@@ -1,0 +1,140 @@
+# replit.md
+
+## Overview
+
+This is a full-stack OKR (Objectives and Key Results) management system built with React, Express.js, and PostgreSQL. The application provides comprehensive functionality for managing organizational objectives, key results, actions, and checkpoints across different regions and service lines. It features role-based access control, real-time progress tracking, and comprehensive reporting capabilities.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite for fast development and optimized builds
+- **UI Framework**: Shadcn/ui components built on Radix UI primitives
+- **Styling**: Tailwind CSS with custom design tokens
+- **State Management**: TanStack Query (React Query) for server state
+- **Routing**: Wouter for lightweight client-side routing
+- **Form Handling**: React Hook Form with Zod validation
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript with ES modules
+- **Authentication**: Passport.js with local strategy and session-based auth
+- **Session Storage**: PostgreSQL sessions via connect-pg-simple
+- **Password Security**: Node.js crypto module with scrypt hashing
+
+### Database Architecture
+- **Database**: PostgreSQL via Neon serverless
+- **ORM**: Drizzle ORM with type-safe queries
+- **Schema Management**: Drizzle Kit for migrations
+- **Connection**: WebSocket-enabled connection pooling
+
+## Key Components
+
+### Authentication System
+- Session-based authentication with secure password hashing
+- Role-based access control (admin, gestor, operacional)
+- Protected routes with automatic redirection
+- User registration and login flows
+
+### OKR Management Structure
+- **Objectives**: Top-level goals with ownership and regional assignment
+- **Key Results**: Measurable outcomes linked to objectives with strategic indicators
+- **Actions**: Specific tasks to achieve key results with priority and status tracking
+- **Checkpoints**: Regular progress updates with actual vs. target values
+
+### Organizational Structure
+- **Regions**: 10 predefined geographical regions
+- **Sub-regions**: 21 specific sub-regional divisions
+- **Service Lines**: Business service categories
+- **Strategic Indicators**: 7 predefined performance metrics
+
+### User Interface Components
+- Responsive sidebar navigation with role-based menu items
+- Dashboard with KPI cards and progress visualization
+- Data tables with sorting, filtering, and search capabilities
+- Modal forms for CRUD operations
+- Progress charts and activity feeds
+
+## Data Flow
+
+### Client-Server Communication
+1. Client makes authenticated API requests via fetch with credentials
+2. Express middleware handles authentication, logging, and error handling
+3. Drizzle ORM processes database queries with type safety
+4. Responses are cached by React Query for optimal performance
+
+### Authentication Flow
+1. User submits credentials to `/api/login`
+2. Passport validates against database with password verification
+3. Session created and stored in PostgreSQL
+4. Client receives user data and updates auth context
+5. Protected routes check authentication status
+
+### Data Management Flow
+1. User actions trigger React Query mutations
+2. Optimistic updates provide immediate UI feedback
+3. API requests validate data with Zod schemas
+4. Database operations maintain referential integrity
+5. Real-time cache invalidation ensures data consistency
+
+## External Dependencies
+
+### Core Dependencies
+- **@neondatabase/serverless**: PostgreSQL database connection
+- **drizzle-orm**: Type-safe database ORM
+- **passport**: Authentication middleware
+- **express-session**: Session management
+- **@tanstack/react-query**: Server state management
+- **react-hook-form**: Form handling and validation
+- **zod**: Runtime type validation
+
+### UI Dependencies
+- **@radix-ui/***: Accessible UI primitives
+- **tailwindcss**: Utility-first CSS framework
+- **lucide-react**: Icon library
+- **recharts**: Data visualization charts
+- **class-variance-authority**: Component variant management
+
+### Development Dependencies
+- **vite**: Build tool and dev server
+- **typescript**: Type checking
+- **esbuild**: Production bundling
+- **tsx**: TypeScript execution for development
+
+## Deployment Strategy
+
+### Development Environment
+- Vite dev server with HMR for frontend development
+- TSX for running TypeScript backend with hot reload
+- Development database provisioned through Neon
+- Environment variables for database connection and session secrets
+
+### Production Build
+1. Frontend built with Vite to static assets in `dist/public`
+2. Backend bundled with esbuild for Node.js production
+3. Database migrations applied via Drizzle Kit
+4. Session store configured for production PostgreSQL instance
+
+### Environment Configuration
+- `DATABASE_URL`: PostgreSQL connection string (required)
+- `SESSION_SECRET`: Session encryption key (required)
+- `NODE_ENV`: Environment mode (development/production)
+
+### File Structure
+- `/client`: React frontend application
+- `/server`: Express.js backend application
+- `/shared`: Shared TypeScript schemas and types
+- `/migrations`: Database migration files
+
+## Changelog
+
+```
+Changelog:
+- July 01, 2025. Initial setup
+```
+
+## User Preferences
+
+```
+Preferred communication style: Simple, everyday language.
+```
