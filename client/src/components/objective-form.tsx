@@ -178,7 +178,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                   <FormLabel>Região</FormLabel>
                   <Select 
                     onValueChange={(value) => {
-                      field.onChange(value ? parseInt(value) : undefined);
+                      field.onChange(value === "none" ? undefined : parseInt(value));
                       form.setValue("subRegionId", undefined);
                     }}
                     value={field.value?.toString() || ""}
@@ -189,7 +189,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma região</SelectItem>
+                      <SelectItem value="none">Nenhuma região</SelectItem>
                       {regions?.map((region: any) => (
                         <SelectItem key={region.id} value={region.id.toString()}>
                           {region.name}
@@ -209,7 +209,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                 <FormItem>
                   <FormLabel>Sub-Região</FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                    onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
                     value={field.value?.toString() || ""}
                     disabled={!selectedRegionId}
                   >
@@ -219,7 +219,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma sub-região</SelectItem>
+                      <SelectItem value="none">Nenhuma sub-região</SelectItem>
                       {subRegions?.map((subRegion: any) => (
                         <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
                           {subRegion.name}
@@ -240,7 +240,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
               <FormItem>
                 <FormLabel>Linha de Serviço</FormLabel>
                 <Select 
-                  onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                  onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
                   value={field.value?.toString() || ""}
                 >
                   <FormControl>
@@ -249,7 +249,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Nenhuma linha de serviço</SelectItem>
+                    <SelectItem value="none">Nenhuma linha de serviço</SelectItem>
                     {serviceLines?.map((serviceLine: any) => (
                       <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
                         {serviceLine.name}

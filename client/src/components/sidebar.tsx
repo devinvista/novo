@@ -79,17 +79,17 @@ export default function Sidebar() {
         {navigationItems.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.href} href={item.href}>
-              <a
-                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-colors ${
-                  isActive(item.href)
-                    ? "text-sidebar-primary bg-sidebar-primary/10"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent"
-                }`}
-              >
-                <Icon className="mr-3 h-4 w-4" />
-                {item.label}
-              </a>
+            <Link 
+              key={item.href} 
+              href={item.href}
+              className={`flex items-center px-4 py-3 rounded-lg font-medium transition-colors ${
+                isActive(item.href)
+                  ? "text-sidebar-primary bg-sidebar-primary/10"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent"
+              }`}
+            >
+              <Icon className="mr-3 h-4 w-4" />
+              {item.label}
             </Link>
           );
         })}
@@ -99,17 +99,17 @@ export default function Sidebar() {
             {adminItems.map((item) => {
               const Icon = item.icon;
               return (
-                <Link key={item.href} href={item.href}>
-                  <a
-                    className={`flex items-center px-4 py-3 rounded-lg font-medium transition-colors ${
-                      isActive(item.href)
-                        ? "text-sidebar-primary bg-sidebar-primary/10"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent"
-                    }`}
-                  >
-                    <Icon className="mr-3 h-4 w-4" />
-                    {item.label}
-                  </a>
+                <Link 
+                  key={item.href} 
+                  href={item.href}
+                  className={`flex items-center px-4 py-3 rounded-lg font-medium transition-colors ${
+                    isActive(item.href)
+                      ? "text-sidebar-primary bg-sidebar-primary/10"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }`}
+                >
+                  <Icon className="mr-3 h-4 w-4" />
+                  {item.label}
                 </Link>
               );
             })}

@@ -54,7 +54,7 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
   const handleFilterChange = (key: string, value: string | undefined) => {
     const newFilters = { ...filters };
     
-    if (value === undefined || value === "") {
+    if (value === undefined || value === "all") {
       delete newFilters[key as keyof typeof newFilters];
     } else {
       (newFilters as any)[key] = key.includes("Id") ? parseInt(value) : value;
@@ -85,7 +85,7 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
               <SelectValue placeholder="Todas as regiões" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as regiões</SelectItem>
+              <SelectItem value="all">Todas as regiões</SelectItem>
               {regions?.map((region: any) => (
                 <SelectItem key={region.id} value={region.id.toString()}>
                   {region.name}
@@ -106,7 +106,7 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
               <SelectValue placeholder="Todas as sub-regiões" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as sub-regiões</SelectItem>
+              <SelectItem value="all">Todas as sub-regiões</SelectItem>
               {subRegions?.map((subRegion: any) => (
                 <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
                   {subRegion.name}
@@ -126,7 +126,7 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
               <SelectValue placeholder="Todas as linhas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as linhas</SelectItem>
+              <SelectItem value="all">Todas as linhas</SelectItem>
               {serviceLines?.map((serviceLine: any) => (
                 <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
                   {serviceLine.name}
@@ -146,7 +146,7 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
               <SelectValue placeholder="Todos os períodos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os períodos</SelectItem>
+              <SelectItem value="all">Todos os períodos</SelectItem>
               {periods.map((period) => (
                 <SelectItem key={period.value} value={period.value}>
                   {period.label}
