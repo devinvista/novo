@@ -42,8 +42,26 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
     },
   });
 
-  
-  ];
+  // Generate period options based on current date
+  const generatePeriods = () => {
+    const periods = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    
+    // Add quarters for current and previous year
+    for (let year = currentYear - 1; year <= currentYear + 1; year++) {
+      for (let quarter = 1; quarter <= 4; quarter++) {
+        periods.push({
+          value: `${year}-Q${quarter}`,
+          label: `${quarter}º Trimestre ${year}`
+        });
+      }
+    }
+    
+    return periods.reverse(); // Most recent first
+  };
+
+  const periods = generatePeriods();
 
   const handleFilterChange = (key: string, value: string | undefined) => {
     const newFilters = { ...filters };

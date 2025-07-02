@@ -167,7 +167,6 @@ export class DatabaseStorage implements IStorage {
     regionId?: number;
     subRegionId?: number;
     serviceLineId?: number;
-    period?: string;
     ownerId?: number;
   }): Promise<(Objective & { 
     owner: User; 
@@ -230,7 +229,6 @@ export class DatabaseStorage implements IStorage {
       if (filters.regionId) conditions.push(eq(objectives.regionId, filters.regionId));
       if (filters.subRegionId) conditions.push(eq(objectives.subRegionId, filters.subRegionId));
       if (filters.serviceLineId) conditions.push(eq(objectives.serviceLineId, filters.serviceLineId));
-      if (filters.period) conditions.push(eq(objectives.period, filters.period));
       if (filters.ownerId) conditions.push(eq(objectives.ownerId, filters.ownerId));
       
       if (conditions.length > 0) {
@@ -639,7 +637,6 @@ export class DatabaseStorage implements IStorage {
     const objectiveConditions = [];
     if (filters?.regionId) objectiveConditions.push(eq(objectives.regionId, filters.regionId));
     if (filters?.subRegionId) objectiveConditions.push(eq(objectives.subRegionId, filters.subRegionId));
-    if (filters?.period) objectiveConditions.push(eq(objectives.period, filters.period));
 
     // Get objectives count and average progress
     let objectivesQuery = db

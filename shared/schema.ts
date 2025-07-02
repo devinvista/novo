@@ -75,7 +75,6 @@ export const objectives = pgTable("objectives", {
   ownerId: integer("owner_id").notNull().references(() => users.id),
   regionId: integer("region_id").references(() => regions.id),
   subRegionId: integer("sub_region_id").references(() => subRegions.id),
-  serviceLineId: integer("service_line_id").references(() => serviceLines.id),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   status: text("status").notNull().default("active"), // active, completed, cancelled

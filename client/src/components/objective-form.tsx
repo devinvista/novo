@@ -44,7 +44,6 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
       description: objective?.description || "",
       ownerId: objective?.ownerId || user?.id,
       regionId: objective?.regionId || undefined,
-      period: objective?.period || "",
       startDate: objective?.startDate ? new Date(objective.startDate).toISOString().split('T')[0] : "",
       endDate: objective?.endDate ? new Date(objective.endDate).toISOString().split('T')[0] : "",
     },
@@ -112,7 +111,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
     return `${year}-q${quarter}`;
   };
 
-  
+
 
   return (
     <div>
@@ -186,7 +185,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
             )}
           />
 
-          
+
 
           <div className="grid grid-cols-2 gap-4">
             <FormField
