@@ -18,6 +18,11 @@ const objectiveFormSchema = insertObjectiveSchema.extend({
   title: z.string().min(1, "Título é obrigatório"),
   startDate: z.string().min(1, "Data de início é obrigatória"),
   endDate: z.string().min(1, "Data de fim é obrigatória"),
+}).omit({
+  solutionId: true,
+  serviceLineId: true,
+  serviceId: true,
+  subRegionId: true,
 });
 
 type ObjectiveFormData = z.infer<typeof objectiveFormSchema>;
@@ -39,28 +44,15 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
       description: objective?.description || "",
       ownerId: objective?.ownerId || user?.id,
       regionId: objective?.regionId || undefined,
-      subRegionId: objective?.subRegionId || undefined,
-      serviceLineId: objective?.serviceLineId || undefined,
       period: objective?.period || "",
       startDate: objective?.startDate ? new Date(objective.startDate).toISOString().split('T')[0] : "",
       endDate: objective?.endDate ? new Date(objective.endDate).toISOString().split('T')[0] : "",
     },
   });
 
-  const selectedSolutionId = form.watch("solutionId");
-  const selectedServiceLineId = form.watch("serviceLineId");
   const selectedRegionId = form.watch("regionId");
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
-
-  const { data: solutions } = useQuery({
-    queryKey: ["/api/solutions"],
-    queryFn: async () => {
-      const response = await fetch("/api/solutions");
-      if (!response.ok) throw new Error("Erro ao carregar soluções");
-      return response.json();
-    },
-  });
 
   const { data: regions } = useQuery({
     queryKey: ["/api/regions"],
@@ -69,37 +61,6 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
       if (!response.ok) throw new Error("Erro ao carregar regiões");
       return response.json();
     },
-  });
-
-  const { data: serviceLines } = useQuery({
-    queryKey: ["/api/service-lines", selectedSolutionId],
-    enabled: !!selectedSolutionId,
-    queryFn: async () => {
-      const response = await fetch(`/api/service-lines?solutionId=${selectedSolutionId}`);
-      if (!response.ok) throw new Error("Erro ao carregar linhas de serviço");
-      return response.json();
-    },
-  });
-
-  const { data: services } = useQuery({
-    queryKey: ["/api/services", selectedServiceLineId],
-    enabled: !!selectedServiceLineId,
-    queryFn: async () => {
-      const response = await fetch(`/api/services?serviceLineId=${selectedServiceLineId}`);
-      if (!response.ok) throw new Error("Erro ao carregar serviços");
-      return response.json();
-    },
-  });
-
-  const { data: subRegions } = useQuery({
-    queryKey: ["/api/sub-regions", selectedRegionId],
-    queryFn: async () => {
-      if (!selectedRegionId) return [];
-      const response = await fetch(`/api/sub-regions?regionId=${selectedRegionId}`);
-      if (!response.ok) throw new Error("Erro ao carregar sub-regiões");
-      return response.json();
-    },
-    enabled: !!selectedRegionId,
   });
 
   const mutation = useMutation({
@@ -227,92 +188,26 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
             )}
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="solutionId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Solução *</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(parseInt(value));
-                      form.setValue("serviceLineId", undefined);
-                      form.setValue("serviceId", undefined);
-                    }}
-                    value={field.value?.toString() || ""}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma solução" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {solutions?.map((solution: any) => (
-                        <SelectItem key={solution.id} value={solution.id.toString()}>
-                          {solution.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="serviceLineId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Linha de Serviço *</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(parseInt(value));
-                      form.setValue("serviceId", undefined);
-                    }}
-                    value={field.value?.toString() || ""}
-                    disabled={!selectedSolutionId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma linha de serviço" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {serviceLines?.map((serviceLine: any) => (
-                        <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
-                          {serviceLine.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
           <FormField
             control={form.control}
-            name="serviceId"
+            name="regionId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Serviço *</FormLabel>
+                <FormLabel>Região</FormLabel>
                 <Select 
-                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
                   value={field.value?.toString() || ""}
-                  disabled={!selectedServiceLineId}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um serviço" />
+                      <SelectValue placeholder="Selecione uma região" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {services?.map((service: any) => (
-                      <SelectItem key={service.id} value={service.id.toString()}>
-                        {service.name}
+                    <SelectItem value="none">Nenhuma região</SelectItem>
+                    {regions?.map((region: any) => (
+                      <SelectItem key={region.id} value={region.id.toString()}>
+                        {region.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -321,70 +216,6 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
               </FormItem>
             )}
           />
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="regionId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Região</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value === "none" ? undefined : parseInt(value));
-                      form.setValue("subRegionId", undefined);
-                    }}
-                    value={field.value?.toString() || ""}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma região" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhuma região</SelectItem>
-                      {regions?.map((region: any) => (
-                        <SelectItem key={region.id} value={region.id.toString()}>
-                          {region.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="subRegionId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sub-Região</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
-                    value={field.value?.toString() || ""}
-                    disabled={!selectedRegionId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma sub-região" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhuma sub-região</SelectItem>
-                      {subRegions?.map((subRegion: any) => (
-                        <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
-                          {subRegion.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
 
           
 
