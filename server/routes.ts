@@ -75,7 +75,6 @@ export function registerRoutes(app: Express): Server {
       const filters = {
         regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
         subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
-        period: req.query.period as string | undefined,
       };
       
       const kpis = await storage.getDashboardKPIs(filters);
@@ -94,7 +93,6 @@ export function registerRoutes(app: Express): Server {
         regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
         subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
         serviceLineId: req.query.serviceLineId ? parseInt(req.query.serviceLineId as string) : undefined,
-        period: req.query.period as string | undefined,
         ownerId: req.user?.role !== 'admin' ? req.user?.id : undefined,
       };
       

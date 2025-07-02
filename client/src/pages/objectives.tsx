@@ -14,7 +14,6 @@ export default function Objectives() {
     regionId: undefined as number | undefined,
     subRegionId: undefined as number | undefined,
     serviceLineId: undefined as number | undefined,
-    period: undefined as string | undefined,
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -25,7 +24,6 @@ export default function Objectives() {
       if (filters.regionId) params.append("regionId", filters.regionId.toString());
       if (filters.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
       if (filters.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
-      if (filters.period) params.append("period", filters.period);
       
       const response = await fetch(`/api/objectives?${params}`);
       if (!response.ok) throw new Error("Erro ao carregar objetivos");

@@ -9,7 +9,6 @@ interface FiltersProps {
     regionId?: number;
     subRegionId?: number;
     serviceLineId?: number;
-    period?: string;
   };
   onFiltersChange: (filters: any) => void;
 }
@@ -43,12 +42,7 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
     },
   });
 
-  const periods = [
-    { value: "2024-q1", label: "Q1 2024" },
-    { value: "2024-q2", label: "Q2 2024" },
-    { value: "2024-q3", label: "Q3 2024" },
-    { value: "2024-q4", label: "Q4 2024" },
-    { value: "2025-q1", label: "Q1 2025" },
+  
   ];
 
   const handleFilterChange = (key: string, value: string | undefined) => {
