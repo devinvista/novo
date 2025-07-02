@@ -1,3 +1,4 @@
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,6 +50,8 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
   const selectedSolutionId = form.watch("solutionId");
   const selectedServiceLineId = form.watch("serviceLineId");
   const selectedRegionId = form.watch("regionId");
+  const startDate = form.watch("startDate");
+  const endDate = form.watch("endDate");
 
   const { data: solutions } = useQuery({
     queryKey: ["/api/solutions"],
@@ -145,6 +148,41 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
     { value: "2024-q4", label: "Q4 2024" },
     { value: "2025-q1", label: "Q1 2025" },
   ];
+
+  // Function to determine quarter from date
+  const getQuarterFromDate = (dateString: string): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1; // getMonth() returns 0-11
+    const quarter = Math.ceil(month / 3);
+    return `${year}-q${quarter}`;
+  };
+
+  // Function to generate period based on start and end dates
+  const generatePeriod = (startDateStr: string, endDateStr: string): string => {
+    if (!startDateStr || !endDateStr) return "";
+    
+    const startQuarter = getQuarterFromDate(startDateStr);
+    const endQuarter = getQuarterFromDate(endDateStr);
+    
+    if (startQuarter === endQuarter) {
+      return startQuarter;
+    } else {
+      // If spans multiple quarters, use the start quarter
+      return startQuarter;
+    }
+  };
+
+  // Auto-generate period when dates change
+  React.useEffect(() => {
+    if (startDate && endDate) {
+      const generatedPeriod = generatePeriod(startDate, endDate);
+      if (generatedPeriod) {
+        form.setValue("period", generatedPeriod);
+      }
+    }
+  }, [startDate, endDate, form]);
 
   return (
     <div>
@@ -382,11 +420,11 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
             name="period"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Período *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <FormLabel>Período * (Gerado automaticamente)</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} disabled>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um período" />
+                    <SelectTrigger className="bg-muted">
+                      <SelectValue placeholder="Período será gerado com base nas datas" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -398,6 +436,9 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                   </SelectContent>
                 </Select>
                 <FormMessage />
+                <p className="text-xs text-muted-foreground mt-1">
+                  O período é calculado automaticamente com base na data de início
+                </p>
               </FormItem>
             )}
           />
