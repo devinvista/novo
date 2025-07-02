@@ -103,6 +103,7 @@ export default function ProgressChart({ objectives }: ProgressChartProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const progress = data?.progress ?? 0;
       return (
         <div className="bg-background border border-border rounded-lg shadow-lg p-3">
           <p className="text-sm font-medium">{data.fullName || label}</p>
