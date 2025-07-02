@@ -32,11 +32,30 @@ export const subRegions = pgTable("sub_regions", {
   regionId: integer("region_id").notNull().references(() => regions.id),
 });
 
-// Service lines
-export const serviceLines = pgTable("service_lines", {
+// Solutions (Educação, Saúde)
+export const solutions = pgTable("solutions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Service lines
+export const serviceLines = pgTable("service_lines", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  solutionId: integer("solution_id").notNull().references(() => solutions.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Services
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  serviceLineId: integer("service_line_id").notNull().references(() => serviceLines.id),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Strategic indicators (7 predefined)
@@ -179,6 +198,20 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
   user: one(users, { fields: [activities.userId], references: [users.id] }),
 }));
 
+export const solutionsRelations = relations(solutions, ({ many }) => ({
+  serviceLines: many(serviceLines),
+}));
+
+export const serviceLinesRelations = relations(serviceLines, ({ one, many }) => ({
+  solution: one(solutions, { fields: [serviceLines.solutionId], references: [solutions.id] }),
+  services: many(services),
+  objectives: many(objectives),
+}));
+
+export const servicesRelations = relations(services, ({ one }) => ({
+  serviceLine: one(serviceLines, { fields: [services.serviceLineId], references: [serviceLines.id] }),
+}));
+
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -227,3 +260,5 @@ export type InsertAction = z.infer<typeof insertActionSchema>;
 export type Checkpoint = typeof checkpoints.$inferSelect;
 export type InsertCheckpoint = z.infer<typeof insertCheckpointSchema>;
 export type Activity = typeof activities.$inferSelect;
+export type Solution = typeof solutions.$inferSelect;
+export type Service = typeof services.$inferSelect;

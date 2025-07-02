@@ -31,6 +31,34 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const form = useForm<ObjectiveFormData>({
+    resolver: zodResolver(objectiveFormSchema),
+    defaultValues: {
+      title: objective?.title || "",
+      description: objective?.description || "",
+      ownerId: objective?.ownerId || user?.id,
+      regionId: objective?.regionId || undefined,
+      subRegionId: objective?.subRegionId || undefined,
+      serviceLineId: objective?.serviceLineId || undefined,
+      period: objective?.period || "",
+      startDate: objective?.startDate ? new Date(objective.startDate).toISOString().split('T')[0] : "",
+      endDate: objective?.endDate ? new Date(objective.endDate).toISOString().split('T')[0] : "",
+    },
+  });
+
+  const selectedSolutionId = form.watch("solutionId");
+  const selectedServiceLineId = form.watch("serviceLineId");
+  const selectedRegionId = form.watch("regionId");
+
+  const { data: solutions } = useQuery({
+    queryKey: ["/api/solutions"],
+    queryFn: async () => {
+      const response = await fetch("/api/solutions");
+      if (!response.ok) throw new Error("Erro ao carregar soluções");
+      return response.json();
+    },
+  });
+
   const { data: regions } = useQuery({
     queryKey: ["/api/regions"],
     queryFn: async () => {
@@ -41,32 +69,24 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
   });
 
   const { data: serviceLines } = useQuery({
-    queryKey: ["/api/service-lines"],
+    queryKey: ["/api/service-lines", selectedSolutionId],
+    enabled: !!selectedSolutionId,
     queryFn: async () => {
-      const response = await fetch("/api/service-lines");
+      const response = await fetch(`/api/service-lines?solutionId=${selectedSolutionId}`);
       if (!response.ok) throw new Error("Erro ao carregar linhas de serviço");
       return response.json();
     },
   });
 
-  const form = useForm<ObjectiveFormData>({
-    resolver: zodResolver(objectiveFormSchema),
-    defaultValues: {
-      title: objective?.title || "",
-      description: objective?.description || "",
-      ownerId: objective?.ownerId || user?.id || 0,
-      regionId: objective?.regionId || undefined,
-      subRegionId: objective?.subRegionId || undefined,
-      serviceLineId: objective?.serviceLineId || undefined,
-      period: objective?.period || "",
-      startDate: objective?.startDate ? new Date(objective.startDate).toISOString().split('T')[0] : "",
-      endDate: objective?.endDate ? new Date(objective.endDate).toISOString().split('T')[0] : "",
-      status: objective?.status || "active",
-      progress: objective?.progress || "0",
+  const { data: services } = useQuery({
+    queryKey: ["/api/services", selectedServiceLineId],
+    enabled: !!selectedServiceLineId,
+    queryFn: async () => {
+      const response = await fetch(`/api/services?serviceLineId=${selectedServiceLineId}`);
+      if (!response.ok) throw new Error("Erro ao carregar serviços");
+      return response.json();
     },
   });
-
-  const selectedRegionId = form.watch("regionId");
 
   const { data: subRegions } = useQuery({
     queryKey: ["/api/sub-regions", selectedRegionId],
@@ -164,6 +184,101 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                     {...field}
                   />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="solutionId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Solução *</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(parseInt(value));
+                      form.setValue("serviceLineId", undefined);
+                      form.setValue("serviceId", undefined);
+                    }}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma solução" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {solutions?.map((solution: any) => (
+                        <SelectItem key={solution.id} value={solution.id.toString()}>
+                          {solution.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="serviceLineId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Linha de Serviço *</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(parseInt(value));
+                      form.setValue("serviceId", undefined);
+                    }}
+                    value={field.value?.toString() || ""}
+                    disabled={!selectedSolutionId}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma linha de serviço" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {serviceLines?.map((serviceLine: any) => (
+                        <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
+                          {serviceLine.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="serviceId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Serviço *</FormLabel>
+                <Select 
+                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  value={field.value?.toString() || ""}
+                  disabled={!selectedServiceLineId}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um serviço" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {services?.map((service: any) => (
+                      <SelectItem key={service.id} value={service.id.toString()}>
+                        {service.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

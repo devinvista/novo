@@ -1,10 +1,12 @@
 import { 
   users, regions, subRegions, serviceLines, strategicIndicators, 
   objectives, keyResults, actions, checkpoints, activities,
+  solutions, services,
   type User, type InsertUser, type Objective, type InsertObjective,
   type KeyResult, type InsertKeyResult, type Action, type InsertAction,
   type Checkpoint, type InsertCheckpoint, type Region, type SubRegion,
-  type ServiceLine, type StrategicIndicator, type Activity
+  type ServiceLine, type StrategicIndicator, type Activity,
+  type Solution, type Service
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
@@ -23,7 +25,9 @@ export interface IStorage {
   // Reference data
   getRegions(): Promise<Region[]>;
   getSubRegions(regionId?: number): Promise<SubRegion[]>;
-  getServiceLines(): Promise<ServiceLine[]>;
+  getSolutions(): Promise<Solution[]>;
+  getServiceLines(solutionId?: number): Promise<ServiceLine[]>;
+  getServices(serviceLineId?: number): Promise<Service[]>;
   getStrategicIndicators(): Promise<StrategicIndicator[]>;
   
   // Objectives
@@ -133,8 +137,24 @@ export class DatabaseStorage implements IStorage {
     return await query.orderBy(asc(subRegions.name));
   }
 
-  async getServiceLines(): Promise<ServiceLine[]> {
-    return await db.select().from(serviceLines).orderBy(asc(serviceLines.name));
+  async getSolutions(): Promise<Solution[]> {
+    return await db.select().from(solutions).orderBy(asc(solutions.name));
+  }
+
+  async getServiceLines(solutionId?: number): Promise<ServiceLine[]> {
+    const query = db.select().from(serviceLines);
+    if (solutionId) {
+      query.where(eq(serviceLines.solutionId, solutionId));
+    }
+    return await query.orderBy(asc(serviceLines.name));
+  }
+
+  async getServices(serviceLineId?: number): Promise<Service[]> {
+    const query = db.select().from(services);
+    if (serviceLineId) {
+      query.where(eq(services.serviceLineId, serviceLineId));
+    }
+    return await query.orderBy(asc(services.name));
   }
 
   async getStrategicIndicators(): Promise<StrategicIndicator[]> {

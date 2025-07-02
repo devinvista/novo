@@ -10,6 +10,15 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
   // Reference data routes
+  app.get("/api/solutions", async (req, res) => {
+    try {
+      const solutions = await storage.getSolutions();
+      res.json(solutions);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar soluções" });
+    }
+  });
+
   app.get("/api/regions", async (req, res) => {
     try {
       const regions = await storage.getRegions();
@@ -31,10 +40,21 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/service-lines", async (req, res) => {
     try {
-      const serviceLines = await storage.getServiceLines();
+      const solutionId = req.query.solutionId ? parseInt(req.query.solutionId as string) : undefined;
+      const serviceLines = await storage.getServiceLines(solutionId);
       res.json(serviceLines);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar linhas de serviço" });
+    }
+  });
+
+  app.get("/api/services", async (req, res) => {
+    try {
+      const serviceLineId = req.query.serviceLineId ? parseInt(req.query.serviceLineId as string) : undefined;
+      const services = await storage.getServices(serviceLineId);
+      res.json(services);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar serviços" });
     }
   });
 
