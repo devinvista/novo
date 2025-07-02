@@ -61,8 +61,8 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
     mutationFn: async (data: ObjectiveFormData) => {
       const payload = {
         ...data,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
+        startDate: data.startDate,
+        endDate: data.endDate,
       };
 
       if (objective) {

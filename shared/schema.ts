@@ -219,6 +219,9 @@ export const insertObjectiveSchema = createInsertSchema(objectives).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  startDate: z.string().transform((val) => new Date(val)),
+  endDate: z.string().transform((val) => new Date(val)),
 });
 
 export const insertKeyResultSchema = createInsertSchema(keyResults).omit({
