@@ -14,6 +14,7 @@ export default function Objectives() {
     regionId: undefined as number | undefined,
     subRegionId: undefined as number | undefined,
     serviceLineId: undefined as number | undefined,
+    period: undefined as string | undefined,
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 

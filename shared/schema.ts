@@ -171,7 +171,6 @@ export const objectivesRelations = relations(objectives, ({ one, many }) => ({
   owner: one(users, { fields: [objectives.ownerId], references: [users.id] }),
   region: one(regions, { fields: [objectives.regionId], references: [regions.id] }),
   subRegion: one(subRegions, { fields: [objectives.subRegionId], references: [subRegions.id] }),
-  serviceLine: one(serviceLines, { fields: [objectives.serviceLineId], references: [serviceLines.id] }),
   keyResults: many(keyResults),
 }));
 

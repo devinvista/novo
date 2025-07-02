@@ -18,11 +18,6 @@ const objectiveFormSchema = insertObjectiveSchema.extend({
   title: z.string().min(1, "Título é obrigatório"),
   startDate: z.string().min(1, "Data de início é obrigatória"),
   endDate: z.string().min(1, "Data de fim é obrigatória"),
-}).omit({
-  solutionId: true,
-  serviceLineId: true,
-  serviceId: true,
-  subRegionId: true,
 });
 
 type ObjectiveFormData = z.infer<typeof objectiveFormSchema>;
@@ -68,7 +63,6 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
         ...data,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-        progress: data.progress.toString(),
       };
 
       if (objective) {

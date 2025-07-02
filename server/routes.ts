@@ -372,7 +372,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(checkpoint);
     } catch (error) {
-      res.status(500).json({ message: "Erro ao atualizar checkpoint" });
+      res.status(500).json({ message: "Erro ao atualizar checkpoint" });ckpoint" });
     }
   });
 

@@ -35,7 +35,6 @@ export interface IStorage {
     regionId?: number;
     subRegionId?: number;
     serviceLineId?: number;
-    period?: string;
     ownerId?: number;
   }): Promise<(Objective & { 
     owner: User; 
@@ -84,7 +83,6 @@ export interface IStorage {
   getDashboardKPIs(filters?: {
     regionId?: number;
     subRegionId?: number;
-    period?: string;
   }): Promise<{
     totalObjectives: number;
     totalKeyResults: number;
@@ -183,7 +181,6 @@ export class DatabaseStorage implements IStorage {
         regionId: objectives.regionId,
         subRegionId: objectives.subRegionId,
         serviceLineId: objectives.serviceLineId,
-        period: objectives.period,
         startDate: objectives.startDate,
         endDate: objectives.endDate,
         status: objectives.status,
@@ -212,17 +209,12 @@ export class DatabaseStorage implements IStorage {
           code: subRegions.code,
           regionId: subRegions.regionId,
         },
-        serviceLine: {
-          id: serviceLines.id,
-          name: serviceLines.name,
-          description: serviceLines.description,
-        }
+        
       })
       .from(objectives)
       .innerJoin(users, eq(objectives.ownerId, users.id))
       .leftJoin(regions, eq(objectives.regionId, regions.id))
-      .leftJoin(subRegions, eq(objectives.subRegionId, subRegions.id))
-      .leftJoin(serviceLines, eq(objectives.serviceLineId, serviceLines.id));
+      .leftJoin(subRegions, eq(objectives.subRegionId, subRegions.id));
 
     if (filters) {
       const conditions = [];
@@ -243,7 +235,6 @@ export class DatabaseStorage implements IStorage {
       owner: result.owner as User,
       region: result.region as Region | undefined,
       subRegion: result.subRegion as SubRegion | undefined,
-      serviceLine: result.serviceLine as ServiceLine | undefined,
     }));
   }
 

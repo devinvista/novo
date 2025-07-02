@@ -9,6 +9,7 @@ interface FiltersProps {
     regionId?: number;
     subRegionId?: number;
     serviceLineId?: number;
+    period?: string;
   };
   onFiltersChange: (filters: any) => void;
 }
