@@ -386,34 +386,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
             />
           </div>
 
-          <FormField
-            control={form.control}
-            name="serviceLineId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Linha de Serviço</FormLabel>
-                <Select 
-                  onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
-                  value={field.value?.toString() || ""}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma linha de serviço" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhuma linha de serviço</SelectItem>
-                    {serviceLines?.map((serviceLine: any) => (
-                      <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
-                        {serviceLine.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          
 
           <FormField
             control={form.control}
