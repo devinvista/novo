@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation, useSearch } from "wouter";
 import { Plus, Calendar, User, Edit } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
@@ -15,6 +16,16 @@ export default function Actions() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<any>(null);
   const [selectedKeyResult, setSelectedKeyResult] = useState<string>("all");
+  const search = useSearch();
+  
+  // Handle URL parameters for filtering by key result
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const krParam = params.get('kr');
+    if (krParam) {
+      setSelectedKeyResult(krParam);
+    }
+  }, [search]);
 
   const { data: actions, isLoading } = useQuery({
     queryKey: ["/api/actions", selectedKeyResult],
@@ -38,6 +49,11 @@ export default function Actions() {
   const handleCreateAction = () => {
     setSelectedAction(null);
     setIsFormOpen(true);
+  };
+
+  // Pre-fill key result when creating action from specific KR
+  const getDefaultKeyResult = () => {
+    return selectedKeyResult !== "all" ? parseInt(selectedKeyResult) : 0;
   };
 
   const handleEditAction = (action: any) => {
@@ -238,6 +254,7 @@ export default function Actions() {
         onSuccess={handleFormSuccess}
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
+        defaultKeyResultId={getDefaultKeyResult()}
       />
     </div>
   );

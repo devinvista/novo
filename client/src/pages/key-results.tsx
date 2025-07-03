@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Eye, Edit } from "lucide-react";
+import { Plus, Eye, Edit, Activity, Calendar } from "lucide-react";
+import { useLocation } from "wouter";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import KeyResultForm from "@/components/key-result-form-simple";
@@ -13,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function KeyResults() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedKeyResult, setSelectedKeyResult] = useState<any>(null);
+  const [, setLocation] = useLocation();
   
   const { data: keyResults, isLoading } = useQuery({
     queryKey: ["/api/key-results"],
@@ -157,6 +159,27 @@ export default function KeyResults() {
                           {kr.strategicIndicator && (
                             <span>Indicador: {kr.strategicIndicator.name}</span>
                           )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 pt-3 border-t">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => setLocation(`/actions?kr=${kr.id}`)}
+                          >
+                            <Activity className="h-4 w-4 mr-1" />
+                            Ações
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => setLocation(`/checkpoints?kr=${kr.id}`)}
+                          >
+                            <Calendar className="h-4 w-4 mr-1" />
+                            Checkpoints
+                          </Button>
                         </div>
                         
                         <div className="flex items-center justify-between text-sm text-muted-foreground">

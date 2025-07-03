@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearch } from "wouter";
 import { Calendar, CheckCircle, Clock } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
@@ -21,6 +22,16 @@ export default function Checkpoints() {
   const [selectedKeyResult, setSelectedKeyResult] = useState<string>("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const search = useSearch();
+  
+  // Handle URL parameters for filtering by key result
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const krParam = params.get('kr');
+    if (krParam) {
+      setSelectedKeyResult(krParam);
+    }
+  }, [search]);
 
   const { data: checkpoints, isLoading } = useQuery({
     queryKey: ["/api/checkpoints", selectedKeyResult],

@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insertActionSchema, type InsertAction } from "@shared/schema";
@@ -24,9 +25,10 @@ interface ActionFormProps {
   onSuccess: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultKeyResultId?: number;
 }
 
-export default function ActionForm({ action, onSuccess, open, onOpenChange }: ActionFormProps) {
+export default function ActionForm({ action, onSuccess, open, onOpenChange, defaultKeyResultId }: ActionFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -70,6 +72,33 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange }: Ac
       dueDate: action?.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
     },
   });
+
+  // Reset form when action changes
+  useEffect(() => {
+    if (action) {
+      form.reset({
+        keyResultId: action.keyResultId,
+        title: action.title || "",
+        description: action.description || "",
+        priority: action.priority || "medium",
+        status: action.status || "pending",
+        responsibleId: action.responsibleId || null,
+        strategicIndicatorId: action.strategicIndicatorId || null,
+        dueDate: action.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
+      });
+    } else {
+      form.reset({
+        keyResultId: defaultKeyResultId || 0,
+        title: "",
+        description: "",
+        priority: "medium",
+        status: "pending",
+        responsibleId: null,
+        strategicIndicatorId: null,
+        dueDate: "",
+      });
+    }
+  }, [action, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: ActionFormData) => {
@@ -205,14 +234,14 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange }: Ac
               <div>
                 <Label htmlFor="responsibleId">Responsável</Label>
                 <Select 
-                  value={form.watch("responsibleId")?.toString() || ""}
-                  onValueChange={(value) => form.setValue("responsibleId", value ? parseInt(value) : null)}
+                  value={form.watch("responsibleId")?.toString() || "0"}
+                  onValueChange={(value) => form.setValue("responsibleId", value === "0" ? null : parseInt(value))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o responsável" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sem responsável</SelectItem>
+                    <SelectItem value="0">Sem responsável</SelectItem>
                     {users?.map((user: any) => (
                       <SelectItem key={user.id} value={user.id.toString()}>
                         {user.username}
@@ -235,14 +264,14 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange }: Ac
             <div>
               <Label htmlFor="strategicIndicatorId">Indicador Estratégico</Label>
               <Select 
-                value={form.watch("strategicIndicatorId")?.toString() || ""}
-                onValueChange={(value) => form.setValue("strategicIndicatorId", value ? parseInt(value) : null)}
+                value={form.watch("strategicIndicatorId")?.toString() || "0"}
+                onValueChange={(value) => form.setValue("strategicIndicatorId", value === "0" ? null : parseInt(value))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um indicador" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem indicador</SelectItem>
+                  <SelectItem value="0">Sem indicador</SelectItem>
                   {indicators?.map((indicator: any) => (
                     <SelectItem key={indicator.id} value={indicator.id.toString()}>
                       {indicator.name}
