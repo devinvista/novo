@@ -151,6 +151,10 @@ Changelog:
   - Fixed key results page buttons to properly create and edit KRs
   - Implemented proper TypeScript handling for form components
   - Removed initial value field from key results form (simplified workflow)
+  - Added start and end date fields to key results (required fields)
+  - Implemented status functionality with automatic updates based on dates and progress
+  - Status values: pending, active, completed, delayed, cancelled
+  - Updated key results display to show dates and proper status badges
 ```
 
 ## User Preferences

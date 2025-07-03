@@ -96,8 +96,10 @@ export const keyResults = pgTable("key_results", {
   currentValue: decimal("current_value", { precision: 15, scale: 2 }).default("0"),
   unit: text("unit"),
   frequency: text("frequency").notNull(), // monthly, quarterly, weekly
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
   progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
-  status: text("status").notNull().default("active"),
+  status: text("status").notNull().default("active"), // active, completed, cancelled, delayed
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -229,6 +231,9 @@ export const insertKeyResultSchema = createInsertSchema(keyResults).omit({
   number: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  startDate: z.string().transform((val) => new Date(val)),
+  endDate: z.string().transform((val) => new Date(val)),
 });
 
 export const insertActionSchema = createInsertSchema(actions).omit({

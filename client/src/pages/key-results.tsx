@@ -44,10 +44,21 @@ export default function KeyResults() {
     return "bg-destructive";
   };
 
-  const getStatusBadge = (progress: number) => {
-    if (progress >= 70) return { label: "No prazo", variant: "default" as const };
-    if (progress >= 40) return { label: "Atenção", variant: "secondary" as const };
-    return { label: "Atrasado", variant: "destructive" as const };
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return { label: "Pendente", variant: "secondary" as const };
+      case 'active':
+        return { label: "Em andamento", variant: "default" as const };
+      case 'completed':
+        return { label: "Concluído", variant: "default" as const };
+      case 'delayed':
+        return { label: "Atrasado", variant: "destructive" as const };
+      case 'cancelled':
+        return { label: "Cancelado", variant: "destructive" as const };
+      default:
+        return { label: "Em andamento", variant: "default" as const };
+    }
   };
 
   return (
@@ -86,7 +97,7 @@ export default function KeyResults() {
             <div className="grid gap-6">
               {keyResults?.map((kr: any) => {
                 const progress = parseFloat(kr.progress) || 0;
-                const statusBadge = getStatusBadge(progress);
+                const statusBadge = getStatusBadge(kr.status || 'active');
                 
                 return (
                   <Card key={kr.id} className="hover:shadow-md transition-shadow">
@@ -146,6 +157,10 @@ export default function KeyResults() {
                           {kr.strategicIndicator && (
                             <span>Indicador: {kr.strategicIndicator.name}</span>
                           )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span>Período: {kr.startDate ? new Date(kr.startDate).toLocaleDateString('pt-BR') : 'N/A'} - {kr.endDate ? new Date(kr.endDate).toLocaleDateString('pt-BR') : 'N/A'}</span>
                         </div>
                       </div>
                     </CardContent>

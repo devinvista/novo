@@ -29,6 +29,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     currentValue: "0",
     unit: "",
     frequency: "monthly",
+    startDate: "",
+    endDate: "",
     status: "active",
   });
 
@@ -46,6 +48,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           currentValue: keyResult.currentValue || "0",
           unit: keyResult.unit || "",
           frequency: keyResult.frequency || "monthly",
+          startDate: keyResult.startDate ? new Date(keyResult.startDate).toISOString().split('T')[0] : "",
+          endDate: keyResult.endDate ? new Date(keyResult.endDate).toISOString().split('T')[0] : "",
           status: keyResult.status || "active",
         });
       } else {
@@ -59,6 +63,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           currentValue: "0",
           unit: "",
           frequency: "monthly",
+          startDate: "",
+          endDate: "",
           status: "active",
         });
       }
@@ -133,10 +139,20 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.objectiveId || !formData.title || !formData.targetValue) {
+    if (!formData.objectiveId || !formData.title || !formData.targetValue || !formData.startDate || !formData.endDate) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate date logic
+    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+      toast({
+        title: "Erro",
+        description: "A data de término deve ser posterior à data de início",
         variant: "destructive",
       });
       return;
@@ -152,6 +168,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       currentValue: formData.currentValue.toString(),
       unit: formData.unit || null,
       frequency: formData.frequency,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
       progress: "0",
       status: formData.status,
     };
@@ -266,6 +284,30 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Data de Início *</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => handleInputChange("startDate", e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="endDate">Data de Término *</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => handleInputChange("endDate", e.target.value)}
+                required
+              />
             </div>
           </div>
 

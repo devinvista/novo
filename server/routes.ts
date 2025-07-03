@@ -238,7 +238,22 @@ export function registerRoutes(app: Express): Server {
       const validation = insertKeyResultSchema.parse(req.body);
       console.log("Validated data:", validation);
       
-      const keyResult = await storage.createKeyResult(validation);
+      // Calculate initial status based on dates
+      const startDate = new Date(validation.startDate);
+      const endDate = new Date(validation.endDate);
+      const today = new Date();
+      
+      let status = validation.status || 'active';
+      if (today < startDate) {
+        status = 'pending';
+      } else if (today > endDate && parseFloat(validation.currentValue) < parseFloat(validation.targetValue)) {
+        status = 'delayed';
+      }
+      
+      const keyResult = await storage.createKeyResult({
+        ...validation,
+        status,
+      });
       console.log("Created key result:", keyResult);
       
       // Log activity
