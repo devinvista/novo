@@ -223,11 +223,23 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/key-results", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    console.log("Key result creation request:", {
+      authenticated: req.isAuthenticated(),
+      userId: req.user?.id,
+      body: req.body
+    });
+    
+    if (!req.isAuthenticated()) {
+      console.log("User not authenticated");
+      return res.sendStatus(401);
+    }
     
     try {
       const validation = insertKeyResultSchema.parse(req.body);
+      console.log("Validated data:", validation);
+      
       const keyResult = await storage.createKeyResult(validation);
+      console.log("Created key result:", keyResult);
       
       // Log activity
       await storage.logActivity({
@@ -241,6 +253,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(keyResult);
     } catch (error) {
+      console.error("Error creating key result:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }

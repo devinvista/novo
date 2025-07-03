@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,17 +21,49 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   const queryClient = useQueryClient();
   
   const [formData, setFormData] = useState({
-    objectiveId: keyResult?.objectiveId || "",
-    title: keyResult?.title || "",
-    description: keyResult?.description || "",
-    strategicIndicatorId: keyResult?.strategicIndicatorId || "",
-
-    targetValue: keyResult?.targetValue || "0",
-    currentValue: keyResult?.currentValue || "0",
-    unit: keyResult?.unit || "",
-    frequency: keyResult?.frequency || "monthly",
-    status: keyResult?.status || "active",
+    objectiveId: "",
+    title: "",
+    description: "",
+    strategicIndicatorId: "",
+    targetValue: "0",
+    currentValue: "0",
+    unit: "",
+    frequency: "monthly",
+    status: "active",
   });
+
+  // Reset form when dialog opens/closes or keyResult changes
+  useEffect(() => {
+    if (open) {
+      if (keyResult) {
+        // Editing existing key result
+        setFormData({
+          objectiveId: keyResult.objectiveId?.toString() || "",
+          title: keyResult.title || "",
+          description: keyResult.description || "",
+          strategicIndicatorId: keyResult.strategicIndicatorId?.toString() || "",
+          targetValue: keyResult.targetValue || "0",
+          currentValue: keyResult.currentValue || "0",
+          unit: keyResult.unit || "",
+          frequency: keyResult.frequency || "monthly",
+          status: keyResult.status || "active",
+        });
+      } else {
+        // Creating new key result
+        setFormData({
+          objectiveId: "",
+          title: "",
+          description: "",
+          strategicIndicatorId: "",
+          targetValue: "0",
+          currentValue: "0",
+          unit: "",
+          frequency: "monthly",
+          status: "active",
+        });
+      }
+    }
+  }, [open, keyResult]);
 
   // Fetch objectives for dropdown
   const { data: objectives } = useQuery({
@@ -60,7 +92,24 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       const endpoint = keyResult ? `/api/key-results/${keyResult.id}` : "/api/key-results";
       const method = keyResult ? "PUT" : "POST";
       
-      return await apiRequest(endpoint, method, data);
+      console.log("Sending data:", data);
+      
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Server response:", response.status, errorData);
+        throw new Error(errorData || `HTTP ${response.status}`);
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
@@ -94,13 +143,17 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     }
 
     const processedData = {
-      ...formData,
       objectiveId: parseInt(formData.objectiveId),
-      strategicIndicatorId: formData.strategicIndicatorId ? parseInt(formData.strategicIndicatorId) : undefined,
+      title: formData.title,
+      description: formData.description || null,
+      strategicIndicatorId: formData.strategicIndicatorId && formData.strategicIndicatorId !== "" ? parseInt(formData.strategicIndicatorId) : null,
       initialValue: "0",
       targetValue: formData.targetValue.toString(),
       currentValue: formData.currentValue.toString(),
+      unit: formData.unit || null,
+      frequency: formData.frequency,
       progress: "0",
+      status: formData.status,
     };
     
     mutation.mutate(processedData);
