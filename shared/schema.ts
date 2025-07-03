@@ -91,6 +91,8 @@ export const keyResults = pgTable("key_results", {
   description: text("description"),
   number: integer("number").notNull(), // Auto-generated sequential number
   strategicIndicatorId: integer("strategic_indicator_id").references(() => strategicIndicators.id),
+  serviceLineId: integer("service_line_id").references(() => serviceLines.id),
+  serviceId: integer("service_id").references(() => services.id),
   initialValue: decimal("initial_value", { precision: 15, scale: 2 }).notNull(),
   targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
   currentValue: decimal("current_value", { precision: 15, scale: 2 }).default("0"),
@@ -179,6 +181,8 @@ export const objectivesRelations = relations(objectives, ({ one, many }) => ({
 export const keyResultsRelations = relations(keyResults, ({ one, many }) => ({
   objective: one(objectives, { fields: [keyResults.objectiveId], references: [objectives.id] }),
   strategicIndicator: one(strategicIndicators, { fields: [keyResults.strategicIndicatorId], references: [strategicIndicators.id] }),
+  serviceLine: one(serviceLines, { fields: [keyResults.serviceLineId], references: [serviceLines.id] }),
+  service: one(services, { fields: [keyResults.serviceId], references: [services.id] }),
   actions: many(actions),
   checkpoints: many(checkpoints),
 }));
@@ -204,11 +208,12 @@ export const solutionsRelations = relations(solutions, ({ many }) => ({
 export const serviceLinesRelations = relations(serviceLines, ({ one, many }) => ({
   solution: one(solutions, { fields: [serviceLines.solutionId], references: [solutions.id] }),
   services: many(services),
-  objectives: many(objectives),
+  keyResults: many(keyResults),
 }));
 
-export const servicesRelations = relations(services, ({ one }) => ({
+export const servicesRelations = relations(services, ({ one, many }) => ({
   serviceLine: one(serviceLines, { fields: [services.serviceLineId], references: [serviceLines.id] }),
+  keyResults: many(keyResults),
 }));
 
 // Zod schemas for validation

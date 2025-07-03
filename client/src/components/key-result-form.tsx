@@ -50,6 +50,32 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     enabled: open,
   });
 
+  // Fetch service lines for dropdown
+  const { data: serviceLines } = useQuery({
+    queryKey: ["/api/service-lines"],
+    queryFn: async () => {
+      const response = await fetch("/api/service-lines");
+      if (!response.ok) throw new Error("Erro ao carregar linhas de serviço");
+      return response.json();
+    },
+    enabled: open,
+  });
+
+  // State for selected service line to control services query
+  const [selectedServiceLine, setSelectedServiceLine] = useState<string | null>(null);
+
+  // Fetch services for dropdown (based on selected service line)
+  const { data: services } = useQuery({
+    queryKey: ["/api/services", selectedServiceLine],
+    queryFn: async () => {
+      if (!selectedServiceLine || selectedServiceLine === "0") return [];
+      const response = await fetch(`/api/services?serviceLineId=${selectedServiceLine}`);
+      if (!response.ok) throw new Error("Erro ao carregar serviços");
+      return response.json();
+    },
+    enabled: open && !!selectedServiceLine && selectedServiceLine !== "0",
+  });
+
   const form = useForm<KeyResultFormData>({
     resolver: zodResolver(insertKeyResultSchema),
     defaultValues: {
@@ -57,11 +83,15 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       title: keyResult?.title || "",
       description: keyResult?.description || "",
       strategicIndicatorId: keyResult?.strategicIndicatorId || "",
+      serviceLineId: keyResult?.serviceLineId || "",
+      serviceId: keyResult?.serviceId || "",
       initialValue: keyResult?.initialValue || "0",
       targetValue: keyResult?.targetValue || "0",
       currentValue: keyResult?.currentValue || "0",
       unit: keyResult?.unit || "",
       frequency: keyResult?.frequency || "monthly",
+      startDate: keyResult?.startDate ? new Date(keyResult.startDate).toISOString().split('T')[0] : "",
+      endDate: keyResult?.endDate ? new Date(keyResult.endDate).toISOString().split('T')[0] : "",
       progress: keyResult?.progress || "0",
       status: keyResult?.status || "active",
     },
@@ -100,6 +130,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       ...data,
       objectiveId: parseInt(data.objectiveId as unknown as string),
       strategicIndicatorId: data.strategicIndicatorId ? parseInt(data.strategicIndicatorId as unknown as string) : undefined,
+      serviceLineId: data.serviceLineId ? parseInt(data.serviceLineId as unknown as string) : undefined,
+      serviceId: data.serviceId ? parseInt(data.serviceId as unknown as string) : undefined,
       initialValue: String(data.initialValue || "0"),
       targetValue: String(data.targetValue || "0"),
       currentValue: String(data.currentValue || "0"),
@@ -284,6 +316,64 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                         {strategicIndicators?.map((indicator: any) => (
                           <SelectItem key={indicator.id} value={indicator.id.toString()}>
                             {indicator.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="serviceLineId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Linha de Serviço</FormLabel>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedServiceLine(value);
+                      form.setValue("serviceId", ""); // Reset service when service line changes
+                    }} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma linha de serviço" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Nenhuma</SelectItem>
+                        {serviceLines?.map((serviceLine: any) => (
+                          <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
+                            {serviceLine.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="serviceId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Serviço</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um serviço" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Nenhum</SelectItem>
+                        {services?.map((service: any) => (
+                          <SelectItem key={service.id} value={service.id.toString()}>
+                            {service.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -6,6 +6,7 @@ import Filters from "@/components/filters";
 import KPICards from "@/components/kpi-cards";
 import ObjectivesTable from "@/components/objectives-table";
 import ProgressChart from "@/components/progress-chart";
+import ProgressVisualization from "@/components/progress-visualization";
 import RecentActivities from "@/components/recent-activities";
 
 export default function Dashboard() {
@@ -58,6 +59,10 @@ export default function Dashboard() {
         
         <div className="flex-1 overflow-y-auto p-6">
           <KPICards data={kpis} isLoading={kpisLoading} />
+          
+          <div className="mt-8">
+            <ProgressVisualization filters={filters} />
+          </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
             <div className="lg:col-span-2">

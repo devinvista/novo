@@ -268,7 +268,9 @@ export class DatabaseStorage implements IStorage {
 
   async getKeyResults(objectiveId?: number): Promise<(KeyResult & { 
     objective: Objective; 
-    strategicIndicator?: StrategicIndicator 
+    strategicIndicator?: StrategicIndicator;
+    serviceLine?: ServiceLine;
+    service?: Service;
   })[]> {
     let query = db
       .select({
@@ -278,21 +280,29 @@ export class DatabaseStorage implements IStorage {
         description: keyResults.description,
         number: keyResults.number,
         strategicIndicatorId: keyResults.strategicIndicatorId,
+        serviceLineId: keyResults.serviceLineId,
+        serviceId: keyResults.serviceId,
         initialValue: keyResults.initialValue,
         targetValue: keyResults.targetValue,
         currentValue: keyResults.currentValue,
         unit: keyResults.unit,
         frequency: keyResults.frequency,
+        startDate: keyResults.startDate,
+        endDate: keyResults.endDate,
         progress: keyResults.progress,
         status: keyResults.status,
         createdAt: keyResults.createdAt,
         updatedAt: keyResults.updatedAt,
         objective: objectives,
         strategicIndicator: strategicIndicators,
+        serviceLine: serviceLines,
+        service: services,
       })
       .from(keyResults)
       .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .leftJoin(strategicIndicators, eq(keyResults.strategicIndicatorId, strategicIndicators.id));
+      .leftJoin(strategicIndicators, eq(keyResults.strategicIndicatorId, strategicIndicators.id))
+      .leftJoin(serviceLines, eq(keyResults.serviceLineId, serviceLines.id))
+      .leftJoin(services, eq(keyResults.serviceId, services.id));
 
     if (objectiveId) {
       query = query.where(eq(keyResults.objectiveId, objectiveId));
@@ -304,6 +314,8 @@ export class DatabaseStorage implements IStorage {
       ...result,
       objective: result.objective as Objective,
       strategicIndicator: result.strategicIndicator as StrategicIndicator | undefined,
+      serviceLine: result.serviceLine as ServiceLine | undefined,
+      service: result.service as Service | undefined,
     }));
   }
 
