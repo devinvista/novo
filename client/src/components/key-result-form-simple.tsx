@@ -1,0 +1,260 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+interface KeyResultFormProps {
+  keyResult?: any;
+  onSuccess: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange }: KeyResultFormProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [formData, setFormData] = useState({
+    objectiveId: keyResult?.objectiveId || "",
+    title: keyResult?.title || "",
+    description: keyResult?.description || "",
+    strategicIndicatorId: keyResult?.strategicIndicatorId || "",
+    initialValue: keyResult?.initialValue || "0",
+    targetValue: keyResult?.targetValue || "0",
+    currentValue: keyResult?.currentValue || "0",
+    unit: keyResult?.unit || "",
+    frequency: keyResult?.frequency || "monthly",
+    status: keyResult?.status || "active",
+  });
+
+  // Fetch objectives for dropdown
+  const { data: objectives } = useQuery({
+    queryKey: ["/api/objectives"],
+    queryFn: async () => {
+      const response = await fetch("/api/objectives");
+      if (!response.ok) throw new Error("Erro ao carregar objetivos");
+      return response.json();
+    },
+    enabled: open,
+  });
+
+  // Fetch strategic indicators for dropdown
+  const { data: strategicIndicators } = useQuery({
+    queryKey: ["/api/strategic-indicators"],
+    queryFn: async () => {
+      const response = await fetch("/api/strategic-indicators");
+      if (!response.ok) throw new Error("Erro ao carregar indicadores estratégicos");
+      return response.json();
+    },
+    enabled: open,
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (data: any) => {
+      const endpoint = keyResult ? `/api/key-results/${keyResult.id}` : "/api/key-results";
+      const method = keyResult ? "PUT" : "POST";
+      
+      return await apiRequest(endpoint, method, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      toast({
+        title: "Sucesso",
+        description: keyResult ? "Resultado-chave atualizado com sucesso!" : "Resultado-chave criado com sucesso!",
+      });
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao salvar resultado-chave",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.objectiveId || !formData.title || !formData.targetValue) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const processedData = {
+      ...formData,
+      objectiveId: parseInt(formData.objectiveId),
+      strategicIndicatorId: formData.strategicIndicatorId ? parseInt(formData.strategicIndicatorId) : undefined,
+      initialValue: formData.initialValue.toString(),
+      targetValue: formData.targetValue.toString(),
+      currentValue: formData.currentValue.toString(),
+      progress: "0",
+    };
+    
+    mutation.mutate(processedData);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {keyResult ? "Editar Resultado-Chave" : "Novo Resultado-Chave"}
+          </DialogTitle>
+          <DialogDescription>
+            {keyResult ? "Atualize as informações do resultado-chave." : "Crie um novo resultado-chave associado a um objetivo."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="objectiveId">Objetivo *</Label>
+            <Select value={formData.objectiveId.toString()} onValueChange={(value) => handleInputChange("objectiveId", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um objetivo" />
+              </SelectTrigger>
+              <SelectContent>
+                {objectives?.map((objective: any) => (
+                  <SelectItem key={objective.id} value={objective.id.toString()}>
+                    {objective.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="title">Título *</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              placeholder="Digite o título do resultado-chave"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Descreva o resultado-chave em detalhes"
+              className="resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="initialValue">Valor Inicial *</Label>
+              <Input
+                id="initialValue"
+                type="number"
+                step="0.01"
+                value={formData.initialValue}
+                onChange={(e) => handleInputChange("initialValue", e.target.value)}
+                placeholder="0"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="targetValue">Valor Meta *</Label>
+              <Input
+                id="targetValue"
+                type="number"
+                step="0.01"
+                value={formData.targetValue}
+                onChange={(e) => handleInputChange("targetValue", e.target.value)}
+                placeholder="0"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentValue">Valor Atual</Label>
+              <Input
+                id="currentValue"
+                type="number"
+                step="0.01"
+                value={formData.currentValue}
+                onChange={(e) => handleInputChange("currentValue", e.target.value)}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unit">Unidade</Label>
+              <Input
+                id="unit"
+                value={formData.unit}
+                onChange={(e) => handleInputChange("unit", e.target.value)}
+                placeholder="Ex: %, unidades, R$"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="frequency">Frequência *</Label>
+              <Select value={formData.frequency} onValueChange={(value) => handleInputChange("frequency", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a frequência" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Semanal</SelectItem>
+                  <SelectItem value="monthly">Mensal</SelectItem>
+                  <SelectItem value="quarterly">Trimestral</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="strategicIndicatorId">Indicador Estratégico</Label>
+              <Select value={formData.strategicIndicatorId.toString()} onValueChange={(value) => handleInputChange("strategicIndicatorId", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um indicador" />
+                </SelectTrigger>
+                <SelectContent>
+                  {strategicIndicators?.map((indicator: any) => (
+                    <SelectItem key={indicator.id} value={indicator.id.toString()}>
+                      {indicator.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? "Salvando..." : keyResult ? "Atualizar" : "Criar"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

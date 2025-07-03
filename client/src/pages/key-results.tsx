@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, Edit } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
+import KeyResultForm from "@/components/key-result-form-simple";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,9 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function KeyResults() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedKeyResult, setSelectedKeyResult] = useState<any>(null);
+  
   const { data: keyResults, isLoading } = useQuery({
     queryKey: ["/api/key-results"],
     queryFn: async () => {
@@ -18,6 +22,21 @@ export default function KeyResults() {
       return response.json();
     },
   });
+
+  const handleCreateKeyResult = () => {
+    setSelectedKeyResult(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditKeyResult = (keyResult: any) => {
+    setSelectedKeyResult(keyResult);
+    setIsFormOpen(true);
+  };
+
+  const handleFormSuccess = () => {
+    setIsFormOpen(false);
+    setSelectedKeyResult(null);
+  };
 
   const getStatusColor = (progress: number) => {
     if (progress >= 70) return "bg-secondary";
@@ -40,7 +59,7 @@ export default function KeyResults() {
           title="Resultados-Chave" 
           description="Gerencie os KRs vinculados aos objetivos"
           action={
-            <Button>
+            <Button onClick={handleCreateKeyResult}>
               <Plus className="mr-2 h-4 w-4" />
               Novo KR
             </Button>
@@ -90,8 +109,8 @@ export default function KeyResults() {
                           <Badge variant={statusBadge.variant}>
                             {statusBadge.label}
                           </Badge>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" onClick={() => handleEditKeyResult(kr)}>
+                            <Edit className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -140,7 +159,7 @@ export default function KeyResults() {
                     <p className="text-muted-foreground">
                       Nenhum resultado-chave encontrado.
                     </p>
-                    <Button className="mt-4">
+                    <Button className="mt-4" onClick={handleCreateKeyResult}>
                       <Plus className="mr-2 h-4 w-4" />
                       Criar primeiro KR
                     </Button>
@@ -151,6 +170,13 @@ export default function KeyResults() {
           )}
         </div>
       </main>
+      
+      <KeyResultForm 
+        keyResult={selectedKeyResult}
+        onSuccess={handleFormSuccess}
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+      />
     </div>
   );
 }
