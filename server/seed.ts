@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { regions, subRegions, serviceLines, strategicIndicators } from "@shared/schema";
+import { regions, subRegions, serviceLines, strategicIndicators, solutions } from "@shared/schema";
 
 async function seed() {
   console.log("🌱 Starting database seed...");
@@ -54,14 +54,20 @@ async function seed() {
       await db.insert(subRegions).values(subRegion).onConflictDoNothing();
     }
 
+    // Get solutions first
+    console.log("Getting solutions...");
+    const solutionsList = await db.select().from(solutions);
+    const saudeId = solutionsList.find(s => s.name === "Saúde")?.id;
+    const educacaoId = solutionsList.find(s => s.name === "Educação")?.id;
+
     // Seed service lines
     console.log("Seeding service lines...");
     const serviceLineData = [
-      { id: 1, name: "Saúde" },
-      { id: 2, name: "Educação" },
-      { id: 3, name: "Tecnologia" },
-      { id: 4, name: "Infraestrutura" },
-      { id: 5, name: "Sustentabilidade" }
+      { id: 1, name: "Atenção à Saúde", solutionId: saudeId! },
+      { id: 2, name: "Segurança e Saúde no Trabalho", solutionId: saudeId! },
+      { id: 3, name: "Educação Básica", solutionId: educacaoId! },
+      { id: 4, name: "Educação Superior", solutionId: educacaoId! },
+      { id: 5, name: "Educação Profissional", solutionId: educacaoId! }
     ];
 
     for (const serviceLine of serviceLineData) {
