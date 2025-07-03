@@ -1,23 +1,54 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Calendar, User } from "lucide-react";
+import { Plus, Calendar, User, Edit } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
+import ActionForm from "@/components/action-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Actions() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<any>(null);
+  const [selectedKeyResult, setSelectedKeyResult] = useState<string>("all");
+
   const { data: actions, isLoading } = useQuery({
-    queryKey: ["/api/actions"],
+    queryKey: ["/api/actions", selectedKeyResult],
     queryFn: async () => {
-      const response = await fetch("/api/actions");
+      const url = selectedKeyResult === "all" ? "/api/actions" : `/api/actions?keyResultId=${selectedKeyResult}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Erro ao carregar ações");
       return response.json();
     },
   });
+
+  const { data: keyResults } = useQuery({
+    queryKey: ["/api/key-results"],
+    queryFn: async () => {
+      const response = await fetch("/api/key-results");
+      if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
+      return response.json();
+    },
+  });
+
+  const handleCreateAction = () => {
+    setSelectedAction(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditAction = (action: any) => {
+    setSelectedAction(action);
+    setIsFormOpen(true);
+  };
+
+  const handleFormSuccess = () => {
+    setIsFormOpen(false);
+    setSelectedAction(null);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -56,7 +87,7 @@ export default function Actions() {
           title="Ações" 
           description="Gerencie as ações vinculadas aos resultados-chave"
           action={
-            <Button>
+            <Button onClick={handleCreateAction}>
               <Plus className="mr-2 h-4 w-4" />
               Nova Ação
             </Button>
@@ -64,6 +95,23 @@ export default function Actions() {
         />
         
         <div className="flex-1 overflow-y-auto p-6">
+          <div className="mb-6 flex items-center space-x-4">
+            <div className="flex-1">
+              <Select value={selectedKeyResult} onValueChange={setSelectedKeyResult}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Filtrar por resultado-chave" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os resultados-chave</SelectItem>
+                  {keyResults?.map((kr: any) => (
+                    <SelectItem key={kr.id} value={kr.id.toString()}>
+                      {kr.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           {isLoading ? (
             <div className="grid gap-4">
               {[1, 2, 3, 4].map((i) => (
@@ -113,6 +161,13 @@ export default function Actions() {
                           >
                             {priorityBadge.label}
                           </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditAction(action)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
@@ -166,7 +221,7 @@ export default function Actions() {
                     <p className="text-muted-foreground">
                       Nenhuma ação encontrada.
                     </p>
-                    <Button className="mt-4">
+                    <Button className="mt-4" onClick={handleCreateAction}>
                       <Plus className="mr-2 h-4 w-4" />
                       Criar primeira ação
                     </Button>
@@ -177,6 +232,13 @@ export default function Actions() {
           )}
         </div>
       </main>
+      
+      <ActionForm
+        action={selectedAction}
+        onSuccess={handleFormSuccess}
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+      />
     </div>
   );
 }

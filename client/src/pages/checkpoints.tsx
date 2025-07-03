@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -17,14 +18,25 @@ import { apiRequest } from "@/lib/queryClient";
 export default function Checkpoints() {
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<any>(null);
   const [updateForm, setUpdateForm] = useState({ actualValue: "", notes: "" });
+  const [selectedKeyResult, setSelectedKeyResult] = useState<string>("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: checkpoints, isLoading } = useQuery({
-    queryKey: ["/api/checkpoints"],
+    queryKey: ["/api/checkpoints", selectedKeyResult],
     queryFn: async () => {
-      const response = await fetch("/api/checkpoints");
+      const url = selectedKeyResult === "all" ? "/api/checkpoints" : `/api/checkpoints?keyResultId=${selectedKeyResult}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Erro ao carregar checkpoints");
+      return response.json();
+    },
+  });
+
+  const { data: keyResults } = useQuery({
+    queryKey: ["/api/key-results"],
+    queryFn: async () => {
+      const response = await fetch("/api/key-results");
+      if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
       return response.json();
     },
   });
@@ -91,6 +103,23 @@ export default function Checkpoints() {
         />
         
         <div className="flex-1 overflow-y-auto p-6">
+          <div className="mb-6 flex items-center space-x-4">
+            <div className="flex-1">
+              <Select value={selectedKeyResult} onValueChange={setSelectedKeyResult}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Filtrar por resultado-chave" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os resultados-chave</SelectItem>
+                  {keyResults?.map((kr: any) => (
+                    <SelectItem key={kr.id} value={kr.id.toString()}>
+                      {kr.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           {isLoading ? (
             <div className="grid gap-4">
               {[1, 2, 3, 4].map((i) => (

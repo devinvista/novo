@@ -155,6 +155,13 @@ Changelog:
   - Implemented status functionality with automatic updates based on dates and progress
   - Status values: pending, active, completed, delayed, cancelled
   - Updated key results display to show dates and proper status badges
+  - Enhanced actions and checkpoints integration with key results
+  - Created comprehensive ActionForm component for managing actions
+  - Added filtering functionality to actions page by key result
+  - Added edit functionality to actions with proper form handling
+  - Enhanced checkpoints page with key result filtering
+  - Improved actions display with proper badges and responsible user info
+  - Fixed TypeScript issues in action form handling
 ```
 
 ## User Preferences
