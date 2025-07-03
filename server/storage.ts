@@ -164,13 +164,11 @@ export class DatabaseStorage implements IStorage {
   async getObjectives(filters?: {
     regionId?: number;
     subRegionId?: number;
-    serviceLineId?: number;
     ownerId?: number;
   }): Promise<(Objective & { 
     owner: User; 
     region?: Region; 
     subRegion?: SubRegion; 
-    serviceLine?: ServiceLine 
   })[]> {
     let query = db
       .select({
@@ -180,7 +178,6 @@ export class DatabaseStorage implements IStorage {
         ownerId: objectives.ownerId,
         regionId: objectives.regionId,
         subRegionId: objectives.subRegionId,
-        serviceLineId: objectives.serviceLineId,
         startDate: objectives.startDate,
         endDate: objectives.endDate,
         status: objectives.status,
@@ -209,7 +206,7 @@ export class DatabaseStorage implements IStorage {
           code: subRegions.code,
           regionId: subRegions.regionId,
         },
-        
+
       })
       .from(objectives)
       .innerJoin(users, eq(objectives.ownerId, users.id))
@@ -220,7 +217,6 @@ export class DatabaseStorage implements IStorage {
       const conditions = [];
       if (filters.regionId) conditions.push(eq(objectives.regionId, filters.regionId));
       if (filters.subRegionId) conditions.push(eq(objectives.subRegionId, filters.subRegionId));
-      if (filters.serviceLineId) conditions.push(eq(objectives.serviceLineId, filters.serviceLineId));
       if (filters.ownerId) conditions.push(eq(objectives.ownerId, filters.ownerId));
       
       if (conditions.length > 0) {
@@ -674,12 +670,12 @@ export class DatabaseStorage implements IStorage {
     const [actionStats] = await actionsQuery;
 
     return {
-      totalObjectives: objectiveStats.count || 0,
-      totalKeyResults: keyResultStats.count || 0,
-      averageProgress: objectiveStats.avgProgress || 0,
-      totalActions: actionStats.total || 0,
-      completedActions: actionStats.completed || 0,
-      overallProgress: objectiveStats.avgProgress || 0,
+      totalObjectives: Number(objectiveStats.count) || 0,
+      totalKeyResults: Number(keyResultStats.count) || 0,
+      averageProgress: Number(objectiveStats.avgProgress) || 0,
+      totalActions: Number(actionStats.total) || 0,
+      completedActions: Number(actionStats.completed) || 0,
+      overallProgress: Number(objectiveStats.avgProgress) || 0,
     };
   }
 }

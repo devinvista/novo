@@ -140,6 +140,12 @@ Changelog:
   - Created and populated solutions, service lines, and services tables
   - Updated API endpoints to support new hierarchy
   - Updated objective form with cascading selects for the new structure
+- July 03, 2025. Improvements and region updates implemented
+  - Fixed objectives API error by removing serviceLine references (not in schema)
+  - Updated regions and sub-regions with new organizational structure
+  - Fixed KPI dashboard values to return proper numbers instead of strings
+  - Updated seed files to reflect new region/sub-region hierarchy
+  - 11 regions with 21 sub-regions matching user requirements
 ```
 
 ## User Preferences

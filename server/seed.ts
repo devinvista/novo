@@ -8,16 +8,17 @@ async function seed() {
     // Seed regions
     console.log("Seeding regions...");
     const regionData = [
-      { id: 1, name: "Central", code: "CE" },
-      { id: 2, name: "Metropolitana 1", code: "M1" },
-      { id: 3, name: "Metropolitana 2", code: "M2" },
-      { id: 4, name: "Metropolitana 3", code: "M3" },
-      { id: 5, name: "Norte 1", code: "N1" },
-      { id: 6, name: "Norte 2", code: "N2" },
-      { id: 7, name: "Oeste", code: "OE" },
-      { id: 8, name: "Sudeste", code: "SE" },
-      { id: 9, name: "Sul 1", code: "S1" },
-      { id: 10, name: "Sul 2", code: "S2" }
+      { id: 1, name: "Central", code: "CEN" },
+      { id: 2, name: "Departamento Regional", code: "DR" },
+      { id: 3, name: "Encosta da Serra", code: "ES" },
+      { id: 4, name: "Metropolitana", code: "MET" },
+      { id: 5, name: "Noroeste", code: "NO" },
+      { id: 6, name: "Norte", code: "N" },
+      { id: 7, name: "Serra", code: "S" },
+      { id: 8, name: "Sul", code: "SU" },
+      { id: 9, name: "Vale do Rio Pardo", code: "VRP" },
+      { id: 10, name: "Vale do Sinos", code: "VS" },
+      { id: 11, name: "Vale do Taquari", code: "VT" }
     ];
 
     for (const region of regionData) {
@@ -27,27 +28,27 @@ async function seed() {
     // Seed sub-regions
     console.log("Seeding sub-regions...");
     const subRegionData = [
-      { id: 1, name: "Brasília", code: "BSB", regionId: 1 },
-      { id: 2, name: "São Paulo", code: "SAO", regionId: 2 },
-      { id: 3, name: "Campinas", code: "CPQ", regionId: 2 },
-      { id: 4, name: "Rio de Janeiro", code: "RIO", regionId: 3 },
-      { id: 5, name: "Niterói", code: "NIT", regionId: 3 },
-      { id: 6, name: "Belo Horizonte", code: "BHZ", regionId: 4 },
-      { id: 7, name: "Contagem", code: "CTG", regionId: 4 },
-      { id: 8, name: "Uberlândia", code: "UDI", regionId: 4 },
-      { id: 9, name: "Belém", code: "BEL", regionId: 5 },
-      { id: 10, name: "Manaus", code: "MAO", regionId: 5 },
-      { id: 11, name: "Fortaleza", code: "FOR", regionId: 6 },
-      { id: 12, name: "Recife", code: "REC", regionId: 6 },
-      { id: 13, name: "Salvador", code: "SSA", regionId: 6 },
-      { id: 14, name: "Goiânia", code: "GYN", regionId: 7 },
-      { id: 15, name: "Campo Grande", code: "CGR", regionId: 7 },
-      { id: 16, name: "Vitória", code: "VIX", regionId: 8 },
-      { id: 17, name: "Vila Velha", code: "VVL", regionId: 8 },
-      { id: 18, name: "Curitiba", code: "CWB", regionId: 9 },
-      { id: 19, name: "Londrina", code: "LDB", regionId: 9 },
-      { id: 20, name: "Porto Alegre", code: "POA", regionId: 10 },
-      { id: 21, name: "Florianópolis", code: "FLN", regionId: 10 }
+      { id: 1, name: "Central", code: "CEN", regionId: 1 },
+      { id: 2, name: "Negócio", code: "NEG", regionId: 2 },
+      { id: 3, name: "Encosta da Serra", code: "ES", regionId: 3 },
+      { id: 4, name: "Metropolitana 1", code: "MET1", regionId: 4 },
+      { id: 5, name: "Metropolitana 2", code: "MET2", regionId: 4 },
+      { id: 6, name: "Metropolitana 3", code: "MET3", regionId: 4 },
+      { id: 7, name: "Noroeste 2", code: "NO2", regionId: 5 },
+      { id: 8, name: "Noroeste 1", code: "NO1", regionId: 5 },
+      { id: 9, name: "Norte 2", code: "N2", regionId: 6 },
+      { id: 10, name: "Norte 1", code: "N1", regionId: 6 },
+      { id: 11, name: "Serra 3", code: "S3", regionId: 7 },
+      { id: 12, name: "Serra 1", code: "S1", regionId: 7 },
+      { id: 13, name: "Serra 2", code: "S2", regionId: 7 },
+      { id: 14, name: "Sul 1", code: "SU1", regionId: 8 },
+      { id: 15, name: "Sul 2", code: "SU2", regionId: 8 },
+      { id: 16, name: "Vale do Rio Pardo", code: "VRP", regionId: 9 },
+      { id: 17, name: "Vale dos Sinos 1", code: "VS1", regionId: 10 },
+      { id: 18, name: "Vale dos Sinos 2", code: "VS2", regionId: 10 },
+      { id: 19, name: "Vale dos Sinos 3", code: "VS3", regionId: 10 },
+      { id: 20, name: "Vale do Taquari 2", code: "VT2", regionId: 11 },
+      { id: 21, name: "Vale do Taquari 1", code: "VT1", regionId: 11 }
     ];
 
     for (const subRegion of subRegionData) {
