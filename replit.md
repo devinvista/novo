@@ -150,6 +150,7 @@ Changelog:
   - Created comprehensive key results form with objective association
   - Fixed key results page buttons to properly create and edit KRs
   - Implemented proper TypeScript handling for form components
+  - Removed initial value field from key results form (simplified workflow)
 ```
 
 ## User Preferences

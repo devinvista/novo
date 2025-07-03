@@ -25,8 +25,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     title: keyResult?.title || "",
     description: keyResult?.description || "",
     strategicIndicatorId: keyResult?.strategicIndicatorId || "",
-    initialValue: keyResult?.initialValue || "0",
+
     targetValue: keyResult?.targetValue || "0",
+    currentValue: keyResult?.currentValue || "0",
     unit: keyResult?.unit || "",
     frequency: keyResult?.frequency || "monthly",
     status: keyResult?.status || "active",
@@ -96,8 +97,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       ...formData,
       objectiveId: parseInt(formData.objectiveId),
       strategicIndicatorId: formData.strategicIndicatorId ? parseInt(formData.strategicIndicatorId) : undefined,
-      initialValue: formData.initialValue.toString(),
+      initialValue: "0",
       targetValue: formData.targetValue.toString(),
+      currentValue: formData.currentValue.toString(),
       progress: "0",
     };
     
@@ -159,32 +161,17 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="initialValue">Valor Inicial *</Label>
-              <Input
-                id="initialValue"
-                type="number"
-                step="0.01"
-                value={formData.initialValue}
-                onChange={(e) => handleInputChange("initialValue", e.target.value)}
-                placeholder="0"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="targetValue">Valor Meta *</Label>
-              <Input
-                id="targetValue"
-                type="number"
-                step="0.01"
-                value={formData.targetValue}
-                onChange={(e) => handleInputChange("targetValue", e.target.value)}
-                placeholder="0"
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="targetValue">Valor Meta *</Label>
+            <Input
+              id="targetValue"
+              type="number"
+              step="0.01"
+              value={formData.targetValue}
+              onChange={(e) => handleInputChange("targetValue", e.target.value)}
+              placeholder="0"
+              required
+            />
           </div>
 
           <div className="space-y-2">
