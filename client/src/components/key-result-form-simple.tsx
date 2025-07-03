@@ -27,7 +27,6 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     strategicIndicatorId: keyResult?.strategicIndicatorId || "",
     initialValue: keyResult?.initialValue || "0",
     targetValue: keyResult?.targetValue || "0",
-    currentValue: keyResult?.currentValue || "0",
     unit: keyResult?.unit || "",
     frequency: keyResult?.frequency || "monthly",
     status: keyResult?.status || "active",
@@ -99,7 +98,6 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       strategicIndicatorId: formData.strategicIndicatorId ? parseInt(formData.strategicIndicatorId) : undefined,
       initialValue: formData.initialValue.toString(),
       targetValue: formData.targetValue.toString(),
-      currentValue: formData.currentValue.toString(),
       progress: "0",
     };
     
@@ -189,28 +187,14 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentValue">Valor Atual</Label>
-              <Input
-                id="currentValue"
-                type="number"
-                step="0.01"
-                value={formData.currentValue}
-                onChange={(e) => handleInputChange("currentValue", e.target.value)}
-                placeholder="0"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="unit">Unidade</Label>
-              <Input
-                id="unit"
-                value={formData.unit}
-                onChange={(e) => handleInputChange("unit", e.target.value)}
-                placeholder="Ex: %, unidades, R$"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="unit">Unidade</Label>
+            <Input
+              id="unit"
+              value={formData.unit}
+              onChange={(e) => handleInputChange("unit", e.target.value)}
+              placeholder="Ex: %, unidades, R$"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
