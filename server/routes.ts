@@ -256,7 +256,7 @@ export function registerRoutes(app: Express): Server {
       });
       console.log("Created key result:", keyResult);
       
-      // Log activity
+      // Log activity - remove updatedAt field
       await storage.logActivity({
         userId: req.user!.id,
         entityType: 'key_result',
@@ -269,10 +269,12 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(keyResult);
     } catch (error) {
       console.error("Error creating key result:", error);
+      console.error("Error stack:", error.stack);
       if (error instanceof z.ZodError) {
+        console.log("Validation errors:", error.errors);
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
-      res.status(500).json({ message: "Erro ao criar resultado-chave" });
+      res.status(500).json({ message: "Erro ao criar resultado-chave", error: error.message });
     }
   });
 

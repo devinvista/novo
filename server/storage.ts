@@ -304,7 +304,7 @@ export class DatabaseStorage implements IStorage {
     // Map results with strategic indicators
     return keyResultsData.map(row => {
       let strategicIndicator = undefined;
-      
+
       if (row.strategicIndicatorIds && row.strategicIndicatorIds.length > 0) {
         strategicIndicator = indicators.find(indicator => 
           row.strategicIndicatorIds!.includes(indicator.id)
@@ -323,25 +323,33 @@ export class DatabaseStorage implements IStorage {
     return keyResult || undefined;
   }
 
-  async createKeyResult(data: InsertKeyResult): Promise<KeyResult> {
-    // Handle strategicIndicatorId conversion to strategicIndicatorIds array
-    const { strategicIndicatorId, ...restData } = data;
+  async createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult> {
+    // Generate sequential number for the objective
+    const result = await db
+      .select({ maxNumber: sql<number>`COALESCE(MAX(${keyResults.number}), 0)` })
+      .from(keyResults)
+      .where(eq(keyResults.objectiveId, keyResult.objectiveId));
 
-    const keyResultData = {
-      ...restData,
-      strategicIndicatorIds: strategicIndicatorId ? [strategicIndicatorId] : (data.strategicIndicatorIds || []),
+    const number = (result[0]?.maxNumber || 0) + 1;
+
+    // Handle the conversion from strategicIndicatorId to strategicIndicatorIds array
+    const { strategicIndicatorId, ...keyResultData } = keyResult as any;
+
+    const dataToInsert = {
+      ...keyResultData,
+      number,
+      strategicIndicatorIds: strategicIndicatorId ? [strategicIndicatorId] : [],
     };
 
-    const [keyResult] = await db
+    const [created] = await db
       .insert(keyResults)
-      .values(keyResultData)
+      .values(dataToInsert)
       .returning();
 
     // Create checkpoints based on frequency
-    //await this.generateCheckpointsForKeyResult(keyResult);
-    await this.generateCheckpoints(keyResult.id);
+    await this.createCheckpoints(created.id, keyResult.frequency, new Date(keyResult.startDate), new Date(keyResult.endDate));
 
-    return keyResult;
+    return created;
   }
 
   async updateKeyResult(id: number, keyResult: Partial<InsertKeyResult>): Promise<KeyResult> {

@@ -230,15 +230,21 @@ export const insertObjectiveSchema = createInsertSchema(objectives).omit({
   endDate: z.string().transform((val) => new Date(val)),
 });
 
-export const insertKeyResultSchema = createInsertSchema(keyResults).omit({
-  id: true,
-  number: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  startDate: z.string().transform((val) => new Date(val)),
-  endDate: z.string().transform((val) => new Date(val)),
+export const insertKeyResultSchema = z.object({
+  objectiveId: z.number(),
+  title: z.string().min(1, "Título é obrigatório"),
+  description: z.string().optional(),
+  strategicIndicatorId: z.number().optional(), // For backward compatibility
   strategicIndicatorIds: z.array(z.number()).optional(),
+  initialValue: z.string(),
+  targetValue: z.string(),
+  currentValue: z.string(),
+  unit: z.string(),
+  frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]),
+  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Data inválida"),
+  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Data inválida"),
+  progress: z.string().optional(),
+  status: z.enum(["pending", "active", "completed", "delayed", "cancelled"]).optional(),
 });
 
 export const insertActionSchema = createInsertSchema(actions).omit({
