@@ -267,7 +267,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getKeyResults(objectiveId?: number): Promise<(KeyResult & { objective: Objective; strategicIndicator?: StrategicIndicator })[]> {
-    let query = db
+    // First get key results with objectives
+    let baseQuery = db
       .select({
         id: keyResults.id,
         objectiveId: keyResults.objectiveId,
@@ -287,22 +288,34 @@ export class DatabaseStorage implements IStorage {
         createdAt: keyResults.createdAt,
         updatedAt: keyResults.updatedAt,
         objective: objectives,
-        strategicIndicator: strategicIndicators,
       })
       .from(keyResults)
-      .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .leftJoin(strategicIndicators, sql`${keyResults.strategicIndicatorIds} IS NOT NULL AND array_length(${keyResults.strategicIndicatorIds}, 1) > 0 AND ${strategicIndicators.id} = ANY(${keyResults.strategicIndicatorIds})`);
+      .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id));
 
     if (objectiveId) {
-      query = query.where(eq(keyResults.objectiveId, objectiveId));
+      baseQuery = baseQuery.where(eq(keyResults.objectiveId, objectiveId));
     }
 
-    const results = await query.orderBy(keyResults.number);
+    const keyResultsData = await baseQuery.orderBy(keyResults.number);
 
-    return results.map(row => ({
-      ...row,
-      strategicIndicator: row.strategicIndicator || undefined,
-    }));
+    // Get all strategic indicators
+    const indicators = await db.select().from(strategicIndicators);
+
+    // Map results with strategic indicators
+    return keyResultsData.map(row => {
+      let strategicIndicator = undefined;
+      
+      if (row.strategicIndicatorIds && row.strategicIndicatorIds.length > 0) {
+        strategicIndicator = indicators.find(indicator => 
+          row.strategicIndicatorIds!.includes(indicator.id)
+        );
+      }
+
+      return {
+        ...row,
+        strategicIndicator,
+      };
+    });
   }
 
   async getKeyResult(id: number): Promise<KeyResult | undefined> {
