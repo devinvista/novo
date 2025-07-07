@@ -215,12 +215,9 @@ export function registerRoutes(app: Express): Server {
     
     try {
       const objectiveId = req.query.objectiveId ? parseInt(req.query.objectiveId as string) : undefined;
-      console.log("Fetching key results with objectiveId:", objectiveId);
       const keyResults = await storage.getKeyResults(objectiveId);
-      console.log("Found key results:", keyResults.length);
       res.json(keyResults);
     } catch (error) {
-      console.error("Error fetching key results:", error);
       res.status(500).json({ message: "Erro ao buscar resultados-chave" });
     }
   });
