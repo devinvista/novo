@@ -316,7 +316,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(keyResults)
       .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .leftJoin(strategicIndicators, sql`${strategicIndicators.id} = ANY(${keyResults.strategicIndicatorIds})`);
+      .leftJoin(strategicIndicators, sql`${keyResults.strategicIndicatorIds} IS NOT NULL AND ${strategicIndicators.id} = ANY(${keyResults.strategicIndicatorIds})`);
 
     if (objectiveId) {
       query = query.where(eq(keyResults.objectiveId, objectiveId));
@@ -632,9 +632,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async logActivity(activity: Omit<Activity, 'id' | 'createdAt'>): Promise<Activity> {
+    // Remove updatedAt field if it exists since the activities table doesn't have it
+    const { updatedAt, ...activityData } = activity as any;
+    
     const [created] = await db
       .insert(activities)
-      .values(activity)
+      .values(activityData)
       .returning();
     return created;
   }

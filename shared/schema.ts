@@ -148,7 +148,6 @@ export const activities = pgTable("activities", {
   oldValues: jsonb("old_values"),
   newValues: jsonb("new_values"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
