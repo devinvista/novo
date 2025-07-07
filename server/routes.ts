@@ -326,9 +326,18 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/actions", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
+    console.log("Action creation request:", {
+      authenticated: req.isAuthenticated(),
+      userId: req.user?.id,
+      body: req.body
+    });
+    
     try {
       const validation = insertActionSchema.parse(req.body);
+      console.log("Validated action data:", validation);
+      
       const action = await storage.createAction(validation);
+      console.log("Created action:", action);
       
       // Log activity
       await storage.logActivity({
@@ -342,7 +351,9 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(action);
     } catch (error) {
+      console.error("Error creating action:", error);
       if (error instanceof z.ZodError) {
+        console.log("Validation errors:", error.errors);
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
       res.status(500).json({ message: "Erro ao criar ação" });

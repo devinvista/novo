@@ -248,6 +248,8 @@ export const insertActionSchema = createInsertSchema(actions).omit({
   updatedAt: true,
 }).extend({
   dueDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+  status: z.string().optional().default("pending"),
+  priority: z.string().optional().default("medium"),
 });
 
 export const insertCheckpointSchema = createInsertSchema(checkpoints).omit({
