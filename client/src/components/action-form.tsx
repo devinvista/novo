@@ -104,7 +104,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
     mutationFn: async (data: ActionFormData) => {
       const payload = {
         ...data,
-        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        dueDate: data.dueDate || undefined,
       };
       
       if (action) {
