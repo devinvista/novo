@@ -266,7 +266,10 @@ export class DatabaseStorage implements IStorage {
     await db.delete(objectives).where(eq(objectives.id, id));
   }
 
-  async getKeyResults(objectiveId?: number): Promise<KeyResult[]> {
+  async getKeyResults(objectiveId?: number): Promise<(KeyResult & { 
+    objective: Objective; 
+    strategicIndicator?: StrategicIndicator 
+  })[]> {
     let query = db
       .select({
         id: keyResults.id,
@@ -291,21 +294,41 @@ export class DatabaseStorage implements IStorage {
         objective: {
           id: objectives.id,
           title: objectives.title,
+          description: objectives.description,
+          ownerId: objectives.ownerId,
+          regionId: objectives.regionId,
+          subRegionId: objectives.subRegionId,
+          startDate: objectives.startDate,
+          endDate: objectives.endDate,
+          status: objectives.status,
+          progress: objectives.progress,
+          createdAt: objectives.createdAt,
+          updatedAt: objectives.updatedAt,
         },
         strategicIndicator: {
           id: strategicIndicators.id,
           name: strategicIndicators.name,
+          description: strategicIndicators.description,
+          unit: strategicIndicators.unit,
+          active: strategicIndicators.active,
+          createdAt: strategicIndicators.createdAt,
         },
       })
       .from(keyResults)
-      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .leftJoin(strategicIndicators, eq(keyResults.strategicIndicatorIds, strategicIndicators.id));
+      .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+      .leftJoin(strategicIndicators, sql`${keyResults.strategicIndicatorIds} = ANY(ARRAY[${strategicIndicators.id}])`);
 
     if (objectiveId) {
       query = query.where(eq(keyResults.objectiveId, objectiveId));
     }
 
-    return await query;
+    const results = await query.orderBy(asc(keyResults.number));
+
+    return results.map(result => ({
+      ...result,
+      objective: result.objective as Objective,
+      strategicIndicator: result.strategicIndicator as StrategicIndicator | undefined,
+    }));
   }
 
   async getKeyResult(id: number): Promise<KeyResult | undefined> {
@@ -322,13 +345,20 @@ export class DatabaseStorage implements IStorage {
 
     const nextNumber = (maxNumber.max || 0) + 1;
 
+    // Convert strategicIndicatorId to array format for strategicIndicatorIds
+    const processedKeyResult = {
+      ...keyResult,
+      strategicIndicatorIds: keyResult.strategicIndicatorId ? [keyResult.strategicIndicatorId] : null,
+      number: nextNumber,
+      updatedAt: new Date(),
+    };
+
+    // Remove the single strategicIndicatorId field since we're using the array field
+    const { strategicIndicatorId, ...insertData } = processedKeyResult;
+
     const [created] = await db
       .insert(keyResults)
-      .values({
-        ...keyResult,
-        number: nextNumber,
-        updatedAt: new Date(),
-      })
+      .values(insertData)
       .returning();
 
     // Generate checkpoints for this key result
