@@ -21,7 +21,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Reference data
   getRegions(): Promise<Region[]>;
   getSubRegions(regionId?: number): Promise<SubRegion[]>;
@@ -29,7 +29,7 @@ export interface IStorage {
   getServiceLines(solutionId?: number): Promise<ServiceLine[]>;
   getServices(serviceLineId?: number): Promise<Service[]>;
   getStrategicIndicators(): Promise<StrategicIndicator[]>;
-  
+
   // Objectives
   getObjectives(filters?: {
     regionId?: number;
@@ -46,7 +46,7 @@ export interface IStorage {
   createObjective(objective: InsertObjective): Promise<Objective>;
   updateObjective(id: number, objective: Partial<InsertObjective>): Promise<Objective>;
   deleteObjective(id: number): Promise<void>;
-  
+
   // Key Results
   getKeyResults(objectiveId?: number): Promise<(KeyResult & { 
     objective: Objective; 
@@ -56,7 +56,7 @@ export interface IStorage {
   createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult>;
   updateKeyResult(id: number, keyResult: Partial<InsertKeyResult>): Promise<KeyResult>;
   deleteKeyResult(id: number): Promise<void>;
-  
+
   // Actions
   getActions(keyResultId?: number): Promise<(Action & { 
     keyResult: KeyResult; 
@@ -67,18 +67,18 @@ export interface IStorage {
   createAction(action: InsertAction): Promise<Action>;
   updateAction(id: number, action: Partial<InsertAction>): Promise<Action>;
   deleteAction(id: number): Promise<void>;
-  
+
   // Checkpoints
   getCheckpoints(keyResultId?: number): Promise<Checkpoint[]>;
   getCheckpoint(id: number): Promise<Checkpoint | undefined>;
   createCheckpoint(checkpoint: InsertCheckpoint): Promise<Checkpoint>;
   updateCheckpoint(id: number, checkpoint: Partial<InsertCheckpoint>): Promise<Checkpoint>;
   generateCheckpoints(keyResultId: number): Promise<Checkpoint[]>;
-  
+
   // Activities
   getRecentActivities(limit?: number): Promise<(Activity & { user: User })[]>;
   logActivity(activity: Omit<Activity, 'id' | 'createdAt'>): Promise<Activity>;
-  
+
   // Analytics
   getDashboardKPIs(filters?: {
     regionId?: number;
@@ -91,7 +91,7 @@ export interface IStorage {
     completedActions: number;
     overallProgress: number;
   }>;
-  
+
   sessionStore: session.SessionStore;
 }
 
@@ -218,14 +218,14 @@ export class DatabaseStorage implements IStorage {
       if (filters.regionId) conditions.push(eq(objectives.regionId, filters.regionId));
       if (filters.subRegionId) conditions.push(eq(objectives.subRegionId, filters.subRegionId));
       if (filters.ownerId) conditions.push(eq(objectives.ownerId, filters.ownerId));
-      
+
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
       }
     }
 
     const results = await query.orderBy(desc(objectives.createdAt));
-    
+
     return results.map(result => ({
       ...result,
       owner: result.owner as User,
@@ -266,12 +266,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(objectives).where(eq(objectives.id, id));
   }
 
-  async getKeyResults(objectiveId?: number): Promise<(KeyResult & { 
-    objective: Objective; 
-    strategicIndicators?: StrategicIndicator[];
-    serviceLine?: ServiceLine;
-    service?: Service;
-  })[]> {
+  async getKeyResults(objectiveId?: number): Promise<KeyResult[]> {
     let query = db
       .select({
         id: keyResults.id,
@@ -293,44 +288,24 @@ export class DatabaseStorage implements IStorage {
         status: keyResults.status,
         createdAt: keyResults.createdAt,
         updatedAt: keyResults.updatedAt,
-        objective: objectives,
-        serviceLine: serviceLines,
-        service: services,
+        objective: {
+          id: objectives.id,
+          title: objectives.title,
+        },
+        strategicIndicator: {
+          id: strategicIndicators.id,
+          name: strategicIndicators.name,
+        },
       })
       .from(keyResults)
-      .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .leftJoin(serviceLines, eq(keyResults.serviceLineId, serviceLines.id))
-      .leftJoin(services, eq(keyResults.serviceId, services.id));
+      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+      .leftJoin(strategicIndicators, eq(keyResults.strategicIndicatorIds, strategicIndicators.id));
 
     if (objectiveId) {
       query = query.where(eq(keyResults.objectiveId, objectiveId));
     }
 
-    const results = await query.orderBy(asc(keyResults.number));
-    
-    // Fetch strategic indicators for each key result
-    const resultsWithIndicators = await Promise.all(
-      results.map(async (result) => {
-        let indicators: StrategicIndicator[] = [];
-        
-        if (result.strategicIndicatorIds && result.strategicIndicatorIds.length > 0) {
-          indicators = await db
-            .select()
-            .from(strategicIndicators)
-            .where(sql`${strategicIndicators.id} = ANY(${result.strategicIndicatorIds})`);
-        }
-        
-        return {
-          ...result,
-          objective: result.objective as Objective,
-          strategicIndicators: indicators,
-          serviceLine: result.serviceLine as ServiceLine | undefined,
-          service: result.service as Service | undefined,
-        };
-      })
-    );
-    
-    return resultsWithIndicators;
+    return await query;
   }
 
   async getKeyResult(id: number): Promise<KeyResult | undefined> {
@@ -355,10 +330,10 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .returning();
-      
+
     // Generate checkpoints for this key result
     await this.generateCheckpoints(created.id);
-    
+
     return created;
   }
 
@@ -411,7 +386,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const results = await query.orderBy(asc(actions.number));
-    
+
     return results.map(result => ({
       ...result,
       keyResult: result.keyResult as KeyResult,
@@ -463,11 +438,11 @@ export class DatabaseStorage implements IStorage {
 
   async getCheckpoints(keyResultId?: number): Promise<Checkpoint[]> {
     let query = db.select().from(checkpoints);
-    
+
     if (keyResultId) {
       query = query.where(eq(checkpoints.keyResultId, keyResultId));
     }
-    
+
     return await query.orderBy(asc(checkpoints.period));
   }
 
@@ -508,15 +483,15 @@ export class DatabaseStorage implements IStorage {
 
     const createdCheckpoints: Checkpoint[] = [];
     const targetValue = parseFloat(keyResult.targetValue);
-    
+
     // Generate checkpoints based on frequency
     const startDate = new Date(objective.startDate);
     const endDate = new Date(objective.endDate);
-    
+
     if (keyResult.frequency === 'monthly') {
       const months = this.getMonthsBetween(startDate, endDate);
       const valuePerMonth = targetValue / months.length;
-      
+
       for (let i = 0; i < months.length; i++) {
         const checkpoint = await this.createCheckpoint({
           keyResultId,
@@ -528,7 +503,7 @@ export class DatabaseStorage implements IStorage {
     } else if (keyResult.frequency === 'quarterly') {
       const quarters = this.getQuartersBetween(startDate, endDate);
       const valuePerQuarter = targetValue / quarters.length;
-      
+
       for (let i = 0; i < quarters.length; i++) {
         const checkpoint = await this.createCheckpoint({
           keyResultId,
@@ -540,7 +515,7 @@ export class DatabaseStorage implements IStorage {
     } else if (keyResult.frequency === 'weekly') {
       const weeks = this.getWeeksBetween(startDate, endDate);
       const valuePerWeek = targetValue / weeks.length;
-      
+
       for (let i = 0; i < weeks.length; i++) {
         const checkpoint = await this.createCheckpoint({
           keyResultId,
@@ -550,26 +525,26 @@ export class DatabaseStorage implements IStorage {
         createdCheckpoints.push(checkpoint);
       }
     }
-    
+
     return createdCheckpoints;
   }
 
   private getMonthsBetween(start: Date, end: Date): string[] {
     const months = [];
     const current = new Date(start);
-    
+
     while (current <= end) {
       months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
       current.setMonth(current.getMonth() + 1);
     }
-    
+
     return months;
   }
 
   private getQuartersBetween(start: Date, end: Date): string[] {
     const quarters = [];
     const current = new Date(start);
-    
+
     while (current <= end) {
       const quarter = Math.floor(current.getMonth() / 3) + 1;
       const quarterStr = `${current.getFullYear()}-Q${quarter}`;
@@ -578,20 +553,20 @@ export class DatabaseStorage implements IStorage {
       }
       current.setMonth(current.getMonth() + 3);
     }
-    
+
     return quarters;
   }
 
   private getWeeksBetween(start: Date, end: Date): string[] {
     const weeks = [];
     const current = new Date(start);
-    
+
     while (current <= end) {
       const weekNumber = this.getWeekNumber(current);
       weeks.push(`${current.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`);
       current.setDate(current.getDate() + 7);
     }
-    
+
     return weeks;
   }
 
