@@ -316,7 +316,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(keyResults)
       .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .leftJoin(strategicIndicators, sql`${keyResults.strategicIndicatorIds} = ANY(ARRAY[${strategicIndicators.id}])`);
+      .leftJoin(strategicIndicators, sql`${strategicIndicators.id} = ANY(${keyResults.strategicIndicatorIds})`);
 
     if (objectiveId) {
       query = query.where(eq(keyResults.objectiveId, objectiveId));
