@@ -241,8 +241,8 @@ export const insertKeyResultSchema = z.object({
   currentValue: z.string(),
   unit: z.string(),
   frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]),
-  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Data inválida"),
-  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), "Data inválida"),
+  startDate: z.string().min(1, "Data de início é obrigatória"),
+  endDate: z.string().min(1, "Data de fim é obrigatória"),
   progress: z.string().optional(),
   status: z.enum(["pending", "active", "completed", "delayed", "cancelled"]).optional(),
 });

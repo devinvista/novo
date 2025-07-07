@@ -235,7 +235,15 @@ export function registerRoutes(app: Express): Server {
     }
     
     try {
-      const validation = insertKeyResultSchema.parse(req.body);
+      console.log("Raw request body:", req.body);
+      
+      // Transform strategicIndicatorId to strategicIndicatorIds if needed
+      const requestData = { ...req.body };
+      if (requestData.strategicIndicatorId && !requestData.strategicIndicatorIds) {
+        requestData.strategicIndicatorIds = [requestData.strategicIndicatorId];
+      }
+      
+      const validation = insertKeyResultSchema.parse(requestData);
       console.log("Validated data:", validation);
       
       // Calculate initial status based on dates
@@ -252,6 +260,8 @@ export function registerRoutes(app: Express): Server {
       
       const keyResult = await storage.createKeyResult({
         ...validation,
+        startDate: validation.startDate,
+        endDate: validation.endDate,
         status,
       });
       console.log("Created key result:", keyResult);

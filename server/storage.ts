@@ -77,7 +77,15 @@ export interface IStorage {
 
   // Activities
   getRecentActivities(limit?: number): Promise<(Activity & { user: User })[]>;
-  logActivity(activity: Omit<Activity, 'id' | 'createdAt'>): Promise<Activity>;
+  logActivity(activity: {
+    userId: number;
+    entityType: string;
+    entityId: number;
+    action: string;
+    description: string;
+    oldValues?: any;
+    newValues?: any;
+  }): Promise<Activity>;
 
   // Analytics
   getDashboardKPIs(filters?: {
@@ -616,10 +624,26 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async logActivity(activity: Omit<Activity, 'id' | 'createdAt'>): Promise<Activity> {
+  async logActivity(activity: {
+    userId: number;
+    entityType: string;
+    entityId: number;
+    action: string;
+    description: string;
+    oldValues?: any;
+    newValues?: any;
+  }): Promise<Activity> {
     const [created] = await db
       .insert(activities)
-      .values(activity)
+      .values({
+        userId: activity.userId,
+        entityType: activity.entityType,
+        entityId: activity.entityId,
+        action: activity.action,
+        description: activity.description,
+        oldValues: activity.oldValues,
+        newValues: activity.newValues,
+      })
       .returning();
     return created;
   }
