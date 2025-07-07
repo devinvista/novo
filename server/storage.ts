@@ -268,7 +268,7 @@ export class DatabaseStorage implements IStorage {
 
   async getKeyResults(objectiveId?: number): Promise<(KeyResult & { 
     objective: Objective; 
-    strategicIndicator?: StrategicIndicator;
+    strategicIndicators?: StrategicIndicator[];
     serviceLine?: ServiceLine;
     service?: Service;
   })[]> {
@@ -279,7 +279,7 @@ export class DatabaseStorage implements IStorage {
         title: keyResults.title,
         description: keyResults.description,
         number: keyResults.number,
-        strategicIndicatorId: keyResults.strategicIndicatorId,
+        strategicIndicatorIds: keyResults.strategicIndicatorIds,
         serviceLineId: keyResults.serviceLineId,
         serviceId: keyResults.serviceId,
         initialValue: keyResults.initialValue,
@@ -294,13 +294,11 @@ export class DatabaseStorage implements IStorage {
         createdAt: keyResults.createdAt,
         updatedAt: keyResults.updatedAt,
         objective: objectives,
-        strategicIndicator: strategicIndicators,
         serviceLine: serviceLines,
         service: services,
       })
       .from(keyResults)
       .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .leftJoin(strategicIndicators, eq(keyResults.strategicIndicatorId, strategicIndicators.id))
       .leftJoin(serviceLines, eq(keyResults.serviceLineId, serviceLines.id))
       .leftJoin(services, eq(keyResults.serviceId, services.id));
 
@@ -310,13 +308,31 @@ export class DatabaseStorage implements IStorage {
 
     const results = await query.orderBy(asc(keyResults.number));
     
-    return results.map(result => ({
-      ...result,
-      objective: result.objective as Objective,
-      strategicIndicator: result.strategicIndicator as StrategicIndicator | undefined,
-      serviceLine: result.serviceLine as ServiceLine | undefined,
-      service: result.service as Service | undefined,
-    }));
+    // Fetch strategic indicators for each key result
+    const resultsWithIndicators = await Promise.all(
+      results.map(async (result) => {
+        let strategicIndicators: StrategicIndicator[] = [];
+        
+        if (result.strategicIndicatorIds && result.strategicIndicatorIds.length > 0) {
+          const indicatorTable = strategicIndicators;
+          const indicators = await db
+            .select()
+            .from(indicatorTable)
+            .where(sql`${indicatorTable.id} = ANY(${result.strategicIndicatorIds})`);
+          strategicIndicators = indicators;
+        }
+        
+        return {
+          ...result,
+          objective: result.objective as Objective,
+          strategicIndicators,
+          serviceLine: result.serviceLine as ServiceLine | undefined,
+          service: result.service as Service | undefined,
+        };
+      })
+    );
+    
+    return resultsWithIndicators;
   }
 
   async getKeyResult(id: number): Promise<KeyResult | undefined> {

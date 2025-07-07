@@ -302,24 +302,33 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
 
               <FormField
                 control={form.control}
-                name="strategicIndicatorId"
+                name="strategicIndicatorIds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Indicador Estratégico</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um indicador" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {strategicIndicators?.map((indicator: any) => (
-                          <SelectItem key={indicator.id} value={indicator.id.toString()}>
+                    <FormLabel>Indicadores Estratégicos</FormLabel>
+                    <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
+                      {strategicIndicators?.map((indicator: any) => (
+                        <div key={indicator.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`indicator-${indicator.id}`}
+                            checked={field.value?.includes(indicator.id) || false}
+                            onChange={(e) => {
+                              const currentValue = field.value || [];
+                              if (e.target.checked) {
+                                field.onChange([...currentValue, indicator.id]);
+                              } else {
+                                field.onChange(currentValue.filter((id: number) => id !== indicator.id));
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                          <label htmlFor={`indicator-${indicator.id}`} className="text-sm font-medium">
                             {indicator.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

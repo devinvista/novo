@@ -90,7 +90,7 @@ export const keyResults = pgTable("key_results", {
   title: text("title").notNull(),
   description: text("description"),
   number: integer("number").notNull(), // Auto-generated sequential number
-  strategicIndicatorId: integer("strategic_indicator_id").references(() => strategicIndicators.id),
+  strategicIndicatorIds: integer("strategic_indicator_ids").array(),
   serviceLineId: integer("service_line_id").references(() => serviceLines.id),
   serviceId: integer("service_id").references(() => services.id),
   initialValue: decimal("initial_value", { precision: 15, scale: 2 }).notNull(),
@@ -180,7 +180,6 @@ export const objectivesRelations = relations(objectives, ({ one, many }) => ({
 
 export const keyResultsRelations = relations(keyResults, ({ one, many }) => ({
   objective: one(objectives, { fields: [keyResults.objectiveId], references: [objectives.id] }),
-  strategicIndicator: one(strategicIndicators, { fields: [keyResults.strategicIndicatorId], references: [strategicIndicators.id] }),
   serviceLine: one(serviceLines, { fields: [keyResults.serviceLineId], references: [serviceLines.id] }),
   service: one(services, { fields: [keyResults.serviceId], references: [services.id] }),
   actions: many(actions),
@@ -239,6 +238,7 @@ export const insertKeyResultSchema = createInsertSchema(keyResults).omit({
 }).extend({
   startDate: z.string().transform((val) => new Date(val)),
   endDate: z.string().transform((val) => new Date(val)),
+  strategicIndicatorIds: z.array(z.number()).optional(),
 });
 
 export const insertActionSchema = createInsertSchema(actions).omit({
