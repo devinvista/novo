@@ -311,21 +311,19 @@ export class DatabaseStorage implements IStorage {
     // Fetch strategic indicators for each key result
     const resultsWithIndicators = await Promise.all(
       results.map(async (result) => {
-        let strategicIndicators: StrategicIndicator[] = [];
+        let indicators: StrategicIndicator[] = [];
         
         if (result.strategicIndicatorIds && result.strategicIndicatorIds.length > 0) {
-          const indicatorTable = strategicIndicators;
-          const indicators = await db
+          indicators = await db
             .select()
-            .from(indicatorTable)
-            .where(sql`${indicatorTable.id} = ANY(${result.strategicIndicatorIds})`);
-          strategicIndicators = indicators;
+            .from(strategicIndicators)
+            .where(sql`${strategicIndicators.id} = ANY(${result.strategicIndicatorIds})`);
         }
         
         return {
           ...result,
           objective: result.objective as Objective,
-          strategicIndicators,
+          strategicIndicators: indicators,
           serviceLine: result.serviceLine as ServiceLine | undefined,
           service: result.service as Service | undefined,
         };
