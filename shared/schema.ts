@@ -148,6 +148,7 @@ export const activities = pgTable("activities", {
   oldValues: jsonb("old_values"),
   newValues: jsonb("new_values"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
@@ -238,6 +239,7 @@ export const insertKeyResultSchema = createInsertSchema(keyResults).omit({
 }).extend({
   startDate: z.string().transform((val) => new Date(val)),
   endDate: z.string().transform((val) => new Date(val)),
+  strategicIndicatorId: z.number().optional(),
   strategicIndicatorIds: z.array(z.number()).optional(),
 });
 
@@ -268,7 +270,9 @@ export type StrategicIndicator = typeof strategicIndicators.$inferSelect;
 export type Objective = typeof objectives.$inferSelect;
 export type InsertObjective = z.infer<typeof insertObjectiveSchema>;
 export type KeyResult = typeof keyResults.$inferSelect;
-export type InsertKeyResult = z.infer<typeof insertKeyResultSchema>;
+export type InsertKeyResult = z.infer<typeof insertKeyResultSchema> & {
+  strategicIndicatorId?: number;
+};
 export type Action = typeof actions.$inferSelect;
 export type InsertAction = z.infer<typeof insertActionSchema>;
 export type Checkpoint = typeof checkpoints.$inferSelect;
