@@ -397,9 +397,12 @@ export function registerRoutes(app: Express): Server {
     
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
+      console.log(`Fetching checkpoints for keyResultId: ${keyResultId}`);
       const checkpoints = await storage.getCheckpoints(keyResultId);
+      console.log(`Found ${checkpoints.length} checkpoints`);
       res.json(checkpoints);
     } catch (error) {
+      console.error("Error fetching checkpoints:", error);
       res.status(500).json({ message: "Erro ao buscar checkpoints" });
     }
   });

@@ -470,7 +470,9 @@ export class DatabaseStorage implements IStorage {
       query = query.where(eq(checkpoints.keyResultId, keyResultId));
     }
 
-    return await query.orderBy(asc(checkpoints.period));
+    const result = await query.orderBy(asc(checkpoints.period));
+    console.log(`Retrieved ${result.length} checkpoints for keyResultId: ${keyResultId}`);
+    return result;
   }
 
   async getCheckpoint(id: number): Promise<Checkpoint | undefined> {
