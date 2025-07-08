@@ -78,13 +78,13 @@ async function seed() {
     // Seed strategic indicators
     console.log("Seeding strategic indicators...");
     const indicatorData = [
-      { id: 1, name: "Receita", description: "Receita total em reais", unit: "R$", active: true },
-      { id: 2, name: "Matrículas", description: "Número total de matrículas", unit: "unidades", active: true },
-      { id: 3, name: "Sustentabilidade", description: "Índice de sustentabilidade", unit: "%", active: true },
-      { id: 4, name: "Saúde Indústria", description: "Atendimentos de saúde para indústria", unit: "unidades", active: true },
-      { id: 5, name: "Satisfação do Cliente", description: "Índice de satisfação dos clientes", unit: "%", active: true },
-      { id: 6, name: "Eficiência Operacional", description: "Índice de eficiência operacional", unit: "%", active: true },
-      { id: 7, name: "Inovação", description: "Número de projetos de inovação", unit: "projetos", active: true }
+      { id: 1, name: "Sustentabilidade Operacional", description: "Indicador de sustentabilidade das operações organizacionais", unit: "%", active: true },
+      { id: 2, name: "Receita de Serviços", description: "Receita gerada através da prestação de serviços", unit: "R$", active: true },
+      { id: 3, name: "Matrículas em Educação", description: "Número de matrículas realizadas em programas educacionais", unit: "unidades", active: true },
+      { id: 4, name: "Indústrias Atendidas em Saúde", description: "Quantidade de indústrias atendidas pelos serviços de saúde", unit: "unidades", active: true },
+      { id: 5, name: "Trabalhadores da Indústria Atendidos em Saúde", description: "Número de trabalhadores industriais atendidos pelos serviços de saúde", unit: "pessoas", active: true },
+      { id: 6, name: "Matrículas Presenciais com Mais de 4 Horas", description: "Matrículas em cursos presenciais com carga horária superior a 4 horas", unit: "unidades", active: true },
+      { id: 7, name: "Custo Hora Aluno", description: "Custo por hora de cada aluno nos programas educacionais", unit: "R$/hora", active: true }
     ];
 
     for (const indicator of indicatorData) {
