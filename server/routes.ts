@@ -248,6 +248,8 @@ export function registerRoutes(app: Express): Server {
         requestData.unit = "";
       }
       
+      // Note: Date conversion is handled by the schema transformation
+      
       const validation = insertKeyResultSchema.parse(requestData);
       console.log("Validated data:", validation);
       

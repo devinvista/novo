@@ -355,7 +355,9 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     // Create checkpoints based on frequency
-    await this.createCheckpoints(created.id, keyResult.frequency, new Date(keyResult.startDate), new Date(keyResult.endDate));
+    const startDate = keyResult.startDate instanceof Date ? keyResult.startDate : new Date(keyResult.startDate);
+    const endDate = keyResult.endDate instanceof Date ? keyResult.endDate : new Date(keyResult.endDate);
+    await this.createCheckpoints(created.id, keyResult.frequency, startDate, endDate);
 
     return created;
   }
