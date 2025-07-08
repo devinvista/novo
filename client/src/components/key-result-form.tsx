@@ -136,7 +136,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       targetValue: String(data.targetValue || "0"),
       currentValue: String(data.currentValue || "0"),
       progress: String(data.progress || "0"),
-      unit: data.unit || undefined, // Convert empty string to undefined
+      unit: data.unit || "", // Convert null to empty string
     };
     
     console.log("Sending data:", processedData);

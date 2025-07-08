@@ -239,7 +239,7 @@ export const insertKeyResultSchema = z.object({
   initialValue: z.string(),
   targetValue: z.string(),
   currentValue: z.string(),
-  unit: z.string().optional(),
+  unit: z.string().nullable().optional(),
   frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]),
   startDate: z.string().min(1, "Data de início é obrigatória"),
   endDate: z.string().min(1, "Data de fim é obrigatória"),
@@ -256,6 +256,8 @@ export const insertActionSchema = createInsertSchema(actions).omit({
   dueDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
   status: z.string().optional().default("pending"),
   priority: z.string().optional().default("medium"),
+  responsibleId: z.number().optional().nullable(),
+  strategicIndicatorId: z.number().optional().nullable(),
 });
 
 export const insertCheckpointSchema = createInsertSchema(checkpoints).omit({

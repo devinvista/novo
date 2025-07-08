@@ -243,9 +243,9 @@ export function registerRoutes(app: Express): Server {
         requestData.strategicIndicatorIds = [requestData.strategicIndicatorId];
       }
       
-      // Handle unit field - convert null to undefined
-      if (requestData.unit === null || requestData.unit === "") {
-        requestData.unit = undefined;
+      // Handle unit field - convert null to empty string
+      if (requestData.unit === null) {
+        requestData.unit = "";
       }
       
       const validation = insertKeyResultSchema.parse(requestData);
@@ -350,7 +350,13 @@ export function registerRoutes(app: Express): Server {
     });
     
     try {
-      const validation = insertActionSchema.parse(req.body);
+      // Clean up null values
+      const requestData = { ...req.body };
+      if (requestData.responsibleId === null) requestData.responsibleId = undefined;
+      if (requestData.strategicIndicatorId === null) requestData.strategicIndicatorId = undefined;
+      if (requestData.dueDate === null || requestData.dueDate === "") requestData.dueDate = undefined;
+      
+      const validation = insertActionSchema.parse(requestData);
       console.log("Validated action data:", validation);
       
       const action = await storage.createAction(validation);

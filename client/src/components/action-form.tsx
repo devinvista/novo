@@ -131,7 +131,16 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   });
 
   const onSubmit = (data: ActionFormData) => {
-    mutation.mutate(data);
+    // Clean up the data to handle null values properly
+    const cleanedData = {
+      ...data,
+      responsibleId: data.responsibleId || undefined,
+      strategicIndicatorId: data.strategicIndicatorId || undefined,
+      dueDate: data.dueDate || undefined,
+    };
+    
+    console.log("Submitting action data:", cleanedData);
+    mutation.mutate(cleanedData);
   };
 
   return (
