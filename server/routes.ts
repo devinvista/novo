@@ -252,6 +252,12 @@ export function registerRoutes(app: Express): Server {
       
       const validation = insertKeyResultSchema.parse(requestData);
       console.log("Validated data:", validation);
+      console.log("Date types:", {
+        startDate: typeof validation.startDate,
+        endDate: typeof validation.endDate,
+        startDateValue: validation.startDate,
+        endDateValue: validation.endDate
+      });
       
       // Calculate initial status based on dates
       const startDate = new Date(validation.startDate);

@@ -241,8 +241,8 @@ export const insertKeyResultSchema = z.object({
   currentValue: z.string(),
   unit: z.string().nullable().optional(),
   frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]),
-  startDate: z.union([z.string(), z.date()]).transform((val) => typeof val === 'string' ? new Date(val) : val),
-  endDate: z.union([z.string(), z.date()]).transform((val) => typeof val === 'string' ? new Date(val) : val),
+  startDate: z.string().transform((val) => new Date(val)),
+  endDate: z.string().transform((val) => new Date(val)),
   progress: z.string().optional(),
   status: z.enum(["pending", "active", "completed", "delayed", "cancelled"]).optional(),
 });

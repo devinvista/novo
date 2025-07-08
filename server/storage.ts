@@ -347,6 +347,8 @@ export class DatabaseStorage implements IStorage {
       ...keyResultData,
       number,
       strategicIndicatorIds: strategicIndicatorId ? [strategicIndicatorId] : [],
+      startDate: keyResultData.startDate instanceof Date ? keyResultData.startDate : new Date(keyResultData.startDate),
+      endDate: keyResultData.endDate instanceof Date ? keyResultData.endDate : new Date(keyResultData.endDate),
     };
 
     const [created] = await db
