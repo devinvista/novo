@@ -404,6 +404,59 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.post("/api/checkpoints/:id/update", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const { actualValue, status } = req.body;
+      
+      const updated = await storage.updateCheckpoint(id, {
+        actualValue: actualValue.toString(),
+        status: status || "pending",
+      });
+      
+      // Log activity
+      await storage.logActivity({
+        userId: req.user!.id,
+        entityType: 'checkpoint',
+        entityId: updated.id,
+        action: 'updated',
+        description: `Atualizou checkpoint para valor ${actualValue}`,
+        newValues: { actualValue, status },
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating checkpoint:", error);
+      res.status(500).json({ message: "Erro ao atualizar checkpoint" });
+    }
+  });
+
+  app.post("/api/key-results/:id/regenerate-checkpoints", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const keyResultId = parseInt(req.params.id);
+      const checkpoints = await storage.generateCheckpoints(keyResultId);
+      
+      // Log activity
+      await storage.logActivity({
+        userId: req.user!.id,
+        entityType: 'key_result',
+        entityId: keyResultId,
+        action: 'regenerated_checkpoints',
+        description: `Regenerou ${checkpoints.length} checkpoints`,
+        newValues: { checkpointCount: checkpoints.length },
+      });
+      
+      res.json(checkpoints);
+    } catch (error) {
+      console.error("Error regenerating checkpoints:", error);
+      res.status(500).json({ message: "Erro ao regenerar checkpoints" });
+    }
+  });
+
   app.put("/api/checkpoints/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     

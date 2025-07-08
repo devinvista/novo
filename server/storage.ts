@@ -359,7 +359,7 @@ export class DatabaseStorage implements IStorage {
     // Create checkpoints based on frequency
     const startDate = keyResult.startDate instanceof Date ? keyResult.startDate : new Date(keyResult.startDate);
     const endDate = keyResult.endDate instanceof Date ? keyResult.endDate : new Date(keyResult.endDate);
-    await this.createCheckpoints(created.id, keyResult.frequency, startDate, endDate);
+    await this.generateCheckpoints(created.id);
 
     return created;
   }
@@ -505,54 +505,64 @@ export class DatabaseStorage implements IStorage {
     const keyResult = await this.getKeyResult(keyResultId);
     if (!keyResult) throw new Error("Key result not found");
 
-    const objective = await this.getObjective(keyResult.objectiveId);
-    if (!objective) throw new Error("Objective not found");
+    // Delete existing checkpoints first
+    await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
 
-    const createdCheckpoints: Checkpoint[] = [];
     const targetValue = parseFloat(keyResult.targetValue);
+    const initialValue = parseFloat(keyResult.initialValue);
+    
+    // Use the key result's own dates, not the objective's dates
+    const startDate = new Date(keyResult.startDate);
+    const endDate = new Date(keyResult.endDate);
 
-    // Generate checkpoints based on frequency
-    const startDate = new Date(objective.startDate);
-    const endDate = new Date(objective.endDate);
+    let periods: string[] = [];
 
-    if (keyResult.frequency === 'monthly') {
-      const months = this.getMonthsBetween(startDate, endDate);
-      const valuePerMonth = targetValue / months.length;
-
-      for (let i = 0; i < months.length; i++) {
-        const checkpoint = await this.createCheckpoint({
-          keyResultId,
-          period: months[i],
-          targetValue: (valuePerMonth * (i + 1)).toString(),
-        });
-        createdCheckpoints.push(checkpoint);
-      }
-    } else if (keyResult.frequency === 'quarterly') {
-      const quarters = this.getQuartersBetween(startDate, endDate);
-      const valuePerQuarter = targetValue / quarters.length;
-
-      for (let i = 0; i < quarters.length; i++) {
-        const checkpoint = await this.createCheckpoint({
-          keyResultId,
-          period: quarters[i],
-          targetValue: (valuePerQuarter * (i + 1)).toString(),
-        });
-        createdCheckpoints.push(checkpoint);
-      }
-    } else if (keyResult.frequency === 'weekly') {
-      const weeks = this.getWeeksBetween(startDate, endDate);
-      const valuePerWeek = targetValue / weeks.length;
-
-      for (let i = 0; i < weeks.length; i++) {
-        const checkpoint = await this.createCheckpoint({
-          keyResultId,
-          period: weeks[i],
-          targetValue: (valuePerWeek * (i + 1)).toString(),
-        });
-        createdCheckpoints.push(checkpoint);
-      }
+    // Generate periods based on frequency
+    switch (keyResult.frequency) {
+      case 'weekly':
+        periods = this.getWeeksBetween(startDate, endDate);
+        break;
+      case 'monthly':
+        periods = this.getMonthsBetween(startDate, endDate);
+        break;
+      case 'quarterly':
+        periods = this.getQuartersBetween(startDate, endDate);
+        break;
+      case 'daily':
+        // For daily frequency, create weekly checkpoints to avoid too many records
+        periods = this.getWeeksBetween(startDate, endDate);
+        break;
+      default:
+        periods = this.getMonthsBetween(startDate, endDate);
     }
 
+    if (periods.length === 0) {
+      console.warn("No periods generated for key result", keyResultId);
+      return [];
+    }
+
+    // Calculate proportional targets (cumulative progress)
+    const totalIncrease = targetValue - initialValue;
+    const checkpointsData = periods.map((period, index) => {
+      const progressRatio = (index + 1) / periods.length;
+      const cumulativeTarget = initialValue + (totalIncrease * progressRatio);
+      
+      return {
+        keyResultId,
+        period,
+        targetValue: cumulativeTarget.toFixed(2),
+        actualValue: initialValue.toFixed(2),
+        status: "pending" as const,
+      };
+    });
+
+    // Insert all checkpoints at once for better performance
+    const createdCheckpoints = await db
+      .insert(checkpoints)
+      .values(checkpointsData)
+      .returning();
+
+    console.log(`Generated ${createdCheckpoints.length} ${keyResult.frequency} checkpoints for key result ${keyResultId}`);
     return createdCheckpoints;
   }
 
