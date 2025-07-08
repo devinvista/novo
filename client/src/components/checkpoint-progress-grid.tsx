@@ -201,32 +201,32 @@ export default function CheckpointProgressGrid({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <CalendarDays className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-sm font-medium text-blue-900">
+              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: "hsl(220, 65%, 95%)" }}>
+                <CalendarDays className="h-8 w-8 mx-auto mb-2" style={{ color: "hsl(220, 65%, 36%)" }} />
+                <div className="text-sm font-medium" style={{ color: "hsl(220, 65%, 36%)" }}>
                   Próximo Marco
                 </div>
-                <div className="text-xs text-blue-700">
+                <div className="text-xs" style={{ color: "hsl(220, 65%, 50%)" }}>
                   {checkpoints.find(cp => cp.status === "pending")?.period || "Todos concluídos"}
                 </div>
               </div>
               
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <Target className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <div className="text-sm font-medium text-green-900">
+              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: "hsl(137, 62%, 95%)" }}>
+                <Target className="h-8 w-8 mx-auto mb-2" style={{ color: "hsl(137, 62%, 42%)" }} />
+                <div className="text-sm font-medium" style={{ color: "hsl(137, 62%, 42%)" }}>
                   Taxa de Sucesso
                 </div>
-                <div className="text-xs text-green-700">
+                <div className="text-xs" style={{ color: "hsl(137, 62%, 50%)" }}>
                   {totalCheckpoints > 0 ? ((completedCheckpoints / totalCheckpoints) * 100).toFixed(0) : 0}% concluído
                 </div>
               </div>
               
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <div className="text-sm font-medium text-purple-900">
+              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: "hsl(195, 100%, 95%)" }}>
+                <TrendingUp className="h-8 w-8 mx-auto mb-2" style={{ color: "hsl(195, 100%, 50%)" }} />
+                <div className="text-sm font-medium" style={{ color: "hsl(195, 100%, 40%)" }}>
                   Momentum
                 </div>
-                <div className="text-xs text-purple-700">
+                <div className="text-xs" style={{ color: "hsl(195, 100%, 45%)" }}>
                   {overallProgress >= 70 ? "Excelente!" : 
                    overallProgress >= 50 ? "Bom ritmo" : 
                    overallProgress >= 25 ? "Acelerando" : "Iniciando"}

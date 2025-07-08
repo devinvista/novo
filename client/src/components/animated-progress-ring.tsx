@@ -56,11 +56,11 @@ export default function AnimatedProgressRing({
   }, [progress, showAnimation, status]);
 
   const getProgressColor = () => {
-    if (status === "completed") return "#10b981"; // green-500
-    if (progress >= 90) return "#3b82f6"; // blue-500
-    if (progress >= 70) return "#8b5cf6"; // purple-500
-    if (progress >= 50) return "#f59e0b"; // amber-500
-    if (progress >= 25) return "#ef4444"; // red-500
+    if (status === "completed") return "hsl(137, 62%, 42%)"; // FIERGS Green SESI
+    if (progress >= 90) return "hsl(220, 65%, 36%)"; // FIERGS Blue
+    if (progress >= 70) return "hsl(195, 100%, 50%)"; // FIERGS Cyan
+    if (progress >= 50) return "hsl(165, 100%, 32%)"; // FIERGS Green IEL
+    if (progress >= 25) return "hsl(14, 80%, 58%)"; // FIERGS Orange
     return "#6b7280"; // gray-500
   };
 
@@ -74,11 +74,11 @@ export default function AnimatedProgressRing({
   };
 
   const getStatusIcon = () => {
-    if (status === "completed") return <CheckCircle2 className="h-6 w-6 text-green-600" />;
-    if (progress >= 90) return <Award className="h-6 w-6 text-blue-600" />;
-    if (progress >= 70) return <TrendingUp className="h-6 w-6 text-purple-600" />;
-    if (progress >= 50) return <Target className="h-6 w-6 text-amber-600" />;
-    return <Zap className="h-6 w-6 text-gray-600" />;
+    if (status === "completed") return <CheckCircle2 className="h-6 w-6" style={{ color: "hsl(137, 62%, 42%)" }} />;
+    if (progress >= 90) return <Award className="h-6 w-6" style={{ color: "hsl(220, 65%, 36%)" }} />;
+    if (progress >= 70) return <TrendingUp className="h-6 w-6" style={{ color: "hsl(195, 100%, 50%)" }} />;
+    if (progress >= 50) return <Target className="h-6 w-6" style={{ color: "hsl(165, 100%, 32%)" }} />;
+    return <Zap className="h-6 w-6" style={{ color: "hsl(14, 80%, 58%)" }} />;
   };
 
   return (

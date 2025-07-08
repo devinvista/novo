@@ -5,36 +5,60 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(210, 11%, 15%);
-  --muted: hsl(210, 40%, 98%);
-  --muted-foreground: hsl(215, 13%, 65%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(210, 11%, 15%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(210, 11%, 15%);
-  --border: hsl(214, 32%, 91%);
-  --input: hsl(214, 32%, 91%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(144, 64%, 39%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(34, 100%, 47%);
-  --accent-foreground: hsl(210, 40%, 98%);
+  /* FIERGS Color Palette */
+  --fiergs-blue: hsl(220, 65%, 36%); /* #1a4b9f */
+  --fiergs-cyan: hsl(195, 100%, 50%); /* #0091d6 */
+  --fiergs-green-iel: hsl(165, 100%, 32%); /* #00b39c */
+  --fiergs-orange: hsl(14, 80%, 58%); /* #ef5e31 */
+  --fiergs-green-sesi: hsl(137, 62%, 42%); /* #4db74f */
+  --fiergs-white: hsl(0, 0%, 100%); /* #ffffff */
+  
+  /* Base theme using FIERGS colors */
+  --background: var(--fiergs-white);
+  --foreground: hsl(220, 65%, 15%);
+  --muted: hsl(220, 20%, 96%);
+  --muted-foreground: hsl(220, 20%, 45%);
+  --popover: var(--fiergs-white);
+  --popover-foreground: hsl(220, 65%, 15%);
+  --card: var(--fiergs-white);
+  --card-foreground: hsl(220, 65%, 15%);
+  --border: hsl(220, 20%, 90%);
+  --input: hsl(220, 20%, 94%);
+  --primary: var(--fiergs-blue);
+  --primary-foreground: var(--fiergs-white);
+  --secondary: hsl(220, 65%, 95%);
+  --secondary-foreground: var(--fiergs-blue);
+  --accent: var(--fiergs-cyan);
+  --accent-foreground: var(--fiergs-white);
   --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(207, 90%, 54%);
+  --destructive-foreground: var(--fiergs-white);
+  --ring: var(--fiergs-blue);
   --radius: 0.5rem;
   
+  /* Chart colors using FIERGS palette */
+  --chart-1: var(--fiergs-blue);
+  --chart-2: var(--fiergs-cyan);
+  --chart-3: var(--fiergs-green-iel);
+  --chart-4: var(--fiergs-orange);
+  --chart-5: var(--fiergs-green-sesi);
+  
+  /* Status colors using FIERGS palette */
+  --success: var(--fiergs-green-sesi);
+  --success-foreground: var(--fiergs-white);
+  --warning: var(--fiergs-orange);
+  --warning-foreground: var(--fiergs-white);
+  --info: var(--fiergs-cyan);
+  --info-foreground: var(--fiergs-white);
+  
   /* Sidebar colors */
-  --sidebar-background: hsl(0, 0%, 100%);
-  --sidebar-foreground: hsl(210, 11%, 15%);
-  --sidebar-primary: hsl(207, 90%, 54%);
-  --sidebar-primary-foreground: hsl(210, 40%, 98%);
-  --sidebar-accent: hsl(214, 32%, 91%);
-  --sidebar-accent-foreground: hsl(210, 11%, 15%);
-  --sidebar-border: hsl(214, 32%, 91%);
-  --sidebar-ring: hsl(207, 90%, 54%);
+  --sidebar-background: var(--fiergs-white);
+  --sidebar-foreground: hsl(220, 65%, 15%);
+  --sidebar-primary: var(--fiergs-blue);
+  --sidebar-primary-foreground: var(--fiergs-white);
+  --sidebar-accent: hsl(220, 20%, 94%);
+  --sidebar-accent-foreground: hsl(220, 65%, 15%);
+  --sidebar-border: hsl(220, 20%, 90%);
+  --sidebar-ring: var(--fiergs-blue);
 }
 
 .dark {
@@ -48,25 +72,32 @@
   --card-foreground: hsl(0, 0%, 95%);
   --border: hsl(210, 11%, 21%);
   --input: hsl(210, 11%, 21%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(144, 64%, 39%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(34, 100%, 47%);
-  --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 62%, 30%);
-  --destructive-foreground: hsl(0, 0%, 95%);
-  --ring: hsl(207, 90%, 54%);
+  --primary: hsl(220, 65%, 55%);
+  --primary-foreground: hsl(220, 65%, 8%);
+  --secondary: hsl(220, 65%, 15%);
+  --secondary-foreground: var(--fiergs-white);
+  --accent: var(--fiergs-cyan);
+  --accent-foreground: hsl(220, 65%, 8%);
+  --destructive: hsl(0, 75%, 55%);
+  --destructive-foreground: var(--fiergs-white);
+  --ring: hsl(220, 65%, 70%);
+  
+  /* Dark mode chart colors */
+  --chart-1: hsl(220, 65%, 60%);
+  --chart-2: hsl(195, 100%, 60%);
+  --chart-3: hsl(165, 100%, 50%);
+  --chart-4: hsl(14, 80%, 65%);
+  --chart-5: hsl(137, 62%, 55%);
   
   /* Sidebar colors for dark mode */
-  --sidebar-background: hsl(210, 11%, 15%);
-  --sidebar-foreground: hsl(0, 0%, 95%);
-  --sidebar-primary: hsl(207, 90%, 54%);
-  --sidebar-primary-foreground: hsl(210, 40%, 98%);
-  --sidebar-accent: hsl(210, 11%, 21%);
-  --sidebar-accent-foreground: hsl(0, 0%, 95%);
-  --sidebar-border: hsl(210, 11%, 21%);
-  --sidebar-ring: hsl(207, 90%, 54%);
+  --sidebar-background: hsl(220, 65%, 8%);
+  --sidebar-foreground: var(--fiergs-white);
+  --sidebar-primary: hsl(220, 65%, 55%);
+  --sidebar-primary-foreground: hsl(220, 65%, 8%);
+  --sidebar-accent: hsl(220, 65%, 15%);
+  --sidebar-accent-foreground: var(--fiergs-white);
+  --sidebar-border: hsl(220, 65%, 20%);
+  --sidebar-ring: hsl(220, 65%, 70%);
 }
 
 @layer base {
@@ -115,6 +146,42 @@
   
   .status-badge.danger {
     @apply bg-red-100 text-red-800;
+  }
+  
+  /* FIERGS branded utility classes */
+  .fiergs-gradient {
+    background: linear-gradient(135deg, hsl(var(--fiergs-blue)) 0%, hsl(var(--fiergs-cyan)) 100%);
+  }
+
+  .fiergs-accent-green-iel {
+    background-color: hsl(var(--fiergs-green-iel));
+    color: hsl(var(--fiergs-white));
+  }
+
+  .fiergs-accent-orange {
+    background-color: hsl(var(--fiergs-orange));
+    color: hsl(var(--fiergs-white));
+  }
+
+  .fiergs-accent-green-sesi {
+    background-color: hsl(var(--fiergs-green-sesi));
+    color: hsl(var(--fiergs-white));
+  }
+
+  /* Status badge variants using FIERGS colors */
+  .badge-success {
+    background-color: hsl(var(--fiergs-green-sesi));
+    color: hsl(var(--fiergs-white));
+  }
+
+  .badge-warning {
+    background-color: hsl(var(--fiergs-orange));
+    color: hsl(var(--fiergs-white));
+  }
+
+  .badge-info {
+    background-color: hsl(var(--fiergs-cyan));
+    color: hsl(var(--fiergs-white));
   }
   
   .status-badge.info {
