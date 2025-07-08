@@ -243,6 +243,11 @@ export function registerRoutes(app: Express): Server {
         requestData.strategicIndicatorIds = [requestData.strategicIndicatorId];
       }
       
+      // Handle unit field - convert null to undefined
+      if (requestData.unit === null || requestData.unit === "") {
+        requestData.unit = undefined;
+      }
+      
       const validation = insertKeyResultSchema.parse(requestData);
       console.log("Validated data:", validation);
       
