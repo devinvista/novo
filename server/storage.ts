@@ -273,7 +273,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getKeyResults(objectiveId?: number): Promise<(KeyResult & { objective: Objective; strategicIndicator?: StrategicIndicator })[]> {
-    // First get key results with objectives
+    // Get key results with objectives
     let baseQuery = db
       .select({
         id: keyResults.id,
@@ -282,10 +282,12 @@ export class DatabaseStorage implements IStorage {
         description: keyResults.description,
         strategicIndicatorIds: keyResults.strategicIndicatorIds,
         targetValue: keyResults.targetValue,
-        actualValue: keyResults.actualValue,
+        currentValue: keyResults.currentValue,
+        initialValue: keyResults.initialValue,
         unit: keyResults.unit,
         frequency: keyResults.frequency,
-
+        startDate: keyResults.startDate,
+        endDate: keyResults.endDate,
         progress: keyResults.progress,
         status: keyResults.status,
         createdAt: keyResults.createdAt,
@@ -299,7 +301,7 @@ export class DatabaseStorage implements IStorage {
       baseQuery = baseQuery.where(eq(keyResults.objectiveId, objectiveId));
     }
 
-    const keyResultsData = await baseQuery.orderBy(keyResults.number);
+    const keyResultsData = await baseQuery.orderBy(keyResults.createdAt);
 
     // Get all strategic indicators
     const indicators = await db.select().from(strategicIndicators);
