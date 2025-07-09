@@ -130,7 +130,7 @@ export const checkpoints = pgTable("checkpoints", {
   targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
   actualValue: decimal("actual_value", { precision: 15, scale: 2 }),
   progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
-  status: text("status").notNull().default("pending"), // pending, completed
+  status: text("status").notNull().default("pendente"), // pendente, no_prazo, em_risco, atrasado, concluido
   notes: text("notes"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),

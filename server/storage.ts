@@ -571,7 +571,7 @@ export class DatabaseStorage implements IStorage {
         period,
         targetValue: cumulativeTarget.toFixed(2),
         actualValue: initialValue.toFixed(2),
-        status: "pending" as const,
+        status: "pendente" as const,
       };
     });
 

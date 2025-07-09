@@ -19,6 +19,47 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Status mapping utilities
+const statusMapping = {
+  // English to Portuguese
+  pending: "pendente",
+  on_track: "no_prazo", 
+  at_risk: "em_risco",
+  behind: "atrasado",
+  completed: "concluido",
+  // Portuguese values (already correct)
+  pendente: "pendente",
+  no_prazo: "no_prazo",
+  em_risco: "em_risco", 
+  atrasado: "atrasado",
+  concluido: "concluido"
+} as const;
+
+const statusLabels = {
+  pendente: "Pendente",
+  no_prazo: "No Prazo",
+  em_risco: "Em Risco", 
+  atrasado: "Atrasado",
+  concluido: "Concluído"
+} as const;
+
+const getStatusLabel = (status: string) => {
+  const mappedStatus = statusMapping[status as keyof typeof statusMapping] || status;
+  return statusLabels[mappedStatus as keyof typeof statusLabels] || status;
+};
+
+const getStatusColor = (status: string) => {
+  const mappedStatus = statusMapping[status as keyof typeof statusMapping] || status;
+  switch (mappedStatus) {
+    case "pendente": return "bg-gray-100 text-gray-800";
+    case "no_prazo": return "bg-blue-100 text-blue-800";
+    case "em_risco": return "bg-yellow-100 text-yellow-800";
+    case "atrasado": return "bg-red-100 text-red-800";
+    case "concluido": return "bg-green-100 text-green-800";
+    default: return "bg-gray-100 text-gray-800";
+  }
+};
+
 interface CheckpointUpdaterProps {
   keyResultId?: number;
 }
@@ -101,8 +142,14 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
   const totalActual = checkpoints.reduce((sum: number, cp: any) => sum + parseFloat(cp.actualValue), 0);
   const overallProgress = totalTarget > 0 ? (totalActual / totalTarget) * 100 : 0;
 
-  const completedCheckpoints = checkpoints.filter((cp: any) => cp.status === "completed").length;
-  const atRiskCheckpoints = checkpoints.filter((cp: any) => ["at_risk", "behind"].includes(cp.status)).length;
+  const completedCheckpoints = checkpoints.filter((cp: any) => {
+    const mappedStatus = statusMapping[cp.status as keyof typeof statusMapping] || cp.status;
+    return mappedStatus === "concluido";
+  }).length;
+  const atRiskCheckpoints = checkpoints.filter((cp: any) => {
+    const mappedStatus = statusMapping[cp.status as keyof typeof statusMapping] || cp.status;
+    return ["em_risco", "atrasado"].includes(mappedStatus);
+  }).length;
 
   const handleCheckpointClick = (checkpoint: any) => {
     setSelectedCheckpoint(checkpoint);
@@ -245,7 +292,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
 function CheckpointCard({ checkpoint, onUpdate }: { checkpoint: any; onUpdate: () => void }) {
   const [isEditing, setIsEditing] = useState(false);
   const [actualValue, setActualValue] = useState(checkpoint.actualValue || "0");
-  const [status, setStatus] = useState(checkpoint.status || "pending");
+  const [status, setStatus] = useState(checkpoint.status || "pendente");
   const { toast } = useToast();
 
   const mutation = useMutation({
@@ -277,27 +324,8 @@ function CheckpointCard({ checkpoint, onUpdate }: { checkpoint: any; onUpdate: (
   const currentValue = parseFloat(actualValue);
   const progressPercentage = targetValue > 0 ? Math.min((currentValue / targetValue) * 100, 100) : 0;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-green-500 text-white";
-      case "on_track": return "bg-blue-500 text-white";
-      case "at_risk": return "bg-yellow-500 text-black";
-      case "behind": return "bg-red-500 text-white";
-      default: return "bg-gray-500 text-white";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "completed": return "Concluído";
-      case "on_track": return "No Prazo";
-      case "at_risk": return "Em Risco";
-      case "behind": return "Atrasado";
-      default: return "Pendente";
-    }
-  };
-
-  const isAtRisk = ["at_risk", "behind"].includes(status);
+  const mappedStatus = statusMapping[status as keyof typeof statusMapping] || status;
+  const isAtRisk = ["em_risco", "atrasado"].includes(mappedStatus);
 
   return (
     <Card className={isAtRisk ? "border-red-200 bg-red-50/50" : ""}>
@@ -308,8 +336,8 @@ function CheckpointCard({ checkpoint, onUpdate }: { checkpoint: any; onUpdate: (
             <CardTitle className="text-base">{checkpoint.period}</CardTitle>
             {isAtRisk && <AlertCircle className="h-4 w-4 text-red-500" />}
           </div>
-          <Badge className={getStatusColor(status)}>
-            {getStatusLabel(status)}
+          <Badge className={getStatusColor(mappedStatus)}>
+            {getStatusLabel(mappedStatus)}
           </Badge>
         </div>
       </CardHeader>
@@ -355,11 +383,11 @@ function CheckpointCard({ checkpoint, onUpdate }: { checkpoint: any; onUpdate: (
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="on_track">No prazo</SelectItem>
-                  <SelectItem value="at_risk">Em risco</SelectItem>
-                  <SelectItem value="behind">Atrasado</SelectItem>
-                  <SelectItem value="completed">Concluído</SelectItem>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="no_prazo">No Prazo</SelectItem>
+                  <SelectItem value="em_risco">Em Risco</SelectItem>
+                  <SelectItem value="atrasado">Atrasado</SelectItem>
+                  <SelectItem value="concluido">Concluído</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -390,7 +418,7 @@ function CheckpointEditForm({ checkpoint, onClose, onUpdate }: {
   onUpdate: () => void; 
 }) {
   const [actualValue, setActualValue] = useState(checkpoint.actualValue || "0");
-  const [status, setStatus] = useState(checkpoint.status || "pending");
+  const [status, setStatus] = useState(checkpoint.status || "pendente");
   const { toast } = useToast();
 
   const mutation = useMutation({
@@ -458,11 +486,11 @@ function CheckpointEditForm({ checkpoint, onClose, onUpdate }: {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="on_track">No prazo</SelectItem>
-            <SelectItem value="at_risk">Em risco</SelectItem>
-            <SelectItem value="behind">Atrasado</SelectItem>
-            <SelectItem value="completed">Concluído</SelectItem>
+            <SelectItem value="pendente">Pendente</SelectItem>
+            <SelectItem value="no_prazo">No Prazo</SelectItem>
+            <SelectItem value="em_risco">Em Risco</SelectItem>
+            <SelectItem value="atrasado">Atrasado</SelectItem>
+            <SelectItem value="concluido">Concluído</SelectItem>
           </SelectContent>
         </Select>
       </div>

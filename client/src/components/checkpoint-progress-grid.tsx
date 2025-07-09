@@ -51,7 +51,7 @@ export default function CheckpointProgressGrid({
 
   // Calculate overall stats
   const totalCheckpoints = checkpoints.length;
-  const completedCheckpoints = checkpoints.filter(cp => cp.status === "completed").length;
+  const completedCheckpoints = checkpoints.filter(cp => cp.status === "concluido" || cp.status === "completed").length;
   const overallProgress = checkpoints.reduce((sum, cp) => {
     const targetValue = parseFloat(cp.targetValue);
     const actualValue = parseFloat(cp.actualValue);
@@ -207,7 +207,7 @@ export default function CheckpointProgressGrid({
                   Próximo Marco
                 </div>
                 <div className="text-xs" style={{ color: "hsl(220, 65%, 50%)" }}>
-                  {checkpoints.find(cp => cp.status === "pending")?.period || "Todos concluídos"}
+                  {checkpoints.find(cp => cp.status === "pendente" || cp.status === "pending")?.period || "Todos concluídos"}
                 </div>
               </div>
               
