@@ -8,11 +8,10 @@ import {
   type ServiceLine, type StrategicIndicator, type Activity,
   type Solution, type Service
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { pool } from "./db";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -487,18 +486,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateCheckpoints(keyResultId: number): Promise<Checkpoint[]> {
-    const keyResult = await this.getKeyResult(keyResultId);
-    if (!keyResult) throw new Error("Key result not found");
+    try {
+      const keyResult = await this.getKeyResult(keyResultId);
+      if (!keyResult) throw new Error("Key result not found");
 
-    // Delete existing checkpoints first
-    await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
 
-    const targetValue = parseFloat(keyResult.targetValue);
-    const initialValue = parseFloat(keyResult.initialValue);
-    
-    // Use the key result's own dates, not the objective's dates
-    const startDate = new Date(keyResult.startDate);
-    const endDate = new Date(keyResult.endDate);
+
+      // Delete existing checkpoints first
+      await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
+
+      const targetValue = parseFloat(keyResult.targetValue);
+      const initialValue = parseFloat(keyResult.initialValue);
+      
+      // Get the raw date strings from the database since Drizzle mapping is having issues
+      const rawResult = await pool.query(
+        'SELECT start_date, end_date FROM key_results WHERE id = $1',
+        [keyResultId]
+      );
+      
+      if (!rawResult || !rawResult.rows || rawResult.rows.length === 0) {
+        console.warn("Key result not found in database", keyResultId);
+        return [];
+      }
+      
+      const row = rawResult.rows[0];
+      const start_date = row.start_date;
+      const end_date = row.end_date;
+      console.log("Raw dates from DB:", start_date, end_date);
+      
+      // Convert PostgreSQL date objects to JavaScript dates
+      const startDate = new Date(start_date);
+      const endDate = new Date(end_date);
+
+    console.log("Parsed dates:", startDate, endDate);
+    console.log("Start date valid:", !isNaN(startDate.getTime()), "End date valid:", !isNaN(endDate.getTime()));
+
+    // Check if dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.warn("Invalid start or end date for key result", keyResultId);
+      return [];
+    }
+
+    if (startDate >= endDate) {
+      console.warn("Start date is not before end date for key result", keyResultId);
+      return [];
+    }
 
     let periods: string[] = [];
 
@@ -520,6 +552,8 @@ export class DatabaseStorage implements IStorage {
       default:
         periods = this.getMonthsBetween(startDate, endDate);
     }
+
+
 
     if (periods.length === 0) {
       console.warn("No periods generated for key result", keyResultId);
@@ -547,8 +581,12 @@ export class DatabaseStorage implements IStorage {
       .values(checkpointsData)
       .returning();
 
-    console.log(`Generated ${createdCheckpoints.length} ${keyResult.frequency} checkpoints for key result ${keyResultId}`);
-    return createdCheckpoints;
+
+      return createdCheckpoints;
+    } catch (error) {
+      console.error("Error in generateCheckpoints:", error);
+      throw error;
+    }
   }
 
   private getMonthsBetween(start: Date, end: Date): string[] {
