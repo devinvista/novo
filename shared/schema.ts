@@ -235,7 +235,7 @@ export const insertKeyResultSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
   description: z.string().optional(),
   strategicIndicatorId: z.number().optional(), // For backward compatibility
-  strategicIndicatorIds: z.array(z.number()).optional(),
+  strategicIndicatorIds: z.array(z.number()).default([]),
   initialValue: z.string(),
   targetValue: z.string(),
   currentValue: z.string(),

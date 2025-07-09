@@ -223,20 +223,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/key-results", async (req, res) => {
-    console.log("Key result creation request:", {
-      authenticated: req.isAuthenticated(),
-      userId: req.user?.id,
-      body: req.body
-    });
-    
-    if (!req.isAuthenticated()) {
-      console.log("User not authenticated");
-      return res.sendStatus(401);
-    }
+    if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
-      console.log("Raw request body:", req.body);
-      
       // Transform strategicIndicatorId to strategicIndicatorIds if needed
       const requestData = { ...req.body };
       if (requestData.strategicIndicatorId && !requestData.strategicIndicatorIds) {
@@ -248,16 +237,7 @@ export function registerRoutes(app: Express): Server {
         requestData.unit = "";
       }
       
-      // Note: Date conversion is handled by the schema transformation
-      
       const validation = insertKeyResultSchema.parse(requestData);
-      console.log("Validated data:", validation);
-      console.log("Date types:", {
-        startDate: typeof validation.startDate,
-        endDate: typeof validation.endDate,
-        startDateValue: validation.startDate,
-        endDateValue: validation.endDate
-      });
       
       // Calculate initial status based on dates
       const startDate = new Date(validation.startDate);
@@ -277,7 +257,6 @@ export function registerRoutes(app: Express): Server {
         endDate: validation.endDate,
         status,
       });
-      console.log("Created key result:", keyResult);
       
       // Log activity - remove updatedAt field
       await storage.logActivity({
@@ -291,13 +270,10 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(keyResult);
     } catch (error) {
-      console.error("Error creating key result:", error);
-      console.error("Error stack:", error.stack);
       if (error instanceof z.ZodError) {
-        console.log("Validation errors:", error.errors);
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
-      res.status(500).json({ message: "Erro ao criar resultado-chave", error: error.message });
+      res.status(500).json({ message: "Erro ao criar resultado-chave" });
     }
   });
 

@@ -327,15 +327,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult> {
-    // Use a simple counter for key results - the number field may not exist
-    let number = 1;
-
     // Handle the conversion from strategicIndicatorId to strategicIndicatorIds array
     const { strategicIndicatorId, ...keyResultData } = keyResult as any;
 
     const dataToInsert = {
       ...keyResultData,
-      strategicIndicatorIds: strategicIndicatorId ? [strategicIndicatorId] : [],
+      strategicIndicatorIds: keyResultData.strategicIndicatorIds || (strategicIndicatorId ? [strategicIndicatorId] : []),
+      updatedAt: new Date(),
     };
 
     const [created] = await db
