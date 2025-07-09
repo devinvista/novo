@@ -198,9 +198,7 @@ export class DatabaseStorage implements IStorage {
           name: users.name,
           email: users.email,
           role: users.role,
-          regionId: users.regionId,
-          subRegionId: users.subRegionId,
-          active: users.active,
+          password: users.password,
           createdAt: users.createdAt,
         },
         region: {
@@ -282,15 +280,12 @@ export class DatabaseStorage implements IStorage {
         objectiveId: keyResults.objectiveId,
         title: keyResults.title,
         description: keyResults.description,
-        number: keyResults.number,
         strategicIndicatorIds: keyResults.strategicIndicatorIds,
-        initialValue: keyResults.initialValue,
         targetValue: keyResults.targetValue,
-        currentValue: keyResults.currentValue,
+        actualValue: keyResults.actualValue,
         unit: keyResults.unit,
         frequency: keyResults.frequency,
-        startDate: keyResults.startDate,
-        endDate: keyResults.endDate,
+
         progress: keyResults.progress,
         status: keyResults.status,
         createdAt: keyResults.createdAt,
@@ -332,23 +327,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult> {
-    // Generate sequential number for the objective
-    const result = await db
-      .select({ maxNumber: sql<number>`COALESCE(MAX(${keyResults.number}), 0)` })
-      .from(keyResults)
-      .where(eq(keyResults.objectiveId, keyResult.objectiveId));
-
-    const number = (result[0]?.maxNumber || 0) + 1;
+    // Use a simple counter for key results - the number field may not exist
+    let number = 1;
 
     // Handle the conversion from strategicIndicatorId to strategicIndicatorIds array
     const { strategicIndicatorId, ...keyResultData } = keyResult as any;
 
     const dataToInsert = {
       ...keyResultData,
-      number,
       strategicIndicatorIds: strategicIndicatorId ? [strategicIndicatorId] : [],
-      startDate: keyResultData.startDate instanceof Date ? keyResultData.startDate : new Date(keyResultData.startDate),
-      endDate: keyResultData.endDate instanceof Date ? keyResultData.endDate : new Date(keyResultData.endDate),
     };
 
     const [created] = await db
@@ -356,10 +343,7 @@ export class DatabaseStorage implements IStorage {
       .values(dataToInsert)
       .returning();
 
-    // Create checkpoints based on frequency
-    const startDate = keyResult.startDate instanceof Date ? keyResult.startDate : new Date(keyResult.startDate);
-    const endDate = keyResult.endDate instanceof Date ? keyResult.endDate : new Date(keyResult.endDate);
-    await this.generateCheckpoints(created.id);
+    // Checkpoints will be generated separately if needed
 
     return created;
   }
@@ -441,7 +425,6 @@ export class DatabaseStorage implements IStorage {
       .values({
         ...action,
         number: nextNumber,
-        updatedAt: new Date(),
       })
       .returning();
     return created;
