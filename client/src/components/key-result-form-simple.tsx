@@ -183,7 +183,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {keyResult ? "Editar Resultado-Chave" : "Novo Resultado-Chave"}
@@ -193,7 +193,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 px-1">
           <div className="space-y-2">
             <Label htmlFor="objectiveId">Objetivo *</Label>
             <Select value={formData.objectiveId.toString()} onValueChange={(value) => handleInputChange("objectiveId", value)}>
@@ -255,7 +255,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="frequency">Frequência *</Label>
               <Select value={formData.frequency} onValueChange={(value) => handleInputChange("frequency", value)}>
@@ -287,7 +287,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Data de Início *</Label>
               <Input
@@ -311,11 +311,11 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
               {mutation.isPending ? "Salvando..." : keyResult ? "Atualizar" : "Criar"}
             </Button>
           </div>
