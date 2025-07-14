@@ -127,17 +127,10 @@ export const checkpoints = sqliteTable("checkpoints", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   keyResultId: integer("key_result_id").notNull().references(() => keyResults.id),
   period: text("period").notNull(), // 2024-01, 2024-Q1, 2024-W01
-<<<<<<< HEAD
   targetValue: real("target_value").notNull(),
   actualValue: real("actual_value"),
   progress: real("progress").default(0),
-  status: text("status").notNull().default("pendente"), // pendente, no_prazo, em_risco, atrasado, concluido
-=======
-  targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
-  actualValue: decimal("actual_value", { precision: 15, scale: 2 }),
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
   status: text("status").notNull().default("pending"), // pending, completed
->>>>>>> parent of b76aceb (Implement full localization in Portuguese to improve user experience)
   notes: text("notes"),
   completedAt: text("completed_at"),
   createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
