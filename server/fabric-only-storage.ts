@@ -11,8 +11,13 @@ import {
 import session from "express-session";
 import { fabricQueries, connectToFabric, executeQuery } from "./fabric-storage";
 import MemoryStore from 'memorystore';
+import Database from "better-sqlite3";
 
 const MemorySessionStore = MemoryStore(session);
+
+// Initialize SQLite as fallback
+const db = new Database("okr.db");
+db.pragma("journal_mode = WAL");
 
 export interface IStorage {
   // User management

@@ -8,18 +8,21 @@ function getConfig(): sql.config {
     database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
     user: process.env.SQL_USERNAME || '',
     password: process.env.SQL_PASSWORD || '',
+    authentication: {
+      type: 'azure-active-directory-default'
+    },
     options: {
       encrypt: true,
-      trustServerCertificate: true,
-      enableArithAbort: true
+      trustServerCertificate: false,
+      enableArithAbort: true,
+      connectTimeout: 30000,
+      requestTimeout: 30000
     },
     pool: {
-      max: 10,
+      max: 5,
       min: 0,
       idleTimeoutMillis: 30000
-    },
-    connectionTimeout: 60000,
-    requestTimeout: 60000
+    }
   };
   
   console.log(`🔌 Connecting to server: ${config.server}`);
