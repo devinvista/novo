@@ -2,7 +2,7 @@ import sql from 'mssql';
 
 // Microsoft Fabric SQL Server connection configuration
 function getConfig(): sql.config {
-  return {
+  const config = {
     server: 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
     port: 1433,
     database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
@@ -10,7 +10,7 @@ function getConfig(): sql.config {
     password: process.env.SQL_PASSWORD || '',
     options: {
       encrypt: true,
-      trustServerCertificate: false,
+      trustServerCertificate: true,
       enableArithAbort: true
     },
     pool: {
@@ -18,9 +18,15 @@ function getConfig(): sql.config {
       min: 0,
       idleTimeoutMillis: 30000
     },
-    connectionTimeout: 30000,
-    requestTimeout: 30000
+    connectionTimeout: 60000,
+    requestTimeout: 60000
   };
+  
+  console.log(`🔌 Connecting to server: ${config.server}`);
+  console.log(`📊 Database: ${config.database}`);
+  console.log(`👤 User: ${config.user}`);
+  
+  return config;
 }
 
 let connectionPool: sql.ConnectionPool | null = null;
