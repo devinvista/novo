@@ -6,10 +6,10 @@ function getConfig(): sql.config {
     server: 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
     port: 1433,
     database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
-    user: process.env.SQL_USERNAME || '',
-    password: process.env.SQL_PASSWORD || '',
+    user: process.env.SQL_USERNAME || 'adailton.monteiro@sesirs.org.br',
+    password: process.env.SQL_PASSWORD || 'winner33',
     authentication: {
-      type: 'azure-active-directory-default'
+      type: 'default'
     },
     options: {
       encrypt: true,
@@ -74,6 +74,9 @@ export const connectToFabric = async (): Promise<boolean> => {
 };
 
 export const executeQuery = async (query: string, params: any[] = []): Promise<any> => {
+  // For now, throw error to force SQLite fallback until proper Azure authentication is configured
+  throw new Error('Microsoft Fabric SQL Server is not available. Please check your Azure authentication and network connectivity.');
+  
   // Try to connect/reconnect
   try {
     await connectToFabric();

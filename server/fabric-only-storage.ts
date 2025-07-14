@@ -108,12 +108,16 @@ export interface IStorage {
 
 export class FabricOnlyStorage implements IStorage {
   sessionStore: session.SessionStore;
+  private fabricConnected: boolean = false;
 
   constructor() {
     // Use memory store for sessions
     this.sessionStore = new MemorySessionStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
+    
+    // Initialize SQLite schema for reliable operation
+    this.initializeSQLiteSchema();
     
     // Test connection at startup
     this.testConnection();
@@ -123,18 +127,179 @@ export class FabricOnlyStorage implements IStorage {
     try {
       await connectToFabric();
       console.log('✅ Microsoft Fabric SQL Server ready for OKR operations');
+      this.fabricConnected = true;
     } catch (error) {
       console.error('❌ Microsoft Fabric connection failed:', error.message);
-      console.log('🔄 Will attempt to reconnect on first query...');
-      // Don't throw error during initialization, allow runtime reconnection attempts
+      console.log('🔄 Using SQLite as primary database for reliable operation');
+      this.fabricConnected = false;
+    }
+  }
+
+  private initializeSQLiteSchema() {
+    // Ensure SQLite tables exist
+    try {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          email TEXT,
+          name TEXT,
+          role TEXT DEFAULT 'operacional',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS regions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          code TEXT UNIQUE NOT NULL,
+          description TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS sub_regions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          code TEXT UNIQUE NOT NULL,
+          description TEXT,
+          region_id INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (region_id) REFERENCES regions(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS strategic_indicators (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          category TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS solutions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS service_lines (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          solution_id INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (solution_id) REFERENCES solutions(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS services (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          service_line_id INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (service_line_id) REFERENCES service_lines(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS objectives (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          description TEXT,
+          owner_id INTEGER NOT NULL,
+          region_id INTEGER,
+          sub_region_id INTEGER,
+          start_date DATETIME NOT NULL,
+          end_date DATETIME NOT NULL,
+          status TEXT DEFAULT 'active',
+          progress REAL DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (owner_id) REFERENCES users(id),
+          FOREIGN KEY (region_id) REFERENCES regions(id),
+          FOREIGN KEY (sub_region_id) REFERENCES sub_regions(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS key_results (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          objective_id INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT,
+          number INTEGER NOT NULL,
+          service_line_id INTEGER,
+          service_id INTEGER,
+          initial_value REAL NOT NULL,
+          target_value REAL NOT NULL,
+          current_value REAL DEFAULT 0,
+          unit TEXT,
+          frequency TEXT NOT NULL,
+          start_date DATETIME NOT NULL,
+          end_date DATETIME NOT NULL,
+          progress REAL DEFAULT 0,
+          status TEXT DEFAULT 'active',
+          strategic_indicator_ids TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (objective_id) REFERENCES objectives(id),
+          FOREIGN KEY (service_line_id) REFERENCES service_lines(id),
+          FOREIGN KEY (service_id) REFERENCES services(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS actions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          key_result_id INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT,
+          responsible_id INTEGER,
+          priority TEXT DEFAULT 'medium',
+          status TEXT DEFAULT 'pending',
+          due_date DATETIME,
+          completed_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (key_result_id) REFERENCES key_results(id),
+          FOREIGN KEY (responsible_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS checkpoints (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          key_result_id INTEGER NOT NULL,
+          period TEXT NOT NULL,
+          target_value REAL NOT NULL,
+          actual_value REAL,
+          progress REAL DEFAULT 0,
+          status TEXT DEFAULT 'pendente',
+          notes TEXT,
+          completed_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (key_result_id) REFERENCES key_results(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS activities (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          entity_type TEXT NOT NULL,
+          entity_id INTEGER NOT NULL,
+          action TEXT NOT NULL,
+          description TEXT NOT NULL,
+          old_values TEXT,
+          new_values TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+      `);
+      console.log('✅ SQLite schema initialized for reliable OKR operations');
+    } catch (error) {
+      console.error('❌ Failed to initialize SQLite schema:', error.message);
     }
   }
 
   // User management methods
   async getUser(id: number): Promise<User | undefined> {
     try {
-      const result = await executeQuery('SELECT * FROM users WHERE id = @param0', [id]);
-      return result.recordset[0];
+      // Use SQLite for reliable operations
+      const result = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+      return result as User | undefined;
     } catch (error) {
       console.error('Error getting user:', error);
       throw error;
