@@ -122,7 +122,7 @@ export class FabricOnlyStorage implements IStorage {
   private async testConnection() {
     try {
       this.fabricConnected = await connectToFabric();
-      console.log('✅ Microsoft Fabric SQL Server ready for future operations');
+      console.log('✅ Microsoft Fabric SQL Server connected and ready for operations');
     } catch (error) {
       console.error('❌ Microsoft Fabric connection failed:', error.message);
       console.log('🔄 Using SQLite as primary database for reliable OKR operations');
@@ -291,6 +291,18 @@ export class FabricOnlyStorage implements IStorage {
   // User management methods
   async getUser(id: number): Promise<User | undefined> {
     try {
+      // Try Microsoft Fabric first
+      if (this.fabricConnected) {
+        try {
+          const result = await executeQuery('SELECT * FROM dbo.users WHERE id = ?', [id]);
+          return result.recordset[0];
+        } catch (fabricError) {
+          console.warn('Fabric query failed, falling back to SQLite:', fabricError.message);
+          this.fabricConnected = false;
+        }
+      }
+      
+      // Fallback to SQLite
       const result = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
       return result as User | undefined;
     } catch (error) {
@@ -301,6 +313,18 @@ export class FabricOnlyStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
+      // Try Microsoft Fabric first
+      if (this.fabricConnected) {
+        try {
+          const result = await executeQuery('SELECT * FROM dbo.users WHERE username = ?', [username]);
+          return result.recordset[0];
+        } catch (fabricError) {
+          console.warn('Fabric query failed, falling back to SQLite:', fabricError.message);
+          this.fabricConnected = false;
+        }
+      }
+      
+      // Fallback to SQLite
       const result = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
       return result as User | undefined;
     } catch (error) {
@@ -311,6 +335,23 @@ export class FabricOnlyStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     try {
+      // Try Microsoft Fabric first
+      if (this.fabricConnected) {
+        try {
+          const result = await executeQuery(`
+            INSERT INTO dbo.users (username, password, email, name, role, created_at, updated_at)
+            OUTPUT INSERTED.*
+            VALUES (?, ?, ?, ?, ?, GETDATE(), GETDATE())
+          `, [insertUser.username, insertUser.password, insertUser.email, insertUser.name, insertUser.role]);
+          
+          return result.recordset[0];
+        } catch (fabricError) {
+          console.warn('Fabric query failed, falling back to SQLite:', fabricError.message);
+          this.fabricConnected = false;
+        }
+      }
+      
+      // Fallback to SQLite
       const result = db.prepare(`
         INSERT INTO users (username, password, email, name, role)
         VALUES (?, ?, ?, ?, ?)
@@ -327,6 +368,18 @@ export class FabricOnlyStorage implements IStorage {
   // Reference data methods
   async getRegions(): Promise<Region[]> {
     try {
+      // Try Microsoft Fabric first
+      if (this.fabricConnected) {
+        try {
+          const result = await executeQuery('SELECT * FROM dbo.regions ORDER BY name');
+          return result.recordset;
+        } catch (fabricError) {
+          console.warn('Fabric query failed, falling back to SQLite:', fabricError.message);
+          this.fabricConnected = false;
+        }
+      }
+      
+      // Fallback to SQLite
       const result = db.prepare('SELECT * FROM regions ORDER BY name').all();
       return result as Region[];
     } catch (error) {
@@ -407,6 +460,18 @@ export class FabricOnlyStorage implements IStorage {
 
   async getStrategicIndicators(): Promise<StrategicIndicator[]> {
     try {
+      // Try Microsoft Fabric first
+      if (this.fabricConnected) {
+        try {
+          const result = await executeQuery('SELECT * FROM dbo.strategic_indicators ORDER BY name');
+          return result.recordset;
+        } catch (fabricError) {
+          console.warn('Fabric query failed, falling back to SQLite:', fabricError.message);
+          this.fabricConnected = false;
+        }
+      }
+      
+      // Fallback to SQLite
       const result = db.prepare('SELECT * FROM strategic_indicators ORDER BY name').all();
       return result as StrategicIndicator[];
     } catch (error) {
@@ -1236,7 +1301,7 @@ export class FabricOnlyStorage implements IStorage {
     try {
       let objectivesQuery = 'SELECT COUNT(*) as count, AVG(o.progress) as avg_progress FROM objectives o WHERE 1=1';
       let keyResultsQuery = 'SELECT COUNT(*) as count, AVG(kr.progress) as avg_progress FROM key_results kr JOIN objectives o ON kr.objective_id = o.id WHERE 1=1';
-      let actionsQuery = 'SELECT COUNT(*) as total, SUM(CASE WHEN a.status = "completed" THEN 1 ELSE 0 END) as completed FROM actions a JOIN key_results kr ON a.key_result_id = kr.id JOIN objectives o ON kr.objective_id = o.id WHERE 1=1';
+      let actionsQuery = 'SELECT COUNT(*) as total, SUM(CASE WHEN a.status = \'completed\' THEN 1 ELSE 0 END) as completed FROM actions a JOIN key_results kr ON a.key_result_id = kr.id JOIN objectives o ON kr.objective_id = o.id WHERE 1=1';
       
       const params: any[] = [];
       

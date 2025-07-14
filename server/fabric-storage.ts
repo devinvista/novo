@@ -74,9 +74,6 @@ export const connectToFabric = async (): Promise<boolean> => {
 };
 
 export const executeQuery = async (query: string, params: any[] = []): Promise<any> => {
-  // For now, throw error to force SQLite fallback until proper Azure authentication is configured
-  throw new Error('Microsoft Fabric SQL Server is not available. Please check your Azure authentication and network connectivity.');
-  
   // Try to connect/reconnect
   try {
     await connectToFabric();
