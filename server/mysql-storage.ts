@@ -266,13 +266,13 @@ export class MySQLStorage implements IStorage {
   }
 
   private async seedInitialData() {
-    // Check if data already exists
+    // Check if data already exists for each table
     const [regions] = await pool.execute('SELECT COUNT(*) as count FROM regions');
-    if ((regions as any)[0].count > 0) {
-      return; // Data already exists
-    }
-
-    // Seed regions
+    const [strategicIndicators] = await pool.execute('SELECT COUNT(*) as count FROM strategic_indicators');
+    
+    // Seed regions if empty
+    if ((regions as any)[0].count === 0) {
+      // Seed regions
     const regionData = [
       { name: 'Região Norte', code: 'NORTE' },
       { name: 'Região Nordeste', code: 'NORDESTE' },
@@ -316,23 +316,31 @@ export class MySQLStorage implements IStorage {
       { name: 'Sub-região Central 1', code: 'CENTRAL_1', regionId: 11 }
     ];
 
-    for (const subRegion of subRegionData) {
-      await pool.execute('INSERT INTO sub_regions (name, code, region_id) VALUES (?, ?, ?)', 
-        [subRegion.name, subRegion.code, subRegion.regionId]);
+      for (const subRegion of subRegionData) {
+        await pool.execute('INSERT INTO sub_regions (name, code, region_id) VALUES (?, ?, ?)', 
+          [subRegion.name, subRegion.code, subRegion.regionId]);
+      }
     }
 
-    // Seed solutions
+    // Seed solutions if empty
+    const [solutions] = await pool.execute('SELECT COUNT(*) as count FROM solutions');
+    if ((solutions as any)[0].count === 0) {
+      // Seed solutions
     const solutions = [
       { name: 'Educação', description: 'Soluções educacionais para a indústria' },
       { name: 'Saúde', description: 'Soluções de saúde e segurança do trabalho' }
     ];
 
-    for (const solution of solutions) {
-      await pool.execute('INSERT INTO solutions (name, description) VALUES (?, ?)', 
-        [solution.name, solution.description]);
+      for (const solution of solutions) {
+        await pool.execute('INSERT INTO solutions (name, description) VALUES (?, ?)', 
+          [solution.name, solution.description]);
+      }
     }
 
-    // Seed service lines
+    // Seed service lines if empty
+    const [serviceLines] = await pool.execute('SELECT COUNT(*) as count FROM service_lines');
+    if ((serviceLines as any)[0].count === 0) {
+      // Seed service lines
     const serviceLines = [
       { name: 'Educação Profissional', description: 'Cursos técnicos e profissionalizantes', solutionId: 1 },
       { name: 'Educação Continuada', description: 'Programas de educação continuada', solutionId: 1 },
@@ -351,12 +359,15 @@ export class MySQLStorage implements IStorage {
       { name: 'Saúde Esportiva', description: 'Medicina esportiva e reabilitação', solutionId: 2 }
     ];
 
-    for (const serviceLine of serviceLines) {
-      await pool.execute('INSERT INTO service_lines (name, description, solution_id) VALUES (?, ?, ?)', 
-        [serviceLine.name, serviceLine.description, serviceLine.solutionId]);
+      for (const serviceLine of serviceLines) {
+        await pool.execute('INSERT INTO service_lines (name, description, solution_id) VALUES (?, ?, ?)', 
+          [serviceLine.name, serviceLine.description, serviceLine.solutionId]);
+      }
     }
 
-    // Seed strategic indicators
+    // Seed strategic indicators if empty
+    if ((strategicIndicators as any)[0].count === 0) {
+      // Seed strategic indicators
     const strategicIndicators = [
       { name: 'Sustentabilidade Operacional', description: 'Indicador de sustentabilidade das operações', unit: '%' },
       { name: 'Receita de Serviços', description: 'Receita gerada pelos serviços prestados', unit: 'R$' },
@@ -367,9 +378,10 @@ export class MySQLStorage implements IStorage {
       { name: 'Custo Hora Aluno', description: 'Custo por hora de ensino por aluno', unit: 'R$/hora' }
     ];
 
-    for (const indicator of strategicIndicators) {
-      await pool.execute('INSERT INTO strategic_indicators (name, description, unit) VALUES (?, ?, ?)', 
-        [indicator.name, indicator.description, indicator.unit]);
+      for (const indicator of strategicIndicators) {
+        await pool.execute('INSERT INTO strategic_indicators (name, description, unit) VALUES (?, ?, ?)', 
+          [indicator.name, indicator.description, indicator.unit]);
+      }
     }
 
     console.log('✅ Initial data seeded successfully');
@@ -570,15 +582,37 @@ export class MySQLStorage implements IStorage {
   async createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult> {
     if (!this.connected) throw new Error('Database not connected');
     
-    const [result] = await pool.execute(
-      'INSERT INTO key_results (objective_id, title, description, target_value, current_value, unit, strategic_indicator_ids, service_line_id, service_id, start_date, end_date, frequency, status, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [keyResult.objectiveId, keyResult.title, keyResult.description, keyResult.targetValue, keyResult.currentValue, keyResult.unit, JSON.stringify(keyResult.strategicIndicatorIds), keyResult.serviceLineId, keyResult.serviceId, keyResult.startDate, keyResult.endDate, keyResult.frequency, keyResult.status, keyResult.progress]
-    );
-    
-    const insertId = (result as any).insertId;
-    const newKeyResult = await this.getKeyResult(insertId);
-    if (!newKeyResult) throw new Error('Failed to create key result');
-    return newKeyResult;
+    try {
+      console.log('Creating key result with data:', keyResult);
+      
+      const [result] = await pool.execute(
+        'INSERT INTO key_results (objective_id, title, description, target_value, current_value, unit, strategic_indicator_ids, service_line_id, service_id, start_date, end_date, frequency, status, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          keyResult.objectiveId, 
+          keyResult.title, 
+          keyResult.description, 
+          keyResult.targetValue, 
+          keyResult.currentValue || 0, 
+          keyResult.unit || null, 
+          JSON.stringify(keyResult.strategicIndicatorIds || []), 
+          keyResult.serviceLineId || null, 
+          keyResult.serviceId || null, 
+          keyResult.startDate, 
+          keyResult.endDate, 
+          keyResult.frequency, 
+          keyResult.status || 'active', 
+          keyResult.progress || '0'
+        ]
+      );
+      
+      const insertId = (result as any).insertId;
+      const newKeyResult = await this.getKeyResult(insertId);
+      if (!newKeyResult) throw new Error('Failed to create key result');
+      return newKeyResult;
+    } catch (error) {
+      console.error('Error creating key result:', error);
+      throw error;
+    }
   }
 
   async updateKeyResult(id: number, keyResult: Partial<InsertKeyResult>): Promise<KeyResult> {
@@ -642,15 +676,37 @@ export class MySQLStorage implements IStorage {
   async createAction(action: InsertAction): Promise<Action> {
     if (!this.connected) throw new Error('Database not connected');
     
-    const [result] = await pool.execute(
-      'INSERT INTO actions (key_result_id, title, description, number, strategic_indicator_id, responsible_id, due_date, status, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [action.keyResultId, action.title, action.description, action.number, action.strategicIndicatorId, action.responsibleId, action.dueDate, action.status, action.priority]
-    );
-    
-    const insertId = (result as any).insertId;
-    const newAction = await this.getAction(insertId);
-    if (!newAction) throw new Error('Failed to create action');
-    return newAction;
+    try {
+      // Get next number for this key result
+      const [maxRows] = await pool.execute(
+        'SELECT COALESCE(MAX(number), 0) + 1 AS next_number FROM actions WHERE key_result_id = ?',
+        [action.keyResultId]
+      );
+      const nextNumber = (maxRows as any)[0].next_number;
+      
+      const [result] = await pool.execute(
+        'INSERT INTO actions (key_result_id, title, description, number, strategic_indicator_id, responsible_id, due_date, status, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          action.keyResultId, 
+          action.title, 
+          action.description, 
+          nextNumber, 
+          action.strategicIndicatorId || null, 
+          action.responsibleId || null, 
+          action.dueDate || null, 
+          action.status || 'pending', 
+          action.priority || 'medium'
+        ]
+      );
+      
+      const insertId = (result as any).insertId;
+      const newAction = await this.getAction(insertId);
+      if (!newAction) throw new Error('Failed to create action');
+      return newAction;
+    } catch (error) {
+      console.error('Error creating action:', error);
+      throw error;
+    }
   }
 
   async updateAction(id: number, action: Partial<InsertAction>): Promise<Action> {

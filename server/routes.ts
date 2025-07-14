@@ -270,10 +270,11 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(keyResult);
     } catch (error) {
+      console.error('Error in key-results creation:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
-      res.status(500).json({ message: "Erro ao criar resultado-chave" });
+      res.status(500).json({ message: "Erro ao criar resultado-chave", error: error.message });
     }
   });
 

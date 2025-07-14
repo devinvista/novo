@@ -236,10 +236,28 @@ export type Activity = typeof activities.$inferSelect;
 
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users);
-export const insertObjectiveSchema = createInsertSchema(objectives);
-export const insertKeyResultSchema = createInsertSchema(keyResults);
-export const insertActionSchema = createInsertSchema(actions);
-export const insertCheckpointSchema = createInsertSchema(checkpoints);
+export const insertObjectiveSchema = createInsertSchema(objectives).extend({
+  startDate: z.string().or(z.date()),
+  endDate: z.string().or(z.date()),
+  progress: z.string().or(z.number()).transform(val => String(val)),
+});
+export const insertKeyResultSchema = createInsertSchema(keyResults).extend({
+  startDate: z.string().or(z.date()),
+  endDate: z.string().or(z.date()),
+  progress: z.string().or(z.number()).transform(val => String(val)),
+  targetValue: z.string().or(z.number()).transform(val => Number(val)),
+  currentValue: z.string().or(z.number()).transform(val => Number(val)),
+  strategicIndicatorIds: z.array(z.number()),
+});
+export const insertActionSchema = createInsertSchema(actions).extend({
+  dueDate: z.string().or(z.date()).optional(),
+}).omit({ number: true });
+export const insertCheckpointSchema = createInsertSchema(checkpoints).extend({
+  completedAt: z.string().or(z.date()).optional(),
+  targetValue: z.string().or(z.number()).transform(val => Number(val)),
+  actualValue: z.string().or(z.number()).optional().transform(val => val ? Number(val) : null),
+  progress: z.string().or(z.number()).transform(val => Number(val)),
+});
 
 // Export types for use in other modules
 export type InsertUserType = z.infer<typeof insertUserSchema>;
