@@ -4,6 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["azure-cli"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -13,6 +14,9 @@ run = ["npm", "run", "start"]
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 33369
 
 [workflows]
 runButton = "Project"

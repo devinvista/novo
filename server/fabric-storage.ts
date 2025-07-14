@@ -1,33 +1,13 @@
 import sql from 'mssql';
 
-// Microsoft Fabric SQL Server connection configuration with multiple auth methods
+// Microsoft Fabric SQL Server connection configuration
 function getConfig(): sql.config {
-  // Try connection string first (for Azure CLI)
-  if (process.env.FABRIC_CONNECTION_STRING) {
-    return {
-      connectionString: process.env.FABRIC_CONNECTION_STRING,
-      options: {
-        encrypt: true,
-        enableArithAbort: true
-      },
-      pool: {
-        max: 10,
-        min: 0,
-        idleTimeoutMillis: 30000
-      },
-      connectionTimeout: 30000,
-      requestTimeout: 30000
-    };
-  }
-
-  // Fallback to detailed configuration
   return {
     server: 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
     port: 1433,
     database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
-    authentication: {
-      type: 'azure-active-directory-default'
-    },
+    user: process.env.SQL_USERNAME || '',
+    password: process.env.SQL_PASSWORD || '',
     options: {
       encrypt: true,
       trustServerCertificate: false,
@@ -77,8 +57,7 @@ export const connectToFabric = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('❌ Failed to connect to Microsoft Fabric SQL Server:', error.message);
-    console.error('   Make sure Azure CLI is installed and authenticated: az login');
-    console.error('   Or provide valid AZURE_ACCESS_TOKEN environment variable');
+    console.error('   Make sure SQL_USERNAME and SQL_PASSWORD environment variables are set');
     isConnected = false;
     connectionPool = null;
     throw new Error(`Microsoft Fabric connection failed: ${error.message}`);
