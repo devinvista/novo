@@ -1,19 +1,12 @@
 import sql from 'mssql';
 
-// Microsoft Fabric SQL Server connection using Azure CLI authentication
+// Microsoft Fabric SQL Server connection using Azure AD authentication
 const config: sql.config = {
   server: 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
   port: 1433,
   database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
   authentication: {
-    type: 'azure-active-directory-access-token',
-    options: {
-      token: async () => {
-        // This would require Azure CLI to be installed and authenticated
-        // For now, we'll handle this gracefully by falling back to SQLite
-        throw new Error('Azure CLI authentication not available in this environment');
-      }
-    }
+    type: 'azure-active-directory-default'
   },
   options: {
     encrypt: true,
@@ -41,11 +34,12 @@ export const connectToFabric = async (): Promise<boolean> => {
     connectionPool = new sql.ConnectionPool(config);
     await connectionPool.connect();
     isConnected = true;
-    console.log('✅ Connected to Microsoft Fabric SQL Server using Azure CLI authentication');
+    console.log('✅ Connected to Microsoft Fabric SQL Server using Azure AD default authentication');
     return true;
   } catch (error) {
-    console.log('⚠️ Azure CLI authentication not available, using SQLite fallback');
-    console.log('   To use Microsoft Fabric, install Azure CLI and run: az login');
+    console.log('⚠️ Azure AD authentication failed, using SQLite fallback');
+    console.log('   Error:', error.message);
+    console.log('   To use Microsoft Fabric, ensure you are authenticated with Azure AD');
     isConnected = false;
     connectionPool = null;
     return false;
