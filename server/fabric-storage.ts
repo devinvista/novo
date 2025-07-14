@@ -1,26 +1,47 @@
 import sql from 'mssql';
 
-// Microsoft Fabric SQL Server connection using Azure AD authentication
-const config: sql.config = {
-  server: 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
-  port: 1433,
-  database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
-  authentication: {
-    type: 'azure-active-directory-default'
-  },
-  options: {
-    encrypt: true,
-    trustServerCertificate: false,
-    enableArithAbort: true
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000
-  },
-  connectionTimeout: 15000,
-  requestTimeout: 15000
-};
+// Microsoft Fabric SQL Server connection configuration with multiple auth methods
+function getConfig(): sql.config {
+  // Try connection string first (for Azure CLI)
+  if (process.env.FABRIC_CONNECTION_STRING) {
+    return {
+      connectionString: process.env.FABRIC_CONNECTION_STRING,
+      options: {
+        encrypt: true,
+        enableArithAbort: true
+      },
+      pool: {
+        max: 10,
+        min: 0,
+        idleTimeoutMillis: 30000
+      },
+      connectionTimeout: 30000,
+      requestTimeout: 30000
+    };
+  }
+
+  // Fallback to detailed configuration
+  return {
+    server: 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
+    port: 1433,
+    database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
+    authentication: {
+      type: 'azure-active-directory-default'
+    },
+    options: {
+      encrypt: true,
+      trustServerCertificate: false,
+      enableArithAbort: true
+    },
+    pool: {
+      max: 10,
+      min: 0,
+      idleTimeoutMillis: 30000
+    },
+    connectionTimeout: 30000,
+    requestTimeout: 30000
+  };
+}
 
 let connectionPool: sql.ConnectionPool | null = null;
 let isConnected = false;
@@ -30,26 +51,51 @@ export const connectToFabric = async (): Promise<boolean> => {
     return true;
   }
 
+  // Close existing connection if any
+  if (connectionPool) {
+    try {
+      await connectionPool.close();
+    } catch (e) {
+      // Ignore close errors
+    }
+    connectionPool = null;
+  }
+
   try {
+    const config = getConfig();
     connectionPool = new sql.ConnectionPool(config);
-    await connectionPool.connect();
+    
+    // Set timeout for connection attempt
+    const connectPromise = connectionPool.connect();
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Connection timeout after 30 seconds')), 30000);
+    });
+    
+    await Promise.race([connectPromise, timeoutPromise]);
     isConnected = true;
-    console.log('✅ Connected to Microsoft Fabric SQL Server using Azure AD default authentication');
+    console.log('✅ Connected to Microsoft Fabric SQL Server');
     return true;
   } catch (error) {
-    console.log('⚠️ Azure AD authentication failed, using SQLite fallback');
-    console.log('   Error:', error.message);
-    console.log('   To use Microsoft Fabric, ensure you are authenticated with Azure AD');
+    console.error('❌ Failed to connect to Microsoft Fabric SQL Server:', error.message);
+    console.error('   Make sure Azure CLI is installed and authenticated: az login');
+    console.error('   Or provide valid AZURE_ACCESS_TOKEN environment variable');
     isConnected = false;
     connectionPool = null;
-    return false;
+    throw new Error(`Microsoft Fabric connection failed: ${error.message}`);
   }
 };
 
 export const executeQuery = async (query: string, params: any[] = []): Promise<any> => {
-  const connected = await connectToFabric();
-  if (!connected || !connectionPool) {
-    throw new Error('Not connected to Microsoft Fabric SQL Server');
+  // Try to connect/reconnect
+  try {
+    await connectToFabric();
+  } catch (connectionError) {
+    console.error('Connection failed, Microsoft Fabric not available:', connectionError.message);
+    throw new Error('Microsoft Fabric SQL Server is not available. Please check your Azure authentication and network connectivity.');
+  }
+
+  if (!connectionPool) {
+    throw new Error('Microsoft Fabric connection not available');
   }
 
   try {
@@ -64,11 +110,15 @@ export const executeQuery = async (query: string, params: any[] = []): Promise<a
     return result;
   } catch (error) {
     console.error('Query execution error:', error);
-    throw error;
+    // Reset connection on query errors
+    isConnected = false;
+    connectionPool = null;
+    throw new Error(`Database query failed: ${error.message}`);
   }
 };
 
 // Specific OKR queries for Microsoft Fabric
+// Improve the fabric queries with better error handling
 export const fabricQueries = {
   // Users
   async getUsers() {
