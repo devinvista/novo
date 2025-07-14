@@ -8,9 +8,17 @@ function getConfig(): sql.config {
     database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
     user: process.env.SQL_USERNAME || 'adailton.monteiro@sesirs.org.br',
     password: process.env.SQL_PASSWORD || 'winner33',
+    authentication: {
+      type: 'azure-active-directory-password',
+      options: {
+        userName: process.env.SQL_USERNAME || 'adailton.monteiro@sesirs.org.br',
+        password: process.env.SQL_PASSWORD || 'winner33',
+        clientId: process.env.AZURE_CLIENT_ID || '04b07795-8ddb-461a-bbee-02f9e1bf7b46'
+      }
+    },
     options: {
       encrypt: true,
-      trustServerCertificate: true,
+      trustServerCertificate: false,
       enableArithAbort: true,
       connectTimeout: 60000,
       requestTimeout: 60000,
