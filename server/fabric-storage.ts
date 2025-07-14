@@ -5,8 +5,8 @@ const config: sql.config = {
   server: 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
   port: 1433,
   database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
-  user: process.env.MSSQL_USERNAME!,
-  password: process.env.MSSQL_PASSWORD!,
+  user: process.env.MSSQL_USERNAME || '',
+  password: process.env.MSSQL_PASSWORD || '',
   options: {
     encrypt: true,
     trustServerCertificate: false,
@@ -25,6 +25,12 @@ let connectionPool: sql.ConnectionPool | null = null;
 let isConnected = false;
 
 export const connectToFabric = async (): Promise<boolean> => {
+  // Skip connection if credentials are not provided
+  if (!process.env.MSSQL_USERNAME || !process.env.MSSQL_PASSWORD) {
+    console.log('⚠️ Microsoft Fabric credentials not provided, using SQLite fallback');
+    return false;
+  }
+
   if (isConnected && connectionPool) {
     return true;
   }
