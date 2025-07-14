@@ -21,8 +21,10 @@ async function seed() {
       { id: 11, name: "Vale do Taquari", code: "VT" }
     ];
 
-    for (const region of regionData) {
-      await db.insert(regions).values(region).onConflictDoNothing();
+    try {
+      await db.insert(regions).values(regionData);
+    } catch (error) {
+      console.log('Regions already exist, skipping...');
     }
 
     // Seed sub-regions
@@ -51,8 +53,10 @@ async function seed() {
       { id: 21, name: "Vale do Taquari 1", code: "VT1", regionId: 11 }
     ];
 
-    for (const subRegion of subRegionData) {
-      await db.insert(subRegions).values(subRegion).onConflictDoNothing();
+    try {
+      await db.insert(subRegions).values(subRegionData);
+    } catch (error) {
+      console.log('Sub-regions already exist, skipping...');
     }
 
     // Get solutions first

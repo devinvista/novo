@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -11,8 +11,8 @@ export const users = sqliteTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   role: text("role").notNull().default("operacional"), // admin, gestor, operacional
-  regionId: integer("region_id").references(() => regions.id),
-  subRegionId: integer("sub_region_id").references(() => subRegions.id),
+  regionId: integer("region_id"),
+  subRegionId: integer("sub_region_id"),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
 });

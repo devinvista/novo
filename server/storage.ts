@@ -757,4 +757,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Import hybrid storage that supports both Microsoft Fabric and SQLite fallback
+export { storage } from './hybrid-storage';
