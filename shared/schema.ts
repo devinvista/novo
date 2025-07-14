@@ -1,11 +1,11 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Users table with role-based access
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
@@ -13,141 +13,141 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("operacional"), // admin, gestor, operacional
   regionId: integer("region_id").references(() => regions.id),
   subRegionId: integer("sub_region_id").references(() => subRegions.id),
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Regions table (10 specific regions)
-export const regions = pgTable("regions", {
-  id: serial("id").primaryKey(),
+export const regions = sqliteTable("regions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
   code: text("code").notNull().unique(),
 });
 
 // Sub-regions table (21 specific sub-regions)
-export const subRegions = pgTable("sub_regions", {
-  id: serial("id").primaryKey(),
+export const subRegions = sqliteTable("sub_regions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   code: text("code").notNull().unique(),
   regionId: integer("region_id").notNull().references(() => regions.id),
 });
 
 // Solutions (Educação, Saúde)
-export const solutions = pgTable("solutions", {
-  id: serial("id").primaryKey(),
+export const solutions = sqliteTable("solutions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
   description: text("description"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Service lines
-export const serviceLines = pgTable("service_lines", {
-  id: serial("id").primaryKey(),
+export const serviceLines = sqliteTable("service_lines", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   description: text("description"),
   solutionId: integer("solution_id").notNull().references(() => solutions.id),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Services
-export const services = pgTable("services", {
-  id: serial("id").primaryKey(),
+export const services = sqliteTable("services", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   description: text("description"),
   serviceLineId: integer("service_line_id").notNull().references(() => serviceLines.id),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Strategic indicators (7 predefined)
-export const strategicIndicators = pgTable("strategic_indicators", {
-  id: serial("id").primaryKey(),
+export const strategicIndicators = sqliteTable("strategic_indicators", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
   description: text("description"),
   unit: text("unit"), // %, units, currency, etc.
-  active: boolean("active").notNull().default(true),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
 });
 
 // Objectives
-export const objectives = pgTable("objectives", {
-  id: serial("id").primaryKey(),
+export const objectives = sqliteTable("objectives", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
   description: text("description"),
   ownerId: integer("owner_id").notNull().references(() => users.id),
   regionId: integer("region_id").references(() => regions.id),
   subRegionId: integer("sub_region_id").references(() => subRegions.id),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date").notNull(),
   status: text("status").notNull().default("active"), // active, completed, cancelled
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  progress: real("progress").default(0),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Key Results
-export const keyResults = pgTable("key_results", {
-  id: serial("id").primaryKey(),
-  objectiveId: integer("objective_id").notNull().references(() => objectives.id, { onDelete: "cascade" }),
+export const keyResults = sqliteTable("key_results", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  objectiveId: integer("objective_id").notNull().references(() => objectives.id),
   title: text("title").notNull(),
   description: text("description"),
   number: integer("number").notNull(), // Auto-generated sequential number
-  strategicIndicatorIds: integer("strategic_indicator_ids").array(),
+  strategicIndicatorIds: text("strategic_indicator_ids"), // JSON string for array
   serviceLineId: integer("service_line_id").references(() => serviceLines.id),
   serviceId: integer("service_id").references(() => services.id),
-  initialValue: decimal("initial_value", { precision: 15, scale: 2 }).notNull(),
-  targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
-  currentValue: decimal("current_value", { precision: 15, scale: 2 }).default("0"),
+  initialValue: real("initial_value").notNull(),
+  targetValue: real("target_value").notNull(),
+  currentValue: real("current_value").default(0),
   unit: text("unit"),
   frequency: text("frequency").notNull(), // monthly, quarterly, weekly
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date").notNull(),
+  progress: real("progress").default(0),
   status: text("status").notNull().default("active"), // active, completed, cancelled, delayed
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Actions
-export const actions = pgTable("actions", {
-  id: serial("id").primaryKey(),
-  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id, { onDelete: "cascade" }),
+export const actions = sqliteTable("actions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id),
   title: text("title").notNull(),
   description: text("description"),
   number: integer("number").notNull(), // Auto-generated sequential number
   strategicIndicatorId: integer("strategic_indicator_id").references(() => strategicIndicators.id),
   responsibleId: integer("responsible_id").references(() => users.id),
-  dueDate: timestamp("due_date"),
+  dueDate: text("due_date"),
   status: text("status").notNull().default("pending"), // pending, in_progress, completed, cancelled
   priority: text("priority").notNull().default("medium"), // low, medium, high
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Checkpoints (automatically generated based on KR frequency)
-export const checkpoints = pgTable("checkpoints", {
-  id: serial("id").primaryKey(),
-  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id, { onDelete: "cascade" }),
+export const checkpoints = sqliteTable("checkpoints", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id),
   period: text("period").notNull(), // 2024-01, 2024-Q1, 2024-W01
-  targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
-  actualValue: decimal("actual_value", { precision: 15, scale: 2 }),
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
+  targetValue: real("target_value").notNull(),
+  actualValue: real("actual_value"),
+  progress: real("progress").default(0),
   status: text("status").notNull().default("pendente"), // pendente, no_prazo, em_risco, atrasado, concluido
   notes: text("notes"),
-  completedAt: timestamp("completed_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: text("completed_at"),
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Activity log for audit trail
-export const activities = pgTable("activities", {
-  id: serial("id").primaryKey(),
+export const activities = sqliteTable("activities", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull().references(() => users.id),
   entityType: text("entity_type").notNull(), // objective, key_result, action, checkpoint
   entityId: integer("entity_id").notNull(),
   action: text("action").notNull(), // created, updated, deleted, completed
   description: text("description").notNull(),
-  oldValues: jsonb("old_values"),
-  newValues: jsonb("new_values"),
-  createdAt: timestamp("created_at").defaultNow(),
+  oldValues: text("old_values"), // JSON string
+  newValues: text("new_values"), // JSON string
+  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
 });
 
 // Relations
