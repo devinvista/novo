@@ -8,18 +8,17 @@ function getConfig(): sql.config {
     database: 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
     user: process.env.SQL_USERNAME || 'adailton.monteiro@sesirs.org.br',
     password: process.env.SQL_PASSWORD || 'winner33',
-    authentication: {
-      type: 'default'
-    },
     options: {
       encrypt: true,
-      trustServerCertificate: false,
+      trustServerCertificate: true,
       enableArithAbort: true,
-      connectTimeout: 30000,
-      requestTimeout: 30000
+      connectTimeout: 60000,
+      requestTimeout: 60000,
+      useUTC: false,
+      abortTransactionOnError: true
     },
     pool: {
-      max: 5,
+      max: 10,
       min: 0,
       idleTimeoutMillis: 30000
     }
