@@ -44,7 +44,7 @@ export default function AnimatedProgressRing({
         setAnimatedProgress(Math.min(progress, 100));
         
         // Show celebration for completed items
-        if (progress >= 100 && (status === "concluido" || status === "completed")) {
+        if (progress >= 100 && status === "completed") {
           setShowCelebration(true);
           setTimeout(() => setShowCelebration(false), 2000);
         }
@@ -56,7 +56,7 @@ export default function AnimatedProgressRing({
   }, [progress, showAnimation, status]);
 
   const getProgressColor = () => {
-    if (status === "concluido" || status === "completed") return "hsl(137, 62%, 42%)"; // FIERGS Green SESI
+    if (status === "completed") return "hsl(137, 62%, 42%)"; // FIERGS Green SESI
     if (progress >= 90) return "hsl(220, 65%, 36%)"; // FIERGS Blue
     if (progress >= 70) return "hsl(195, 100%, 50%)"; // FIERGS Cyan
     if (progress >= 50) return "hsl(165, 100%, 32%)"; // FIERGS Green IEL
@@ -65,7 +65,7 @@ export default function AnimatedProgressRing({
   };
 
   const getMotivationalMessage = () => {
-    if (status === "concluido" || status === "completed") return "Concluído! 🎉";
+    if (status === "completed") return "Concluído! 🎉";
     if (progress >= 90) return "Quase lá!";
     if (progress >= 70) return "Ótimo progresso!";
     if (progress >= 50) return "No caminho certo!";
@@ -74,7 +74,7 @@ export default function AnimatedProgressRing({
   };
 
   const getStatusIcon = () => {
-    if (status === "concluido" || status === "completed") return <CheckCircle2 className="h-6 w-6" style={{ color: "hsl(137, 62%, 42%)" }} />;
+    if (status === "completed") return <CheckCircle2 className="h-6 w-6" style={{ color: "hsl(137, 62%, 42%)" }} />;
     if (progress >= 90) return <Award className="h-6 w-6" style={{ color: "hsl(220, 65%, 36%)" }} />;
     if (progress >= 70) return <TrendingUp className="h-6 w-6" style={{ color: "hsl(195, 100%, 50%)" }} />;
     if (progress >= 50) return <Target className="h-6 w-6" style={{ color: "hsl(165, 100%, 32%)" }} />;

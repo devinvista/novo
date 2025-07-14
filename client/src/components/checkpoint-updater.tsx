@@ -190,7 +190,7 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
                                   </div>
                                 ) : (
                                   <Badge variant="outline" className="text-xs">
-                                    {status === "overdue" ? "Atrasado" : "Pendente"}
+                                    {status === "overdue" ? "Atrasado" : "Aguardando"}
                                   </Badge>
                                 )}
                               </div>
