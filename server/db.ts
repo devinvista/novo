@@ -2,9 +2,8 @@ import sql from 'mssql';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-if (!process.env.MSSQL_USERNAME || !process.env.MSSQL_PASSWORD) {
-  throw new Error('MSSQL_USERNAME and MSSQL_PASSWORD must be set for Microsoft Fabric connection');
-}
+// Note: This file is now using hybrid storage with SQLite fallback
+// The actual database connection is managed in hybrid-storage.ts
 
 // Microsoft Fabric SQL Server configuration (primary database)
 const mssqlConfig: sql.config = {
