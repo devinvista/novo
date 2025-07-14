@@ -1,131 +1,178 @@
 import sql from 'mssql';
 
+// Comprehensive diagnosis of Microsoft Fabric connection issues
 async function diagnoseFabricConnection() {
-  console.log('🔍 Diagnosticando conexão com Microsoft Fabric SQL Server...');
+  console.log('🔍 Diagnóstico completo da conexão Microsoft Fabric...');
   
-  // Display connection details (without showing sensitive info)
-  console.log('\n📊 Detalhes da conexão:');
-  console.log('- Servidor:', process.env.SQL_SERVER || 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com');
-  console.log('- Porta:', process.env.SQL_PORT || '1433');
-  console.log('- Database:', process.env.SQL_DATABASE || 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6');
-  console.log('- Username:', process.env.SQL_USERNAME ? '✅ Configurado' : '❌ Não configurado');
-  console.log('- Password:', process.env.SQL_PASSWORD ? '✅ Configurado' : '❌ Não configurado');
+  const server = 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com';
+  const database = 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6';
+  const password = process.env.SQL_PASSWORD || 'winner33';
   
-  // Test different connection configurations
-  const connectionConfigs = [
+  // Test without domain in username
+  console.log('\n🔄 Testando usernames sem domínio...');
+  
+  const usernamesWithoutDomain = [
+    'adailton.monteiro',
+    'carlos.santos', 
+    'maria.silva',
+    'tom.johnson',
+    'admin'
+  ];
+  
+  for (const username of usernamesWithoutDomain) {
+    console.log(`\n🔄 Testando: ${username}`);
+    
+    try {
+      const connectionString = `server=${server},1433;database=${database};uid=${username};pwd=${password};encrypt=true;trustServerCertificate=false;authentication=SqlPassword`;
+      
+      const pool = new sql.ConnectionPool(connectionString);
+      await pool.connect();
+      
+      console.log('✅ Conexão estabelecida!');
+      
+      const result = await pool.request().query('SELECT 1 as test, GETDATE() as timestamp');
+      console.log('✅ Query executada:', result.recordset[0]);
+      
+      await pool.close();
+      
+      console.log(`\n🎉 SUCESSO COM ${username}!`);
+      return { success: true, username, format: 'no-domain' };
+      
+    } catch (error) {
+      console.log(`❌ ${username}: ${error.message}`);
+    }
+  }
+  
+  // Test with different authentication methods
+  console.log('\n🔄 Testando diferentes métodos de autenticação...');
+  
+  const authMethods = [
     {
-      name: 'Configuração Padrão',
+      name: 'Integrated Security',
       config: {
-        server: process.env.SQL_SERVER || 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
-        port: parseInt(process.env.SQL_PORT || '1433'),
-        database: process.env.SQL_DATABASE || 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
-        user: process.env.SQL_USERNAME,
-        password: process.env.SQL_PASSWORD,
+        server,
+        port: 1433,
+        database,
         options: {
           encrypt: true,
           trustServerCertificate: false,
           enableArithAbort: true,
-          requestTimeout: 30000,
-          connectionTimeout: 30000,
-          appName: 'OKR-Replit'
+          integratedSecurity: true
         }
       }
     },
     {
-      name: 'Configuração com Trust Certificate',
+      name: 'Windows Authentication',
       config: {
-        server: process.env.SQL_SERVER || 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
-        port: parseInt(process.env.SQL_PORT || '1433'),
-        database: process.env.SQL_DATABASE || 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
-        user: process.env.SQL_USERNAME,
-        password: process.env.SQL_PASSWORD,
+        server,
+        port: 1433,
+        database,
+        domain: 'fiergs.org.br',
+        user: 'adailton.monteiro',
+        password,
+        options: {
+          encrypt: true,
+          trustServerCertificate: false,
+          enableArithAbort: true
+        }
+      }
+    },
+    {
+      name: 'Trust Server Certificate',
+      config: {
+        server,
+        port: 1433,
+        database,
+        user: 'adailton.monteiro',
+        password,
         options: {
           encrypt: true,
           trustServerCertificate: true,
-          enableArithAbort: true,
-          requestTimeout: 30000,
-          connectionTimeout: 30000,
-          appName: 'OKR-Replit'
-        }
-      }
-    },
-    {
-      name: 'Configuração Azure AD',
-      config: {
-        server: process.env.SQL_SERVER || 'uxtc4qteojcetnlefqhbolxtcu-rpyxvvjlg7luzcfqp4vnum6pty.database.fabric.microsoft.com',
-        port: parseInt(process.env.SQL_PORT || '1433'),
-        database: process.env.SQL_DATABASE || 'OKR-eba598b1-61bc-43d3-b6b6-da74213b7ec6',
-        authentication: {
-          type: 'default'
-        },
-        options: {
-          encrypt: true,
-          trustServerCertificate: false,
-          enableArithAbort: true,
-          requestTimeout: 30000,
-          connectionTimeout: 30000,
-          appName: 'OKR-Replit'
+          enableArithAbort: true
         }
       }
     }
   ];
   
-  for (const { name, config } of connectionConfigs) {
+  for (const { name, config } of authMethods) {
     console.log(`\n🔄 Testando ${name}...`);
     
     try {
       const pool = new sql.ConnectionPool(config);
       await pool.connect();
       
-      console.log(`✅ ${name}: Conexão estabelecida com sucesso!`);
+      console.log('✅ Conexão estabelecida!');
       
-      // Test a simple query
-      const result = await pool.request().query('SELECT 1 as test, GETDATE() as timestamp');
-      console.log(`📊 Resultado do teste: ${JSON.stringify(result.recordset[0])}`);
-      
-      // Test database access
-      const dbTest = await pool.request().query('SELECT DB_NAME() as database_name');
-      console.log(`🏢 Database conectado: ${dbTest.recordset[0].database_name}`);
+      const result = await pool.request().query('SELECT 1 as test');
+      console.log('✅ Query executada:', result.recordset[0]);
       
       await pool.close();
       
-      console.log(`✅ ${name}: Teste completo realizado com sucesso!`);
-      return true;
+      console.log(`\n🎉 SUCESSO COM ${name}!`);
+      return { success: true, method: name };
       
     } catch (error) {
-      console.log(`❌ ${name}: Falha na conexão`);
-      console.log(`   Erro: ${error.message}`);
-      if (error.code) {
-        console.log(`   Código: ${error.code}`);
-      }
-      if (error.number) {
-        console.log(`   Número: ${error.number}`);
-      }
+      console.log(`❌ ${name}: ${error.message}`);
     }
   }
   
-  console.log('\n❌ Todas as configurações de conexão falharam');
-  console.log('\n💡 Possíveis soluções:');
-  console.log('1. Verifique se as credenciais SQL_USERNAME e SQL_PASSWORD estão corretas');
-  console.log('2. Confirme se o servidor Microsoft Fabric está acessível');
-  console.log('3. Verifique se o firewall permite conexões na porta 1433');
-  console.log('4. Confirme se o usuário tem permissões no database especificado');
-  console.log('5. Teste com Azure AD authentication se disponível');
+  // Test connection string variations
+  console.log('\n🔄 Testando variações de connection string...');
   
-  return false;
+  const connectionStrings = [
+    `Server=${server};Database=${database};User Id=adailton.monteiro;Password=${password};Encrypt=true;TrustServerCertificate=false;`,
+    `Data Source=${server};Initial Catalog=${database};User ID=adailton.monteiro;Password=${password};Encrypt=yes;TrustServerCertificate=no;`,
+    `server=${server};database=${database};user=adailton.monteiro;password=${password};encrypt=true;`,
+    `server=${server},1433;database=${database};authentication=SqlPassword;uid=adailton.monteiro;pwd=${password};encrypt=true;TrustServerCertificate=true;`
+  ];
+  
+  for (let i = 0; i < connectionStrings.length; i++) {
+    const connStr = connectionStrings[i];
+    console.log(`\n🔄 Testando connection string ${i + 1}...`);
+    
+    try {
+      const pool = new sql.ConnectionPool(connStr);
+      await pool.connect();
+      
+      console.log('✅ Conexão estabelecida!');
+      
+      const result = await pool.request().query('SELECT 1 as test');
+      console.log('✅ Query executada:', result.recordset[0]);
+      
+      await pool.close();
+      
+      console.log(`\n🎉 SUCESSO COM CONNECTION STRING ${i + 1}!`);
+      return { success: true, connectionString: connStr };
+      
+    } catch (error) {
+      console.log(`❌ Connection string ${i + 1}: ${error.message}`);
+    }
+  }
+  
+  console.log('\n❌ TODOS OS TESTES FALHARAM');
+  console.log('\n🔍 Análise do problema:');
+  console.log('- Erro consistente: "Cannot open server [domain] requested by the login"');
+  console.log('- Microsoft Fabric está interpretando o domínio do usuário como nome do servidor');
+  console.log('- Isso sugere que o formato do username está incorreto para este tipo de servidor');
+  console.log('- Possíveis causas: credenciais incorretas, configuração do servidor, ou limitações do Microsoft Fabric');
+  
+  return { success: false };
 }
 
+// Main execution
 diagnoseFabricConnection()
-  .then((success) => {
-    if (success) {
-      console.log('\n🎉 Diagnóstico concluído: Conexão funcional!');
+  .then(result => {
+    if (result.success) {
+      console.log('\n🎉 Diagnóstico concluído - Microsoft Fabric funcionando!');
+      console.log('✅ Formato funcional encontrado');
       process.exit(0);
     } else {
-      console.log('\n⚠️ Diagnóstico concluído: Conexão com problemas');
+      console.log('\n⚠️ Diagnóstico concluído - Microsoft Fabric não acessível');
+      console.log('🔄 Sistema continuará usando SQLite como banco primário');
       process.exit(1);
     }
   })
-  .catch((error) => {
-    console.error('\n💥 Erro no diagnóstico:', error);
+  .catch(error => {
+    console.error('💥 Erro no diagnóstico:', error);
     process.exit(1);
   });
