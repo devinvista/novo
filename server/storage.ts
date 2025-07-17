@@ -22,7 +22,7 @@ export interface IStorage {
   getPendingUsers(): Promise<User[]>; // Get users pending approval
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
-  approveUser(id: number, approvedBy: number): Promise<User>;
+  approveUser(id: number, approvedBy: number, subRegionId?: number): Promise<User>;
   deleteUser(id: number): Promise<void>;
 
   // Reference data
@@ -145,14 +145,30 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async approveUser(id: number, approvedBy: number): Promise<User> {
+  async approveUser(id: number, approvedBy: number, subRegionId?: number): Promise<User> {
+    // Get the approver (gestor) data to inherit region
+    const approver = await this.getUser(approvedBy);
+    if (!approver) {
+      throw new Error("Gestor não encontrado");
+    }
+
+    const updateData: any = {
+      approved: true, 
+      approvedAt: sql`CURRENT_TIMESTAMP`,
+      approvedBy: approvedBy,
+      regionId: approver.regionId, // User inherits gestor's region
+    };
+
+    // If sub-region is provided, use it; otherwise inherit from gestor
+    if (subRegionId !== undefined) {
+      updateData.subRegionId = subRegionId;
+    } else if (approver.subRegionId) {
+      updateData.subRegionId = approver.subRegionId;
+    }
+
     const [user] = await db
       .update(users)
-      .set({ 
-        approved: true, 
-        approvedAt: sql`CURRENT_TIMESTAMP`,
-        approvedBy: approvedBy
-      })
+      .set(updateData)
       .where(eq(users.id, id))
       .returning();
     return user;

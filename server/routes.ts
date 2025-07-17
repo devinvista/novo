@@ -592,6 +592,9 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/users/:id/approve", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const { subRegionId } = req.body; // Optional sub-region override
+
+      console.log(`Approving user ${id} by ${req.user?.id}, subRegionId: ${subRegionId}`);
 
       // Verificar se o usuário pode aprovar este usuário
       const targetUser = await storage.getUser(id);
@@ -604,7 +607,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ message: "Sem permissão para aprovar este usuário" });
       }
 
-      const user = await storage.approveUser(id, req.user!.id);
+      const user = await storage.approveUser(id, req.user!.id, subRegionId);
+      console.log("User approved successfully");
       res.json(user);
     } catch (error) {
       console.error("Error approving user:", error);

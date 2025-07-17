@@ -71,6 +71,9 @@ export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showPasswords, setShowPasswords] = useState<{[key: number]: boolean}>({});
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [userToApprove, setUserToApprove] = useState<User | null>(null);
+  const [selectedSubRegionForApproval, setSelectedSubRegionForApproval] = useState<string>("");
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema),
@@ -148,14 +151,17 @@ export default function UsersPage() {
   });
 
   const approveUserMutation = useMutation({
-    mutationFn: (id: number) => 
-      apiRequest("PATCH", `/api/users/${id}/approve`, {}).then(res => res.json()),
+    mutationFn: ({ id, subRegionId }: { id: number; subRegionId?: number }) => 
+      apiRequest("PATCH", `/api/users/${id}/approve`, { subRegionId }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending-users"] });
+      setApprovalDialogOpen(false);
+      setUserToApprove(null);
+      setSelectedSubRegionForApproval("");
       toast({
         title: "Usuário aprovado",
-        description: "Usuário aprovado com sucesso!",
+        description: "Usuário aprovado com sucesso e vinculado à sua região!",
       });
     },
     onError: (error: any) => {
@@ -254,6 +260,24 @@ export default function UsersPage() {
     toggleUserStatusMutation.mutate({ id, active });
   };
 
+  const handleApproveUser = (user: User) => {
+    setUserToApprove(user);
+    setApprovalDialogOpen(true);
+  };
+
+  const confirmApproval = () => {
+    if (userToApprove) {
+      const subRegionId = selectedSubRegionForApproval && selectedSubRegionForApproval !== "inherit" 
+        ? parseInt(selectedSubRegionForApproval) 
+        : undefined;
+      
+      approveUserMutation.mutate({ 
+        id: userToApprove.id, 
+        subRegionId 
+      });
+    }
+  };
+
   const togglePasswordVisibility = (userId: number) => {
     setShowPasswords(prev => ({
       ...prev,
@@ -332,7 +356,7 @@ export default function UsersPage() {
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      onClick={() => approveUserMutation.mutate(user.id)}
+                      onClick={() => handleApproveUser(user)}
                       disabled={approveUserMutation.isPending}
                       className="h-8"
                     >
@@ -662,6 +686,78 @@ export default function UsersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Approval Dialog */}
+      <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Aprovar Usuário</DialogTitle>
+            <DialogDescription>
+              Ao aprovar, o usuário será vinculado à sua região ({currentUser?.regionId ? regions.find(r => r.id === currentUser.regionId)?.name : 'N/A'}).
+              Você pode opcionalmente definir uma sub-região específica.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {userToApprove && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Usuário:</div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="font-medium">{userToApprove.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {userToApprove.email} • {userToApprove.username}
+                  </div>
+                  <Badge variant={getRoleBadgeVariant(userToApprove.role)} className="mt-1">
+                    {userToApprove.role}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Sub-região (opcional)</label>
+                <Select 
+                  value={selectedSubRegionForApproval} 
+                  onValueChange={setSelectedSubRegionForApproval}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Herdar sub-região do gestor ou escolher específica" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inherit">
+                      Herdar sub-região do gestor ({currentUser?.subRegionId ? subRegions.find(sr => sr.id === currentUser.subRegionId)?.name : 'Nenhuma'})
+                    </SelectItem>
+                    {currentUser?.regionId && getFilteredSubRegions(currentUser.regionId.toString()).map((subRegion) => (
+                      <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
+                        {subRegion.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-muted-foreground">
+                  O usuário será vinculado à região {currentUser?.regionId ? regions.find(r => r.id === currentUser.regionId)?.name : 'N/A'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApprovalDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={confirmApproval}
+              disabled={approveUserMutation.isPending}
+            >
+              {approveUserMutation.isPending ? (
+                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+              ) : (
+                <Shield className="mr-2 h-4 w-4" />
+              )}
+              Aprovar Usuário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
