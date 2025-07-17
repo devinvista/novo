@@ -164,15 +164,7 @@ export function registerRoutes(app: Express): Server {
       const validation = insertObjectiveSchema.parse(req.body);
       const objective = await storage.createObjective(validation);
       
-      // Log activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'objective',
-        entityId: objective.id,
-        action: 'created',
-        description: `Criou o objetivo "${objective.title}"`,
-        newValues: objective,
-      });
+      // TODO: Implement activity logging if needed
       
       res.status(201).json(objective);
     } catch (error) {
@@ -197,16 +189,7 @@ export function registerRoutes(app: Express): Server {
       
       const objective = await storage.updateObjective(id, validation);
       
-      // Log activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'objective',
-        entityId: objective.id,
-        action: 'updated',
-        description: `Atualizou o objetivo "${objective.title}"`,
-        oldValues: existingObjective,
-        newValues: objective,
-      });
+      // TODO: Implement activity logging if needed
       
       res.json(objective);
     } catch (error) {
@@ -230,15 +213,7 @@ export function registerRoutes(app: Express): Server {
       
       await storage.deleteObjective(id);
       
-      // Log activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'objective',
-        entityId: id,
-        action: 'deleted',
-        description: `Deletou o objetivo "${existingObjective.title}"`,
-        oldValues: existingObjective,
-      });
+      // TODO: Implement activity logging if needed
       
       res.sendStatus(204);
     } catch (error) {
@@ -295,15 +270,7 @@ export function registerRoutes(app: Express): Server {
         status,
       });
       
-      // Log activity - remove updatedAt field
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'key_result',
-        entityId: keyResult.id,
-        action: 'created',
-        description: `Criou o resultado-chave "${keyResult.title}"`,
-        newValues: keyResult,
-      });
+      // TODO: Implement activity logging if needed
       
       res.status(201).json(keyResult);
     } catch (error) {
@@ -329,16 +296,7 @@ export function registerRoutes(app: Express): Server {
       
       const keyResult = await storage.updateKeyResult(id, validation);
       
-      // Log activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'key_result',
-        entityId: keyResult.id,
-        action: 'updated',
-        description: `Atualizou o resultado-chave "${keyResult.title}"`,
-        oldValues: existingKeyResult,
-        newValues: keyResult,
-      });
+      // TODO: Implement activity logging if needed
       
       res.json(keyResult);
     } catch (error) {
@@ -384,15 +342,7 @@ export function registerRoutes(app: Express): Server {
       const action = await storage.createAction(validation);
       console.log("Created action:", action);
       
-      // Log activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'action',
-        entityId: action.id,
-        action: 'created',
-        description: `Criou a ação "${action.title}"`,
-        newValues: action,
-      });
+      // TODO: Implement activity logging if needed
       
       res.status(201).json(action);
     } catch (error) {
@@ -433,15 +383,7 @@ export function registerRoutes(app: Express): Server {
         status: status || "pending",
       });
       
-      // Log activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'checkpoint',
-        entityId: updated.id,
-        action: 'updated',
-        description: `Atualizou checkpoint para valor ${actualValue}`,
-        newValues: { actualValue, status },
-      });
+      // TODO: Implement activity logging if needed
       
       res.json(updated);
     } catch (error) {
@@ -457,15 +399,7 @@ export function registerRoutes(app: Express): Server {
       const keyResultId = parseInt(req.params.id);
       const checkpoints = await storage.generateCheckpoints(keyResultId);
       
-      // Log activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'key_result',
-        entityId: keyResultId,
-        action: 'regenerated_checkpoints',
-        description: `Regenerou ${checkpoints.length} checkpoints`,
-        newValues: { checkpointCount: checkpoints.length },
-      });
+      // TODO: Implement activity logging if needed
       
       res.json(checkpoints);
     } catch (error) {
@@ -493,22 +427,11 @@ export function registerRoutes(app: Express): Server {
       
       const checkpoint = await storage.updateCheckpoint(id, {
         actualValue: actualValue.toString(),
-        progress: progress.toString(),
         notes,
         status: 'completed',
-        completedAt: new Date(),
       });
       
-      // Log activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        entityType: 'checkpoint',
-        entityId: checkpoint.id,
-        action: 'completed',
-        description: `Completou o checkpoint do período ${checkpoint.period}`,
-        oldValues: existingCheckpoint,
-        newValues: checkpoint,
-      });
+      // TODO: Implement activity logging if needed
       
       res.json(checkpoint);
     } catch (error) {
@@ -516,18 +439,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Recent activities
-  app.get("/api/activities", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
-    try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-      const activities = await storage.getRecentActivities(limit);
-      res.json(activities);
-    } catch (error) {
-      res.status(500).json({ message: "Erro ao buscar atividades" });
-    }
-  });
+  // TODO: Implement activities feature if needed
 
   // User management routes
   app.get("/api/users", requireAuth, async (req, res) => {
