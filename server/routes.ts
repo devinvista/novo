@@ -608,7 +608,7 @@ export function registerRoutes(app: Express): Server {
       res.json(user);
     } catch (error) {
       console.error("Error approving user:", error);
-      res.status(500).json({ message: "Erro ao aprovar usuário" });
+      res.status(500).json({ message: "Erro ao aprovar usuário", error: error.message });
     }
   });
 

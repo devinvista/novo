@@ -323,6 +323,19 @@ Changelog:
     - Secure authentication with password hashing
     - Complete data validation with Zod schemas
     - Professional error handling throughout system
+- July 17, 2025. **Sistema OKR Totalmente Funcional - Erros de API Corrigidos**
+  - **CORREÇÃO CRÍTICA**: Corrigido erro "Invalid request method" nas chamadas de API
+    - Problema: ordem incorreta dos parâmetros na função apiRequest (url, method) ao invés de (method, url)
+    - Solucionado: todas as mutações de usuários agora funcionam corretamente
+    - Adicionado tratamento adequado de respostas JSON
+  - **CORREÇÃO TIMESTAMP**: Corrigido erro ao aprovar usuários
+    - Problema: campo approvedAt estava sendo preenchido com string ISO ao invés de objeto Date
+    - Drizzle ORM espera objetos Date para campos timestamp
+    - Função approveUser agora funciona corretamente
+  - **MELHORIAS DE DEBUG**: Adicionado logging detalhado para facilitar debugging
+    - Logs de requisições API no frontend
+    - Logs detalhados do servidor para operações de usuário
+    - Melhor tratamento de erro com mensagens específicas
 - July 17, 2025. **Complete Migration to Replit Environment with SQLite Database**
   - **REPLIT MIGRATION COMPLETED**: Successfully migrated from Replit Agent to standard Replit environment
   - **DATABASE MIGRATION**: Migrated from PostgreSQL/MySQL to SQLite for local development

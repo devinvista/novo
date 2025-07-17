@@ -150,7 +150,7 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ 
         approved: true, 
-        approvedAt: new Date().toISOString(),
+        approvedAt: sql`CURRENT_TIMESTAMP`,
         approvedBy: approvedBy
       })
       .where(eq(users.id, id))
