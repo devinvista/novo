@@ -94,7 +94,7 @@ export default function Sidebar() {
           );
         })}
 
-        {user?.role === "admin" && (
+        {(user?.role === "admin" || user?.role === "gestor") && (
           <div className="pt-4 border-t border-sidebar-border mt-4">
             {adminItems.map((item) => {
               const Icon = item.icon;

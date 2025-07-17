@@ -124,11 +124,9 @@ export const checkpoints = sqliteTable("checkpoints", {
   keyResultId: integer("key_result_id").notNull().references(() => keyResults.id),
   period: text("period").notNull(), // 2024-01, 2024-Q1, 2024-W01
   targetValue: real("target_value").notNull(),
-  actualValue: real("actual_value"),
+  actualValue: real("actual_value").default(0),
   status: text("status").notNull().default("pending"), // pending, completed, delayed
-  checkDate: text("check_date").notNull(),
-  comments: text("comments"),
-  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  notes: text("notes"),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 

@@ -2,8 +2,26 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema } from "@shared/schema";
+import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema, insertUserSchema } from "@shared/schema";
+import { hashPassword } from "./auth";
 import { z } from "zod";
+
+// Authentication middleware
+function requireAuth(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  next();
+}
+
+function requireRole(roles: string[]) {
+  return (req: any, res: any, next: any) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    next();
+  };
+}
 
 export function registerRoutes(app: Express): Server {
   // Setup authentication routes
@@ -489,6 +507,120 @@ export function registerRoutes(app: Express): Server {
       res.json(activities);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar atividades" });
+    }
+  });
+
+  // User management routes
+  app.get("/api/users", requireAuth, async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Erro ao buscar usuários" });
+    }
+  });
+
+  app.post("/api/users", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Gestores só podem criar usuários operacionais
+      if (req.user?.role === "gestor" && userData.role !== "operacional") {
+        return res.status(403).json({ message: "Gestores só podem criar usuários operacionais" });
+      }
+
+      // Hash password
+      userData.password = await hashPassword(userData.password);
+
+      const user = await storage.createUser(userData);
+      res.json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Erro ao criar usuário" });
+    }
+  });
+
+  app.patch("/api/users/:id", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userData = req.body;
+
+      // Verificar se o usuário pode editar este usuário
+      const targetUser = await storage.getUser(id);
+      if (!targetUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      // Gestores só podem editar usuários operacionais
+      if (req.user?.role === "gestor" && targetUser.role !== "operacional") {
+        return res.status(403).json({ message: "Sem permissão para editar este usuário" });
+      }
+
+      // Hash password se fornecida
+      if (userData.password) {
+        userData.password = await hashPassword(userData.password);
+      } else {
+        delete userData.password; // Não atualizar senha se não fornecida
+      }
+
+      const user = await storage.updateUser(id, userData);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Erro ao atualizar usuário" });
+    }
+  });
+
+  app.delete("/api/users/:id", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Não permitir deletar a si mesmo
+      if (id === req.user?.id) {
+        return res.status(400).json({ message: "Não é possível deletar seu próprio usuário" });
+      }
+
+      // Verificar se o usuário pode deletar este usuário
+      const targetUser = await storage.getUser(id);
+      if (!targetUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      // Gestores só podem deletar usuários operacionais
+      if (req.user?.role === "gestor" && targetUser.role !== "operacional") {
+        return res.status(403).json({ message: "Sem permissão para deletar este usuário" });
+      }
+
+      await storage.deleteUser(id);
+      res.json({ message: "Usuário deletado com sucesso" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Erro ao deletar usuário" });
+    }
+  });
+
+  app.patch("/api/users/:id/status", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { active } = req.body;
+
+      // Verificar se o usuário pode alterar o status deste usuário
+      const targetUser = await storage.getUser(id);
+      if (!targetUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      // Gestores só podem alterar status de usuários operacionais
+      if (req.user?.role === "gestor" && targetUser.role !== "operacional") {
+        return res.status(403).json({ message: "Sem permissão para alterar status deste usuário" });
+      }
+
+      const user = await storage.updateUser(id, { active });
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      res.status(500).json({ message: "Erro ao alterar status do usuário" });
     }
   });
 
