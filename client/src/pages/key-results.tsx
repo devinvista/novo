@@ -16,13 +16,18 @@ export default function KeyResults() {
   const [selectedKeyResult, setSelectedKeyResult] = useState<any>(null);
   const [, setLocation] = useLocation();
   
-  const { data: keyResults, isLoading } = useQuery({
+  const { data: keyResults, isLoading, error } = useQuery({
     queryKey: ["/api/key-results"],
     queryFn: async () => {
       const response = await fetch("/api/key-results");
-      if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Erro ao carregar resultados-chave");
+      }
       return response.json();
     },
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   const handleCreateKeyResult = () => {
@@ -95,9 +100,14 @@ export default function KeyResults() {
                 </Card>
               ))}
             </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Erro ao carregar resultados-chave</p>
+              <p className="text-sm text-red-500 mt-2">{error.message}</p>
+            </div>
           ) : (
             <div className="grid gap-6">
-              {keyResults?.map((kr: any) => {
+              {keyResults && keyResults.length > 0 ? keyResults.map((kr: any) => {
                 const progress = parseFloat(kr.progress) || 0;
                 const statusBadge = getStatusBadge(kr.status || 'active');
                 
@@ -131,11 +141,7 @@ export default function KeyResults() {
                     
                     <CardContent>
                       <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Valor Inicial:</span>
-                            <p className="font-medium">{kr.initialValue} {kr.unit}</p>
-                          </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="text-muted-foreground">Valor Atual:</span>
                             <p className="font-medium">{kr.currentValue} {kr.unit}</p>
@@ -189,20 +195,17 @@ export default function KeyResults() {
                     </CardContent>
                   </Card>
                 );
-              })}
-              
-              {keyResults?.length === 0 && (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <p className="text-muted-foreground">
-                      Nenhum resultado-chave encontrado.
-                    </p>
-                    <Button className="mt-4" onClick={handleCreateKeyResult}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Criar primeiro KR
-                    </Button>
-                  </CardContent>
-                </Card>
+              }) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Nenhum resultado-chave encontrado</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Crie objetivos primeiro e depois adicione resultados-chave a eles.
+                  </p>
+                  <Button className="mt-4" onClick={handleCreateKeyResult}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar primeiro KR
+                  </Button>
+                </div>
               )}
             </div>
           )}

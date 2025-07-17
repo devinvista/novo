@@ -313,7 +313,6 @@ export class DatabaseStorage implements IStorage {
         strategicIndicatorIds: keyResults.strategicIndicatorIds,
         targetValue: keyResults.targetValue,
         currentValue: keyResults.currentValue,
-        initialValue: keyResults.initialValue,
         unit: keyResults.unit,
         frequency: keyResults.frequency,
         startDate: keyResults.startDate,
