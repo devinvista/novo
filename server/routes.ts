@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
-import { storage } from "./mysql-storage";
+import { storage } from "./storage";
 import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema } from "@shared/schema";
 import { z } from "zod";
 

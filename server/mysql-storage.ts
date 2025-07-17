@@ -7,13 +7,13 @@ import {
   Action, InsertAction, Checkpoint, InsertCheckpoint, Activity
 } from '../shared/schema';
 
-// MySQL connection configuration
+// MySQL connection configuration for Replit
 const mysqlConfig = {
-  host: process.env.MYSQL_HOST || 'srv1661.hstgr.io',
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USERNAME || '',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: process.env.MYSQL_DATABASE || '',
+  host: 'localhost',
+  port: 3306,
+  user: 'root',
+  password: '',
+  database: 'okr_db',
   ssl: false,
   connectTimeout: 60000,
   acquireTimeout: 60000,

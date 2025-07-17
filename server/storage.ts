@@ -1,19 +1,17 @@
 import { 
   users, regions, subRegions, serviceLines, strategicIndicators, 
-  objectives, keyResults, actions, checkpoints, activities,
+  objectives, keyResults, actions, checkpoints,
   solutions, services,
   type User, type InsertUser, type Objective, type InsertObjective,
   type KeyResult, type InsertKeyResult, type Action, type InsertAction,
   type Checkpoint, type InsertCheckpoint, type Region, type SubRegion,
-  type ServiceLine, type StrategicIndicator, type Activity,
+  type ServiceLine, type StrategicIndicator,
   type Solution, type Service
 } from "@shared/schema";
-import { db, pool } from "./db";
+import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-
-const PostgresSessionStore = connectPg(session);
+import MemoryStore from "memorystore";
 
 export interface IStorage {
   // User management
@@ -74,17 +72,7 @@ export interface IStorage {
   updateCheckpoint(id: number, checkpoint: Partial<InsertCheckpoint>): Promise<Checkpoint>;
   generateCheckpoints(keyResultId: number): Promise<Checkpoint[]>;
 
-  // Activities
-  getRecentActivities(limit?: number): Promise<(Activity & { user: User })[]>;
-  logActivity(activity: {
-    userId: number;
-    entityType: string;
-    entityId: number;
-    action: string;
-    description: string;
-    oldValues?: any;
-    newValues?: any;
-  }): Promise<Activity>;
+  // Analytics and utilities
 
   // Analytics
   getDashboardKPIs(filters?: {
@@ -106,9 +94,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    const MemStore = MemoryStore(session);
+    this.sessionStore = new MemStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
     });
   }
 
@@ -164,7 +152,6 @@ export class DatabaseStorage implements IStorage {
 
   async getStrategicIndicators(): Promise<StrategicIndicator[]> {
     return await db.select().from(strategicIndicators)
-      .where(eq(strategicIndicators.active, true))
       .orderBy(asc(strategicIndicators.name));
   }
 
@@ -496,27 +483,11 @@ export class DatabaseStorage implements IStorage {
       await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
 
       const targetValue = parseFloat(keyResult.targetValue);
-      const initialValue = parseFloat(keyResult.initialValue);
+      const initialValue = parseFloat(keyResult.currentValue || "0");
       
-      // Get the raw date strings from the database since Drizzle mapping is having issues
-      const rawResult = await pool.query(
-        'SELECT start_date, end_date FROM key_results WHERE id = $1',
-        [keyResultId]
-      );
-      
-      if (!rawResult || !rawResult.rows || rawResult.rows.length === 0) {
-        console.warn("Key result not found in database", keyResultId);
-        return [];
-      }
-      
-      const row = rawResult.rows[0];
-      const start_date = row.start_date;
-      const end_date = row.end_date;
-      console.log("Raw dates from DB:", start_date, end_date);
-      
-      // Convert PostgreSQL date objects to JavaScript dates
-      const startDate = new Date(start_date);
-      const endDate = new Date(end_date);
+      // Parse dates from the key result object
+      const startDate = new Date(keyResult.startDate);
+      const endDate = new Date(keyResult.endDate);
 
     console.log("Parsed dates:", startDate, endDate);
     console.log("Start date valid:", !isNaN(startDate.getTime()), "End date valid:", !isNaN(endDate.getTime()));
@@ -636,54 +607,7 @@ export class DatabaseStorage implements IStorage {
     return Math.ceil((days + firstDay.getDay() + 1) / 7);
   }
 
-  async getRecentActivities(limit = 10): Promise<(Activity & { user: User })[]> {
-    const results = await db
-      .select({
-        id: activities.id,
-        userId: activities.userId,
-        entityType: activities.entityType,
-        entityId: activities.entityId,
-        action: activities.action,
-        description: activities.description,
-        oldValues: activities.oldValues,
-        newValues: activities.newValues,
-        createdAt: activities.createdAt,
-        user: users,
-      })
-      .from(activities)
-      .innerJoin(users, eq(activities.userId, users.id))
-      .orderBy(desc(activities.createdAt))
-      .limit(limit);
-
-    return results.map(result => ({
-      ...result,
-      user: result.user as User,
-    }));
-  }
-
-  async logActivity(activity: {
-    userId: number;
-    entityType: string;
-    entityId: number;
-    action: string;
-    description: string;
-    oldValues?: any;
-    newValues?: any;
-  }): Promise<Activity> {
-    const [created] = await db
-      .insert(activities)
-      .values({
-        userId: activity.userId,
-        entityType: activity.entityType,
-        entityId: activity.entityId,
-        action: activity.action,
-        description: activity.description,
-        oldValues: activity.oldValues,
-        newValues: activity.newValues,
-      })
-      .returning();
-    return created;
-  }
+  // Activity tracking disabled in SQLite version for simplicity
 
   async getDashboardKPIs(filters?: {
     regionId?: number;
@@ -757,5 +681,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Import hybrid storage that supports both Microsoft Fabric and SQLite fallback
-export { storage } from './hybrid-storage';
+// Export the SQLite storage instance
+export const storage = new DatabaseStorage();
