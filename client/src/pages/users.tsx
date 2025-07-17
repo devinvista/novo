@@ -105,7 +105,7 @@ export default function UsersPage() {
   // Mutations
   const createUserMutation = useMutation({
     mutationFn: (userData: UserFormData) => 
-      apiRequest("/api/users", "POST", userData),
+      apiRequest("POST", "/api/users", userData).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setIsDialogOpen(false);
@@ -126,7 +126,7 @@ export default function UsersPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: ({ id, ...userData }: UserFormData & { id: number }) =>
-      apiRequest(`/api/users/${id}`, "PATCH", userData),
+      apiRequest("PATCH", `/api/users/${id}`, userData).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setIsDialogOpen(false);
@@ -149,7 +149,7 @@ export default function UsersPage() {
 
   const approveUserMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/users/${id}/approve`, "PATCH", {}),
+      apiRequest("PATCH", `/api/users/${id}/approve`, {}).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending-users"] });
@@ -168,7 +168,7 @@ export default function UsersPage() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/users/${id}`, "DELETE"),
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/users/${id}`).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
@@ -187,7 +187,7 @@ export default function UsersPage() {
 
   const toggleUserStatusMutation = useMutation({
     mutationFn: ({ id, active }: { id: number; active: boolean }) =>
-      apiRequest(`/api/users/${id}/status`, "PATCH", { active }),
+      apiRequest("PATCH", `/api/users/${id}/status`, { active: !active }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
@@ -251,7 +251,7 @@ export default function UsersPage() {
   };
 
   const toggleUserStatus = (id: number, active: boolean) => {
-    toggleUserStatusMutation.mutate({ id, active: !active });
+    toggleUserStatusMutation.mutate({ id, active });
   };
 
   const togglePasswordVisibility = (userId: number) => {
