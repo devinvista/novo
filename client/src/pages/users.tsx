@@ -43,10 +43,19 @@ const userFormSchema = z.object({
   username: z.string().min(3, "Username deve ter pelo menos 3 caracteres"),
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email deve ser válido"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  password: z.string().optional(),
   role: z.enum(["admin", "gestor", "operacional"]),
   regionId: z.string().optional(),
   subRegionId: z.string().optional(),
+}).refine((data) => {
+  // Password required only for new users
+  if (!data.password || data.password.length === 0) {
+    return true; // Allow empty password for editing
+  }
+  return data.password.length >= 6;
+}, {
+  message: "Senha deve ter pelo menos 6 caracteres",
+  path: ["password"],
 });
 
 type UserFormData = z.infer<typeof userFormSchema>;
@@ -67,8 +76,8 @@ export default function UsersPage() {
       email: "",
       password: "",
       role: "operacional",
-      regionId: "",
-      subRegionId: "",
+      regionId: "all",
+      subRegionId: "all",
     },
   });
 
@@ -160,10 +169,16 @@ export default function UsersPage() {
   });
 
   const handleCreateUser = (data: UserFormData) => {
+    // Validation for new users - password is required
+    if (!editingUser && (!data.password || data.password.length === 0)) {
+      form.setError("password", { message: "Senha é obrigatória para novos usuários" });
+      return;
+    }
+
     const userData = {
       ...data,
-      regionId: data.regionId ? parseInt(data.regionId) : undefined,
-      subRegionId: data.subRegionId ? parseInt(data.subRegionId) : undefined,
+      regionId: data.regionId && data.regionId !== "all" ? parseInt(data.regionId) : undefined,
+      subRegionId: data.subRegionId && data.subRegionId !== "all" ? parseInt(data.subRegionId) : undefined,
     };
     
     if (editingUser) {
@@ -181,8 +196,8 @@ export default function UsersPage() {
       email: user.email,
       password: "", // Don't show existing password
       role: user.role,
-      regionId: user.regionId?.toString() || "",
-      subRegionId: user.subRegionId?.toString() || "",
+      regionId: user.regionId?.toString() || "all",
+      subRegionId: user.subRegionId?.toString() || "all",
     });
     setIsDialogOpen(true);
   };
@@ -226,7 +241,7 @@ export default function UsersPage() {
   };
 
   const getFilteredSubRegions = (regionId: string) => {
-    if (!regionId) return [];
+    if (!regionId || regionId === "all") return [];
     return subRegions.filter(sr => sr.regionId === parseInt(regionId));
   };
 
@@ -317,8 +332,9 @@ export default function UsersPage() {
                       <FormControl>
                         <Input 
                           type="password" 
-                          placeholder={editingUser ? "Nova senha" : "Digite a senha"} 
+                          placeholder={editingUser ? "Nova senha (opcional)" : "Digite a senha"} 
                           {...field} 
+                          required={!editingUser}
                         />
                       </FormControl>
                       <FormMessage />
@@ -366,7 +382,7 @@ export default function UsersPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Todas as regiões</SelectItem>
+                          <SelectItem value="all">Todas as regiões</SelectItem>
                           {regions.map((region) => (
                             <SelectItem key={region.id} value={region.id.toString()}>
                               {region.name}
@@ -392,7 +408,7 @@ export default function UsersPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Todas as sub-regiões</SelectItem>
+                            <SelectItem value="all">Todas as sub-regiões</SelectItem>
                             {getFilteredSubRegions(form.watch("regionId")).map((subRegion) => (
                               <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
                                 {subRegion.name}
