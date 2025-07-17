@@ -1,20 +1,24 @@
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-// SQLite database configuration for Replit
-const sqlite = new Database('okr.db');
+// PostgreSQL database configuration for Replit
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
 
-// Create Drizzle instance with SQLite
-export const db = drizzle(sqlite, { schema });
+const sql = postgres(process.env.DATABASE_URL);
+export const db = drizzle(sql, { schema });
 
 // Initialize the database connection
-const initializeDatabase = () => {
+const initializeDatabase = async () => {
   try {
-    console.log('✓ Connected to SQLite database');
+    // Test connection
+    await sql`SELECT 1`;
+    console.log('✓ Connected to PostgreSQL database');
     return true;
   } catch (err) {
-    console.error('✗ SQLite connection failed:', err);
+    console.error('✗ PostgreSQL connection failed:', err);
     throw err;
   }
 };
@@ -23,4 +27,4 @@ const initializeDatabase = () => {
 initializeDatabase();
 
 // Export the connection for direct queries if needed
-export { sqlite };
+export { sql };
