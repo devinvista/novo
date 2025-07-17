@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Target, TrendingUp, Users, Activity } from "lucide-react";
 
 export default function AuthPage() {
@@ -19,6 +21,12 @@ export default function AuthPage() {
     name: "",
     email: "",
     role: "operacional" as const,
+    gestorId: "",
+  });
+
+  // Load managers for registration
+  const { data: managers } = useQuery({
+    queryKey: ["/api/managers"],
   });
 
   // Use effect to redirect if already logged in
@@ -39,7 +47,11 @@ export default function AuthPage() {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    registerMutation.mutate(registerForm);
+    const formData = {
+      ...registerForm,
+      gestorId: registerForm.gestorId ? parseInt(registerForm.gestorId) : undefined,
+    };
+    registerMutation.mutate(formData);
   };
 
   return (
@@ -188,6 +200,26 @@ export default function AuthPage() {
                         className="h-11 sm:h-12 text-sm sm:text-base"
                         placeholder="Crie uma senha segura"
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-manager" className="text-sm sm:text-base">Gestor Responsável</Label>
+                      <Select
+                        value={registerForm.gestorId}
+                        onValueChange={(value) =>
+                          setRegisterForm({ ...registerForm, gestorId: value })
+                        }
+                      >
+                        <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
+                          <SelectValue placeholder="Selecione seu gestor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {managers?.map((manager: any) => (
+                            <SelectItem key={manager.id} value={manager.id.toString()}>
+                              {manager.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     {registerMutation.isError && (
                       <Alert variant="destructive">

@@ -25,6 +25,10 @@ interface User {
   regionId?: number;
   subRegionId?: number;
   active: boolean;
+  approved: boolean;
+  approvedAt?: string;
+  approvedBy?: number;
+  gestorId?: number;
   createdAt: string;
 }
 
@@ -86,6 +90,10 @@ export default function UsersPage() {
     queryKey: ["/api/users"],
   });
 
+  const { data: pendingUsers = [] } = useQuery({
+    queryKey: ["/api/pending-users"],
+  });
+
   const { data: regions = [] } = useQuery<Region[]>({
     queryKey: ["/api/regions"],
   });
@@ -133,6 +141,26 @@ export default function UsersPage() {
       toast({
         title: "Erro",
         description: error.message || "Erro ao atualizar usuário",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const approveUserMutation = useMutation({
+    mutationFn: (id: number) => 
+      apiRequest(`/api/users/${id}/approve`, "PATCH", {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-users"] });
+      toast({
+        title: "Usuário aprovado",
+        description: "Usuário aprovado com sucesso!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao aprovar usuário",
         variant: "destructive",
       });
     },
@@ -258,6 +286,67 @@ export default function UsersPage() {
             Gerencie usuários e seus níveis de acesso no sistema
           </p>
         </div>
+      </div>
+
+      {/* Pending Users Section */}
+      {pendingUsers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Usuários Pendentes de Aprovação ({pendingUsers.length})
+            </CardTitle>
+            <CardDescription>
+              Usuários que aguardam aprovação para acessar o sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingUsers.map((user: User) => (
+                <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{user.name}</span>
+                      <Badge variant={getRoleBadgeVariant(user.role)}>
+                        {user.role}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {user.email} • {user.username}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => approveUserMutation.mutate(user.id)}
+                      disabled={approveUserMutation.isPending}
+                      className="h-8"
+                    >
+                      {approveUserMutation.isPending ? (
+                        <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                      ) : (
+                        "Aprovar"
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteUser(user.id)}
+                      disabled={deleteUserMutation.isPending}
+                      className="h-8"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div />
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
@@ -478,6 +567,7 @@ export default function UsersPage() {
                 <TableHead>Função</TableHead>
                 <TableHead>Região</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Aprovação</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -512,6 +602,11 @@ export default function UsersPage() {
                     <TableCell>
                       <Badge variant={user.active ? "default" : "secondary"}>
                         {user.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.approved ? "default" : "destructive"}>
+                        {user.approved ? "Aprovado" : "Pendente"}
                       </Badge>
                     </TableCell>
                     <TableCell>

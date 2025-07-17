@@ -18,8 +18,11 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
+  getManagers(): Promise<User[]>; // Get only managers (gestores)
+  getPendingUsers(): Promise<User[]>; // Get users pending approval
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
+  approveUser(id: number, approvedBy: number): Promise<User>;
   deleteUser(id: number): Promise<void>;
 
   // Reference data
@@ -117,6 +120,14 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(users.name);
   }
 
+  async getManagers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, 'gestor')).orderBy(users.name);
+  }
+
+  async getPendingUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.approved, false)).orderBy(users.createdAt);
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -129,6 +140,19 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async approveUser(id: number, approvedBy: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        approved: true, 
+        approvedAt: new Date().toISOString(),
+        approvedBy: approvedBy
+      })
       .where(eq(users.id, id))
       .returning();
     return user;

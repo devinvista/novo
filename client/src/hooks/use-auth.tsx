@@ -53,12 +53,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       return await res.json();
     },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (response: any) => {
+      toast({
+        title: "Cadastro realizado!",
+        description: response.message || "Usuário registrado com sucesso! Aguarde aprovação de um gestor.",
+        variant: "default",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration failed",
+        title: "Erro no cadastro",
         description: error.message,
         variant: "destructive",
       });

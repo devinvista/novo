@@ -27,6 +27,25 @@ export function registerRoutes(app: Express): Server {
   // Setup authentication routes
   setupAuth(app);
 
+  // Public user registration route
+  app.post("/api/register", async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Public registration creates users as not approved by default
+      userData.approved = false;
+      
+      // Hash password
+      userData.password = await hashPassword(userData.password);
+
+      const user = await storage.createUser(userData);
+      res.json({ message: "Usuário registrado com sucesso! Aguarde aprovação de um gestor." });
+    } catch (error) {
+      console.error("Error registering user:", error);
+      res.status(500).json({ message: "Erro ao registrar usuário" });
+    }
+  });
+
   // Reference data routes
   app.get("/api/solutions", async (req, res) => {
     try {
@@ -521,6 +540,26 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/managers", async (req, res) => {
+    try {
+      const managers = await storage.getManagers();
+      res.json(managers);
+    } catch (error) {
+      console.error("Error fetching managers:", error);
+      res.status(500).json({ message: "Erro ao buscar gestores" });
+    }
+  });
+
+  app.get("/api/pending-users", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
+    try {
+      const pendingUsers = await storage.getPendingUsers();
+      res.json(pendingUsers);
+    } catch (error) {
+      console.error("Error fetching pending users:", error);
+      res.status(500).json({ message: "Erro ao buscar usuários pendentes" });
+    }
+  });
+
   app.post("/api/users", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -532,6 +571,9 @@ export function registerRoutes(app: Express): Server {
 
       // Hash password
       userData.password = await hashPassword(userData.password);
+
+      // Users created by admins/gestores are auto-approved
+      userData.approved = true;
 
       const user = await storage.createUser(userData);
       res.json(user);
@@ -621,6 +663,29 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error updating user status:", error);
       res.status(500).json({ message: "Erro ao alterar status do usuário" });
+    }
+  });
+
+  app.patch("/api/users/:id/approve", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+
+      // Verificar se o usuário pode aprovar este usuário
+      const targetUser = await storage.getUser(id);
+      if (!targetUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      // Gestores só podem aprovar usuários operacionais
+      if (req.user?.role === "gestor" && targetUser.role !== "operacional") {
+        return res.status(403).json({ message: "Sem permissão para aprovar este usuário" });
+      }
+
+      const user = await storage.approveUser(id, req.user!.id);
+      res.json(user);
+    } catch (error) {
+      console.error("Error approving user:", error);
+      res.status(500).json({ message: "Erro ao aprovar usuário" });
     }
   });
 

@@ -13,6 +13,10 @@ export const users = sqliteTable("users", {
   role: text("role").notNull().default("operacional"), // admin, gestor, operacional
   regionId: integer("region_id"),
   subRegionId: integer("sub_region_id"),
+  gestorId: integer("gestor_id").references(() => users.id), // Reference to manager
+  approved: integer("approved", { mode: "boolean" }).notNull().default(false), // Approval status
+  approvedAt: text("approved_at"), // When was approved
+  approvedBy: integer("approved_by").references(() => users.id), // Who approved
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
@@ -134,6 +138,10 @@ export const checkpoints = sqliteTable("checkpoints", {
 export const usersRelations = relations(users, ({ one, many }) => ({
   region: one(regions, { fields: [users.regionId], references: [regions.id] }),
   subRegion: one(subRegions, { fields: [users.subRegionId], references: [subRegions.id] }),
+  gestor: one(users, { fields: [users.gestorId], references: [users.id], relationName: "gestorRelation" }),
+  subordinates: many(users, { relationName: "gestorRelation" }),
+  approvedBy: one(users, { fields: [users.approvedBy], references: [users.id], relationName: "approvedByRelation" }),
+  approvedUsers: many(users, { relationName: "approvedByRelation" }),
   objectives: many(objectives),
   responsibleActions: many(actions),
 }));
@@ -194,6 +202,8 @@ export const checkpointsRelations = relations(checkpoints, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  approvedAt: true,
+  approvedBy: true,
 });
 
 export const insertRegionSchema = createInsertSchema(regions).omit({
