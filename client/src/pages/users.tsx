@@ -138,6 +138,7 @@ export default function UsersPage() {
       });
     },
     onError: (error: any) => {
+      console.error("User update error:", error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao atualizar usuário",
@@ -197,22 +198,35 @@ export default function UsersPage() {
   });
 
   const handleCreateUser = (data: UserFormData) => {
-    // Validation for new users - password is required
-    if (!editingUser && (!data.password || data.password.length === 0)) {
-      form.setError("password", { message: "Senha é obrigatória para novos usuários" });
-      return;
-    }
+    try {
+      // Validation for new users - password is required
+      if (!editingUser && (!data.password || data.password.length === 0)) {
+        form.setError("password", { message: "Senha é obrigatória para novos usuários" });
+        return;
+      }
 
-    const userData = {
-      ...data,
-      regionId: data.regionId && data.regionId !== "all" ? parseInt(data.regionId) : undefined,
-      subRegionId: data.subRegionId && data.subRegionId !== "all" ? parseInt(data.subRegionId) : undefined,
-    };
-    
-    if (editingUser) {
-      updateUserMutation.mutate({ ...userData, id: editingUser.id });
-    } else {
-      createUserMutation.mutate(userData);
+      const userData = {
+        ...data,
+        regionId: data.regionId && data.regionId !== "all" ? parseInt(data.regionId) : undefined,
+        subRegionId: data.subRegionId && data.subRegionId !== "all" ? parseInt(data.subRegionId) : undefined,
+      };
+      
+      console.log("Submitting user data:", { ...userData, password: userData.password ? "[HIDDEN]" : undefined });
+      
+      if (editingUser) {
+        console.log("Updating user:", editingUser.id);
+        updateUserMutation.mutate({ ...userData, id: editingUser.id });
+      } else {
+        console.log("Creating new user");
+        createUserMutation.mutate(userData);
+      }
+    } catch (error) {
+      console.error("Error in handleCreateUser:", error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao processar dados do usuário",
+        variant: "destructive",
+      });
     }
   };
 

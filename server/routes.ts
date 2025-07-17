@@ -502,30 +502,38 @@ export function registerRoutes(app: Express): Server {
     try {
       const id = parseInt(req.params.id);
       const userData = req.body;
+      
+      console.log(`Updating user ${id} with data:`, userData);
 
       // Verificar se o usuário pode editar este usuário
       const targetUser = await storage.getUser(id);
       if (!targetUser) {
+        console.log(`User ${id} not found`);
         return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
       // Gestores só podem editar usuários operacionais
       if (req.user?.role === "gestor" && targetUser.role !== "operacional") {
+        console.log(`User ${req.user.id} (${req.user.role}) trying to edit user ${id} (${targetUser.role})`);
         return res.status(403).json({ message: "Sem permissão para editar este usuário" });
       }
 
       // Hash password se fornecida
-      if (userData.password) {
+      if (userData.password && userData.password.trim() !== "") {
+        console.log("Hashing new password");
         userData.password = await hashPassword(userData.password);
       } else {
+        console.log("No password provided, removing from update data");
         delete userData.password; // Não atualizar senha se não fornecida
       }
 
+      console.log("Final update data:", { ...userData, password: userData.password ? "[HIDDEN]" : undefined });
       const user = await storage.updateUser(id, userData);
+      console.log("User updated successfully");
       res.json(user);
     } catch (error) {
       console.error("Error updating user:", error);
-      res.status(500).json({ message: "Erro ao atualizar usuário" });
+      res.status(500).json({ message: "Erro ao atualizar usuário", error: error.message });
     }
   });
 
