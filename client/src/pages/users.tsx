@@ -250,30 +250,33 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Gerencie usuários e seus níveis de acesso no sistema
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              setEditingUser(null);
-              form.reset();
-            }}>
+            <Button 
+              onClick={() => {
+                setEditingUser(null);
+                form.reset();
+              }}
+              className="w-full sm:w-auto h-10 sm:h-11 text-sm sm:text-base"
+            >
               <UserPlus className="mr-2 h-4 w-4" />
               Novo Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>
+          <DialogContent className="w-[95vw] max-w-[425px] sm:max-w-[500px] md:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-4">
+              <DialogTitle className="text-lg sm:text-xl">
                 {editingUser ? "Editar Usuário" : "Criar Novo Usuário"}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm sm:text-base">
                 {editingUser 
                   ? "Atualize as informações do usuário" 
                   : "Preencha os dados para criar um novo usuário"
@@ -281,15 +284,19 @@ export default function UsersPage() {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleCreateUser)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(handleCreateUser)} className="space-y-4 sm:space-y-5">
                 <FormField
                   control={form.control}
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel className="text-sm sm:text-base">Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="Digite o username" {...field} />
+                        <Input 
+                          placeholder="Digite o username" 
+                          className="h-10 sm:h-11 text-sm sm:text-base"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -300,9 +307,13 @@ export default function UsersPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Completo</FormLabel>
+                      <FormLabel className="text-sm sm:text-base">Nome Completo</FormLabel>
                       <FormControl>
-                        <Input placeholder="Digite o nome completo" {...field} />
+                        <Input 
+                          placeholder="Digite o nome completo" 
+                          className="h-10 sm:h-11 text-sm sm:text-base"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -313,9 +324,14 @@ export default function UsersPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="text-sm sm:text-base">Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Digite o email" {...field} />
+                        <Input 
+                          type="email" 
+                          placeholder="Digite o email" 
+                          className="h-10 sm:h-11 text-sm sm:text-base"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -326,13 +342,14 @@ export default function UsersPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
+                      <FormLabel className="text-sm sm:text-base">
                         {editingUser ? "Nova Senha (deixe vazio para manter)" : "Senha"}
                       </FormLabel>
                       <FormControl>
                         <Input 
                           type="password" 
                           placeholder={editingUser ? "Nova senha (opcional)" : "Digite a senha"} 
+                          className="h-10 sm:h-11 text-sm sm:text-base"
                           {...field} 
                           required={!editingUser}
                         />
@@ -346,10 +363,10 @@ export default function UsersPage() {
                   name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Função</FormLabel>
+                      <FormLabel className="text-sm sm:text-base">Função</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                             <SelectValue placeholder="Selecione a função" />
                           </SelectTrigger>
                         </FormControl>
@@ -374,10 +391,10 @@ export default function UsersPage() {
                   name="regionId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Região (Opcional)</FormLabel>
+                      <FormLabel className="text-sm sm:text-base">Região (Opcional)</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                             <SelectValue placeholder="Selecione uma região" />
                           </SelectTrigger>
                         </FormControl>
@@ -400,10 +417,10 @@ export default function UsersPage() {
                     name="subRegionId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Sub-região (Opcional)</FormLabel>
+                        <FormLabel className="text-sm sm:text-base">Sub-região (Opcional)</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                               <SelectValue placeholder="Selecione uma sub-região" />
                             </SelectTrigger>
                           </FormControl>
@@ -421,10 +438,11 @@ export default function UsersPage() {
                     )}
                   />
                 )}
-                <DialogFooter>
+                <DialogFooter className="pt-4">
                   <Button 
                     type="submit" 
                     disabled={createUserMutation.isPending || updateUserMutation.isPending}
+                    className="w-full sm:w-auto h-10 sm:h-11 text-sm sm:text-base"
                   >
                     {(createUserMutation.isPending || updateUserMutation.isPending) ? "Salvando..." : 
                      editingUser ? "Atualizar" : "Criar Usuário"}
@@ -438,11 +456,11 @@ export default function UsersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <Users className="h-5 w-5" />
             Usuários do Sistema
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm sm:text-base">
             {currentUser?.role === "admin" 
               ? "Como administrador, você pode gerenciar todos os usuários"
               : "Como gestor, você pode criar e gerenciar usuários operacionais"
@@ -450,7 +468,8 @@ export default function UsersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="overflow-x-auto">
+            <Table className="min-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
@@ -531,6 +550,7 @@ export default function UsersPage() {
               })}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
