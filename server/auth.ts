@@ -22,6 +22,14 @@ export async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  // Handle old format (just hex hash with hardcoded salt) for backward compatibility
+  if (!stored.includes(".")) {
+    const suppliedBuf = (await scryptAsync(supplied, 'salt', 64)) as Buffer;
+    const storedBuf = Buffer.from(stored, "hex");
+    return timingSafeEqual(suppliedBuf, storedBuf);
+  }
+  
+  // Handle new format (hash.salt)
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
