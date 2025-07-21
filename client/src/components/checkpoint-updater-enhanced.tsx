@@ -38,6 +38,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
       if (!response.ok) throw new Error("Erro ao carregar checkpoints");
       return response.json();
     },
+    enabled: !!keyResultId,
   });
 
   const regenerateMutation = useMutation({
@@ -73,11 +74,14 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Checkpoints
+            <AlertCircle className="h-5 w-5" />
+            Nenhum checkpoint encontrado
           </CardTitle>
           <CardDescription>
-            Nenhum checkpoint encontrado para este resultado-chave
+            {keyResultId 
+              ? "Este resultado-chave ainda não possui checkpoints configurados."
+              : "Selecione um resultado-chave para visualizar seus checkpoints."
+            }
           </CardDescription>
         </CardHeader>
         {keyResultId && (
@@ -96,385 +100,68 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
     );
   }
 
-  // Calculate overall progress
-  const totalTarget = checkpoints.reduce((sum: number, cp: any) => sum + parseFloat(cp.targetValue), 0);
-  const totalActual = checkpoints.reduce((sum: number, cp: any) => sum + parseFloat(cp.actualValue), 0);
-  const overallProgress = totalTarget > 0 ? (totalActual / totalTarget) * 100 : 0;
-
-  const completedCheckpoints = checkpoints.filter((cp: any) => cp.status === "completed").length;
-  const atRiskCheckpoints = checkpoints.filter((cp: any) => ["at_risk", "behind"].includes(cp.status)).length;
-
-  const handleCheckpointClick = (checkpoint: any) => {
-    setSelectedCheckpoint(checkpoint);
-    setIsEditDialogOpen(true);
-  };
-
-  const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results"],
-    queryFn: async () => {
-      const response = await fetch("/api/key-results");
-      if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
-      return response.json();
-    },
-  });
-
-  const keyResultTitle = keyResults?.find((kr: any) => kr.id === keyResultId)?.title;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="h-5 w-5" />
           <h3 className="text-lg font-semibold">Checkpoints</h3>
           <Badge variant="outline">{checkpoints.length} períodos</Badge>
         </div>
-        
-        <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
-          <div className="flex items-center border rounded-lg p-1">
-            <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              className="h-8 w-8 p-0"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              className="h-8 w-8 p-0"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-          
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("grid")}
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+          >
+            <List className="h-4 w-4" />
+          </Button>
           {keyResultId && (
             <Button 
-              variant="outline" 
-              size="sm"
               onClick={() => regenerateMutation.mutate()}
               disabled={regenerateMutation.isPending}
+              size="sm"
+              variant="outline"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${regenerateMutation.isPending ? 'animate-spin' : ''}`} />
-              Regenerar
+              <RefreshCw className={`h-4 w-4 ${regenerateMutation.isPending ? 'animate-spin' : ''}`} />
             </Button>
           )}
         </div>
       </div>
-
-      {/* Progress Summary */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base">Resumo do Progresso</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progresso Geral</span>
-              <span>{overallProgress.toFixed(1)}%</span>
-            </div>
-            <Progress value={Math.min(overallProgress, 100)} className="h-3" />
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-green-600">{completedCheckpoints}</div>
-              <div className="text-xs text-muted-foreground">Concluídos</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{checkpoints.length - completedCheckpoints - atRiskCheckpoints}</div>
-              <div className="text-xs text-muted-foreground">No Prazo</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">{atRiskCheckpoints}</div>
-              <div className="text-xs text-muted-foreground">Em Risco</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Checkpoints Display */}
-      {viewMode === "grid" ? (
-        <CheckpointProgressGrid
-          checkpoints={checkpoints}
-          onCheckpointClick={handleCheckpointClick}
-          onRegenerateCheckpoints={keyResultId ? () => regenerateMutation.mutate() : undefined}
-          keyResultTitle={keyResultTitle}
+      
+      {viewMode === "grid" && keyResultId && (
+        <CheckpointProgressGrid 
+          checkpoints={checkpoints} 
+          keyResultId={keyResultId}
         />
-      ) : (
-        <div className="grid gap-4">
+      )}
+      
+      {viewMode === "list" && (
+        <div className="space-y-4">
           {checkpoints.map((checkpoint: any) => (
-            <CheckpointCard
-              key={checkpoint.id}
-              checkpoint={checkpoint}
-              onUpdate={() => {
-                queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
-              }}
-            />
+            <Card key={checkpoint.id} className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold">{checkpoint.period}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Meta: {checkpoint.targetValue} | Atual: {checkpoint.actualValue}
+                  </p>
+                </div>
+                <Badge variant={checkpoint.status === 'completed' ? 'default' : 'secondary'}>
+                  {checkpoint.status}
+                </Badge>
+              </div>
+            </Card>
           ))}
         </div>
       )}
-
-      {/* Edit Checkpoint Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Atualizar Checkpoint</DialogTitle>
-            <DialogDescription>
-              Atualize o progresso e status do checkpoint {selectedCheckpoint?.period}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedCheckpoint && (
-            <CheckpointEditForm
-              checkpoint={selectedCheckpoint}
-              onClose={() => setIsEditDialogOpen(false)}
-              onUpdate={() => {
-                queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
-                setIsEditDialogOpen(false);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-}
-
-function CheckpointCard({ checkpoint, onUpdate }: { checkpoint: any; onUpdate: () => void }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [actualValue, setActualValue] = useState(checkpoint.actualValue || "0");
-  const [status, setStatus] = useState(checkpoint.status || "pending");
-  const { toast } = useToast();
-
-  const mutation = useMutation({
-    mutationFn: async (data: { actualValue: string; status: string }) => {
-      await apiRequest("POST", `/api/checkpoints/${checkpoint.id}/update`, data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Checkpoint atualizado",
-        description: "O checkpoint foi atualizado com sucesso.",
-      });
-      setIsEditing(false);
-      onUpdate();
-    },
-    onError: () => {
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar checkpoint.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSave = () => {
-    mutation.mutate({ actualValue, status });
-  };
-
-  const targetValue = parseFloat(checkpoint.targetValue);
-  const currentValue = parseFloat(actualValue);
-  const progressPercentage = targetValue > 0 ? Math.min((currentValue / targetValue) * 100, 100) : 0;
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-green-500 text-white";
-      case "on_track": return "bg-blue-500 text-white";
-      case "at_risk": return "bg-yellow-500 text-black";
-      case "behind": return "bg-red-500 text-white";
-      default: return "bg-gray-500 text-white";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "completed": return "Concluído";
-      case "on_track": return "No Prazo";
-      case "at_risk": return "Em Risco";
-      case "behind": return "Atrasado";
-      default: return "Pendente";
-    }
-  };
-
-  const isAtRisk = ["at_risk", "behind"].includes(status);
-
-  return (
-    <Card className={isAtRisk ? "border-red-200 bg-red-50/50" : ""}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4" />
-            <CardTitle className="text-base">{checkpoint.period}</CardTitle>
-            {isAtRisk && <AlertCircle className="h-4 w-4 text-red-500" />}
-          </div>
-          <Badge className={getStatusColor(status)}>
-            {getStatusLabel(status)}
-          </Badge>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Progresso</span>
-            <span className={progressPercentage >= 90 ? "text-green-600 font-semibold" : 
-                           progressPercentage >= 70 ? "text-blue-600" : 
-                           progressPercentage >= 50 ? "text-yellow-600" : "text-red-600"}>
-              {progressPercentage.toFixed(1)}%
-            </span>
-          </div>
-          <Progress 
-            value={progressPercentage} 
-            className={`h-3 ${isAtRisk ? "bg-red-100" : ""}`}
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Atual: {currentValue.toFixed(2)}</span>
-            <span>Meta: {targetValue.toFixed(2)}</span>
-          </div>
-        </div>
-
-        {isEditing ? (
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor={`actual-${checkpoint.id}`}>Valor Atual</Label>
-              <Input
-                id={`actual-${checkpoint.id}`}
-                type="number"
-                step="0.01"
-                value={actualValue}
-                onChange={(e) => setActualValue(e.target.value)}
-                placeholder="Digite o valor atual"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor={`status-${checkpoint.id}`}>Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="on_track">No prazo</SelectItem>
-                  <SelectItem value="at_risk">Em risco</SelectItem>
-                  <SelectItem value="behind">Atrasado</SelectItem>
-                  <SelectItem value="completed">Concluído</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={mutation.isPending}>
-                {mutation.isPending ? "Salvando..." : "Salvar"}
-              </Button>
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button variant="outline" onClick={() => setIsEditing(true)} className="w-full">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Atualizar Progresso
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function CheckpointEditForm({ checkpoint, onClose, onUpdate }: { 
-  checkpoint: any; 
-  onClose: () => void; 
-  onUpdate: () => void; 
-}) {
-  const [actualValue, setActualValue] = useState(checkpoint.actualValue || "0");
-  const [status, setStatus] = useState(checkpoint.status || "pending");
-  const { toast } = useToast();
-
-  const mutation = useMutation({
-    mutationFn: async (data: { actualValue: string; status: string }) => {
-      await apiRequest("POST", `/api/checkpoints/${checkpoint.id}/update`, data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Checkpoint atualizado",
-        description: "O checkpoint foi atualizado com sucesso.",
-      });
-      onUpdate();
-    },
-    onError: () => {
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar checkpoint.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    mutation.mutate({ actualValue, status });
-  };
-
-  const targetValue = parseFloat(checkpoint.targetValue);
-  const currentValue = parseFloat(actualValue);
-  const progressPercentage = targetValue > 0 ? Math.min((currentValue / targetValue) * 100, 100) : 0;
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label>Período</Label>
-        <div className="text-sm font-medium">{checkpoint.period}</div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Progresso Atual</Label>
-        <Progress value={progressPercentage} className="h-3" />
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Atual: {currentValue.toFixed(2)}</span>
-          <span>Meta: {targetValue.toFixed(2)}</span>
-          <span>{progressPercentage.toFixed(1)}%</span>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="actualValue">Valor Atual</Label>
-        <Input
-          id="actualValue"
-          type="number"
-          step="0.01"
-          value={actualValue}
-          onChange={(e) => setActualValue(e.target.value)}
-          placeholder="Digite o valor atual"
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="on_track">No prazo</SelectItem>
-            <SelectItem value="at_risk">Em risco</SelectItem>
-            <SelectItem value="behind">Atrasado</SelectItem>
-            <SelectItem value="completed">Concluído</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? "Salvando..." : "Salvar"}
-        </Button>
-      </div>
-    </form>
   );
 }

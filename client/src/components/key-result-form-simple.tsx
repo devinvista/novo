@@ -52,12 +52,14 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           strategicIndicatorIds: keyResult.strategicIndicatorIds || [],
           serviceLineIds: keyResult.serviceLineIds || [],
           serviceId: keyResult.serviceId || undefined,
-          targetValue: keyResult.targetValue || "0",
-          currentValue: keyResult.currentValue || "0",
+          initialValue: keyResult.initialValue?.toString() || "0",
+          targetValue: keyResult.targetValue?.toString() || "0",
+          currentValue: keyResult.currentValue?.toString() || "0",
           unit: keyResult.unit || "",
           frequency: keyResult.frequency || "monthly",
           startDate: keyResult.startDate ? new Date(keyResult.startDate).toISOString().split('T')[0] : "",
           endDate: keyResult.endDate ? new Date(keyResult.endDate).toISOString().split('T')[0] : "",
+          progress: keyResult.progress?.toString() || "0",
           status: keyResult.status || "active",
         });
       } else {
@@ -69,12 +71,14 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           strategicIndicatorIds: [],
           serviceLineIds: [],
           serviceId: undefined,
+          initialValue: "0",
           targetValue: "0",
           currentValue: "0",
           unit: "",
           frequency: "monthly",
           startDate: "",
           endDate: "",
+          progress: "0",
           status: "active",
         });
       }
@@ -213,7 +217,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
 
   const handleInputChange = (field: string, value: string | number | undefined) => {
     if (field === 'serviceId' && (value === '' || value === '0')) {
-      setFormData(prev => ({ ...prev, [field]: null }));
+      setFormData(prev => ({ ...prev, [field]: undefined }));
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
