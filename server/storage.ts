@@ -98,11 +98,11 @@ export interface IStorage {
     overallProgress: number;
   }>;
 
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 
   constructor() {
     // Using MemoryStore since we're using SQLite (simulating MySQL)

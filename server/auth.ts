@@ -22,18 +22,35 @@ export async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  // Handle old format (just hex hash with hardcoded salt) for backward compatibility
-  if (!stored.includes(".")) {
-    const suppliedBuf = (await scryptAsync(supplied, 'salt', 64)) as Buffer;
-    const storedBuf = Buffer.from(stored, "hex");
-    return timingSafeEqual(suppliedBuf, storedBuf);
+  try {
+    // Handle old format (just hex hash with hardcoded salt) for backward compatibility
+    if (!stored.includes(".")) {
+      const suppliedBuf = (await scryptAsync(supplied, 'salt', 64)) as Buffer;
+      const storedBuf = Buffer.from(stored, "hex");
+      
+      // Ensure buffers are the same length for timingSafeEqual
+      if (suppliedBuf.length !== storedBuf.length) {
+        return false;
+      }
+      
+      return timingSafeEqual(suppliedBuf, storedBuf);
+    }
+    
+    // Handle new format (hash.salt)
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    
+    // Ensure buffers are the same length for timingSafeEqual
+    if (suppliedBuf.length !== hashedBuf.length) {
+      return false;
+    }
+    
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
   }
-  
-  // Handle new format (hash.salt)
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 export function setupAuth(app: Express) {

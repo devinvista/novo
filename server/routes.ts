@@ -33,7 +33,7 @@ export function registerRoutes(app: Express): Server {
       const userData = insertUserSchema.parse(req.body);
       
       // Public registration creates users as not approved by default
-      const userToCreate = {
+      const userToCreate: any = {
         ...userData,
         approved: false,
         password: await hashPassword(userData.password)
