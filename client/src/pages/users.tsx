@@ -106,11 +106,11 @@ export default function UsersPage() {
   });
 
   // Queries
-  const { data: users = [], isLoading: loadingUsers } = useQuery({
+  const { data: users = [], isLoading: loadingUsers } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
-  const { data: pendingUsers = [] } = useQuery({
+  const { data: pendingUsers = [] } = useQuery<User[]>({
     queryKey: ["/api/pending-users"],
   });
 
@@ -122,15 +122,15 @@ export default function UsersPage() {
     queryKey: ["/api/sub-regions"],
   });
 
-  const { data: solutions = [] } = useQuery({
+  const { data: solutions = [] } = useQuery<any[]>({
     queryKey: ["/api/solutions"],
   });
 
-  const { data: serviceLines = [] } = useQuery({
+  const { data: serviceLines = [] } = useQuery<any[]>({
     queryKey: ["/api/service-lines"],
   });
 
-  const { data: services = [] } = useQuery({
+  const { data: services = [] } = useQuery<any[]>({
     queryKey: ["/api/services"],
   });
 
@@ -162,21 +162,25 @@ export default function UsersPage() {
 
   const availableServiceLines = currentUser?.role === "admin"
     ? serviceLines
-    : serviceLines.filter(serviceLine => 
-        !currentUser?.serviceLineIds || 
-        currentUser.serviceLineIds.length === 0 || 
-        currentUser.serviceLineIds.includes(serviceLine.id) ||
-        availableSolutions.some(solution => solution.id === serviceLine.solutionId)
-      );
+    : serviceLines.filter(serviceLine => {
+        // Se o usuário tem serviceLineIds específicas, usar apenas essas
+        if (currentUser?.serviceLineIds && currentUser.serviceLineIds.length > 0) {
+          return currentUser.serviceLineIds.includes(serviceLine.id);
+        }
+        // Caso contrário, filtrar por soluções disponíveis
+        return availableSolutions.some(solution => solution.id === serviceLine.solutionId);
+      });
 
   const availableServices = currentUser?.role === "admin"
     ? services
-    : services.filter(service => 
-        !currentUser?.serviceIds || 
-        currentUser.serviceIds.length === 0 || 
-        currentUser.serviceIds.includes(service.id) ||
-        availableServiceLines.some(serviceLine => serviceLine.id === service.serviceLineId)
-      );
+    : services.filter(service => {
+        // Se o usuário tem serviceIds específicos, usar apenas esses
+        if (currentUser?.serviceIds && currentUser.serviceIds.length > 0) {
+          return currentUser.serviceIds.includes(service.id);
+        }
+        // Caso contrário, filtrar por linhas de serviço disponíveis
+        return availableServiceLines.some(serviceLine => serviceLine.id === service.serviceLineId);
+      });
 
   // Mutations
   const createUserMutation = useMutation({
