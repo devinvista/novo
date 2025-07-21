@@ -539,7 +539,21 @@ export function registerRoutes(app: Express): Server {
   // User management routes
   app.get("/api/users", requireAuth, async (req, res) => {
     try {
-      const users = await storage.getUsers();
+      let users = await storage.getUsers();
+      
+      // Aplicar filtro de acesso baseado no papel do usuário
+      if (req.user?.role === "gestor") {
+        // Gestores veem apenas a si próprios e usuários operacionais vinculados a eles
+        users = users.filter(user => 
+          user.id === req.user?.id || // O próprio gestor
+          (user.role === "operacional" && user.gestorId === req.user?.id) // Operacionais vinculados
+        );
+      } else if (req.user?.role === "operacional") {
+        // Operacionais veem apenas a si próprios
+        users = users.filter(user => user.id === req.user?.id);
+      }
+      // Admins veem todos os usuários (sem filtro)
+      
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);

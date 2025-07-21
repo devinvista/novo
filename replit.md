@@ -245,7 +245,7 @@ Changelog:
     - API endpoints atualizados para validação de acesso multi-regional
     - Dashboard KPIs com suporte a filtros de múltiplas regiões por usuário
 - July 21, 2025. **CONTROLE DE ACESSO MULTI-REGIONAL IMPLEMENTADO** - Sistema completo de múltiplas regiões por usuário
-- July 21, 2025. **FILTRO REGIONAL CORRIGIDO** - Controle de acesso regional agora funcionando corretamente
+- July 21, 2025. **FILTRO REGIONAL CORRIGIDO + CONTROLE PÁGINA USUÁRIOS** - Controle de acesso regional e de usuários implementado
   - **PROBLEMA CORRIGIDO**: App foi debugado e erro de autenticação foi resolvido
     - Erro de buffer length em `timingSafeEqual` corrigido na função `comparePasswords`
     - TypeScript session store import errors resolvidos
