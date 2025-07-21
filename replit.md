@@ -298,6 +298,8 @@ Changelog:
   - **DATABASE SETUP**: Successfully created and seeded SQLite database
     - Applied all reference data (regions, solutions, service lines, strategic indicators)
     - Created admin user (admin/admin123) and test manager (gestor.teste) 
+    - Updated regional structure with user-specified mapping: 11 regions, 21 sub-regions
+    - Regional mapping includes Metropolitana (3 sub), Serra (3 sub), Vale do Sinos (3 sub), etc.
     - Verified all database operations function correctly
     - Database file: ./server/okr.db with proper foreign key constraints
   - **APPLICATION STATUS**: Full functionality maintained with SQLite-only backend
