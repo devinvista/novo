@@ -297,6 +297,8 @@ Changelog:
     - Usuários operacionais veem apenas a si próprios
     - Endpoint `/api/users` com filtros automáticos baseados no papel do usuário logado
     - Segurança de dados garantida com acesso controlado por hierarquia organizacional
+    - Frontend corrigido: função `canManageUser` agora valida vínculos diretos (gestorId)
+    - Gestores podem editar apenas usuários operacionais diretamente vinculados a eles
 - July 08, 2025. Final Replit Agent to Replit environment migration completed and checkpoint system enhancement
   - **MIGRATION COMPLETED**: Successfully completed full migration from Replit Agent to Replit environment
   - **FORM VALIDATION FIXES**: Resolved key results and actions creation validation errors

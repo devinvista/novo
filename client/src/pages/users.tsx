@@ -361,7 +361,13 @@ export default function UsersPage() {
 
   const canManageUser = (user: User) => {
     if (currentUser?.role === "admin") return true;
-    if (currentUser?.role === "gestor" && user.role === "operacional") return true;
+    if (currentUser?.role === "gestor") {
+      // Gestor pode editar a si próprio
+      if (user.id === currentUser.id) return true;
+      // Gestor pode editar apenas usuários operacionais vinculados a ele
+      if (user.role === "operacional" && user.gestorId === currentUser.id) return true;
+    }
+    if (currentUser?.role === "operacional" && user.id === currentUser.id) return true;
     return false;
   };
 
