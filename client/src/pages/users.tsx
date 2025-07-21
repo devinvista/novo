@@ -521,139 +521,133 @@ export default function UsersPage() {
                   name="regionIds"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm sm:text-base">Regiões (Selecione múltiplas)</FormLabel>
-                      <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-32 overflow-y-auto">
-                        <div className="col-span-2 flex items-center space-x-2 p-2 bg-muted rounded">
-                          <Checkbox
-                            id="all-regions"
-                            checked={!field.value || field.value.length === 0}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                field.onChange([]);
-                                // Clear sub-regions when selecting all regions
-                                form.setValue("subRegionIds", []);
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor="all-regions"
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            Todas as regiões
-                          </label>
+                      <FormLabel className="text-sm sm:text-base">Região</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          if (value === "all") {
+                            field.onChange([]);
+                          } else {
+                            const regionId = parseInt(value);
+                            const currentValue = field.value || [];
+                            const newValue = currentValue.includes(regionId)
+                              ? currentValue.filter(id => id !== regionId)
+                              : [...currentValue, regionId];
+                            field.onChange(newValue);
+                          }
+                          // Clear sub-regions when region changes
+                          form.setValue("subRegionIds", []);
+                        }}
+                        value=""
+                      >
+                        <FormControl>
+                          <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                            <SelectValue placeholder={
+                              !field.value || field.value.length === 0 
+                                ? "Todas as regiões" 
+                                : `${field.value.length} região(ões) selecionada(s)`
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as regiões</SelectItem>
+                          {regions.map((region) => {
+                            const isSelected = field.value?.includes(region.id) || false;
+                            return (
+                              <SelectItem key={region.id} value={region.id.toString()}>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onChange={() => {}} // Handled by parent onValueChange
+                                  />
+                                  <span>{region.name}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      {field.value && field.value.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Selecionadas: {field.value.map(id => 
+                            regions.find(r => r.id === id)?.name
+                          ).filter(Boolean).join(", ")}
                         </div>
-                        {regions.map((region) => {
-                          const isChecked = field.value?.includes(region.id) || false;
-                          const isAllSelected = !field.value || field.value.length === 0;
-                          return (
-                            <div key={region.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`region-${region.id}`}
-                                checked={isChecked}
-                                disabled={isAllSelected}
-                                onCheckedChange={(checked) => {
-                                  const currentValue = field.value || [];
-                                  const newValue = checked
-                                    ? [...currentValue, region.id]
-                                    : currentValue.filter((id) => id !== region.id);
-                                  field.onChange(newValue);
-                                  
-                                  // Clear sub-regions when changing regions
-                                  const currentSubRegions = form.getValues("subRegionIds") || [];
-                                  const filteredSubRegions = currentSubRegions.filter(subId => 
-                                    subRegions.find(sr => sr.id === subId && newValue.includes(sr.regionId))
-                                  );
-                                  form.setValue("subRegionIds", filteredSubRegions);
-                                }}
-                              />
-                              <label
-                                htmlFor={`region-${region.id}`}
-                                className={`text-sm cursor-pointer truncate ${isAllSelected ? 'text-muted-foreground' : ''}`}
-                                title={region.name}
-                              >
-                                {region.name}
-                              </label>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="subRegionIds"
-                  render={({ field }) => {
-                    const selectedRegions = form.watch("regionIds") || [];
-                    const availableSubRegions = selectedRegions.length === 0 
-                      ? subRegions // All sub-regions available if all regions selected
-                      : subRegions.filter(sr => selectedRegions.includes(sr.regionId));
-                    
-                    return (
-                      <FormItem>
-                        <FormLabel className="text-sm sm:text-base">Sub-regiões (Selecione múltiplas)</FormLabel>
-                        <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-32 overflow-y-auto">
-                          <div className="col-span-2 flex items-center space-x-2 p-2 bg-muted rounded">
-                            <Checkbox
-                              id="all-subregions"
-                              checked={!field.value || field.value.length === 0}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange([]);
-                                }
-                              }}
-                            />
-                            <label
-                              htmlFor="all-subregions"
-                              className="text-sm font-medium cursor-pointer"
-                            >
-                              Todas as sub-regiões
-                            </label>
-                          </div>
-                          {availableSubRegions.map((subRegion) => {
-                            const isChecked = field.value?.includes(subRegion.id) || false;
-                            const isAllSelected = !field.value || field.value.length === 0;
-                            const parentRegion = regions.find(r => r.id === subRegion.regionId);
-                            
-                            return (
-                              <div key={subRegion.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`subregion-${subRegion.id}`}
-                                  checked={isChecked}
-                                  disabled={isAllSelected}
-                                  onCheckedChange={(checked) => {
-                                    const currentValue = field.value || [];
-                                    const newValue = checked
-                                      ? [...currentValue, subRegion.id]
-                                      : currentValue.filter((id) => id !== subRegion.id);
-                                    field.onChange(newValue);
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`subregion-${subRegion.id}`}
-                                  className={`text-sm cursor-pointer truncate ${isAllSelected ? 'text-muted-foreground' : ''}`}
-                                  title={`${subRegion.name} (${parentRegion?.name})`}
-                                >
-                                  {subRegion.name}
-                                  <span className="text-xs text-muted-foreground ml-1">
-                                    ({parentRegion?.name})
-                                  </span>
-                                </label>
-                              </div>
-                            );
-                          })}
-                          {availableSubRegions.length === 0 && selectedRegions.length > 0 && (
-                            <div className="col-span-2 text-sm text-muted-foreground text-center p-2">
-                              Nenhuma sub-região disponível para as regiões selecionadas
+                {form.watch("regionIds") && form.watch("regionIds").length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="subRegionIds"
+                    render={({ field }) => {
+                      const selectedRegions = form.watch("regionIds") || [];
+                      const availableSubRegions = subRegions.filter(sr => 
+                        selectedRegions.includes(sr.regionId)
+                      );
+                      
+                      return (
+                        <FormItem>
+                          <FormLabel className="text-sm sm:text-base">Sub-região (Opcional)</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              if (value === "all") {
+                                field.onChange([]);
+                              } else if (value === "none") {
+                                field.onChange([]);
+                              } else {
+                                const subRegionId = parseInt(value);
+                                const currentValue = field.value || [];
+                                const newValue = currentValue.includes(subRegionId)
+                                  ? currentValue.filter(id => id !== subRegionId)
+                                  : [...currentValue, subRegionId];
+                                field.onChange(newValue);
+                              }
+                            }}
+                            value=""
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                                <SelectValue placeholder={
+                                  !field.value || field.value.length === 0 
+                                    ? "Todas as sub-regiões" 
+                                    : `${field.value.length} sub-região(ões) selecionada(s)`
+                                } />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="all">Todas as sub-regiões</SelectItem>
+                              {availableSubRegions.map((subRegion) => {
+                                const isSelected = field.value?.includes(subRegion.id) || false;
+                                const parentRegion = regions.find(r => r.id === subRegion.regionId);
+                                return (
+                                  <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={isSelected}
+                                        onChange={() => {}} // Handled by parent onValueChange
+                                      />
+                                      <span>{subRegion.name} ({parentRegion?.name})</span>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                          {field.value && field.value.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Selecionadas: {field.value.map(id => 
+                                subRegions.find(sr => sr.id === id)?.name
+                              ).filter(Boolean).join(", ")}
                             </div>
                           )}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                )}
                 <DialogFooter className="pt-4">
                   <Button 
                     type="submit" 
