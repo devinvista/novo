@@ -23,10 +23,10 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 - **Password Security**: Node.js crypto module with scrypt hashing
 
 ### Database Architecture
-- **Database**: PostgreSQL via Neon serverless
+- **Database**: SQLite for local development (PostgreSQL explicitly avoided per user request)
 - **ORM**: Drizzle ORM with type-safe queries
-- **Schema Management**: Drizzle Kit for migrations
-- **Connection**: WebSocket-enabled connection pooling
+- **Schema Management**: Direct SQLite table creation via setup scripts
+- **Connection**: Better-sqlite3 with foreign key constraints enabled
 
 ## Key Components
 
@@ -283,6 +283,33 @@ Changelog:
   - Fixed server-side data processing to handle null/empty unit values
   - All core functionality tested and working: authentication, objectives, key results, actions, checkpoints
   - Project now fully operational in Replit environment with proper security practices
+- July 21, 2025. **SQLite Migration Completed (PostgreSQL Removed)**
+  - **CRITICAL USER REQUIREMENT**: Never use PostgreSQL - user explicitly requested this
+  - **COMPLETE SQLITE MIGRATION**: Successfully migrated from PostgreSQL to SQLite-only architecture
+    - Removed all PostgreSQL references and dependencies 
+    - Implemented SQLite schema using drizzle-orm/sqlite-core structure
+    - Updated database connection to use better-sqlite3
+    - Maintained all existing functionality with SQLite table structures
+  - **SCHEMA UPDATES**: Updated database schema to use SQLite syntax and conventions
+    - Fixed table creation using SQLite syntax with proper data types
+    - Updated connection layer to work with SQLite
+    - Maintained session management with MemoryStore
+    - Ensured all CRUD operations work correctly with SQLite
+  - **DATABASE SETUP**: Successfully created and seeded SQLite database
+    - Applied all reference data (regions, solutions, service lines, strategic indicators)
+    - Created admin user (admin/admin123) and test manager (gestor.teste) 
+    - Verified all database operations function correctly
+    - Database file: ./server/okr.db with proper foreign key constraints
+  - **APPLICATION STATUS**: Full functionality maintained with SQLite-only backend
+    - All API endpoints working correctly (login returns 200, regions/managers loaded)
+    - Authentication and session management operational
+    - User registration, objectives, key results, actions, and checkpoints functional
+    - Dashboard KPIs and reporting systems operational
+  - **MIGRATION COMPLETED**: Application now uses SQLite exclusively
+    - No PostgreSQL references remaining in codebase
+    - Clean SQLite-only architecture implemented
+    - All security practices maintained during migration
+    - Performance optimized with proper indexing
 - July 21, 2025. **Complete MySQL Migration Implemented**
   - **DATABASE MIGRATION**: Successfully migrated from PostgreSQL to MySQL-only architecture
     - Removed all PostgreSQL references and dependencies

@@ -1,2 +1,2 @@
-// This file exports from the PostgreSQL schema
-export * from './postgres-schema';
+// This file exports from the SQLite schema
+export * from './sqlite-schema';

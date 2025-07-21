@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { 
   users, regions, subRegions, serviceLines, strategicIndicators, 
-  objectives, keyResults, actions, checkpoints, activities,
+  objectives, keyResults, actions, checkpoints,
   solutions, services
 } from "@shared/schema";
 
@@ -10,7 +10,7 @@ const sqlite = new Database('okr.db');
 const db = drizzle(sqlite, { 
   schema: { 
     users, regions, subRegions, serviceLines, strategicIndicators,
-    objectives, keyResults, actions, checkpoints, activities,
+    objectives, keyResults, actions, checkpoints,
     solutions, services
   } 
 });
