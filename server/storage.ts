@@ -100,6 +100,7 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
 
   constructor() {
+    // Configure in-memory session store for SQLite
     const MemStore = MemoryStore(session);
     this.sessionStore = new MemStore({
       checkPeriod: 86400000 // prune expired entries every 24h
@@ -129,20 +130,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
+    const result = await db
       .insert(users)
       .values(insertUser)
       .returning();
-    return user;
+    return result[0];
   }
 
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User> {
-    const [user] = await db
+    const result = await db
       .update(users)
       .set(userData)
       .where(eq(users.id, id))
       .returning();
-    return user;
+    return result[0];
   }
 
   async approveUser(id: number, approvedBy: number, subRegionId?: number): Promise<User> {
@@ -166,12 +167,12 @@ export class DatabaseStorage implements IStorage {
       updateData.subRegionId = approver.subRegionId;
     }
 
-    const [user] = await db
+    const result = await db
       .update(users)
       .set(updateData)
       .where(eq(users.id, id))
       .returning();
-    return user;
+    return result[0];
   }
 
   async deleteUser(id: number): Promise<void> {

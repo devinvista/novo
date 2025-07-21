@@ -19,14 +19,14 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 - **Runtime**: Node.js with Express.js framework
 - **Language**: TypeScript with ES modules
 - **Authentication**: Passport.js with local strategy and session-based auth
-- **Session Storage**: PostgreSQL sessions via connect-pg-simple
+- **Session Storage**: In-memory sessions via memorystore
 - **Password Security**: Node.js crypto module with scrypt hashing
 
 ### Database Architecture
-- **Database**: PostgreSQL via Neon serverless
+- **Database**: SQLite with WAL mode for better performance
 - **ORM**: Drizzle ORM with type-safe queries
-- **Schema Management**: Drizzle Kit for migrations
-- **Connection**: WebSocket-enabled connection pooling
+- **Schema Management**: Direct table creation with SQL
+- **Connection**: Better-sqlite3 driver with synchronous operations
 
 ## Key Components
 
@@ -118,7 +118,7 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 4. Session store configured for production PostgreSQL instance
 
 ### Environment Configuration
-- `DATABASE_URL`: PostgreSQL connection string (required)
+- `DATABASE_PATH`: SQLite database file path (default: ./okr.db)
 - `SESSION_SECRET`: Session encryption key (required)
 - `NODE_ENV`: Environment mode (development/production)
 
