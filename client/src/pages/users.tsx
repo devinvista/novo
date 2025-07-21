@@ -129,6 +129,50 @@ export default function UsersPage() {
     queryKey: ["/api/services"],
   });
 
+  // Filter data based on current user permissions
+  const availableRegions = currentUser?.role === "admin" 
+    ? regions 
+    : regions.filter(region => 
+        !currentUser?.regionIds || 
+        currentUser.regionIds.length === 0 || 
+        currentUser.regionIds.includes(region.id)
+      );
+
+  const availableSubRegions = currentUser?.role === "admin"
+    ? subRegions
+    : subRegions.filter(subRegion => 
+        !currentUser?.subRegionIds || 
+        currentUser.subRegionIds.length === 0 || 
+        currentUser.subRegionIds.includes(subRegion.id) ||
+        availableRegions.some(region => region.id === subRegion.regionId)
+      );
+
+  const availableSolutions = currentUser?.role === "admin"
+    ? solutions
+    : solutions.filter(solution => 
+        !currentUser?.solutionIds || 
+        currentUser.solutionIds.length === 0 || 
+        currentUser.solutionIds.includes(solution.id)
+      );
+
+  const availableServiceLines = currentUser?.role === "admin"
+    ? serviceLines
+    : serviceLines.filter(serviceLine => 
+        !currentUser?.serviceLineIds || 
+        currentUser.serviceLineIds.length === 0 || 
+        currentUser.serviceLineIds.includes(serviceLine.id) ||
+        availableSolutions.some(solution => solution.id === serviceLine.solutionId)
+      );
+
+  const availableServices = currentUser?.role === "admin"
+    ? services
+    : services.filter(service => 
+        !currentUser?.serviceIds || 
+        currentUser.serviceIds.length === 0 || 
+        currentUser.serviceIds.includes(service.id) ||
+        availableServiceLines.some(serviceLine => serviceLine.id === service.serviceLineId)
+      );
+
   // Mutations
   const createUserMutation = useMutation({
     mutationFn: (userData: UserFormData) => 
@@ -577,7 +621,7 @@ export default function UsersPage() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="all">Todas as regiões</SelectItem>
-                          {regions.map((region) => {
+                          {availableRegions.map((region) => {
                             const isSelected = field.value?.includes(region.id) || false;
                             return (
                               <SelectItem key={region.id} value={region.id.toString()}>
@@ -610,7 +654,7 @@ export default function UsersPage() {
                     name="subRegionIds"
                     render={({ field }) => {
                       const selectedRegions = form.watch("regionIds") || [];
-                      const availableSubRegions = subRegions.filter(sr => 
+                      const filteredSubRegions = availableSubRegions.filter(sr => 
                         selectedRegions.includes(sr.regionId)
                       );
                       
@@ -645,9 +689,9 @@ export default function UsersPage() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="all">Todas as sub-regiões</SelectItem>
-                              {availableSubRegions.map((subRegion) => {
+                              {filteredSubRegions.map((subRegion) => {
                                 const isSelected = field.value?.includes(subRegion.id) || false;
-                                const parentRegion = regions.find(r => r.id === subRegion.regionId);
+                                const parentRegion = availableRegions.find(r => r.id === subRegion.regionId);
                                 return (
                                   <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
                                     <div className="flex items-center space-x-2">
@@ -665,7 +709,7 @@ export default function UsersPage() {
                           {field.value && field.value.length > 0 && (
                             <div className="text-xs text-muted-foreground mt-1">
                               Selecionadas: {field.value.map(id => 
-                                subRegions.find(sr => sr.id === id)?.name
+                                availableSubRegions.find(sr => sr.id === id)?.name
                               ).filter(Boolean).join(", ")}
                             </div>
                           )}
@@ -712,7 +756,7 @@ export default function UsersPage() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="all">Todas as soluções</SelectItem>
-                          {solutions.map((solution: any) => {
+                          {availableSolutions.map((solution: any) => {
                             const isSelected = field.value?.includes(solution.id) || false;
                             return (
                               <SelectItem key={solution.id} value={solution.id.toString()}>
@@ -731,7 +775,7 @@ export default function UsersPage() {
                       {field.value && field.value.length > 0 && (
                         <div className="text-xs text-muted-foreground mt-1">
                           Selecionadas: {field.value.map((id: number) => 
-                            solutions.find((s: any) => s.id === id)?.name
+                            availableSolutions.find((s: any) => s.id === id)?.name
                           ).filter(Boolean).join(", ")}
                         </div>
                       )}
@@ -747,7 +791,7 @@ export default function UsersPage() {
                     name="serviceLineIds"
                     render={({ field }) => {
                       const selectedSolutions = form.watch("solutionIds") || [];
-                      const availableServiceLines = serviceLines.filter((sl: any) => 
+                      const filteredServiceLines = availableServiceLines.filter((sl: any) => 
                         selectedSolutions.includes(sl.solutionId)
                       );
                       
@@ -782,9 +826,9 @@ export default function UsersPage() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="all">Todas as linhas de serviço</SelectItem>
-                              {availableServiceLines.map((serviceLine: any) => {
+                              {filteredServiceLines.map((serviceLine: any) => {
                                 const isSelected = field.value?.includes(serviceLine.id) || false;
-                                const parentSolution = solutions.find((s: any) => s.id === serviceLine.solutionId);
+                                const parentSolution = availableSolutions.find((s: any) => s.id === serviceLine.solutionId);
                                 return (
                                   <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
                                     <div className="flex items-center space-x-2">
@@ -802,7 +846,7 @@ export default function UsersPage() {
                           {field.value && field.value.length > 0 && (
                             <div className="text-xs text-muted-foreground mt-1">
                               Selecionadas: {field.value.map((id: number) => 
-                                serviceLines.find((sl: any) => sl.id === id)?.name
+                                availableServiceLines.find((sl: any) => sl.id === id)?.name
                               ).filter(Boolean).join(", ")}
                             </div>
                           )}
@@ -820,7 +864,7 @@ export default function UsersPage() {
                     name="serviceIds"
                     render={({ field }) => {
                       const selectedServiceLines = form.watch("serviceLineIds") || [];
-                      const availableServices = services.filter((s: any) => 
+                      const filteredServices = availableServices.filter((s: any) => 
                         selectedServiceLines.includes(s.serviceLineId)
                       );
                       
@@ -853,9 +897,9 @@ export default function UsersPage() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="all">Todos os serviços</SelectItem>
-                              {availableServices.map((service: any) => {
+                              {filteredServices.map((service: any) => {
                                 const isSelected = field.value?.includes(service.id) || false;
-                                const parentServiceLine = serviceLines.find((sl: any) => sl.id === service.serviceLineId);
+                                const parentServiceLine = availableServiceLines.find((sl: any) => sl.id === service.serviceLineId);
                                 return (
                                   <SelectItem key={service.id} value={service.id.toString()}>
                                     <div className="flex items-center space-x-2">
@@ -873,7 +917,7 @@ export default function UsersPage() {
                           {field.value && field.value.length > 0 && (
                             <div className="text-xs text-muted-foreground mt-1">
                               Selecionados: {field.value.map((id: number) => 
-                                services.find((s: any) => s.id === id)?.name
+                                availableServices.find((s: any) => s.id === id)?.name
                               ).filter(Boolean).join(", ")}
                             </div>
                           )}
