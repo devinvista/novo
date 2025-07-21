@@ -220,7 +220,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/objectives", requireAuth, async (req: any, res) => {
+  app.post("/api/objectives", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const validation = insertObjectiveSchema.parse(req.body);
       
@@ -248,7 +248,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/objectives/:id", requireAuth, async (req: any, res) => {
+  app.put("/api/objectives/:id", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const validation = insertObjectiveSchema.partial().parse(req.body);
@@ -268,7 +268,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/objectives/:id", requireAuth, async (req: any, res) => {
+  app.delete("/api/objectives/:id", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       
