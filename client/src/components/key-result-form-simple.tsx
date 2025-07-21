@@ -220,8 +220,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="text-center space-y-3 pb-6">
           <div className="flex items-center justify-center space-x-2">
-            <Target className="h-6 w-6 text-blue-600" />
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <Target className="h-6 w-6" style={{ color: 'hsl(220, 65%, 36%)' }} />
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(to right, hsl(220, 65%, 36%), hsl(195, 100%, 50%))' }}>
               {keyResult ? "Editar Resultado-Chave" : "Novo Resultado-Chave"}
             </DialogTitle>
           </div>
@@ -231,10 +231,10 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="border-l-4 border-l-blue-500 shadow-sm">
+          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(220, 65%, 36%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
-                <Target className="h-5 w-5 mr-2 text-blue-600" />
+                <Target className="h-5 w-5 mr-2" style={{ color: 'hsl(220, 65%, 36%)' }} />
                 Informações Básicas
               </CardTitle>
             </CardHeader>
@@ -288,10 +288,10 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500 shadow-sm">
+          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(137, 62%, 42%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
-                <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                <TrendingUp className="h-5 w-5 mr-2" style={{ color: 'hsl(137, 62%, 42%)' }} />
                 Métricas e Metas
               </CardTitle>
             </CardHeader>
@@ -347,10 +347,10 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-purple-500 shadow-sm">
+          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(165, 100%, 32%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
-                <Settings className="h-5 w-5 mr-2 text-purple-600" />
+                <Settings className="h-5 w-5 mr-2" style={{ color: 'hsl(165, 100%, 32%)' }} />
                 Indicadores Estratégicos
                 <Badge variant="secondary" className="ml-2 text-xs">Opcional</Badge>
               </CardTitle>
@@ -399,7 +399,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 </div>
                 {formData.strategicIndicatorIds.length > 0 && (
                   <div className="flex items-center space-x-2 mt-3">
-                    <Badge variant="default" className="bg-purple-100 text-purple-800 border-purple-300">
+                    <Badge variant="default" className="border" style={{ backgroundColor: 'hsl(165, 100%, 95%)', color: 'hsl(165, 100%, 32%)', borderColor: 'hsl(165, 100%, 32%)' }}>
                       {formData.strategicIndicatorIds.length} selecionado{formData.strategicIndicatorIds.length > 1 ? 's' : ''}
                     </Badge>
                   </div>
@@ -408,10 +408,10 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-orange-500 shadow-sm">
+          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(14, 80%, 58%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
-                <Briefcase className="h-5 w-5 mr-2 text-orange-600" />
+                <Briefcase className="h-5 w-5 mr-2" style={{ color: 'hsl(14, 80%, 58%)' }} />
                 Linhas de Serviço
                 <Badge variant="secondary" className="ml-2 text-xs">Opcional</Badge>
               </CardTitle>
@@ -423,11 +423,11 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                     <label 
                       key={serviceLine.id} 
                       htmlFor={`serviceline-${serviceLine.id}`}
-                      className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
-                        formData.serviceLineIds.includes(serviceLine.id) 
-                          ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
-                          : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
-                      }`}
+                      className="flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md"
+                      style={formData.serviceLineIds.includes(serviceLine.id) 
+                        ? { borderColor: 'hsl(14, 80%, 58%)', backgroundColor: 'hsl(14, 80%, 95%)' }
+                        : { borderColor: 'hsl(220, 20%, 90%)', backgroundColor: 'transparent' }
+                      }
                     >
                       <input
                         type="checkbox"
@@ -447,11 +447,12 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                             }));
                           }
                         }}
-                        className="w-4 h-4 text-orange-600 rounded"
+                        className="w-4 h-4 rounded"
+                        style={{ accentColor: 'hsl(14, 80%, 58%)' }}
                       />
                       <span className="text-sm font-medium flex-1">{serviceLine.name}</span>
                       {formData.serviceLineIds.includes(serviceLine.id) && (
-                        <CheckCircle2 className="h-4 w-4 text-orange-600" />
+                        <CheckCircle2 className="h-4 w-4" style={{ color: 'hsl(14, 80%, 58%)' }} />
                       )}
                     </label>
                   )) : (
@@ -460,7 +461,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 </div>
                 {formData.serviceLineIds.length > 0 && (
                   <div className="flex items-center space-x-2">
-                    <Badge variant="default" className="bg-orange-100 text-orange-800 border-orange-300">
+                    <Badge variant="default" className="border" style={{ backgroundColor: 'hsl(14, 80%, 95%)', color: 'hsl(14, 80%, 58%)', borderColor: 'hsl(14, 80%, 58%)' }}>
                       {formData.serviceLineIds.length} selecionada{formData.serviceLineIds.length > 1 ? 's' : ''}
                     </Badge>
                   </div>
@@ -471,7 +472,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
 
               <div className="space-y-2">
                 <Label htmlFor="serviceId" className="text-sm font-semibold flex items-center">
-                  <Users className="h-4 w-4 mr-1 text-orange-600" />
+                  <Users className="h-4 w-4 mr-1" style={{ color: 'hsl(14, 80%, 58%)' }} />
                   Serviço Específico
                   <Badge variant="outline" className="ml-2 text-xs">Opcional</Badge>
                 </Label>
@@ -492,10 +493,10 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-indigo-500 shadow-sm">
+          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(195, 100%, 50%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
-                <Calendar className="h-5 w-5 mr-2 text-indigo-600" />
+                <Calendar className="h-5 w-5 mr-2" style={{ color: 'hsl(195, 100%, 50%)' }} />
                 Cronograma de Execução
               </CardTitle>
             </CardHeader>
@@ -504,7 +505,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 <div className="space-y-2">
                   <Label htmlFor="startDate" className="text-sm font-semibold flex items-center">
                     <span className="text-red-500 mr-1">*</span>
-                    <Calendar className="h-4 w-4 mr-1 text-green-600" />
+                    <Calendar className="h-4 w-4 mr-1" style={{ color: 'hsl(137, 62%, 42%)' }} />
                     Data de Início
                   </Label>
                   <Input
@@ -520,7 +521,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 <div className="space-y-2">
                   <Label htmlFor="endDate" className="text-sm font-semibold flex items-center">
                     <span className="text-red-500 mr-1">*</span>
-                    <Calendar className="h-4 w-4 mr-1 text-red-600" />
+                    <Calendar className="h-4 w-4 mr-1" style={{ color: 'hsl(14, 80%, 58%)' }} />
                     Data de Término
                   </Label>
                   <Input
@@ -550,7 +551,11 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             <Button 
               type="submit" 
               disabled={mutation.isPending} 
-              className="w-full sm:w-auto h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
+              className="w-full sm:w-auto h-11 text-white font-semibold hover:opacity-90 transition-opacity"
+              style={{ 
+                background: 'linear-gradient(to right, hsl(220, 65%, 36%), hsl(195, 100%, 50%))',
+                boxShadow: '0 4px 14px 0 hsla(220, 65%, 36%, 0.39)'
+              }}
             >
               {mutation.isPending ? (
                 <>
