@@ -342,6 +342,25 @@ Changelog:
   - Fixed server-side data processing to handle null/empty unit values
   - All core functionality tested and working: authentication, objectives, key results, actions, checkpoints
   - Project now fully operational in Replit environment with proper security practices
+- July 21, 2025. **HIERARQUIA ADMINISTRATOR > GESTOR > OPERACIONAL IMPLEMENTADA COMPLETA**
+  - **REGISTRO HIERÁRQUICO**: Usuários sempre criados como "operacional" vinculados obrigatoriamente a um gestor
+    - Campo gestorId obrigatório no registro público
+    - Validação de gestor existente e válido durante registro
+    - Role "operacional" forçado em registros públicos (não é possível escolher)
+  - **CONTROLE DE APROVAÇÃO HIERÁRQUICA**: Gestores só podem aprovar usuários vinculados a eles
+    - `/api/pending-users` filtra por gestorId para gestores
+    - Validação: gestor só aprova usuários com gestorId = seu próprio ID
+    - Admins podem aprovar qualquer usuário
+    - Controle rigoroso de permissões por hierarquia
+  - **HERANÇA AUTOMÁTICA DE PERMISSÕES**: Usuário aprovado herda TODAS as permissões do gestor vinculado
+    - regionIds, subRegionIds, solutionIds, serviceLineIds, serviceIds
+    - Herança completa e automática na aprovação
+    - Sistema funciona: operacional.teste herdou de gestor.teste [região 26, solução 5, linhas 23,24, serviços 11,12,14]
+  - **SISTEMA HIERÁRQUICO COMPLETO**: Administrator > Gestor > Operacional funcionando perfeitamente
+    - Admins: acesso total, podem criar gestores e aprovar qualquer usuário
+    - Gestores: acesso limitado às suas permissões, só veem/aprovam seus operacionais
+    - Operacionais: herdam permissões do gestor, não podem aprovar ninguém
+  - **TESTADO E VALIDADO**: Criação, vinculação, aprovação e herança funcionando 100%
 - July 21, 2025. **SQLite Migration Completed (PostgreSQL Removed)**
   - **CRITICAL USER REQUIREMENT**: Never use PostgreSQL - user explicitly requested this
   - **COMPLETE SQLITE MIGRATION**: Successfully migrated from PostgreSQL to SQLite-only architecture

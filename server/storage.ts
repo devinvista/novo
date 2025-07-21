@@ -8,7 +8,7 @@ import {
   type ServiceLine, type StrategicIndicator,
   type Solution, type Service
 } from "@shared/schema";
-import { db } from "./db";
+import { db, connection } from "./db";
 import { eq, and, desc, sql, asc, inArray } from "drizzle-orm";
 import session from "express-session";
 // @ts-ignore - memorystore types are outdated
@@ -24,6 +24,14 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   approveUser(id: number, approvedBy: number, subRegionId?: number): Promise<User>;
+  approveUserWithPermissions(id: number, approvedBy: number, permissions: {
+    regionIds: number[];
+    subRegionIds: number[];
+    solutionIds: number[];
+    serviceLineIds: number[];
+    serviceIds: number[];
+  }): Promise<User>;
+  getUserById(id: number): Promise<User | undefined>;
   deleteUser(id: number): Promise<void>;
 
   // Reference data
@@ -152,18 +160,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async approveUser(id: number, approvedBy: number, subRegionId?: number): Promise<User> {
-    // Get the approver (gestor) data to inherit region
+    // Get the approver (gestor) data to inherit permissions
     const approver = await this.getUser(approvedBy);
     if (!approver) {
       throw new Error("Gestor não encontrado");
+    }
+
+    // Get target user to inherit from their linked gestor
+    const targetUser = await this.getUser(id);
+    if (!targetUser) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Get the linked gestor for inheritance
+    const linkedGestor = targetUser.gestorId ? await this.getUser(targetUser.gestorId) : approver;
+    if (!linkedGestor) {
+      throw new Error("Gestor vinculado não encontrado");
     }
 
     const updateData: any = {
       approved: true, 
       approvedAt: sql`CURRENT_TIMESTAMP`,
       approvedBy: approvedBy,
-      regionIds: approver.regionIds || [], // User inherits gestor's regions
-      subRegionIds: approver.subRegionIds || [], // User inherits gestor's sub-regions
+      regionIds: linkedGestor.regionIds || [], // User inherits linked gestor's regions
+      subRegionIds: linkedGestor.subRegionIds || [], // User inherits linked gestor's sub-regions
+      solutionIds: linkedGestor.solutionIds || [], // User inherits linked gestor's solutions
+      serviceLineIds: linkedGestor.serviceLineIds || [], // User inherits linked gestor's service lines
+      serviceIds: linkedGestor.serviceIds || [], // User inherits linked gestor's services
     };
 
     // If sub-region is provided, add it to the user's sub-regions
@@ -181,6 +204,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return await this.getUser(id);
   }
 
   async deleteUser(id: number): Promise<void> {

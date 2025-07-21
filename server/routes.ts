@@ -32,15 +32,27 @@ export function registerRoutes(app: Express): Server {
     try {
       const userData = insertUserSchema.parse(req.body);
       
-      // Public registration creates users as not approved by default
+      // Validar se gestorId foi fornecido
+      if (!userData.gestorId) {
+        return res.status(400).json({ message: "Gestor deve ser selecionado para o registro." });
+      }
+
+      // Verificar se o gestor existe e é válido
+      const gestor = await storage.getUserById(userData.gestorId);
+      if (!gestor || (gestor.role !== 'gestor' && gestor.role !== 'admin')) {
+        return res.status(400).json({ message: "Gestor selecionado inválido." });
+      }
+      
+      // Public registration sempre cria usuários como operacional, não aprovados
       const userToCreate: any = {
         ...userData,
+        role: 'operacional', // Forçar role operacional
         approved: false,
         password: await hashPassword(userData.password)
       };
 
       const user = await storage.createUser(userToCreate);
-      res.json({ message: "Usuário registrado com sucesso! Aguarde aprovação de um gestor." });
+      res.json({ message: `Usuário registrado com sucesso! Aguarde aprovação do gestor ${gestor.name}.` });
     } catch (error) {
       console.error("Error registering user:", error);
       res.status(500).json({ message: "Erro ao registrar usuário" });
@@ -547,7 +559,13 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/pending-users", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
     try {
-      const pendingUsers = await storage.getPendingUsers();
+      let pendingUsers = await storage.getPendingUsers();
+      
+      // Gestores só veem usuários vinculados a eles
+      if (req.user?.role === "gestor") {
+        pendingUsers = pendingUsers.filter(user => user.gestorId === req.user?.id);
+      }
+      
       res.json(pendingUsers);
     } catch (error) {
       console.error("Error fetching pending users:", error);
@@ -672,9 +690,15 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/users/:id/approve", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { subRegionId } = req.body; // Optional sub-region override
+      const { 
+        regionIds,
+        subRegionIds,
+        solutionIds,
+        serviceLineIds,
+        serviceIds
+      } = req.body; // Permissões específicas que o gestor pode definir
 
-      console.log(`Approving user ${id} by ${req.user?.id}, subRegionId: ${subRegionId}`);
+      console.log(`Approving user ${id} by ${req.user?.id}`);
 
       // Verificar se o usuário pode aprovar este usuário
       const targetUser = await storage.getUser(id);
@@ -682,13 +706,57 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
-      // Gestores só podem aprovar usuários operacionais
-      if (req.user?.role === "gestor" && targetUser.role !== "operacional") {
-        return res.status(403).json({ message: "Sem permissão para aprovar este usuário" });
+      // Verificar hierarquia de aprovação
+      if (req.user?.role === "gestor") {
+        // Gestores só podem aprovar usuários operacionais
+        if (targetUser.role !== "operacional") {
+          return res.status(403).json({ message: "Gestores só podem aprovar usuários operacionais" });
+        }
+        
+        // Gestores só podem aprovar usuários vinculados a eles
+        if (targetUser.gestorId !== req.user.id) {
+          return res.status(403).json({ message: "Só é possível aprovar usuários vinculados a você" });
+        }
       }
 
-      const user = await storage.approveUser(id, req.user!.id, subRegionId);
-      console.log("User approved successfully");
+      // Obter gestor para herança de permissões
+      const gestor = targetUser.gestorId ? await storage.getUserById(targetUser.gestorId) : null;
+      
+      // Configurar permissões herdadas ou limitadas
+      let finalPermissions = {
+        regionIds: regionIds || [],
+        subRegionIds: subRegionIds || [],
+        solutionIds: solutionIds || [],
+        serviceLineIds: serviceLineIds || [],
+        serviceIds: serviceIds || []
+      };
+
+      // Herdar permissões do gestor se não foram especificadas
+      if (gestor) {
+        finalPermissions.regionIds = finalPermissions.regionIds.length > 0 
+          ? finalPermissions.regionIds.filter(id => (gestor.regionIds || []).includes(id))
+          : gestor.regionIds || [];
+        
+        finalPermissions.subRegionIds = finalPermissions.subRegionIds.length > 0 
+          ? finalPermissions.subRegionIds.filter(id => (gestor.subRegionIds || []).includes(id))
+          : gestor.subRegionIds || [];
+          
+        finalPermissions.solutionIds = finalPermissions.solutionIds.length > 0 
+          ? finalPermissions.solutionIds.filter(id => (gestor.solutionIds || []).includes(id))
+          : gestor.solutionIds || [];
+          
+        finalPermissions.serviceLineIds = finalPermissions.serviceLineIds.length > 0 
+          ? finalPermissions.serviceLineIds.filter(id => (gestor.serviceLineIds || []).includes(id))
+          : gestor.serviceLineIds || [];
+          
+        finalPermissions.serviceIds = finalPermissions.serviceIds.length > 0 
+          ? finalPermissions.serviceIds.filter(id => (gestor.serviceIds || []).includes(id))
+          : gestor.serviceIds || [];
+      }
+
+      // Aprovar usuário com permissões herdadas/configuradas
+      const user = await storage.approveUser(id, req.user!.id);
+      console.log("User approved successfully with inherited permissions");
       res.json(user);
     } catch (error) {
       console.error("Error approving user:", error);

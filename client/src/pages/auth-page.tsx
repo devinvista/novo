@@ -20,7 +20,6 @@ export default function AuthPage() {
     password: "",
     name: "",
     email: "",
-    role: "operacional" as const,
     gestorId: "",
   });
 
