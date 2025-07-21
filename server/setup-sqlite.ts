@@ -13,7 +13,7 @@ const createTables = () => {
   
   // Create all tables
   sqlite.exec(`
-    -- Users table with role-based access
+    -- Users table with role-based access and solution/service permissions
     CREATE TABLE IF NOT EXISTS "users" (
       "id" integer PRIMARY KEY AUTOINCREMENT,
       "username" text NOT NULL UNIQUE,
@@ -24,6 +24,9 @@ const createTables = () => {
       "region_id" integer,
       "sub_region_id" integer,
       "gestor_id" integer REFERENCES users(id),
+      "solution_ids" text,
+      "service_line_ids" text,
+      "service_ids" text,
       "approved" integer DEFAULT 0 NOT NULL,
       "approved_at" text,
       "approved_by" integer REFERENCES users(id),
@@ -85,7 +88,11 @@ const createTables = () => {
       "owner_id" integer NOT NULL REFERENCES users(id),
       "region_id" integer REFERENCES regions(id),
       "sub_region_id" integer REFERENCES sub_regions(id),
-      "status" text DEFAULT 'draft' NOT NULL,
+      "solution_id" integer REFERENCES solutions(id),
+      "service_line_id" integer REFERENCES service_lines(id),
+      "status" text DEFAULT 'active' NOT NULL,
+      "progress" real DEFAULT 0,
+      "period" text,
       "start_date" text NOT NULL,
       "end_date" text NOT NULL,
       "created_at" text DEFAULT CURRENT_TIMESTAMP
@@ -94,43 +101,47 @@ const createTables = () => {
     -- Key Results table
     CREATE TABLE IF NOT EXISTS "key_results" (
       "id" integer PRIMARY KEY AUTOINCREMENT,
+      "objective_id" integer NOT NULL REFERENCES objectives(id),
       "title" text NOT NULL,
       "description" text,
-      "objective_id" integer NOT NULL REFERENCES objectives(id),
+      "target_value" real NOT NULL,
+      "current_value" real DEFAULT 0,
+      "unit" text,
       "strategic_indicator_id" integer REFERENCES strategic_indicators(id),
       "service_line_id" integer REFERENCES service_lines(id),
       "service_id" integer REFERENCES services(id),
-      "initial_value" real DEFAULT 0 NOT NULL,
-      "target_value" real NOT NULL,
-      "current_value" real DEFAULT 0 NOT NULL,
-      "unit" text,
-      "status" text DEFAULT 'in_progress' NOT NULL,
+      "start_date" text NOT NULL,
+      "end_date" text NOT NULL,
+      "frequency" text NOT NULL,
+      "status" text DEFAULT 'active' NOT NULL,
+      "progress" real DEFAULT 0,
       "created_at" text DEFAULT CURRENT_TIMESTAMP
     );
 
     -- Actions table
     CREATE TABLE IF NOT EXISTS "actions" (
       "id" integer PRIMARY KEY AUTOINCREMENT,
+      "key_result_id" integer NOT NULL REFERENCES key_results(id),
       "title" text NOT NULL,
       "description" text,
-      "key_result_id" integer NOT NULL REFERENCES key_results(id),
+      "number" integer NOT NULL,
       "strategic_indicator_id" integer REFERENCES strategic_indicators(id),
       "responsible_id" integer REFERENCES users(id),
-      "status" text DEFAULT 'pending' NOT NULL,
       "due_date" text,
-      "completed_at" text,
+      "status" text DEFAULT 'pending' NOT NULL,
+      "priority" text DEFAULT 'medium' NOT NULL,
       "created_at" text DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Checkpoints table
+    -- Checkpoints table  
     CREATE TABLE IF NOT EXISTS "checkpoints" (
       "id" integer PRIMARY KEY AUTOINCREMENT,
       "key_result_id" integer NOT NULL REFERENCES key_results(id),
       "period" text NOT NULL,
       "target_value" real NOT NULL,
-      "actual_value" real DEFAULT 0 NOT NULL,
-      "notes" text,
+      "actual_value" real DEFAULT 0,
       "status" text DEFAULT 'pending' NOT NULL,
+      "notes" text,
       "created_at" text DEFAULT CURRENT_TIMESTAMP
     );
 
