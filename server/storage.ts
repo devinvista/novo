@@ -9,7 +9,7 @@ import {
   type Solution, type Service
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, asc } from "drizzle-orm";
+import { eq, and, desc, sql, asc, inArray } from "drizzle-orm";
 import session from "express-session";
 // @ts-ignore - memorystore types are outdated
 import MemoryStore from "memorystore";
@@ -310,11 +310,16 @@ export class DatabaseStorage implements IStorage {
         const currentUser = await this.getUser(filters.currentUserId);
         if (currentUser && currentUser.role !== 'admin') {
           // Usuários não-admin só veem objetivos da sua região/subregião
-          if (currentUser.regionId) {
-            conditions.push(eq(objectives.regionId, currentUser.regionId));
+          const userRegionIds = currentUser.regionIds || [];
+          const userSubRegionIds = currentUser.subRegionIds || [];
+          
+          if (userRegionIds.length > 0) {
+            // Se usuário tem regiões específicas, aplicar filtro
+            conditions.push(inArray(objectives.regionId, userRegionIds));
           }
-          if (currentUser.subRegionId) {
-            conditions.push(eq(objectives.subRegionId, currentUser.subRegionId));
+          if (userSubRegionIds.length > 0) {
+            // Se usuário tem sub-regiões específicas, aplicar filtro
+            conditions.push(inArray(objectives.subRegionId, userSubRegionIds));
           }
         }
       }
@@ -417,15 +422,26 @@ export class DatabaseStorage implements IStorage {
     if (currentUserId) {
       const currentUser = await this.getUser(currentUserId);
       if (currentUser && currentUser.role !== 'admin') {
+        const userRegionIds = currentUser.regionIds || [];
+        const userSubRegionIds = currentUser.subRegionIds || [];
+        
         filteredResults = keyResultsData.filter(row => {
           const objective = row.objective;
-          // Verificar se o usuário tem acesso à região/subregião do objetivo
-          if (currentUser.regionId && objective.regionId && currentUser.regionId !== objective.regionId) {
-            return false;
+          
+          // Se usuário tem regiões específicas, verificar acesso
+          if (userRegionIds.length > 0 && objective.regionId) {
+            if (!userRegionIds.includes(objective.regionId)) {
+              return false;
+            }
           }
-          if (currentUser.subRegionId && objective.subRegionId && currentUser.subRegionId !== objective.subRegionId) {
-            return false;
+          
+          // Se usuário tem sub-regiões específicas, verificar acesso
+          if (userSubRegionIds.length > 0 && objective.subRegionId) {
+            if (!userSubRegionIds.includes(objective.subRegionId)) {
+              return false;
+            }
           }
+          
           return true;
         });
       }
@@ -547,19 +563,28 @@ export class DatabaseStorage implements IStorage {
           )
         );
         
+        const userRegionIds = currentUser.regionIds || [];
+        const userSubRegionIds = currentUser.subRegionIds || [];
+        
         filteredResults = results.filter(result => {
           const objective = objectives.find(obj => obj && 
             keyResultIds.indexOf(result.keyResultId) === objectives.indexOf(obj)
           );
           if (!objective) return false;
           
-          // Verificar acesso regional
-          if (currentUser.regionId && objective.regionId && currentUser.regionId !== objective.regionId) {
-            return false;
+          // Verificar acesso regional usando arrays multi-regionais
+          if (userRegionIds.length > 0 && objective.regionId) {
+            if (!userRegionIds.includes(objective.regionId)) {
+              return false;
+            }
           }
-          if (currentUser.subRegionId && objective.subRegionId && currentUser.subRegionId !== objective.subRegionId) {
-            return false;
+          
+          if (userSubRegionIds.length > 0 && objective.subRegionId) {
+            if (!userSubRegionIds.includes(objective.subRegionId)) {
+              return false;
+            }
           }
+          
           return true;
         });
       }
@@ -826,6 +851,8 @@ export class DatabaseStorage implements IStorage {
   async getDashboardKPIs(filters?: {
     regionId?: number;
     subRegionId?: number;
+    userRegionIds?: number[];
+    userSubRegionIds?: number[];
     period?: string;
   }): Promise<{
     totalObjectives: number;
@@ -837,8 +864,18 @@ export class DatabaseStorage implements IStorage {
   }> {
     // Build filter conditions
     const objectiveConditions = [];
+    
+    // Single region/subregion filters (specific filter)
     if (filters?.regionId) objectiveConditions.push(eq(objectives.regionId, filters.regionId));
     if (filters?.subRegionId) objectiveConditions.push(eq(objectives.subRegionId, filters.subRegionId));
+    
+    // Multi-regional filters (user access restrictions)
+    if (filters?.userRegionIds && filters.userRegionIds.length > 0) {
+      objectiveConditions.push(inArray(objectives.regionId, filters.userRegionIds));
+    }
+    if (filters?.userSubRegionIds && filters.userSubRegionIds.length > 0) {
+      objectiveConditions.push(inArray(objectives.subRegionId, filters.userSubRegionIds));
+    }
 
     // Get objectives count and average progress
     let objectivesQuery = db

@@ -114,14 +114,17 @@ export function registerRoutes(app: Express): Server {
         subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
       };
       
-      // Aplicar filtros de acesso baseados no usuário atual
+      // Aplicar filtros de acesso baseados no usuário atual (multi-regional)
       if (currentUser.role !== 'admin') {
-        // Usuários não-admin só veem dados da sua região/subregião
-        if (currentUser.regionId && !filters.regionId) {
-          filters.regionId = currentUser.regionId;
+        const userRegionIds = currentUser.regionIds || [];
+        const userSubRegionIds = currentUser.subRegionIds || [];
+        
+        // Se usuário tem regiões específicas e não foi especificado filtro, aplicar restrição
+        if (userRegionIds.length > 0 && !filters.regionId) {
+          filters.userRegionIds = userRegionIds;
         }
-        if (currentUser.subRegionId && !filters.subRegionId) {
-          filters.subRegionId = currentUser.subRegionId;
+        if (userSubRegionIds.length > 0 && !filters.subRegionId) {
+          filters.userSubRegionIds = userSubRegionIds;
         }
       }
       
@@ -169,13 +172,16 @@ export function registerRoutes(app: Express): Server {
     try {
       const validation = insertObjectiveSchema.parse(req.body);
       
-      // Verificar se o usuário pode criar objetivo na região/subregião especificada
+      // Verificar se o usuário pode criar objetivo na região/subregião especificada (multi-regional)
       const currentUser = req.user;
       if (currentUser.role !== 'admin') {
-        if (validation.regionId && currentUser.regionId !== validation.regionId) {
+        const userRegionIds = currentUser.regionIds || [];
+        const userSubRegionIds = currentUser.subRegionIds || [];
+        
+        if (validation.regionId && userRegionIds.length > 0 && !userRegionIds.includes(validation.regionId)) {
           return res.status(403).json({ message: "Sem permissão para criar objetivo nesta região" });
         }
-        if (validation.subRegionId && currentUser.subRegionId !== validation.subRegionId) {
+        if (validation.subRegionId && userSubRegionIds.length > 0 && !userSubRegionIds.includes(validation.subRegionId)) {
           return res.status(403).json({ message: "Sem permissão para criar objetivo nesta subregião" });
         }
       }
