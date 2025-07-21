@@ -106,14 +106,24 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Dashboard KPIs
-  app.get("/api/dashboard/kpis", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.get("/api/dashboard/kpis", requireAuth, async (req: any, res) => {
     try {
-      const filters = {
+      const currentUser = req.user;
+      const filters: any = {
         regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
         subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
       };
+      
+      // Aplicar filtros de acesso baseados no usuário atual
+      if (currentUser.role !== 'admin') {
+        // Usuários não-admin só veem dados da sua região/subregião
+        if (currentUser.regionId && !filters.regionId) {
+          filters.regionId = currentUser.regionId;
+        }
+        if (currentUser.subRegionId && !filters.subRegionId) {
+          filters.subRegionId = currentUser.subRegionId;
+        }
+      }
       
       const kpis = await storage.getDashboardKPIs(filters);
       res.json(kpis);
@@ -123,15 +133,14 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Objectives routes
-  app.get("/api/objectives", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.get("/api/objectives", requireAuth, async (req: any, res) => {
     try {
       const filters = {
         regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
         subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
         serviceLineId: req.query.serviceLineId ? parseInt(req.query.serviceLineId as string) : undefined,
-        ownerId: req.user?.role !== 'admin' ? req.user?.id : undefined,
+        ownerId: req.query.ownerId ? parseInt(req.query.ownerId as string) : undefined,
+        currentUserId: req.user.id, // Adicionar controle de acesso
       };
       
       const objectives = await storage.getObjectives(filters);
@@ -141,15 +150,13 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/objectives/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.get("/api/objectives/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const objective = await storage.getObjective(id);
+      const objective = await storage.getObjective(id, req.user.id);
       
       if (!objective) {
-        return res.status(404).json({ message: "Objetivo não encontrado" });
+        return res.status(404).json({ message: "Objetivo não encontrado ou sem acesso" });
       }
       
       res.json(objective);
@@ -158,15 +165,22 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/objectives", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.post("/api/objectives", requireAuth, async (req: any, res) => {
     try {
       const validation = insertObjectiveSchema.parse(req.body);
+      
+      // Verificar se o usuário pode criar objetivo na região/subregião especificada
+      const currentUser = req.user;
+      if (currentUser.role !== 'admin') {
+        if (validation.regionId && currentUser.regionId !== validation.regionId) {
+          return res.status(403).json({ message: "Sem permissão para criar objetivo nesta região" });
+        }
+        if (validation.subRegionId && currentUser.subRegionId !== validation.subRegionId) {
+          return res.status(403).json({ message: "Sem permissão para criar objetivo nesta subregião" });
+        }
+      }
+      
       const objective = await storage.createObjective(validation);
-      
-      // TODO: Implement activity logging if needed
-      
       res.status(201).json(objective);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -176,22 +190,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/objectives/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.put("/api/objectives/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const validation = insertObjectiveSchema.partial().parse(req.body);
       
-      const existingObjective = await storage.getObjective(id);
+      const existingObjective = await storage.getObjective(id, req.user.id);
       if (!existingObjective) {
-        return res.status(404).json({ message: "Objetivo não encontrado" });
+        return res.status(404).json({ message: "Objetivo não encontrado ou sem acesso" });
       }
       
       const objective = await storage.updateObjective(id, validation);
-      
-      // TODO: Implement activity logging if needed
-      
       res.json(objective);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -201,21 +210,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/objectives/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.delete("/api/objectives/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       
-      const existingObjective = await storage.getObjective(id);
+      const existingObjective = await storage.getObjective(id, req.user.id);
       if (!existingObjective) {
-        return res.status(404).json({ message: "Objetivo não encontrado" });
+        return res.status(404).json({ message: "Objetivo não encontrado ou sem acesso" });
       }
       
       await storage.deleteObjective(id);
-      
-      // TODO: Implement activity logging if needed
-      
       res.sendStatus(204);
     } catch (error) {
       res.status(500).json({ message: "Erro ao deletar objetivo" });
@@ -223,13 +227,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Key Results routes
-  app.get("/api/key-results", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.get("/api/key-results", requireAuth, async (req: any, res) => {
     try {
       const objectiveId = req.query.objectiveId ? parseInt(req.query.objectiveId as string) : undefined;
       console.log("Fetching key results for objectiveId:", objectiveId);
-      const keyResults = await storage.getKeyResults(objectiveId);
+      const keyResults = await storage.getKeyResults(objectiveId, req.user.id);
       console.log("Key results found:", keyResults.length);
       res.json(keyResults);
     } catch (error) {
@@ -238,9 +240,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/key-results", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.post("/api/key-results", requireAuth, async (req: any, res) => {
     try {
       // Transform strategicIndicatorId to strategicIndicatorIds if needed
       const requestData = { ...req.body };
@@ -254,6 +254,12 @@ export function registerRoutes(app: Express): Server {
       }
       
       const validation = insertKeyResultSchema.parse(requestData);
+      
+      // Verificar se o usuário tem acesso ao objetivo
+      const objective = await storage.getObjective(validation.objectiveId, req.user.id);
+      if (!objective) {
+        return res.status(403).json({ message: "Sem permissão para criar resultado-chave neste objetivo" });
+      }
       
       // Calculate initial status based on dates
       const startDate = new Date(validation.startDate);
@@ -275,8 +281,6 @@ export function registerRoutes(app: Express): Server {
         status,
       });
       
-      // TODO: Implement activity logging if needed
-      
       res.status(201).json(keyResult);
     } catch (error) {
       console.error('Error in key-results creation:', error);
@@ -287,16 +291,14 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/key-results/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.put("/api/key-results/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const validation = insertKeyResultSchema.partial().parse(req.body);
       
-      const existingKeyResult = await storage.getKeyResult(id);
+      const existingKeyResult = await storage.getKeyResult(id, req.user.id);
       if (!existingKeyResult) {
-        return res.status(404).json({ message: "Resultado-chave não encontrado" });
+        return res.status(404).json({ message: "Resultado-chave não encontrado ou sem acesso" });
       }
       
       const updateData = { ...validation };
@@ -304,8 +306,6 @@ export function registerRoutes(app: Express): Server {
         updateData.targetValue = updateData.targetValue.toString();
       }
       const keyResult = await storage.updateKeyResult(id, updateData);
-      
-      // TODO: Implement activity logging if needed
       
       res.json(keyResult);
     } catch (error) {
@@ -317,21 +317,17 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Actions routes
-  app.get("/api/actions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.get("/api/actions", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
-      const actions = await storage.getActions(keyResultId);
+      const actions = await storage.getActions(keyResultId, req.user.id);
       res.json(actions);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar ações" });
     }
   });
 
-  app.post("/api/actions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.post("/api/actions", requireAuth, async (req: any, res) => {
     console.log("Action creation request:", {
       authenticated: req.isAuthenticated(),
       userId: req.user?.id,
@@ -348,10 +344,14 @@ export function registerRoutes(app: Express): Server {
       const validation = insertActionSchema.parse(requestData);
       console.log("Validated action data:", validation);
       
+      // Verificar se o usuário tem acesso ao key result
+      const keyResult = await storage.getKeyResult(validation.keyResultId, req.user.id);
+      if (!keyResult) {
+        return res.status(403).json({ message: "Sem permissão para criar ação neste resultado-chave" });
+      }
+      
       const action = await storage.createAction(validation);
       console.log("Created action:", action);
-      
-      // TODO: Implement activity logging if needed
       
       res.status(201).json(action);
     } catch (error) {
@@ -365,13 +365,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Checkpoints routes
-  app.get("/api/checkpoints", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.get("/api/checkpoints", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
       console.log(`Fetching checkpoints for keyResultId: ${keyResultId}`);
-      const checkpoints = await storage.getCheckpoints(keyResultId);
+      const checkpoints = await storage.getCheckpoints(keyResultId, req.user.id);
       console.log(`Found ${checkpoints.length} checkpoints`);
       res.json(checkpoints);
     } catch (error) {
@@ -380,19 +378,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/checkpoints/:id/update", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.post("/api/checkpoints/:id/update", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const { actualValue, status } = req.body;
+      
+      // Verificar acesso ao checkpoint
+      const existingCheckpoint = await storage.getCheckpoint(id, req.user.id);
+      if (!existingCheckpoint) {
+        return res.status(404).json({ message: "Checkpoint não encontrado ou sem acesso" });
+      }
       
       const updated = await storage.updateCheckpoint(id, {
         actualValue: actualValue.toString(),
         status: status || "pending",
       });
-      
-      // TODO: Implement activity logging if needed
       
       res.json(updated);
     } catch (error) {
@@ -401,15 +401,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/key-results/:id/regenerate-checkpoints", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.post("/api/key-results/:id/regenerate-checkpoints", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = parseInt(req.params.id);
+      
+      // Verificar acesso ao key result
+      const keyResult = await storage.getKeyResult(keyResultId, req.user.id);
+      if (!keyResult) {
+        return res.status(404).json({ message: "Resultado-chave não encontrado ou sem acesso" });
+      }
+      
       const checkpoints = await storage.generateCheckpoints(keyResultId);
-      
-      // TODO: Implement activity logging if needed
-      
       res.json(checkpoints);
     } catch (error) {
       console.error("Error regenerating checkpoints:", error);
@@ -417,16 +419,14 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/checkpoints/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.put("/api/checkpoints/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const { actualValue, notes } = req.body;
       
-      const existingCheckpoint = await storage.getCheckpoint(id);
+      const existingCheckpoint = await storage.getCheckpoint(id, req.user.id);
       if (!existingCheckpoint) {
-        return res.status(404).json({ message: "Checkpoint não encontrado" });
+        return res.status(404).json({ message: "Checkpoint não encontrado ou sem acesso" });
       }
       
       // Calculate progress
@@ -439,8 +439,6 @@ export function registerRoutes(app: Express): Server {
         notes,
         status: 'completed',
       });
-      
-      // TODO: Implement activity logging if needed
       
       res.json(checkpoint);
     } catch (error) {

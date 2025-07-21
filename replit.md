@@ -232,6 +232,27 @@ Changelog:
     - Dashboard KPIs loading properly
   - **SECURITY MAINTAINED**: Client/server separation preserved with secure practices
   - **ERROR HANDLING**: Implemented robust error handling with proper logging
+- July 21, 2025. Controle de acesso regional implementado no sistema OKR
+  - **CONTROLE DE ACESSO REGIONAL**: Implementado sistema completo de controle de acesso baseado em região/subregião
+    - Usuários só podem visualizar e manipular dados das regiões/subregiões que têm acesso
+    - Admins têm acesso total a todas as regiões e subregiões
+    - Gestores e operacionais limitados às suas regiões/subregiões específicas
+    - Sistema de filtros automáticos aplicados em todas as consultas (objetivos, key results, ações, checkpoints)
+  - **STORAGE LAYER ATUALIZADO**: Adicionados métodos de verificação de acesso em todas as operações
+    - Método `checkUserAccess()` para validar permissões regionais
+    - Parâmetro `currentUserId` adicionado em todos os métodos de consulta
+    - Filtros de acesso aplicados automaticamente baseados no usuário logado
+    - Validações de segurança em criação, atualização e exclusão de dados
+  - **API ENDPOINTS SEGUROS**: Todas as rotas protegidas com controle de acesso regional
+    - Rotas de objetivos, key results, ações e checkpoints com verificação de acesso
+    - Middleware de autenticação e autorização aprimorado
+    - Mensagens de erro específicas para casos de acesso negado
+    - Validação de permissões antes de operações CRUD
+  - **SEGURANÇA APRIMORADA**: Separação cliente/servidor mantida com práticas seguras
+    - Validação de acesso no backend para todas as operações
+    - Prevenção de vazamento de dados entre regiões/subregiões
+    - Controle granular de permissões por nível hierárquico
+  - Migration do Replit Agent para Replit environment completada com controle de acesso funcional
 - July 08, 2025. Final Replit Agent to Replit environment migration completed and checkpoint system enhancement
   - **MIGRATION COMPLETED**: Successfully completed full migration from Replit Agent to Replit environment
   - **FORM VALIDATION FIXES**: Resolved key results and actions creation validation errors

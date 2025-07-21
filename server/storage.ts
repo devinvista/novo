@@ -34,50 +34,54 @@ export interface IStorage {
   getServices(serviceLineId?: number): Promise<Service[]>;
   getStrategicIndicators(): Promise<StrategicIndicator[]>;
 
-  // Objectives
+  // Objectives (com controle de acesso regional)
   getObjectives(filters?: {
     regionId?: number;
     subRegionId?: number;
     serviceLineId?: number;
     ownerId?: number;
+    currentUserId?: number; // Para controle de acesso
   }): Promise<(Objective & { 
     owner: User; 
     region?: Region; 
     subRegion?: SubRegion; 
     serviceLine?: ServiceLine 
   })[]>;
-  getObjective(id: number): Promise<Objective | undefined>;
+  getObjective(id: number, currentUserId?: number): Promise<Objective | undefined>;
   createObjective(objective: InsertObjective): Promise<Objective>;
   updateObjective(id: number, objective: Partial<InsertObjective>): Promise<Objective>;
   deleteObjective(id: number): Promise<void>;
 
-  // Key Results
-  getKeyResults(objectiveId?: number): Promise<(KeyResult & { 
+  // Key Results (com controle de acesso regional)
+  getKeyResults(objectiveId?: number, currentUserId?: number): Promise<(KeyResult & { 
     objective: Objective; 
     strategicIndicator?: StrategicIndicator 
   })[]>;
-  getKeyResult(id: number): Promise<KeyResult | undefined>;
+  getKeyResult(id: number, currentUserId?: number): Promise<KeyResult | undefined>;
   createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult>;
   updateKeyResult(id: number, keyResult: Partial<InsertKeyResult>): Promise<KeyResult>;
   deleteKeyResult(id: number): Promise<void>;
 
-  // Actions
-  getActions(keyResultId?: number): Promise<(Action & { 
+  // Actions (com controle de acesso regional)
+  getActions(keyResultId?: number, currentUserId?: number): Promise<(Action & { 
     keyResult: KeyResult; 
     strategicIndicator?: StrategicIndicator;
     responsible?: User 
   })[]>;
-  getAction(id: number): Promise<Action | undefined>;
+  getAction(id: number, currentUserId?: number): Promise<Action | undefined>;
   createAction(action: InsertAction): Promise<Action>;
   updateAction(id: number, action: Partial<InsertAction>): Promise<Action>;
   deleteAction(id: number): Promise<void>;
 
-  // Checkpoints
-  getCheckpoints(keyResultId?: number): Promise<Checkpoint[]>;
-  getCheckpoint(id: number): Promise<Checkpoint | undefined>;
+  // Checkpoints (com controle de acesso regional)
+  getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<Checkpoint[]>;
+  getCheckpoint(id: number, currentUserId?: number): Promise<Checkpoint | undefined>;
   createCheckpoint(checkpoint: InsertCheckpoint): Promise<Checkpoint>;
   updateCheckpoint(id: number, checkpoint: Partial<InsertCheckpoint>): Promise<Checkpoint>;
   generateCheckpoints(keyResultId: number): Promise<Checkpoint[]>;
+
+  // Método auxiliar para verificar acesso
+  checkUserAccess(currentUserId: number, targetRegionId?: number, targetSubRegionId?: number): Promise<boolean>;
 
   // Analytics and utilities
 
@@ -217,10 +221,31 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(strategicIndicators.name));
   }
 
+  // Método auxiliar para verificar acesso do usuário
+  async checkUserAccess(currentUserId: number, targetRegionId?: number, targetSubRegionId?: number): Promise<boolean> {
+    const currentUser = await this.getUser(currentUserId);
+    if (!currentUser) return false;
+    
+    // Admins têm acesso a tudo
+    if (currentUser.role === 'admin') return true;
+    
+    // Se não há restrições de região/subregião, permite acesso
+    if (!targetRegionId && !targetSubRegionId) return true;
+    
+    // Verifica acesso por região
+    if (targetRegionId && currentUser.regionId !== targetRegionId) return false;
+    
+    // Verifica acesso por subregião
+    if (targetSubRegionId && currentUser.subRegionId !== targetSubRegionId) return false;
+    
+    return true;
+  }
+
   async getObjectives(filters?: {
     regionId?: number;
     subRegionId?: number;
     ownerId?: number;
+    currentUserId?: number;
   }): Promise<(Objective & { 
     owner: User; 
     region?: Region; 
@@ -269,6 +294,22 @@ export class DatabaseStorage implements IStorage {
 
     if (filters) {
       const conditions = [];
+      
+      // Aplicar controle de acesso baseado no usuário atual
+      if (filters.currentUserId) {
+        const currentUser = await this.getUser(filters.currentUserId);
+        if (currentUser && currentUser.role !== 'admin') {
+          // Usuários não-admin só veem objetivos da sua região/subregião
+          if (currentUser.regionId) {
+            conditions.push(eq(objectives.regionId, currentUser.regionId));
+          }
+          if (currentUser.subRegionId) {
+            conditions.push(eq(objectives.subRegionId, currentUser.subRegionId));
+          }
+        }
+      }
+      
+      // Aplicar outros filtros
       if (filters.regionId) conditions.push(eq(objectives.regionId, filters.regionId));
       if (filters.subRegionId) conditions.push(eq(objectives.subRegionId, filters.subRegionId));
       if (filters.ownerId) conditions.push(eq(objectives.ownerId, filters.ownerId));
@@ -288,9 +329,17 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getObjective(id: number): Promise<Objective | undefined> {
+  async getObjective(id: number, currentUserId?: number): Promise<Objective | undefined> {
     const [objective] = await db.select().from(objectives).where(eq(objectives.id, id));
-    return objective || undefined;
+    if (!objective) return undefined;
+    
+    // Verificar acesso se currentUserId foi fornecido
+    if (currentUserId) {
+      const hasAccess = await this.checkUserAccess(currentUserId, objective.regionId || undefined, objective.subRegionId || undefined);
+      if (!hasAccess) return undefined;
+    }
+    
+    return objective;
   }
 
   async createObjective(objective: InsertObjective): Promise<Objective> {
@@ -298,7 +347,7 @@ export class DatabaseStorage implements IStorage {
       .insert(objectives)
       .values({
         ...objective,
-        updatedAt: new Date(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .returning();
     return created;
@@ -309,7 +358,7 @@ export class DatabaseStorage implements IStorage {
       .update(objectives)
       .set({
         ...objective,
-        updatedAt: new Date(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .where(eq(objectives.id, id))
       .returning();
@@ -320,7 +369,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(objectives).where(eq(objectives.id, id));
   }
 
-  async getKeyResults(objectiveId?: number): Promise<(KeyResult & { objective: Objective; strategicIndicator?: StrategicIndicator })[]> {
+  async getKeyResults(objectiveId?: number, currentUserId?: number): Promise<(KeyResult & { objective: Objective; strategicIndicator?: StrategicIndicator })[]> {
     // Get key results with objectives
     let baseQuery = db
       .select({
@@ -353,8 +402,27 @@ export class DatabaseStorage implements IStorage {
     // Get all strategic indicators
     const indicators = await db.select().from(strategicIndicators);
 
+    // Filtrar baseado no controle de acesso regional
+    let filteredResults = keyResultsData;
+    if (currentUserId) {
+      const currentUser = await this.getUser(currentUserId);
+      if (currentUser && currentUser.role !== 'admin') {
+        filteredResults = keyResultsData.filter(row => {
+          const objective = row.objective;
+          // Verificar se o usuário tem acesso à região/subregião do objetivo
+          if (currentUser.regionId && objective.regionId && currentUser.regionId !== objective.regionId) {
+            return false;
+          }
+          if (currentUser.subRegionId && objective.subRegionId && currentUser.subRegionId !== objective.subRegionId) {
+            return false;
+          }
+          return true;
+        });
+      }
+    }
+
     // Map results with strategic indicators
-    return keyResultsData.map(row => {
+    return filteredResults.map(row => {
       let strategicIndicator = undefined;
 
       if (row.strategicIndicatorIds && row.strategicIndicatorIds.length > 0) {
@@ -370,9 +438,17 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async getKeyResult(id: number): Promise<KeyResult | undefined> {
+  async getKeyResult(id: number, currentUserId?: number): Promise<KeyResult | undefined> {
     const [keyResult] = await db.select().from(keyResults).where(eq(keyResults.id, id));
-    return keyResult || undefined;
+    if (!keyResult) return undefined;
+    
+    // Verificar acesso se currentUserId foi fornecido
+    if (currentUserId) {
+      const objective = await this.getObjective(keyResult.objectiveId, currentUserId);
+      if (!objective) return undefined; // Sem acesso ao objetivo associado
+    }
+    
+    return keyResult;
   }
 
   async createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult> {
@@ -382,7 +458,7 @@ export class DatabaseStorage implements IStorage {
     const dataToInsert = {
       ...keyResultData,
       strategicIndicatorIds: keyResultData.strategicIndicatorIds || (strategicIndicatorId ? [strategicIndicatorId] : []),
-      updatedAt: new Date(),
+      updatedAt: sql`CURRENT_TIMESTAMP`,
     };
 
     const [created] = await db
@@ -400,7 +476,7 @@ export class DatabaseStorage implements IStorage {
       .update(keyResults)
       .set({
         ...keyResult,
-        updatedAt: new Date(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .where(eq(keyResults.id, id))
       .returning();
@@ -411,7 +487,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(keyResults).where(eq(keyResults.id, id));
   }
 
-  async getActions(keyResultId?: number): Promise<(Action & { 
+  async getActions(keyResultId?: number, currentUserId?: number): Promise<(Action & { 
     keyResult: KeyResult; 
     strategicIndicator?: StrategicIndicator;
     responsible?: User 
@@ -445,7 +521,41 @@ export class DatabaseStorage implements IStorage {
 
     const results = await query.orderBy(asc(actions.number));
 
-    return results.map(result => ({
+    // Aplicar controle de acesso regional baseado no key result associado
+    let filteredResults = results;
+    if (currentUserId) {
+      const currentUser = await this.getUser(currentUserId);
+      if (currentUser && currentUser.role !== 'admin') {
+        // Buscar objetivos dos key results para verificar acesso
+        const keyResultIds = [...new Set(results.map(r => r.keyResultId))];
+        const objectives = await Promise.all(
+          keyResultIds.map(id => 
+            db.select().from(keyResults)
+              .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+              .where(eq(keyResults.id, id))
+              .then(res => res[0]?.objectives)
+          )
+        );
+        
+        filteredResults = results.filter(result => {
+          const objective = objectives.find(obj => obj && 
+            keyResultIds.indexOf(result.keyResultId) === objectives.indexOf(obj)
+          );
+          if (!objective) return false;
+          
+          // Verificar acesso regional
+          if (currentUser.regionId && objective.regionId && currentUser.regionId !== objective.regionId) {
+            return false;
+          }
+          if (currentUser.subRegionId && objective.subRegionId && currentUser.subRegionId !== objective.subRegionId) {
+            return false;
+          }
+          return true;
+        });
+      }
+    }
+
+    return filteredResults.map(result => ({
       ...result,
       keyResult: result.keyResult as KeyResult,
       strategicIndicator: result.strategicIndicator as StrategicIndicator | undefined,
@@ -453,9 +563,17 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getAction(id: number): Promise<Action | undefined> {
+  async getAction(id: number, currentUserId?: number): Promise<Action | undefined> {
     const [action] = await db.select().from(actions).where(eq(actions.id, id));
-    return action || undefined;
+    if (!action) return undefined;
+    
+    // Verificar acesso se currentUserId foi fornecido
+    if (currentUserId) {
+      const keyResult = await this.getKeyResult(action.keyResultId, currentUserId);
+      if (!keyResult) return undefined; // Sem acesso ao key result associado
+    }
+    
+    return action;
   }
 
   async createAction(action: InsertAction): Promise<Action> {
@@ -482,7 +600,7 @@ export class DatabaseStorage implements IStorage {
       .update(actions)
       .set({
         ...action,
-        updatedAt: new Date(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .where(eq(actions.id, id))
       .returning();
@@ -493,21 +611,46 @@ export class DatabaseStorage implements IStorage {
     await db.delete(actions).where(eq(actions.id, id));
   }
 
-  async getCheckpoints(keyResultId?: number): Promise<Checkpoint[]> {
+  async getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<Checkpoint[]> {
     let query = db.select().from(checkpoints);
 
     if (keyResultId) {
       query = query.where(eq(checkpoints.keyResultId, keyResultId));
     }
 
-    const result = await query.orderBy(asc(checkpoints.period));
-    console.log(`Retrieved ${result.length} checkpoints for keyResultId: ${keyResultId}`);
-    return result;
+    let results = await query.orderBy(asc(checkpoints.period));
+    
+    // Aplicar controle de acesso regional
+    if (currentUserId) {
+      const currentUser = await this.getUser(currentUserId);
+      if (currentUser && currentUser.role !== 'admin') {
+        // Verificar acesso aos key results associados
+        const accessibleResults = [];
+        for (const checkpoint of results) {
+          const keyResult = await this.getKeyResult(checkpoint.keyResultId, currentUserId);
+          if (keyResult) {
+            accessibleResults.push(checkpoint);
+          }
+        }
+        results = accessibleResults;
+      }
+    }
+
+    console.log(`Retrieved ${results.length} checkpoints for keyResultId: ${keyResultId}`);
+    return results;
   }
 
-  async getCheckpoint(id: number): Promise<Checkpoint | undefined> {
+  async getCheckpoint(id: number, currentUserId?: number): Promise<Checkpoint | undefined> {
     const [checkpoint] = await db.select().from(checkpoints).where(eq(checkpoints.id, id));
-    return checkpoint || undefined;
+    if (!checkpoint) return undefined;
+    
+    // Verificar acesso se currentUserId foi fornecido
+    if (currentUserId) {
+      const keyResult = await this.getKeyResult(checkpoint.keyResultId, currentUserId);
+      if (!keyResult) return undefined; // Sem acesso ao key result associado
+    }
+    
+    return checkpoint;
   }
 
   async createCheckpoint(checkpoint: InsertCheckpoint): Promise<Checkpoint> {
@@ -515,7 +658,7 @@ export class DatabaseStorage implements IStorage {
       .insert(checkpoints)
       .values({
         ...checkpoint,
-        updatedAt: new Date(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .returning();
     return created;
@@ -526,7 +669,7 @@ export class DatabaseStorage implements IStorage {
       .update(checkpoints)
       .set({
         ...checkpoint,
-        updatedAt: new Date(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .where(eq(checkpoints.id, id))
       .returning();
