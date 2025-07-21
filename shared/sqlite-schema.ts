@@ -13,6 +13,9 @@ export const users = sqliteTable("users", {
   role: text("role").notNull().default("operacional"), // admin, gestor, operacional
   regionIds: text("region_ids", { mode: "json" }).$type<number[]>().default([]), // Multiple regions
   subRegionIds: text("sub_region_ids", { mode: "json" }).$type<number[]>().default([]), // Multiple sub-regions
+  solutionIds: text("solution_ids", { mode: "json" }).$type<number[]>().default([]), // Multiple solutions
+  serviceLineIds: text("service_line_ids", { mode: "json" }).$type<number[]>().default([]), // Multiple service lines
+  serviceIds: text("service_ids", { mode: "json" }).$type<number[]>().default([]), // Multiple services
   gestorId: integer("gestor_id").references(() => users.id), // Reference to manager
   approved: integer("approved", { mode: "boolean" }).notNull().default(false), // Approval status
   approvedAt: text("approved_at"), // When was approved
