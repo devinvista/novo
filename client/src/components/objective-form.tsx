@@ -68,8 +68,8 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
   });
 
   // Filter sub-regions based on selected region
-  const filteredSubRegions = selectedRegionId 
-    ? subRegions?.filter((subRegion: any) => subRegion.regionId === selectedRegionId)
+  const filteredSubRegions = selectedRegionId && subRegions
+    ? subRegions.filter((subRegion: any) => subRegion.regionId === selectedRegionId)
     : [];
 
   const mutation = useMutation({
@@ -187,7 +187,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="none">Nenhuma região</SelectItem>
-                    {regions?.map((region: any) => (
+                    {regions && regions.map((region: any) => (
                       <SelectItem key={region.id} value={region.id.toString()}>
                         {region.name}
                       </SelectItem>
@@ -199,7 +199,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
             )}
           />
 
-          {selectedRegionId && filteredSubRegions.length > 0 && (
+          {selectedRegionId && filteredSubRegions && filteredSubRegions.length > 0 && (
             <FormField
               control={form.control}
               name="subRegionId"
