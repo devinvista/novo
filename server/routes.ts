@@ -48,9 +48,20 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Reference data routes
-  app.get("/api/solutions", async (req, res) => {
+  app.get("/api/solutions", requireAuth, async (req, res) => {
     try {
-      const solutions = await storage.getSolutions();
+      const user = req.user;
+      let solutions = await storage.getSolutions();
+      
+      // Aplicar filtro de soluções para usuários não-admin
+      if (user && user.role !== 'admin') {
+        const userSolutionIds = user.solutionIds || [];
+        if (userSolutionIds.length > 0) {
+          // Filtrar apenas as soluções que o usuário tem acesso
+          solutions = solutions.filter(solution => userSolutionIds.includes(solution.id));
+        }
+      }
+      
       res.json(solutions);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar soluções" });
@@ -103,20 +114,52 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/service-lines", async (req, res) => {
+  app.get("/api/service-lines", requireAuth, async (req, res) => {
     try {
+      const user = req.user;
       const solutionId = req.query.solutionId ? parseInt(req.query.solutionId as string) : undefined;
-      const serviceLines = await storage.getServiceLines(solutionId);
+      let serviceLines = await storage.getServiceLines(solutionId);
+      
+      // Aplicar filtro de linhas de serviço para usuários não-admin
+      if (user && user.role !== 'admin') {
+        const userServiceLineIds = user.serviceLineIds || [];
+        const userSolutionIds = user.solutionIds || [];
+        
+        if (userServiceLineIds.length > 0) {
+          // Filtrar apenas as linhas de serviço que o usuário tem acesso
+          serviceLines = serviceLines.filter(serviceLine => userServiceLineIds.includes(serviceLine.id));
+        } else if (userSolutionIds.length > 0) {
+          // Se usuário não tem linhas específicas, filtrar por solução
+          serviceLines = serviceLines.filter(serviceLine => userSolutionIds.includes(serviceLine.solutionId));
+        }
+      }
+      
       res.json(serviceLines);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar linhas de serviço" });
     }
   });
 
-  app.get("/api/services", async (req, res) => {
+  app.get("/api/services", requireAuth, async (req, res) => {
     try {
+      const user = req.user;
       const serviceLineId = req.query.serviceLineId ? parseInt(req.query.serviceLineId as string) : undefined;
-      const services = await storage.getServices(serviceLineId);
+      let services = await storage.getServices(serviceLineId);
+      
+      // Aplicar filtro de serviços para usuários não-admin
+      if (user && user.role !== 'admin') {
+        const userServiceIds = user.serviceIds || [];
+        const userServiceLineIds = user.serviceLineIds || [];
+        
+        if (userServiceIds.length > 0) {
+          // Filtrar apenas os serviços que o usuário tem acesso
+          services = services.filter(service => userServiceIds.includes(service.id));
+        } else if (userServiceLineIds.length > 0) {
+          // Se usuário não tem serviços específicos, filtrar por linha de serviço
+          services = services.filter(service => userServiceLineIds.includes(service.serviceLineId));
+        }
+      }
+      
       res.json(services);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar serviços" });

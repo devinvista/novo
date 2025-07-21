@@ -260,6 +260,13 @@ Changelog:
     - Usuário gestor.teste (região 26 - Metropolitana) agora vê apenas 1 região ao invés de 11
     - Sistema filtra baseado em `user.regionIds` e `user.subRegionIds` arrays
     - Compatibilidade mantida: admins continuam tendo acesso total sem filtros
+  - **FILTROS SOLUÇÕES/LINHAS/SERVIÇOS IMPLEMENTADOS**: Controle de acesso estendido para toda hierarquia
+    - `/api/solutions` endpoint agora filtra soluções baseado em `user.solutionIds`
+    - `/api/service-lines` endpoint filtra linhas de serviço baseado em `user.serviceLineIds` ou `user.solutionIds`
+    - `/api/services` endpoint filtra serviços baseado em `user.serviceIds` ou `user.serviceLineIds`
+    - Usuário gestor.teste configurado com: 1 solução (Educação), 2 linhas de serviço, 3 serviços específicos
+    - Admins veem todos os dados (2 soluções, 15 linhas, 68 serviços) sem filtros
+    - Gestores veem apenas seus dados autorizados com filtros hierárquicos aplicados
   - **SISTEMA MULTI-REGIONAL**: Usuários podem ter acesso a múltiplas regiões/subregiões simultaneamente
     - Schema atualizado: `regionIds` e `subRegionIds` como arrays JSON para múltiplas regiões
     - Admins têm acesso total a todas as regiões e subregiões
