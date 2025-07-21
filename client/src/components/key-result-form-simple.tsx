@@ -197,14 +197,14 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       strategicIndicatorIds: formData.strategicIndicatorIds,
       serviceLineIds: formData.serviceLineIds,
       serviceId: formData.serviceId || null,
-      initialValue: parseFloat(formData.initialValue.toString()) || 0,
-      targetValue: parseFloat(formData.targetValue.toString()) || 0,
-      currentValue: parseFloat(formData.currentValue.toString()) || 0,
+      initialValue: parseFloat(String(formData.initialValue || "0")) || 0,
+      targetValue: parseFloat(String(formData.targetValue || "0")) || 0,
+      currentValue: parseFloat(String(formData.currentValue || "0")) || 0,
       unit: formData.unit || null,
       frequency: formData.frequency,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      progress: parseFloat(formData.progress.toString()) || 0,
+      progress: parseFloat(String(formData.progress || "0")) || 0,
       status: formData.status,
     };
     
@@ -212,11 +212,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   };
 
   const handleInputChange = (field: string, value: string | number | undefined) => {
-    // Convert numeric string inputs to proper numbers for numeric fields
-    if (field === 'objectiveId' || field === 'serviceId') {
-      setFormData(prev => ({ ...prev, [field]: value === '' || value === '0' ? (field === 'serviceId' ? null : '') : value }));
-    } else if (field === 'targetValue' || field === 'currentValue' || field === 'initialValue' || field === 'progress') {
-      setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'serviceId' && (value === '' || value === '0')) {
+      setFormData(prev => ({ ...prev, [field]: null }));
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
