@@ -1143,135 +1143,277 @@ export default function UsersPage() {
               {/* Regions */}
               {availableRegions.length > 0 && (
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">Regiões (selecione uma ou mais)</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {availableRegions.map((region) => (
-                      <div key={region.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`region-${region.id}`}
-                          checked={selectedRegionsForApproval.includes(region.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedRegionsForApproval([...selectedRegionsForApproval, region.id]);
-                            } else {
-                              setSelectedRegionsForApproval(selectedRegionsForApproval.filter(id => id !== region.id));
-                            }
-                          }}
-                        />
-                        <label htmlFor={`region-${region.id}`} className="text-sm">
-                          {region.name}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                  <label className="text-sm font-medium">Regiões</label>
+                  <Select 
+                    onValueChange={(value) => {
+                      if (value === "all") {
+                        setSelectedRegionsForApproval([]);
+                      } else {
+                        const regionId = parseInt(value);
+                        const newValue = selectedRegionsForApproval.includes(regionId)
+                          ? selectedRegionsForApproval.filter(id => id !== regionId)
+                          : [...selectedRegionsForApproval, regionId];
+                        setSelectedRegionsForApproval(newValue);
+                      }
+                      // Clear sub-regions when region changes
+                      setSelectedSubRegionsForApproval([]);
+                    }}
+                    value=""
+                  >
+                    <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                      <SelectValue placeholder={
+                        selectedRegionsForApproval.length === 0 
+                          ? "Todas as regiões" 
+                          : `${selectedRegionsForApproval.length} região(ões) selecionada(s)`
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as regiões</SelectItem>
+                      {availableRegions.map((region) => {
+                        const isSelected = selectedRegionsForApproval.includes(region.id);
+                        return (
+                          <SelectItem key={region.id} value={region.id.toString()}>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={isSelected}
+                                onChange={() => {}} // Handled by parent onValueChange
+                              />
+                              <span>{region.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {selectedRegionsForApproval.length > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Selecionadas: {selectedRegionsForApproval.map(id => 
+                        regions.find(r => r.id === id)?.name
+                      ).filter(Boolean).join(", ")}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Sub-regions */}
-              {availableSubRegions.length > 0 && (
+              {selectedRegionsForApproval.length > 0 && availableSubRegions.length > 0 && (
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">Sub-regiões (selecione uma ou mais)</label>
-                  <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                    {availableSubRegions.map((subRegion) => (
-                      <div key={subRegion.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`subregion-${subRegion.id}`}
-                          checked={selectedSubRegionsForApproval.includes(subRegion.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedSubRegionsForApproval([...selectedSubRegionsForApproval, subRegion.id]);
-                            } else {
-                              setSelectedSubRegionsForApproval(selectedSubRegionsForApproval.filter(id => id !== subRegion.id));
-                            }
-                          }}
-                        />
-                        <label htmlFor={`subregion-${subRegion.id}`} className="text-sm">
-                          {subRegion.name}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                  <label className="text-sm font-medium">Sub-regiões (Opcional)</label>
+                  <Select 
+                    onValueChange={(value) => {
+                      if (value === "all") {
+                        setSelectedSubRegionsForApproval([]);
+                      } else {
+                        const subRegionId = parseInt(value);
+                        const newValue = selectedSubRegionsForApproval.includes(subRegionId)
+                          ? selectedSubRegionsForApproval.filter(id => id !== subRegionId)
+                          : [...selectedSubRegionsForApproval, subRegionId];
+                        setSelectedSubRegionsForApproval(newValue);
+                      }
+                    }}
+                    value=""
+                  >
+                    <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                      <SelectValue placeholder={
+                        selectedSubRegionsForApproval.length === 0 
+                          ? "Todas as sub-regiões" 
+                          : `${selectedSubRegionsForApproval.length} sub-região(ões) selecionada(s)`
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as sub-regiões</SelectItem>
+                      {availableSubRegions.filter(sr => selectedRegionsForApproval.includes(sr.regionId)).map((subRegion) => {
+                        const isSelected = selectedSubRegionsForApproval.includes(subRegion.id);
+                        const parentRegion = availableRegions.find(r => r.id === subRegion.regionId);
+                        return (
+                          <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={isSelected}
+                                onChange={() => {}} // Handled by parent onValueChange
+                              />
+                              <span>{subRegion.name} ({parentRegion?.name})</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {selectedSubRegionsForApproval.length > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Selecionadas: {selectedSubRegionsForApproval.map(id => 
+                        availableSubRegions.find(sr => sr.id === id)?.name
+                      ).filter(Boolean).join(", ")}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Solutions */}
               {availableSolutions.length > 0 && (
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">Soluções (selecione uma ou mais)</label>
-                  <div className="space-y-2">
-                    {availableSolutions.map((solution) => (
-                      <div key={solution.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`solution-${solution.id}`}
-                          checked={selectedSolutionsForApproval.includes(solution.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedSolutionsForApproval([...selectedSolutionsForApproval, solution.id]);
-                            } else {
-                              setSelectedSolutionsForApproval(selectedSolutionsForApproval.filter(id => id !== solution.id));
-                            }
-                          }}
-                        />
-                        <label htmlFor={`solution-${solution.id}`} className="text-sm">
-                          {solution.name} - {solution.description}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                  <label className="text-sm font-medium">Soluções</label>
+                  <Select 
+                    onValueChange={(value) => {
+                      if (value === "all") {
+                        setSelectedSolutionsForApproval([]);
+                      } else {
+                        const solutionId = parseInt(value);
+                        const newValue = selectedSolutionsForApproval.includes(solutionId)
+                          ? selectedSolutionsForApproval.filter(id => id !== solutionId)
+                          : [...selectedSolutionsForApproval, solutionId];
+                        setSelectedSolutionsForApproval(newValue);
+                      }
+                      // Clear service lines and services when solution changes
+                      setSelectedServiceLinesForApproval([]);
+                      setSelectedServicesForApproval([]);
+                    }}
+                    value=""
+                  >
+                    <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                      <SelectValue placeholder={
+                        selectedSolutionsForApproval.length === 0 
+                          ? "Todas as soluções" 
+                          : `${selectedSolutionsForApproval.length} solução(ões) selecionada(s)`
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as soluções</SelectItem>
+                      {availableSolutions.map((solution: any) => {
+                        const isSelected = selectedSolutionsForApproval.includes(solution.id);
+                        return (
+                          <SelectItem key={solution.id} value={solution.id.toString()}>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={isSelected}
+                                onChange={() => {}} // Handled by parent onValueChange
+                              />
+                              <span>{solution.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {selectedSolutionsForApproval.length > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Selecionadas: {selectedSolutionsForApproval.map((id: number) => 
+                        availableSolutions.find((s: any) => s.id === id)?.name
+                      ).filter(Boolean).join(", ")}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Service Lines */}
-              {availableServiceLines.length > 0 && (
+              {selectedSolutionsForApproval.length > 0 && availableServiceLines.length > 0 && (
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">Linhas de Serviço (selecione uma ou mais)</label>
-                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
-                    {availableServiceLines.map((serviceLine) => (
-                      <div key={serviceLine.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`serviceline-${serviceLine.id}`}
-                          checked={selectedServiceLinesForApproval.includes(serviceLine.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedServiceLinesForApproval([...selectedServiceLinesForApproval, serviceLine.id]);
-                            } else {
-                              setSelectedServiceLinesForApproval(selectedServiceLinesForApproval.filter(id => id !== serviceLine.id));
-                            }
-                          }}
-                        />
-                        <label htmlFor={`serviceline-${serviceLine.id}`} className="text-sm">
-                          {serviceLine.name}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                  <label className="text-sm font-medium">Linhas de Serviço (Opcional)</label>
+                  <Select 
+                    onValueChange={(value) => {
+                      if (value === "all") {
+                        setSelectedServiceLinesForApproval([]);
+                      } else {
+                        const serviceLineId = parseInt(value);
+                        const newValue = selectedServiceLinesForApproval.includes(serviceLineId)
+                          ? selectedServiceLinesForApproval.filter(id => id !== serviceLineId)
+                          : [...selectedServiceLinesForApproval, serviceLineId];
+                        setSelectedServiceLinesForApproval(newValue);
+                      }
+                      // Clear services when service line changes
+                      setSelectedServicesForApproval([]);
+                    }}
+                    value=""
+                  >
+                    <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                      <SelectValue placeholder={
+                        selectedServiceLinesForApproval.length === 0 
+                          ? "Todas as linhas de serviço" 
+                          : `${selectedServiceLinesForApproval.length} linha(s) de serviço selecionada(s)`
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as linhas de serviço</SelectItem>
+                      {availableServiceLines.filter((sl: any) => 
+                        selectedSolutionsForApproval.includes(sl.solutionId)
+                      ).map((serviceLine: any) => {
+                        const isSelected = selectedServiceLinesForApproval.includes(serviceLine.id);
+                        return (
+                          <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={isSelected}
+                                onChange={() => {}} // Handled by parent onValueChange
+                              />
+                              <span>{serviceLine.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {selectedServiceLinesForApproval.length > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Selecionadas: {selectedServiceLinesForApproval.map((id: number) => 
+                        availableServiceLines.find((sl: any) => sl.id === id)?.name
+                      ).filter(Boolean).join(", ")}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Services */}
-              {availableServices.length > 0 && (
+              {selectedServiceLinesForApproval.length > 0 && availableServices.length > 0 && (
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">Serviços (selecione um ou mais)</label>
-                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
-                    {availableServices.map((service) => (
-                      <div key={service.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`service-${service.id}`}
-                          checked={selectedServicesForApproval.includes(service.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedServicesForApproval([...selectedServicesForApproval, service.id]);
-                            } else {
-                              setSelectedServicesForApproval(selectedServicesForApproval.filter(id => id !== service.id));
-                            }
-                          }}
-                        />
-                        <label htmlFor={`service-${service.id}`} className="text-sm">
-                          {service.name}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                  <label className="text-sm font-medium">Serviços (Opcional)</label>
+                  <Select 
+                    onValueChange={(value) => {
+                      if (value === "all") {
+                        setSelectedServicesForApproval([]);
+                      } else {
+                        const serviceId = parseInt(value);
+                        const newValue = selectedServicesForApproval.includes(serviceId)
+                          ? selectedServicesForApproval.filter(id => id !== serviceId)
+                          : [...selectedServicesForApproval, serviceId];
+                        setSelectedServicesForApproval(newValue);
+                      }
+                    }}
+                    value=""
+                  >
+                    <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                      <SelectValue placeholder={
+                        selectedServicesForApproval.length === 0 
+                          ? "Todos os serviços" 
+                          : `${selectedServicesForApproval.length} serviço(s) selecionado(s)`
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os serviços</SelectItem>
+                      {availableServices.filter((s: any) => 
+                        selectedServiceLinesForApproval.includes(s.serviceLineId)
+                      ).map((service: any) => {
+                        const isSelected = selectedServicesForApproval.includes(service.id);
+                        return (
+                          <SelectItem key={service.id} value={service.id.toString()}>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={isSelected}
+                                onChange={() => {}} // Handled by parent onValueChange
+                              />
+                              <span>{service.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {selectedServicesForApproval.length > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Selecionados: {selectedServicesForApproval.map((id: number) => 
+                        availableServices.find((s: any) => s.id === id)?.name
+                      ).filter(Boolean).join(", ")}
+                    </div>
+                  )}
                 </div>
               )}
 

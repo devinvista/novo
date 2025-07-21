@@ -309,6 +309,11 @@ Changelog:
     - Usuários operacionais agora herdam corretamente regionIds, subRegionIds, solutionIds, serviceLineIds e serviceIds do gestor
     - Sistema de aprovação aplica permissões calculadas (herdadas ou específicas) ao usuário aprovado
     - Filtros automáticos funcionando com base nas permissões herdadas após aprovação
+  - **INTERFACE PADRONIZADA DE APROVAÇÃO**: Diálogo de aprovação atualizado para seguir mesmo padrão do formulário de usuários
+    - Select dropdowns com checkboxes internos ao invés de checkbox simples
+    - Seleção hierárquica com cascata automática (região → sub-região → solução → linha → serviço)
+    - Indicadores visuais de quantidade selecionada e resumo das escolhas
+    - Interface consistente com resto do sistema para melhor experiência do usuário
 - July 08, 2025. Final Replit Agent to Replit environment migration completed and checkpoint system enhancement
   - **MIGRATION COMPLETED**: Successfully completed full migration from Replit Agent to Replit environment
   - **FORM VALIDATION FIXES**: Resolved key results and actions creation validation errors
