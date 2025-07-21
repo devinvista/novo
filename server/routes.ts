@@ -57,19 +57,46 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/regions", async (req, res) => {
+  app.get("/api/regions", requireAuth, async (req, res) => {
     try {
-      const regions = await storage.getRegions();
+      const user = req.user;
+      let regions = await storage.getRegions();
+      
+      // Aplicar filtro regional para usuários não-admin
+      if (user && user.role !== 'admin') {
+        const userRegionIds = user.regionIds || [];
+        if (userRegionIds.length > 0) {
+          // Filtrar apenas as regiões que o usuário tem acesso
+          regions = regions.filter(region => userRegionIds.includes(region.id));
+        }
+      }
+      
       res.json(regions);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar regiões" });
     }
   });
 
-  app.get("/api/sub-regions", async (req, res) => {
+  app.get("/api/sub-regions", requireAuth, async (req, res) => {
     try {
+      const user = req.user;
       const regionId = req.query.regionId ? parseInt(req.query.regionId as string) : undefined;
-      const subRegions = await storage.getSubRegions(regionId);
+      let subRegions = await storage.getSubRegions(regionId);
+      
+      // Aplicar filtro regional para usuários não-admin
+      if (user && user.role !== 'admin') {
+        const userSubRegionIds = user.subRegionIds || [];
+        const userRegionIds = user.regionIds || [];
+        
+        if (userSubRegionIds.length > 0) {
+          // Filtrar apenas as sub-regiões que o usuário tem acesso
+          subRegions = subRegions.filter(subRegion => userSubRegionIds.includes(subRegion.id));
+        } else if (userRegionIds.length > 0) {
+          // Se usuário não tem sub-regiões específicas, filtrar por região
+          subRegions = subRegions.filter(subRegion => userRegionIds.includes(subRegion.regionId));
+        }
+      }
+      
       res.json(subRegions);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar sub-regiões" });

@@ -245,6 +245,21 @@ Changelog:
     - API endpoints atualizados para validação de acesso multi-regional
     - Dashboard KPIs com suporte a filtros de múltiplas regiões por usuário
 - July 21, 2025. **CONTROLE DE ACESSO MULTI-REGIONAL IMPLEMENTADO** - Sistema completo de múltiplas regiões por usuário
+- July 21, 2025. **FILTRO REGIONAL CORRIGIDO** - Controle de acesso regional agora funcionando corretamente
+  - **PROBLEMA CORRIGIDO**: App foi debugado e erro de autenticação foi resolvido
+    - Erro de buffer length em `timingSafeEqual` corrigido na função `comparePasswords`
+    - TypeScript session store import errors resolvidos
+    - App agora roda sem erros na porta 5000
+  - **FILTROS REGIONAIS IMPLEMENTADOS**: API endpoints agora respeitam permissões regionais
+    - `/api/regions` endpoint agora filtra regiões baseado no usuário logado
+    - `/api/sub-regions` endpoint agora filtra sub-regiões baseado no usuário logado
+    - Admins veem todas as regiões (11 regiões totais)
+    - Gestores veem apenas suas regiões autorizadas (ex: gestor.teste vê só região Metropolitana)
+    - Middleware `requireAuth` aplicado nos endpoints de regiões e sub-regiões
+  - **VALIDAÇÃO DE ACESSO**: Sistema de controle regional funcionando corretamente
+    - Usuário gestor.teste (região 26 - Metropolitana) agora vê apenas 1 região ao invés de 11
+    - Sistema filtra baseado em `user.regionIds` e `user.subRegionIds` arrays
+    - Compatibilidade mantida: admins continuam tendo acesso total sem filtros
   - **SISTEMA MULTI-REGIONAL**: Usuários podem ter acesso a múltiplas regiões/subregiões simultaneamente
     - Schema atualizado: `regionIds` e `subRegionIds` como arrays JSON para múltiplas regiões
     - Admins têm acesso total a todas as regiões e subregiões
