@@ -206,6 +206,32 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async approveUserWithPermissions(id: number, approvedBy: number, permissions: {
+    regionIds: number[];
+    subRegionIds: number[];
+    solutionIds: number[];
+    serviceLineIds: number[];
+    serviceIds: number[];
+  }): Promise<User> {
+    const updateData: any = {
+      approved: true, 
+      approvedAt: sql`CURRENT_TIMESTAMP`,
+      approvedBy: approvedBy,
+      regionIds: permissions.regionIds || [],
+      subRegionIds: permissions.subRegionIds || [],
+      solutionIds: permissions.solutionIds || [],
+      serviceLineIds: permissions.serviceLineIds || [],
+      serviceIds: permissions.serviceIds || [],
+    };
+
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
 
 
   async getUserById(id: number): Promise<User | undefined> {

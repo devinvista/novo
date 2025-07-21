@@ -304,6 +304,11 @@ Changelog:
     - Autenticação bloqueia login de usuários não aprovados (exceto admins)
     - Usuários registrados aguardam aprovação antes de poder fazer login
     - Eliminado login automático após registro - usuário deve aguardar aprovação do gestor
+  - **HERANÇA DE PERMISSÕES CORRIGIDA**: Sistema de herança de acessos implementado corretamente
+    - Método `approveUserWithPermissions` implementado no storage para aplicar permissões específicas
+    - Usuários operacionais agora herdam corretamente regionIds, subRegionIds, solutionIds, serviceLineIds e serviceIds do gestor
+    - Sistema de aprovação aplica permissões calculadas (herdadas ou específicas) ao usuário aprovado
+    - Filtros automáticos funcionando com base nas permissões herdadas após aprovação
 - July 08, 2025. Final Replit Agent to Replit environment migration completed and checkpoint system enhancement
   - **MIGRATION COMPLETED**: Successfully completed full migration from Replit Agent to Replit environment
   - **FORM VALIDATION FIXES**: Resolved key results and actions creation validation errors

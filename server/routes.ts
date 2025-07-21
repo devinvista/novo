@@ -739,8 +739,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Aprovar usuário com permissões herdadas/configuradas
-      const user = await storage.approveUser(id, req.user!.id);
-      console.log("User approved successfully with inherited permissions");
+      const user = await storage.approveUserWithPermissions(id, req.user!.id, finalPermissions);
+      console.log("User approved successfully with inherited permissions", finalPermissions);
       res.json(user);
     } catch (error) {
       console.error("Error approving user:", error);
