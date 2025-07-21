@@ -3,7 +3,7 @@ import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table with role-based access and solution/service permissions
+// Users table with role-based access
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
@@ -14,10 +14,6 @@ export const users = sqliteTable("users", {
   regionId: integer("region_id"),
   subRegionId: integer("sub_region_id"),
   gestorId: integer("gestor_id").references(() => users.id), // Reference to manager
-  // Solution/Service access permissions (JSON arrays)
-  solutionIds: text("solution_ids"), // JSON array of accessible solution IDs
-  serviceLineIds: text("service_line_ids"), // JSON array of accessible service line IDs
-  serviceIds: text("service_ids"), // JSON array of accessible service IDs
   approved: integer("approved", { mode: "boolean" }).notNull().default(false), // Approval status
   approvedAt: text("approved_at"), // When was approved
   approvedBy: integer("approved_by").references(() => users.id), // Who approved
@@ -79,14 +75,14 @@ export const objectives = sqliteTable("objectives", {
   ownerId: integer("owner_id").notNull().references(() => users.id),
   regionId: integer("region_id").references(() => regions.id),
   subRegionId: integer("sub_region_id").references(() => subRegions.id),
-  solutionId: integer("solution_id").references(() => solutions.id),
-  serviceLineId: integer("service_line_id").references(() => serviceLines.id),
   startDate: text("start_date").notNull(),
   endDate: text("end_date").notNull(),
   status: text("status").notNull().default("active"), // active, completed, cancelled, delayed
   progress: real("progress").default(0),
   period: text("period"),
+  serviceLineId: integer("service_line_id"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Key Results
@@ -98,7 +94,7 @@ export const keyResults = sqliteTable("key_results", {
   targetValue: real("target_value").notNull(),
   currentValue: real("current_value").default(0),
   unit: text("unit"),
-  strategicIndicatorId: integer("strategic_indicator_id").references(() => strategicIndicators.id),
+  strategicIndicatorIds: text("strategic_indicator_ids").notNull(), // JSON string
   serviceLineId: integer("service_line_id").references(() => serviceLines.id),
   serviceId: integer("service_id").references(() => services.id),
   startDate: text("start_date").notNull(),
@@ -107,6 +103,7 @@ export const keyResults = sqliteTable("key_results", {
   status: text("status").notNull().default("active"), // active, completed, cancelled, delayed
   progress: real("progress").default(0),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Actions
@@ -122,6 +119,7 @@ export const actions = sqliteTable("actions", {
   status: text("status").notNull().default("pending"), // pending, in_progress, completed, cancelled
   priority: text("priority").notNull().default("medium"), // low, medium, high
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Checkpoints (automatically generated based on KR frequency)
@@ -133,7 +131,7 @@ export const checkpoints = sqliteTable("checkpoints", {
   actualValue: real("actual_value").default(0),
   status: text("status").notNull().default("pending"), // pending, completed, delayed
   notes: text("notes"),
-  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Define relationships
@@ -179,14 +177,11 @@ export const objectivesRelations = relations(objectives, ({ one, many }) => ({
   owner: one(users, { fields: [objectives.ownerId], references: [users.id] }),
   region: one(regions, { fields: [objectives.regionId], references: [regions.id] }),
   subRegion: one(subRegions, { fields: [objectives.subRegionId], references: [subRegions.id] }),
-  solution: one(solutions, { fields: [objectives.solutionId], references: [solutions.id] }),
-  serviceLine: one(serviceLines, { fields: [objectives.serviceLineId], references: [serviceLines.id] }),
   keyResults: many(keyResults),
 }));
 
 export const keyResultsRelations = relations(keyResults, ({ one, many }) => ({
   objective: one(objectives, { fields: [keyResults.objectiveId], references: [objectives.id] }),
-  strategicIndicator: one(strategicIndicators, { fields: [keyResults.strategicIndicatorId], references: [strategicIndicators.id] }),
   serviceLine: one(serviceLines, { fields: [keyResults.serviceLineId], references: [serviceLines.id] }),
   service: one(services, { fields: [keyResults.serviceId], references: [services.id] }),
   actions: many(actions),

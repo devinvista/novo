@@ -100,7 +100,6 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
 
   constructor() {
-    // Configure in-memory session store for SQLite
     const MemStore = MemoryStore(session);
     this.sessionStore = new MemStore({
       checkPeriod: 86400000 // prune expired entries every 24h
@@ -130,35 +129,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db
+    const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
-    return result[0];
+    return user;
   }
 
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User> {
-    const result = await db
+    const [user] = await db
       .update(users)
       .set(userData)
       .where(eq(users.id, id))
       .returning();
-    return result[0];
+    return user;
   }
 
-  async approveUser(id: number, approvedBy: number, updateData: {
-    subRegionId?: number;
-    solutionIds?: number[];
-    serviceLineIds?: number[];
-    serviceIds?: number[];
-  } = {}): Promise<User> {
+  async approveUser(id: number, approvedBy: number, subRegionId?: number): Promise<User> {
     // Get the approver (gestor) data to inherit region
     const approver = await this.getUser(approvedBy);
     if (!approver) {
       throw new Error("Gestor não encontrado");
     }
 
-    const approvalData: any = {
+    const updateData: any = {
       approved: true, 
       approvedAt: sql`CURRENT_TIMESTAMP`,
       approvedBy: approvedBy,
@@ -166,29 +160,18 @@ export class DatabaseStorage implements IStorage {
     };
 
     // If sub-region is provided, use it; otherwise inherit from gestor
-    if (updateData.subRegionId !== undefined) {
-      approvalData.subRegionId = updateData.subRegionId;
+    if (subRegionId !== undefined) {
+      updateData.subRegionId = subRegionId;
     } else if (approver.subRegionId) {
-      approvalData.subRegionId = approver.subRegionId;
+      updateData.subRegionId = approver.subRegionId;
     }
 
-    // Set solution/service permissions
-    if (updateData.solutionIds) {
-      approvalData.solutionIds = JSON.stringify(updateData.solutionIds);
-    }
-    if (updateData.serviceLineIds) {
-      approvalData.serviceLineIds = JSON.stringify(updateData.serviceLineIds);
-    }
-    if (updateData.serviceIds) {
-      approvalData.serviceIds = JSON.stringify(updateData.serviceIds);
-    }
-
-    const result = await db
+    const [user] = await db
       .update(users)
-      .set(approvalData)
+      .set(updateData)
       .where(eq(users.id, id))
       .returning();
-    return result[0];
+    return user;
   }
 
   async deleteUser(id: number): Promise<void> {
@@ -236,14 +219,10 @@ export class DatabaseStorage implements IStorage {
     regionId?: number;
     subRegionId?: number;
     ownerId?: number;
-    solutionId?: number;
-    serviceLineId?: number;
   }): Promise<(Objective & { 
     owner: User; 
     region?: Region; 
-    subRegion?: SubRegion;
-    solution?: Solution;
-    serviceLine?: ServiceLine;
+    subRegion?: SubRegion; 
   })[]> {
     let query = db
       .select({
@@ -253,27 +232,19 @@ export class DatabaseStorage implements IStorage {
         ownerId: objectives.ownerId,
         regionId: objectives.regionId,
         subRegionId: objectives.subRegionId,
-        solutionId: objectives.solutionId,
-        serviceLineId: objectives.serviceLineId,
         startDate: objectives.startDate,
         endDate: objectives.endDate,
         status: objectives.status,
         progress: objectives.progress,
-        period: objectives.period,
         createdAt: objectives.createdAt,
+        updatedAt: objectives.updatedAt,
         owner: {
           id: users.id,
           username: users.username,
           name: users.name,
           email: users.email,
           role: users.role,
-          regionId: users.regionId,
-          subRegionId: users.subRegionId,
-          solutionIds: users.solutionIds,
-          serviceLineIds: users.serviceLineIds,
-          serviceIds: users.serviceIds,
-          approved: users.approved,
-          active: users.active,
+          password: users.password,
           createdAt: users.createdAt,
         },
         region: {
@@ -287,32 +258,18 @@ export class DatabaseStorage implements IStorage {
           code: subRegions.code,
           regionId: subRegions.regionId,
         },
-        solution: {
-          id: solutions.id,
-          name: solutions.name,
-          description: solutions.description,
-        },
-        serviceLine: {
-          id: serviceLines.id,
-          name: serviceLines.name,
-          description: serviceLines.description,
-          solutionId: serviceLines.solutionId,
-        },
+
       })
       .from(objectives)
       .innerJoin(users, eq(objectives.ownerId, users.id))
       .leftJoin(regions, eq(objectives.regionId, regions.id))
-      .leftJoin(subRegions, eq(objectives.subRegionId, subRegions.id))
-      .leftJoin(solutions, eq(objectives.solutionId, solutions.id))
-      .leftJoin(serviceLines, eq(objectives.serviceLineId, serviceLines.id));
+      .leftJoin(subRegions, eq(objectives.subRegionId, subRegions.id));
 
     if (filters) {
       const conditions = [];
       if (filters.regionId) conditions.push(eq(objectives.regionId, filters.regionId));
       if (filters.subRegionId) conditions.push(eq(objectives.subRegionId, filters.subRegionId));
       if (filters.ownerId) conditions.push(eq(objectives.ownerId, filters.ownerId));
-      if (filters.solutionId) conditions.push(eq(objectives.solutionId, filters.solutionId));
-      if (filters.serviceLineId) conditions.push(eq(objectives.serviceLineId, filters.serviceLineId));
 
       if (conditions.length > 0) {
         query = query.where(and(...conditions));

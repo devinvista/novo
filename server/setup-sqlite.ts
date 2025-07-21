@@ -1,162 +1,266 @@
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { db, sqlite } from './db';
-import * as schema from "@shared/schema";
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { 
+  users, regions, subRegions, serviceLines, strategicIndicators, 
+  objectives, keyResults, actions, checkpoints, activities,
+  solutions, services
+} from "@shared/schema";
 
-console.log('Setting up SQLite database...');
+const sqlite = new Database('okr.db');
+const db = drizzle(sqlite, { 
+  schema: { 
+    users, regions, subRegions, serviceLines, strategicIndicators,
+    objectives, keyResults, actions, checkpoints, activities,
+    solutions, services
+  } 
+});
 
-// Create tables directly from schema
-const createTables = () => {
-  console.log('Creating tables...');
+async function setupSQLite() {
+  console.log('🔧 Configurando banco SQLite...');
+
+  // Create tables using SQL directly
+  const tableCreationSQL = [
+    `CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      role TEXT NOT NULL DEFAULT 'operacional',
+      region_id INTEGER,
+      sub_region_id INTEGER,
+      active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS regions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      code TEXT NOT NULL UNIQUE
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS sub_regions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      code TEXT NOT NULL UNIQUE,
+      region_id INTEGER NOT NULL
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS solutions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS service_lines (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      solution_id INTEGER NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS services (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      service_line_id INTEGER NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS strategic_indicators (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT,
+      unit TEXT,
+      active INTEGER NOT NULL DEFAULT 1
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS objectives (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      owner_id INTEGER NOT NULL,
+      region_id INTEGER,
+      sub_region_id INTEGER,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      progress REAL DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS key_results (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      objective_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      number INTEGER NOT NULL,
+      strategic_indicator_ids TEXT,
+      service_line_id INTEGER,
+      service_id INTEGER,
+      initial_value REAL NOT NULL,
+      target_value REAL NOT NULL,
+      current_value REAL DEFAULT 0,
+      unit TEXT,
+      frequency TEXT NOT NULL,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      progress REAL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS actions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key_result_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      number INTEGER NOT NULL,
+      strategic_indicator_id INTEGER,
+      responsible_id INTEGER,
+      due_date TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      priority TEXT NOT NULL DEFAULT 'medium',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS checkpoints (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key_result_id INTEGER NOT NULL,
+      period TEXT NOT NULL,
+      target_value REAL NOT NULL,
+      actual_value REAL,
+      progress REAL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pendente',
+      notes TEXT,
+      completed_at TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS activities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      description TEXT NOT NULL,
+      old_values TEXT,
+      new_values TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`
+  ];
+
+  for (const sql of tableCreationSQL) {
+    sqlite.exec(sql);
+  }
+
+  console.log('✅ Tabelas criadas');
+
+  // Seed basic data
+  const seedData = {
+    regions: [
+      { name: 'Central', code: 'CEN' },
+      { name: 'Departamento Regional', code: 'DR' },
+      { name: 'Encosta da Serra', code: 'ES' },
+      { name: 'Metropolitana', code: 'MET' },
+      { name: 'Noroeste', code: 'NO' },
+      { name: 'Norte', code: 'N' },
+      { name: 'Serra', code: 'S' },
+      { name: 'Sul', code: 'SU' },
+      { name: 'Vale do Rio Pardo', code: 'VRP' },
+      { name: 'Vale do Sinos', code: 'VS' },
+      { name: 'Vale do Taquari', code: 'VT' }
+    ],
+    solutions: [
+      { name: 'Educação', description: 'Soluções educacionais' },
+      { name: 'Saúde', description: 'Soluções de saúde' }
+    ],
+    indicators: [
+      { name: 'Sustentabilidade Operacional', description: 'Indicador de sustentabilidade das operações organizacionais', unit: '%' },
+      { name: 'Receita de Serviços', description: 'Receita gerada através da prestação de serviços', unit: 'R$' },
+      { name: 'Matrículas em Educação', description: 'Número de matrículas realizadas em programas educacionais', unit: 'unidades' },
+      { name: 'Indústrias Atendidas em Saúde', description: 'Quantidade de indústrias atendidas pelos serviços de saúde', unit: 'unidades' },
+      { name: 'Trabalhadores da Indústria Atendidos em Saúde', description: 'Número de trabalhadores industriais atendidos pelos serviços de saúde', unit: 'pessoas' },
+      { name: 'Matrículas Presenciais com Mais de 4 Horas', description: 'Matrículas em cursos presenciais com carga horária superior a 4 horas', unit: 'unidades' },
+      { name: 'Custo Hora Aluno', description: 'Custo por hora de cada aluno nos programas educacionais', unit: 'R$/hora' }
+    ]
+  };
+
+  // Insert regions
+  for (const region of seedData.regions) {
+    sqlite.prepare('INSERT OR IGNORE INTO regions (name, code) VALUES (?, ?)').run(region.name, region.code);
+  }
+
+  // Insert solutions
+  for (const solution of seedData.solutions) {
+    sqlite.prepare('INSERT OR IGNORE INTO solutions (name, description) VALUES (?, ?)').run(solution.name, solution.description);
+  }
+
+  // Insert indicators
+  for (const indicator of seedData.indicators) {
+    sqlite.prepare('INSERT OR IGNORE INTO strategic_indicators (name, description, unit) VALUES (?, ?, ?)').run(indicator.name, indicator.description, indicator.unit);
+  }
+
+  // Insert service lines
+  const serviceLines = [
+    { name: 'Educação Básica', solution_id: 1 },
+    { name: 'Educação Continuada', solution_id: 1 },
+    { name: 'Evento', solution_id: 1 },
+    { name: 'Atividade Física', solution_id: 2 },
+    { name: 'Evento', solution_id: 2 },
+    { name: 'Locação de Espaços', solution_id: 2 },
+    { name: 'Normas Regulamentadoras', solution_id: 2 },
+    { name: 'Nutrição', solution_id: 2 },
+    { name: 'Odontologia', solution_id: 2 },
+    { name: 'Parque SESI', solution_id: 2 },
+    { name: 'Promoção da Saúde', solution_id: 2 },
+    { name: 'Saúde Mental', solution_id: 2 },
+    { name: 'Saúde Ocupacional', solution_id: 2 },
+    { name: 'Segurança do Trabalho', solution_id: 2 },
+    { name: 'Vacinação', solution_id: 2 }
+  ];
+
+  for (const sl of serviceLines) {
+    sqlite.prepare('INSERT OR IGNORE INTO service_lines (name, solution_id) VALUES (?, ?)').run(sl.name, sl.solution_id);
+  }
+
+  console.log('✅ Dados básicos inseridos');
   
-  // Enable foreign keys
-  sqlite.pragma('foreign_keys = ON');
-  
-  // Create all tables
-  sqlite.exec(`
-    -- Users table with role-based access and solution/service permissions
-    CREATE TABLE IF NOT EXISTS "users" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "username" text NOT NULL UNIQUE,
-      "password" text NOT NULL,
-      "name" text NOT NULL,
-      "email" text NOT NULL UNIQUE,
-      "role" text NOT NULL DEFAULT 'operacional',
-      "region_id" integer,
-      "sub_region_id" integer,
-      "gestor_id" integer REFERENCES users(id),
-      "solution_ids" text,
-      "service_line_ids" text,
-      "service_ids" text,
-      "approved" integer DEFAULT 0 NOT NULL,
-      "approved_at" text,
-      "approved_by" integer REFERENCES users(id),
-      "active" integer DEFAULT 1 NOT NULL,
-      "created_at" text DEFAULT CURRENT_TIMESTAMP
-    );
+  // Create admin user
+  const adminUser = {
+    username: 'admin',
+    password: 'admin123',
+    name: 'Administrador SESI',
+    email: 'admin@sesi.rs.gov.br',
+    role: 'admin',
+    region_id: 1,
+    active: 1
+  };
 
-    -- Regions table
-    CREATE TABLE IF NOT EXISTS "regions" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "name" text NOT NULL UNIQUE,
-      "code" text NOT NULL UNIQUE
-    );
+  sqlite.prepare(`INSERT OR IGNORE INTO users 
+    (username, password, name, email, role, region_id, active) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+    adminUser.username, adminUser.password, adminUser.name, 
+    adminUser.email, adminUser.role, adminUser.region_id, adminUser.active
+  );
 
-    -- Sub-regions table
-    CREATE TABLE IF NOT EXISTS "sub_regions" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "name" text NOT NULL,
-      "code" text NOT NULL UNIQUE,
-      "region_id" integer NOT NULL REFERENCES regions(id)
-    );
+  console.log('✅ Usuário admin criado');
+  console.log('🎉 SQLite configurado com sucesso!');
+}
 
-    -- Solutions table
-    CREATE TABLE IF NOT EXISTS "solutions" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "name" text NOT NULL UNIQUE,
-      "description" text
-    );
+if (import.meta.url === `file://${process.argv[1]}`) {
+  setupSQLite()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+}
 
-    -- Service Lines table
-    CREATE TABLE IF NOT EXISTS "service_lines" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "name" text NOT NULL,
-      "description" text,
-      "solution_id" integer NOT NULL REFERENCES solutions(id)
-    );
-
-    -- Services table
-    CREATE TABLE IF NOT EXISTS "services" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "name" text NOT NULL,
-      "description" text,
-      "service_line_id" integer NOT NULL REFERENCES service_lines(id)
-    );
-
-    -- Strategic Indicators table
-    CREATE TABLE IF NOT EXISTS "strategic_indicators" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "name" text NOT NULL UNIQUE,
-      "description" text,
-      "unit" text
-    );
-
-    -- Objectives table
-    CREATE TABLE IF NOT EXISTS "objectives" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "title" text NOT NULL,
-      "description" text,
-      "owner_id" integer NOT NULL REFERENCES users(id),
-      "region_id" integer REFERENCES regions(id),
-      "sub_region_id" integer REFERENCES sub_regions(id),
-      "solution_id" integer REFERENCES solutions(id),
-      "service_line_id" integer REFERENCES service_lines(id),
-      "status" text DEFAULT 'active' NOT NULL,
-      "progress" real DEFAULT 0,
-      "period" text,
-      "start_date" text NOT NULL,
-      "end_date" text NOT NULL,
-      "created_at" text DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Key Results table
-    CREATE TABLE IF NOT EXISTS "key_results" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "objective_id" integer NOT NULL REFERENCES objectives(id),
-      "title" text NOT NULL,
-      "description" text,
-      "target_value" real NOT NULL,
-      "current_value" real DEFAULT 0,
-      "unit" text,
-      "strategic_indicator_id" integer REFERENCES strategic_indicators(id),
-      "service_line_id" integer REFERENCES service_lines(id),
-      "service_id" integer REFERENCES services(id),
-      "start_date" text NOT NULL,
-      "end_date" text NOT NULL,
-      "frequency" text NOT NULL,
-      "status" text DEFAULT 'active' NOT NULL,
-      "progress" real DEFAULT 0,
-      "created_at" text DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Actions table
-    CREATE TABLE IF NOT EXISTS "actions" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "key_result_id" integer NOT NULL REFERENCES key_results(id),
-      "title" text NOT NULL,
-      "description" text,
-      "number" integer NOT NULL,
-      "strategic_indicator_id" integer REFERENCES strategic_indicators(id),
-      "responsible_id" integer REFERENCES users(id),
-      "due_date" text,
-      "status" text DEFAULT 'pending' NOT NULL,
-      "priority" text DEFAULT 'medium' NOT NULL,
-      "created_at" text DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Checkpoints table  
-    CREATE TABLE IF NOT EXISTS "checkpoints" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "key_result_id" integer NOT NULL REFERENCES key_results(id),
-      "period" text NOT NULL,
-      "target_value" real NOT NULL,
-      "actual_value" real DEFAULT 0,
-      "status" text DEFAULT 'pending' NOT NULL,
-      "notes" text,
-      "created_at" text DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Activities table
-    CREATE TABLE IF NOT EXISTS "activities" (
-      "id" integer PRIMARY KEY AUTOINCREMENT,
-      "user_id" integer NOT NULL REFERENCES users(id),
-      "action" text NOT NULL,
-      "details" text,
-      "created_at" text DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-  
-  console.log('✓ Tables created successfully');
-};
-
-createTables();
-console.log('✅ SQLite database setup completed');
+export { setupSQLite };

@@ -1,2 +1,2 @@
-// This file now exports from the SQLite schema for Replit compatibility
-export * from './sqlite-schema';
+// This file now exports from the PostgreSQL schema for Replit compatibility
+export * from './postgres-schema';

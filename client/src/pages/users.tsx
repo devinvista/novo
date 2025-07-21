@@ -15,7 +15,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Edit, Trash2, Shield, Eye, EyeOff } from "lucide-react";
-import { UserPermissionsForm } from "@/components/user-permissions-form";
 
 interface User {
   id: number;
@@ -74,11 +73,6 @@ export default function UsersPage() {
   const [showPasswords, setShowPasswords] = useState<{[key: number]: boolean}>({});
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [userToApprove, setUserToApprove] = useState<User | null>(null);
-  const [userPermissions, setUserPermissions] = useState({
-    solutionIds: [] as number[],
-    serviceLineIds: [] as number[],
-    serviceIds: [] as number[],
-  });
   const [selectedSubRegionForApproval, setSelectedSubRegionForApproval] = useState<string>("");
 
   const form = useForm<UserFormData>({
@@ -157,30 +151,14 @@ export default function UsersPage() {
   });
 
   const approveUserMutation = useMutation({
-    mutationFn: ({ id, subRegionId, solutionIds, serviceLineIds, serviceIds }: { 
-      id: number; 
-      subRegionId?: number;
-      solutionIds?: number[];
-      serviceLineIds?: number[];
-      serviceIds?: number[];
-    }) => 
-      apiRequest("PATCH", `/api/users/${id}/approve`, { 
-        subRegionId, 
-        solutionIds, 
-        serviceLineIds, 
-        serviceIds 
-      }).then(res => res.json()),
+    mutationFn: ({ id, subRegionId }: { id: number; subRegionId?: number }) => 
+      apiRequest("PATCH", `/api/users/${id}/approve`, { subRegionId }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending-users"] });
       setApprovalDialogOpen(false);
       setUserToApprove(null);
       setSelectedSubRegionForApproval("");
-      setUserPermissions({
-        solutionIds: [],
-        serviceLineIds: [],
-        serviceIds: [],
-      });
       toast({
         title: "Usuário aprovado",
         description: "Usuário aprovado com sucesso e vinculado à sua região!",
@@ -294,11 +272,8 @@ export default function UsersPage() {
         : undefined;
       
       approveUserMutation.mutate({ 
-        id: userToApprove.id,
-        subRegionId,
-        solutionIds: userPermissions.solutionIds,
-        serviceLineIds: userPermissions.serviceLineIds,
-        serviceIds: userPermissions.serviceIds 
+        id: userToApprove.id, 
+        subRegionId 
       });
     }
   };
@@ -714,7 +689,7 @@ export default function UsersPage() {
 
       {/* Approval Dialog */}
       <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Aprovar Usuário</DialogTitle>
             <DialogDescription>
@@ -761,14 +736,6 @@ export default function UsersPage() {
                 <div className="text-xs text-muted-foreground">
                   O usuário será vinculado à região {currentUser?.regionId ? regions.find(r => r.id === currentUser.regionId)?.name : 'N/A'}
                 </div>
-              </div>
-
-              {/* Permissions Configuration */}
-              <div className="space-y-3">
-                <UserPermissionsForm 
-                  onPermissionsChange={setUserPermissions}
-                  initialPermissions={userPermissions}
-                />
               </div>
             </div>
           )}

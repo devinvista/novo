@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Users table with role-based access
-export const users: any = pgTable("users", {
+export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
@@ -13,10 +13,10 @@ export const users: any = pgTable("users", {
   role: varchar("role", { length: 50 }).notNull().default("operacional"), // admin, gestor, operacional
   regionId: integer("region_id"),
   subRegionId: integer("sub_region_id"),
-  gestorId: integer("gestor_id").references((): any => users.id), // Reference to manager
+  gestorId: integer("gestor_id").references(() => users.id), // Reference to manager
   approved: boolean("approved").notNull().default(false), // Approval status
   approvedAt: timestamp("approved_at"), // When was approved
-  approvedBy: integer("approved_by").references((): any => users.id), // Who approved
+  approvedBy: integer("approved_by").references(() => users.id), // Who approved
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
