@@ -6,8 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Target, Calendar, TrendingUp, Settings, Users, Briefcase, CheckCircle2 } from "lucide-react";
 
 interface KeyResultFormProps {
   keyResult?: any;
@@ -213,211 +217,352 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {keyResult ? "Editar Resultado-Chave" : "Novo Resultado-Chave"}
-          </DialogTitle>
-          <DialogDescription>
-            {keyResult ? "Atualize as informações do resultado-chave." : "Crie um novo resultado-chave associado a um objetivo."}
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] overflow-y-auto">
+        <DialogHeader className="text-center space-y-3 pb-6">
+          <div className="flex items-center justify-center space-x-2">
+            <Target className="h-6 w-6 text-blue-600" />
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {keyResult ? "Editar Resultado-Chave" : "Novo Resultado-Chave"}
+            </DialogTitle>
+          </div>
+          <DialogDescription className="text-muted-foreground text-base">
+            {keyResult ? "Atualize as informações do resultado-chave para acompanhar o progresso." : "Defina um resultado mensurável que contribua para o alcance do objetivo estratégico."}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 px-1">
-          <div className="space-y-2">
-            <Label htmlFor="objectiveId">Objetivo *</Label>
-            <Select value={formData.objectiveId.toString()} onValueChange={(value) => handleInputChange("objectiveId", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um objetivo" />
-              </SelectTrigger>
-              <SelectContent>
-                {objectives?.map((objective: any) => (
-                  <SelectItem key={objective.id} value={objective.id.toString()}>
-                    {objective.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card className="border-l-4 border-l-blue-500 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Target className="h-5 w-5 mr-2 text-blue-600" />
+                Informações Básicas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="objectiveId" className="text-sm font-semibold flex items-center">
+                  <span className="text-red-500 mr-1">*</span>
+                  Objetivo
+                </Label>
+                <Select value={formData.objectiveId.toString()} onValueChange={(value) => handleInputChange("objectiveId", value)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Selecione o objetivo estratégico" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {objectives?.map((objective: any) => (
+                      <SelectItem key={objective.id} value={objective.id.toString()}>
+                        {objective.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="title">Título *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="Digite o título do resultado-chave"
-              required
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-semibold flex items-center">
+                  <span className="text-red-500 mr-1">*</span>
+                  Título do Resultado-Chave
+                </Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  placeholder="Ex: Aumentar satisfação do cliente em 25%"
+                  required
+                  className="h-11"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Descreva o resultado-chave em detalhes"
-              className="resize-none"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-semibold">
+                  Descrição Detalhada
+                </Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  placeholder="Descreva como este resultado será medido e qual impacto esperado..."
+                  className="resize-none h-20"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="space-y-2">
-            <Label htmlFor="targetValue">Valor Meta *</Label>
-            <Input
-              id="targetValue"
-              type="number"
-              step="0.01"
-              value={formData.targetValue}
-              onChange={(e) => handleInputChange("targetValue", e.target.value)}
-              placeholder="0"
-              required
-            />
-          </div>
+          <Card className="border-l-4 border-l-green-500 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                Métricas e Metas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="targetValue" className="text-sm font-semibold flex items-center">
+                    <span className="text-red-500 mr-1">*</span>
+                    Valor Meta
+                  </Label>
+                  <Input
+                    id="targetValue"
+                    type="number"
+                    step="0.01"
+                    value={formData.targetValue}
+                    onChange={(e) => handleInputChange("targetValue", e.target.value)}
+                    placeholder="100"
+                    required
+                    className="h-11 text-center font-semibold"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="unit">Unidade</Label>
-            <Input
-              id="unit"
-              value={formData.unit}
-              onChange={(e) => handleInputChange("unit", e.target.value)}
-              placeholder="Ex: %, unidades, R$"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="unit" className="text-sm font-semibold">
+                    Unidade de Medida
+                  </Label>
+                  <Input
+                    id="unit"
+                    value={formData.unit}
+                    onChange={(e) => handleInputChange("unit", e.target.value)}
+                    placeholder="Ex: %, R$, unidades"
+                    className="h-11"
+                  />
+                </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="frequency">Frequência *</Label>
-              <Select value={formData.frequency} onValueChange={(value) => handleInputChange("frequency", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a frequência" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Semanal</SelectItem>
-                  <SelectItem value="monthly">Mensal</SelectItem>
-                  <SelectItem value="quarterly">Trimestral</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="frequency" className="text-sm font-semibold flex items-center">
+                    <span className="text-red-500 mr-1">*</span>
+                    Frequência de Acompanhamento
+                  </Label>
+                  <Select value={formData.frequency} onValueChange={(value) => handleInputChange("frequency", value)}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Periodicidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">🗓️ Semanal</SelectItem>
+                      <SelectItem value="monthly">📅 Mensal</SelectItem>
+                      <SelectItem value="quarterly">📊 Trimestral</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-2">
-              <Label>Indicadores Estratégicos (Opcional)</Label>
-              <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
-                {strategicIndicators && strategicIndicators.length > 0 ? strategicIndicators.map((indicator: any) => (
-                  <div key={indicator.id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`indicator-${indicator.id}`}
-                      checked={formData.strategicIndicatorIds.includes(indicator.id)}
-                      onChange={(e) => {
-                        const currentValue = formData.strategicIndicatorIds;
-                        if (e.target.checked) {
-                          setFormData(prev => ({
-                            ...prev,
-                            strategicIndicatorIds: [...currentValue, indicator.id]
-                          }));
-                        } else {
-                          setFormData(prev => ({
-                            ...prev,
-                            strategicIndicatorIds: currentValue.filter((id: number) => id !== indicator.id)
-                          }));
-                        }
-                      }}
-                      className="rounded border-gray-300"
-                    />
-                    <label htmlFor={`indicator-${indicator.id}`} className="text-sm font-medium">
-                      {indicator.name}
+          <Card className="border-l-4 border-l-purple-500 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Settings className="h-5 w-5 mr-2 text-purple-600" />
+                Indicadores Estratégicos
+                <Badge variant="secondary" className="ml-2 text-xs">Opcional</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                  {strategicIndicators && strategicIndicators.length > 0 ? strategicIndicators.map((indicator: any) => (
+                    <label 
+                      key={indicator.id} 
+                      htmlFor={`indicator-${indicator.id}`}
+                      className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                        formData.strategicIndicatorIds.includes(indicator.id) 
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
+                          : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        id={`indicator-${indicator.id}`}
+                        checked={formData.strategicIndicatorIds.includes(indicator.id)}
+                        onChange={(e) => {
+                          const currentValue = formData.strategicIndicatorIds;
+                          if (e.target.checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              strategicIndicatorIds: [...currentValue, indicator.id]
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              strategicIndicatorIds: currentValue.filter((id: number) => id !== indicator.id)
+                            }));
+                          }
+                        }}
+                        className="w-4 h-4 text-purple-600 rounded"
+                      />
+                      <span className="text-sm font-medium flex-1">{indicator.name}</span>
+                      {formData.strategicIndicatorIds.includes(indicator.id) && (
+                        <CheckCircle2 className="h-4 w-4 text-purple-600" />
+                      )}
                     </label>
+                  )) : (
+                    <p className="col-span-2 text-sm text-gray-500 text-center py-4">Nenhum indicador estratégico disponível</p>
+                  )}
+                </div>
+                {formData.strategicIndicatorIds.length > 0 && (
+                  <div className="flex items-center space-x-2 mt-3">
+                    <Badge variant="default" className="bg-purple-100 text-purple-800 border-purple-300">
+                      {formData.strategicIndicatorIds.length} selecionado{formData.strategicIndicatorIds.length > 1 ? 's' : ''}
+                    </Badge>
                   </div>
-                )) : (
-                  <p className="text-sm text-gray-500">Nenhum indicador estratégico disponível</p>
                 )}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="space-y-2">
-            <Label>Linhas de Serviço (Opcional)</Label>
-            <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
-              {serviceLines && serviceLines.length > 0 ? serviceLines.map((serviceLine: any) => (
-                <div key={serviceLine.id} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`serviceline-${serviceLine.id}`}
-                    checked={formData.serviceLineIds.includes(serviceLine.id)}
-                    onChange={(e) => {
-                      const currentValue = formData.serviceLineIds;
-                      if (e.target.checked) {
-                        setFormData(prev => ({
-                          ...prev,
-                          serviceLineIds: [...currentValue, serviceLine.id]
-                        }));
-                      } else {
-                        setFormData(prev => ({
-                          ...prev,
-                          serviceLineIds: currentValue.filter((id: number) => id !== serviceLine.id)
-                        }));
-                      }
-                    }}
-                    className="rounded border-gray-300"
-                  />
-                  <label htmlFor={`serviceline-${serviceLine.id}`} className="text-sm font-medium">
-                    {serviceLine.name}
-                  </label>
+          <Card className="border-l-4 border-l-orange-500 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Briefcase className="h-5 w-5 mr-2 text-orange-600" />
+                Linhas de Serviço
+                <Badge variant="secondary" className="ml-2 text-xs">Opcional</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                  {serviceLines && serviceLines.length > 0 ? serviceLines.map((serviceLine: any) => (
+                    <label 
+                      key={serviceLine.id} 
+                      htmlFor={`serviceline-${serviceLine.id}`}
+                      className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                        formData.serviceLineIds.includes(serviceLine.id) 
+                          ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
+                          : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        id={`serviceline-${serviceLine.id}`}
+                        checked={formData.serviceLineIds.includes(serviceLine.id)}
+                        onChange={(e) => {
+                          const currentValue = formData.serviceLineIds;
+                          if (e.target.checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              serviceLineIds: [...currentValue, serviceLine.id]
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              serviceLineIds: currentValue.filter((id: number) => id !== serviceLine.id)
+                            }));
+                          }
+                        }}
+                        className="w-4 h-4 text-orange-600 rounded"
+                      />
+                      <span className="text-sm font-medium flex-1">{serviceLine.name}</span>
+                      {formData.serviceLineIds.includes(serviceLine.id) && (
+                        <CheckCircle2 className="h-4 w-4 text-orange-600" />
+                      )}
+                    </label>
+                  )) : (
+                    <p className="col-span-2 text-sm text-gray-500 text-center py-4">Nenhuma linha de serviço disponível</p>
+                  )}
                 </div>
-              )) : (
-                <p className="text-sm text-gray-500">Nenhuma linha de serviço disponível</p>
-              )}
-            </div>
-          </div>
+                {formData.serviceLineIds.length > 0 && (
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="default" className="bg-orange-100 text-orange-800 border-orange-300">
+                      {formData.serviceLineIds.length} selecionada{formData.serviceLineIds.length > 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                )}
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="serviceId">Serviço Específico (Opcional)</Label>
-            <Select value={formData.serviceId?.toString() || "0"} onValueChange={(value) => handleInputChange("serviceId", value === "0" ? undefined : parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um serviço específico" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Nenhum serviço específico</SelectItem>
-                {services && services.length > 0 && services.map((service: any) => (
-                  <SelectItem key={service.id} value={service.id.toString()}>
-                    {service.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <Separator />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Data de Início *</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => handleInputChange("startDate", e.target.value)}
-                required
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="serviceId" className="text-sm font-semibold flex items-center">
+                  <Users className="h-4 w-4 mr-1 text-orange-600" />
+                  Serviço Específico
+                  <Badge variant="outline" className="ml-2 text-xs">Opcional</Badge>
+                </Label>
+                <Select value={formData.serviceId?.toString() || "0"} onValueChange={(value) => handleInputChange("serviceId", value === "0" ? undefined : parseInt(value))}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Selecione um serviço específico" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">🔹 Nenhum serviço específico</SelectItem>
+                    {services && services.length > 0 && services.map((service: any) => (
+                      <SelectItem key={service.id} value={service.id.toString()}>
+                        {service.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="endDate">Data de Término *</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => handleInputChange("endDate", e.target.value)}
-                required
-              />
-            </div>
-          </div>
+          <Card className="border-l-4 border-l-indigo-500 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Calendar className="h-5 w-5 mr-2 text-indigo-600" />
+                Cronograma de Execução
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate" className="text-sm font-semibold flex items-center">
+                    <span className="text-red-500 mr-1">*</span>
+                    <Calendar className="h-4 w-4 mr-1 text-green-600" />
+                    Data de Início
+                  </Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => handleInputChange("startDate", e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
 
-          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+                <div className="space-y-2">
+                  <Label htmlFor="endDate" className="text-sm font-semibold flex items-center">
+                    <span className="text-red-500 mr-1">*</span>
+                    <Calendar className="h-4 w-4 mr-1 text-red-600" />
+                    Data de Término
+                  </Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => handleInputChange("endDate", e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator className="my-6" />
+
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)} 
+              className="w-full sm:w-auto h-11 border-2"
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
-              {mutation.isPending ? "Salvando..." : keyResult ? "Atualizar" : "Criar"}
+            <Button 
+              type="submit" 
+              disabled={mutation.isPending} 
+              className="w-full sm:w-auto h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
+            >
+              {mutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  {keyResult ? "Atualizar" : "Criar Resultado-Chave"}
+                </>
+              )}
             </Button>
           </div>
         </form>
