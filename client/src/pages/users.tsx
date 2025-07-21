@@ -523,24 +523,52 @@ export default function UsersPage() {
                     <FormItem>
                       <FormLabel className="text-sm sm:text-base">Regiões (Selecione múltiplas)</FormLabel>
                       <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-32 overflow-y-auto">
+                        <div className="col-span-2 flex items-center space-x-2 p-2 bg-muted rounded">
+                          <Checkbox
+                            id="all-regions"
+                            checked={!field.value || field.value.length === 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                field.onChange([]);
+                                // Clear sub-regions when selecting all regions
+                                form.setValue("subRegionIds", []);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor="all-regions"
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            Todas as regiões
+                          </label>
+                        </div>
                         {regions.map((region) => {
                           const isChecked = field.value?.includes(region.id) || false;
+                          const isAllSelected = !field.value || field.value.length === 0;
                           return (
                             <div key={region.id} className="flex items-center space-x-2">
                               <Checkbox
                                 id={`region-${region.id}`}
                                 checked={isChecked}
+                                disabled={isAllSelected}
                                 onCheckedChange={(checked) => {
                                   const currentValue = field.value || [];
                                   const newValue = checked
                                     ? [...currentValue, region.id]
                                     : currentValue.filter((id) => id !== region.id);
                                   field.onChange(newValue);
+                                  
+                                  // Clear sub-regions when changing regions
+                                  const currentSubRegions = form.getValues("subRegionIds") || [];
+                                  const filteredSubRegions = currentSubRegions.filter(subId => 
+                                    subRegions.find(sr => sr.id === subId && newValue.includes(sr.regionId))
+                                  );
+                                  form.setValue("subRegionIds", filteredSubRegions);
                                 }}
                               />
                               <label
                                 htmlFor={`region-${region.id}`}
-                                className="text-sm cursor-pointer truncate"
+                                className={`text-sm cursor-pointer truncate ${isAllSelected ? 'text-muted-foreground' : ''}`}
                                 title={region.name}
                               >
                                 {region.name}
@@ -556,39 +584,75 @@ export default function UsersPage() {
                 <FormField
                   control={form.control}
                   name="subRegionIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm sm:text-base">Sub-regiões (Selecione múltiplas)</FormLabel>
-                      <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-32 overflow-y-auto">
-                        {subRegions.map((subRegion) => {
-                          const isChecked = field.value?.includes(subRegion.id) || false;
-                          return (
-                            <div key={subRegion.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`subregion-${subRegion.id}`}
-                                checked={isChecked}
-                                onCheckedChange={(checked) => {
-                                  const currentValue = field.value || [];
-                                  const newValue = checked
-                                    ? [...currentValue, subRegion.id]
-                                    : currentValue.filter((id) => id !== subRegion.id);
-                                  field.onChange(newValue);
-                                }}
-                              />
-                              <label
-                                htmlFor={`subregion-${subRegion.id}`}
-                                className="text-sm cursor-pointer truncate"
-                                title={subRegion.name}
-                              >
-                                {subRegion.name}
-                              </label>
+                  render={({ field }) => {
+                    const selectedRegions = form.watch("regionIds") || [];
+                    const availableSubRegions = selectedRegions.length === 0 
+                      ? subRegions // All sub-regions available if all regions selected
+                      : subRegions.filter(sr => selectedRegions.includes(sr.regionId));
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-sm sm:text-base">Sub-regiões (Selecione múltiplas)</FormLabel>
+                        <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-32 overflow-y-auto">
+                          <div className="col-span-2 flex items-center space-x-2 p-2 bg-muted rounded">
+                            <Checkbox
+                              id="all-subregions"
+                              checked={!field.value || field.value.length === 0}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  field.onChange([]);
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor="all-subregions"
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              Todas as sub-regiões
+                            </label>
+                          </div>
+                          {availableSubRegions.map((subRegion) => {
+                            const isChecked = field.value?.includes(subRegion.id) || false;
+                            const isAllSelected = !field.value || field.value.length === 0;
+                            const parentRegion = regions.find(r => r.id === subRegion.regionId);
+                            
+                            return (
+                              <div key={subRegion.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`subregion-${subRegion.id}`}
+                                  checked={isChecked}
+                                  disabled={isAllSelected}
+                                  onCheckedChange={(checked) => {
+                                    const currentValue = field.value || [];
+                                    const newValue = checked
+                                      ? [...currentValue, subRegion.id]
+                                      : currentValue.filter((id) => id !== subRegion.id);
+                                    field.onChange(newValue);
+                                  }}
+                                />
+                                <label
+                                  htmlFor={`subregion-${subRegion.id}`}
+                                  className={`text-sm cursor-pointer truncate ${isAllSelected ? 'text-muted-foreground' : ''}`}
+                                  title={`${subRegion.name} (${parentRegion?.name})`}
+                                >
+                                  {subRegion.name}
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    ({parentRegion?.name})
+                                  </span>
+                                </label>
+                              </div>
+                            );
+                          })}
+                          {availableSubRegions.length === 0 && selectedRegions.length > 0 && (
+                            <div className="col-span-2 text-sm text-muted-foreground text-center p-2">
+                              Nenhuma sub-região disponível para as regiões selecionadas
                             </div>
-                          );
-                        })}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                          )}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
                 <DialogFooter className="pt-4">
                   <Button 
@@ -658,12 +722,14 @@ export default function UsersPage() {
                               regions.find(r => r.id === regionId)?.name
                             ).filter(Boolean).join(", ")}
                           </div>
-                          {user.subRegionIds && user.subRegionIds.length > 0 && (
+                          {user.subRegionIds && user.subRegionIds.length > 0 ? (
                             <div className="text-muted-foreground">
                               {user.subRegionIds.map(subRegionId => 
                                 subRegions.find(sr => sr.id === subRegionId)?.name
                               ).filter(Boolean).join(", ")}
                             </div>
+                          ) : (
+                            <div className="text-muted-foreground italic">Todas as sub-regiões</div>
                           )}
                         </div>
                       ) : userRegion ? (
@@ -674,7 +740,10 @@ export default function UsersPage() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground">Todas</span>
+                        <div className="text-sm">
+                          <div className="font-medium text-muted-foreground italic">Todas as regiões</div>
+                          <div className="text-muted-foreground italic">Todas as sub-regiões</div>
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
