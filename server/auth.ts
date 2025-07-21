@@ -73,9 +73,14 @@ export function setupAuth(app: Express) {
       const user = await storage.getUserByUsername(username);
       if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false);
-      } else {
-        return done(null, user);
       }
+      
+      // Verificar se o usuário está aprovado (exceto admins)
+      if (!user.approved && user.role !== 'admin') {
+        return done(null, false, { message: "Usuário aguarda aprovação" });
+      }
+      
+      return done(null, user);
     }),
   );
 
@@ -86,20 +91,43 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
+    try {
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username já existe" });
+      }
+
+      // Validar se gestorId foi fornecido
+      if (!req.body.gestorId) {
+        return res.status(400).json({ message: "Gestor deve ser selecionado para o registro." });
+      }
+
+      // Verificar se o gestor existe e é válido
+      const gestor = await storage.getUserById(req.body.gestorId);
+      if (!gestor || (gestor.role !== 'gestor' && gestor.role !== 'admin')) {
+        return res.status(400).json({ message: "Gestor selecionado inválido." });
+      }
+
+      // Public registration sempre cria usuários como operacional, não aprovados, vinculados ao gestor
+      const userToCreate = {
+        ...req.body,
+        role: 'operacional', // Forçar role operacional
+        approved: false,     // Aguardar aprovação
+        gestorId: req.body.gestorId, // Vincular ao gestor selecionado
+        password: await hashPassword(req.body.password)
+      };
+
+      const user = await storage.createUser(userToCreate);
+      
+      // NÃO fazer login automaticamente - usuário deve aguardar aprovação
+      res.status(201).json({ 
+        message: `Usuário registrado com sucesso! Aguarde aprovação do gestor ${gestor.name}.`,
+        userId: user.id 
+      });
+    } catch (error) {
+      console.error("Error registering user:", error);
+      res.status(500).json({ message: "Erro ao registrar usuário" });
     }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {

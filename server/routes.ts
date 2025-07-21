@@ -27,37 +27,7 @@ export function registerRoutes(app: Express): Server {
   // Setup authentication routes
   setupAuth(app);
 
-  // Public user registration route
-  app.post("/api/register", async (req, res) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      
-      // Validar se gestorId foi fornecido
-      if (!userData.gestorId) {
-        return res.status(400).json({ message: "Gestor deve ser selecionado para o registro." });
-      }
-
-      // Verificar se o gestor existe e é válido
-      const gestor = await storage.getUserById(userData.gestorId);
-      if (!gestor || (gestor.role !== 'gestor' && gestor.role !== 'admin')) {
-        return res.status(400).json({ message: "Gestor selecionado inválido." });
-      }
-      
-      // Public registration sempre cria usuários como operacional, não aprovados
-      const userToCreate: any = {
-        ...userData,
-        role: 'operacional', // Forçar role operacional
-        approved: false,
-        password: await hashPassword(userData.password)
-      };
-
-      const user = await storage.createUser(userToCreate);
-      res.json({ message: `Usuário registrado com sucesso! Aguarde aprovação do gestor ${gestor.name}.` });
-    } catch (error) {
-      console.error("Error registering user:", error);
-      res.status(500).json({ message: "Erro ao registrar usuário" });
-    }
-  });
+  // Remover o endpoint duplicado - usar apenas o do auth.ts
 
   // Reference data routes
   app.get("/api/solutions", requireAuth, async (req, res) => {

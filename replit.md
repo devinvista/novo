@@ -299,6 +299,11 @@ Changelog:
     - Segurança de dados garantida com acesso controlado por hierarquia organizacional
     - Frontend corrigido: função `canManageUser` agora valida vínculos diretos (gestorId)
     - Gestores podem editar apenas usuários operacionais diretamente vinculados a eles
+  - **CORREÇÃO VINCULAÇÃO E APROVAÇÃO IMPLEMENTADA**: Sistema de registro e autenticação corrigido
+    - Registro agora vincula corretamente usuários ao gestor selecionado (gestorId)
+    - Autenticação bloqueia login de usuários não aprovados (exceto admins)
+    - Usuários registrados aguardam aprovação antes de poder fazer login
+    - Eliminado login automático após registro - usuário deve aguardar aprovação do gestor
 - July 08, 2025. Final Replit Agent to Replit environment migration completed and checkpoint system enhancement
   - **MIGRATION COMPLETED**: Successfully completed full migration from Replit Agent to Replit environment
   - **FORM VALIDATION FIXES**: Resolved key results and actions creation validation errors
