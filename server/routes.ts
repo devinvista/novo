@@ -33,12 +33,13 @@ export function registerRoutes(app: Express): Server {
       const userData = insertUserSchema.parse(req.body);
       
       // Public registration creates users as not approved by default
-      userData.approved = false;
-      
-      // Hash password
-      userData.password = await hashPassword(userData.password);
+      const userToCreate = {
+        ...userData,
+        approved: false,
+        password: await hashPassword(userData.password)
+      };
 
-      const user = await storage.createUser(userData);
+      const user = await storage.createUser(userToCreate);
       res.json({ message: "Usuário registrado com sucesso! Aguarde aprovação de um gestor." });
     } catch (error) {
       console.error("Error registering user:", error);
@@ -262,12 +263,13 @@ export function registerRoutes(app: Express): Server {
       let status = validation.status || 'active';
       if (today < startDate) {
         status = 'pending';
-      } else if (today > endDate && parseFloat(validation.currentValue) < parseFloat(validation.targetValue)) {
+      } else if (today > endDate && parseFloat("0") < parseFloat(validation.targetValue.toString())) {
         status = 'delayed';
       }
       
       const keyResult = await storage.createKeyResult({
         ...validation,
+        targetValue: validation.targetValue.toString(),
         startDate: validation.startDate,
         endDate: validation.endDate,
         status,
@@ -297,7 +299,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Resultado-chave não encontrado" });
       }
       
-      const keyResult = await storage.updateKeyResult(id, validation);
+      const updateData = { ...validation };
+      if (updateData.targetValue !== undefined) {
+        updateData.targetValue = updateData.targetValue.toString();
+      }
+      const keyResult = await storage.updateKeyResult(id, updateData);
       
       // TODO: Implement activity logging if needed
       
