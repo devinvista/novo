@@ -245,7 +245,7 @@ Changelog:
     - API endpoints atualizados para validação de acesso multi-regional
     - Dashboard KPIs com suporte a filtros de múltiplas regiões por usuário
 - July 21, 2025. **CONTROLE DE ACESSO MULTI-REGIONAL IMPLEMENTADO** - Sistema completo de múltiplas regiões por usuário
-- July 21, 2025. **FILTRO REGIONAL CORRIGIDO + CONTROLE PÁGINA USUÁRIOS** - Controle de acesso regional e de usuários implementado
+- July 21, 2025. **MIGRAÇÃO REPLIT AGENT → REPLIT COMPLETA + CONTROLE PÁGINA USUÁRIOS** - Migração finalizada e controle de acesso implementado
   - **PROBLEMA CORRIGIDO**: App foi debugado e erro de autenticação foi resolvido
     - Erro de buffer length em `timingSafeEqual` corrigido na função `comparePasswords`
     - TypeScript session store import errors resolvidos
@@ -291,6 +291,12 @@ Changelog:
     - Usuário pode ter acesso a múltiplas regiões selecionadas  
     - Usuário pode ter acesso a todas as regiões (role admin)
     - Sistema permite configuração dinâmica de permissões regionais
+  - **CONTROLE PÁGINA USUÁRIOS IMPLEMENTADO**: Sistema de acesso hierárquico na página de usuários
+    - Admins veem todos os usuários do sistema sem restrições
+    - Gestores veem apenas a si próprios e usuários operacionais vinculados diretamente a eles
+    - Usuários operacionais veem apenas a si próprios
+    - Endpoint `/api/users` com filtros automáticos baseados no papel do usuário logado
+    - Segurança de dados garantida com acesso controlado por hierarquia organizacional
 - July 08, 2025. Final Replit Agent to Replit environment migration completed and checkpoint system enhancement
   - **MIGRATION COMPLETED**: Successfully completed full migration from Replit Agent to Replit environment
   - **FORM VALIDATION FIXES**: Resolved key results and actions creation validation errors
