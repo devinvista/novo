@@ -1,2 +1,2 @@
-// This file now exports from the MySQL schema for Replit compatibility
-export * from './mysql-schema';
+// This file exports from the PostgreSQL schema
+export * from './postgres-schema';

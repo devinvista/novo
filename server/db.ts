@@ -1,22 +1,22 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-// For Replit compatibility, using SQLite with MySQL-compatible schema
-// This provides the same functionality with MySQL table structure
-const sqlite = new Database('./server/okr_mysql.db');
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required");
+}
 
-// Enable foreign keys for SQLite
-sqlite.pragma('foreign_keys = ON');
-
-export const db = drizzle(sqlite, { schema });
+// PostgreSQL connection
+const connectionString = process.env.DATABASE_URL;
+const sql = postgres(connectionString);
+export const db = drizzle(sql, { schema });
 
 // Initialize the database connection
 const initializeDatabase = async () => {
   try {
     // Test connection
-    sqlite.prepare('SELECT 1').get();
-    console.log('✓ Connected to SQLite database with MySQL schema');
+    await sql`SELECT 1`;
+    console.log('✓ Connected to PostgreSQL database');
     return true;
   } catch (err) {
     console.error('✗ Database connection failed:', err);
@@ -28,4 +28,4 @@ const initializeDatabase = async () => {
 initializeDatabase();
 
 // Export the connection for direct queries if needed
-export { sqlite as connection };
+export { sql as connection };

@@ -11,6 +11,7 @@ import {
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
 import session from "express-session";
+// @ts-ignore - memorystore types are outdated
 import MemoryStore from "memorystore";
 
 export interface IStorage {
@@ -633,7 +634,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   private getQuartersBetween(start: Date, end: Date): string[] {
-    const quarters = [];
+    const quarters: string[] = [];
     const current = new Date(start);
 
     while (current <= end) {
