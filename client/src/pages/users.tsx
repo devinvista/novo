@@ -15,6 +15,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Edit, Trash2, Shield, Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface User {
   id: number;
@@ -24,6 +25,8 @@ interface User {
   role: "admin" | "gestor" | "operacional";
   regionId?: number;
   subRegionId?: number;
+  regionIds?: number[];
+  subRegionIds?: number[];
   active: boolean;
   approved: boolean;
   approvedAt?: string;
@@ -49,8 +52,8 @@ const userFormSchema = z.object({
   email: z.string().email("Email deve ser válido"),
   password: z.string().optional(),
   role: z.enum(["admin", "gestor", "operacional"]),
-  regionId: z.string().optional(),
-  subRegionId: z.string().optional(),
+  regionIds: z.array(z.number()).optional().default([]),
+  subRegionIds: z.array(z.number()).optional().default([]),
 }).refine((data) => {
   // Password required only for new users
   if (!data.password || data.password.length === 0) {
@@ -83,8 +86,8 @@ export default function UsersPage() {
       email: "",
       password: "",
       role: "operacional",
-      regionId: "all",
-      subRegionId: "all",
+      regionIds: [],
+      subRegionIds: [],
     },
   });
 
@@ -213,8 +216,8 @@ export default function UsersPage() {
 
       const userData = {
         ...data,
-        regionId: data.regionId && data.regionId !== "all" ? parseInt(data.regionId) : undefined,
-        subRegionId: data.subRegionId && data.subRegionId !== "all" ? parseInt(data.subRegionId) : undefined,
+        regionIds: data.regionIds || [],
+        subRegionIds: data.subRegionIds || [],
       };
       
       console.log("Submitting user data:", { ...userData, password: userData.password ? "[HIDDEN]" : undefined });
@@ -244,8 +247,8 @@ export default function UsersPage() {
       email: user.email,
       password: "", // Don't show existing password
       role: user.role,
-      regionId: user.regionId?.toString() || "all",
-      subRegionId: user.subRegionId?.toString() || "all",
+      regionIds: user.regionIds || (user.regionId ? [user.regionId] : []),
+      subRegionIds: user.subRegionIds || (user.subRegionId ? [user.subRegionId] : []),
     });
     setIsDialogOpen(true);
   };
@@ -515,56 +518,78 @@ export default function UsersPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="regionId"
+                  name="regionIds"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm sm:text-base">Região (Opcional)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
-                            <SelectValue placeholder="Selecione uma região" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as regiões</SelectItem>
-                          {regions.map((region) => (
-                            <SelectItem key={region.id} value={region.id.toString()}>
-                              {region.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel className="text-sm sm:text-base">Regiões (Selecione múltiplas)</FormLabel>
+                      <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-32 overflow-y-auto">
+                        {regions.map((region) => {
+                          const isChecked = field.value?.includes(region.id) || false;
+                          return (
+                            <div key={region.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`region-${region.id}`}
+                                checked={isChecked}
+                                onCheckedChange={(checked) => {
+                                  const currentValue = field.value || [];
+                                  const newValue = checked
+                                    ? [...currentValue, region.id]
+                                    : currentValue.filter((id) => id !== region.id);
+                                  field.onChange(newValue);
+                                }}
+                              />
+                              <label
+                                htmlFor={`region-${region.id}`}
+                                className="text-sm cursor-pointer truncate"
+                                title={region.name}
+                              >
+                                {region.name}
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                {form.watch("regionId") && (
-                  <FormField
-                    control={form.control}
-                    name="subRegionId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm sm:text-base">Sub-região (Opcional)</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
-                              <SelectValue placeholder="Selecione uma sub-região" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="all">Todas as sub-regiões</SelectItem>
-                            {getFilteredSubRegions(form.watch("regionId")).map((subRegion) => (
-                              <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
+                <FormField
+                  control={form.control}
+                  name="subRegionIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm sm:text-base">Sub-regiões (Selecione múltiplas)</FormLabel>
+                      <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg max-h-32 overflow-y-auto">
+                        {subRegions.map((subRegion) => {
+                          const isChecked = field.value?.includes(subRegion.id) || false;
+                          return (
+                            <div key={subRegion.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`subregion-${subRegion.id}`}
+                                checked={isChecked}
+                                onCheckedChange={(checked) => {
+                                  const currentValue = field.value || [];
+                                  const newValue = checked
+                                    ? [...currentValue, subRegion.id]
+                                    : currentValue.filter((id) => id !== subRegion.id);
+                                  field.onChange(newValue);
+                                }}
+                              />
+                              <label
+                                htmlFor={`subregion-${subRegion.id}`}
+                                className="text-sm cursor-pointer truncate"
+                                title={subRegion.name}
+                              >
                                 {subRegion.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <DialogFooter className="pt-4">
                   <Button 
                     type="submit" 
@@ -626,7 +651,22 @@ export default function UsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {userRegion ? (
+                      {user.regionIds && user.regionIds.length > 0 ? (
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            {user.regionIds.map(regionId => 
+                              regions.find(r => r.id === regionId)?.name
+                            ).filter(Boolean).join(", ")}
+                          </div>
+                          {user.subRegionIds && user.subRegionIds.length > 0 && (
+                            <div className="text-muted-foreground">
+                              {user.subRegionIds.map(subRegionId => 
+                                subRegions.find(sr => sr.id === subRegionId)?.name
+                              ).filter(Boolean).join(", ")}
+                            </div>
+                          )}
+                        </div>
+                      ) : userRegion ? (
                         <div className="text-sm">
                           <div>{userRegion.name}</div>
                           {userSubRegion && (
