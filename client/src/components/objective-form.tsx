@@ -39,6 +39,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
       description: objective?.description || "",
       ownerId: objective?.ownerId || user?.id,
       regionId: objective?.regionId || undefined,
+      subRegionId: objective?.subRegionId || undefined,
       startDate: objective?.startDate ? new Date(objective.startDate).toISOString().split('T')[0] : "",
       endDate: objective?.endDate ? new Date(objective.endDate).toISOString().split('T')[0] : "",
     },
@@ -56,6 +57,20 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
       return response.json();
     },
   });
+
+  const { data: subRegions } = useQuery({
+    queryKey: ["/api/sub-regions"],
+    queryFn: async () => {
+      const response = await fetch("/api/sub-regions");
+      if (!response.ok) throw new Error("Erro ao carregar sub-regiões");
+      return response.json();
+    },
+  });
+
+  // Filter sub-regions based on selected region
+  const filteredSubRegions = selectedRegionId 
+    ? subRegions?.filter((subRegion: any) => subRegion.regionId === selectedRegionId)
+    : [];
 
   const mutation = useMutation({
     mutationFn: async (data: ObjectiveFormData) => {
@@ -157,7 +172,12 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
               <FormItem>
                 <FormLabel>Região</FormLabel>
                 <Select 
-                  onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
+                  onValueChange={(value) => {
+                    const regionId = value === "none" ? undefined : parseInt(value);
+                    field.onChange(regionId);
+                    // Clear sub-region when region changes
+                    form.setValue("subRegionId", undefined);
+                  }}
                   value={field.value?.toString() || ""}
                 >
                   <FormControl>
@@ -178,6 +198,37 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
               </FormItem>
             )}
           />
+
+          {selectedRegionId && filteredSubRegions.length > 0 && (
+            <FormField
+              control={form.control}
+              name="subRegionId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sub-Região (Opcional)</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma sub-região" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhuma sub-região</SelectItem>
+                      {filteredSubRegions.map((subRegion: any) => (
+                        <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
+                          {subRegion.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
 
 
