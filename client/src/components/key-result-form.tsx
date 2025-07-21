@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
@@ -82,10 +83,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       objectiveId: keyResult?.objectiveId || "",
       title: keyResult?.title || "",
       description: keyResult?.description || "",
-      strategicIndicatorId: keyResult?.strategicIndicatorId || "",
-      serviceLineId: keyResult?.serviceLineId || "",
-      serviceId: keyResult?.serviceId || "",
-      initialValue: keyResult?.initialValue || "0",
+      strategicIndicatorIds: keyResult?.strategicIndicatorIds || [],
+      serviceLineIds: keyResult?.serviceLineIds || [],
+      serviceId: keyResult?.serviceId || undefined,
       targetValue: keyResult?.targetValue || "0",
       currentValue: keyResult?.currentValue || "0",
       unit: keyResult?.unit || "",
@@ -129,14 +129,13 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     const processedData = {
       ...data,
       objectiveId: parseInt(data.objectiveId as unknown as string),
-      strategicIndicatorId: data.strategicIndicatorId ? parseInt(data.strategicIndicatorId as unknown as string) : undefined,
-      serviceLineId: data.serviceLineId ? parseInt(data.serviceLineId as unknown as string) : undefined,
+      strategicIndicatorIds: data.strategicIndicatorIds || [],
+      serviceLineIds: data.serviceLineIds || [],
       serviceId: data.serviceId ? parseInt(data.serviceId as unknown as string) : undefined,
-      initialValue: String(data.initialValue || "0"),
-      targetValue: String(data.targetValue || "0"),
-      currentValue: String(data.currentValue || "0"),
-      progress: String(data.progress || "0"),
-      unit: data.unit || "", // Convert null to empty string
+      targetValue: parseFloat(data.targetValue as unknown as string),
+      currentValue: parseFloat(data.currentValue as unknown as string) || 0,
+      progress: parseFloat(data.progress as unknown as string) || 0,
+      unit: data.unit || "",
     };
     
     console.log("Sending data:", processedData);
@@ -337,32 +336,38 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <FormField
                 control={form.control}
-                name="serviceLineId"
+                name="serviceLineIds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Linha de Serviço</FormLabel>
-                    <Select onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedServiceLine(value);
-                      form.setValue("serviceId", ""); // Reset service when service line changes
-                    }} value={field.value?.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma linha de serviço" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="0">Nenhuma</SelectItem>
-                        {serviceLines?.map((serviceLine: any) => (
-                          <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
+                    <FormLabel>Linhas de Serviço (Opcional)</FormLabel>
+                    <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
+                      {serviceLines && serviceLines.length > 0 ? serviceLines.map((serviceLine: any) => (
+                        <div key={serviceLine.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`serviceline-${serviceLine.id}`}
+                            checked={field.value?.includes(serviceLine.id) || false}
+                            onChange={(e) => {
+                              const currentValue = field.value || [];
+                              if (e.target.checked) {
+                                field.onChange([...currentValue, serviceLine.id]);
+                              } else {
+                                field.onChange(currentValue.filter((id: number) => id !== serviceLine.id));
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                          <label htmlFor={`serviceline-${serviceLine.id}`} className="text-sm font-medium">
                             {serviceLine.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </label>
+                        </div>
+                      )) : (
+                        <p className="text-sm text-gray-500">Nenhuma linha de serviço disponível</p>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -373,22 +378,52 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 name="serviceId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Serviço</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                    <FormLabel>Serviço Específico (Opcional)</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === "0" ? undefined : parseInt(value))} value={field.value?.toString() || "0"}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione um serviço" />
+                          <SelectValue placeholder="Selecione um serviço específico" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="0">Nenhum</SelectItem>
-                        {services?.map((service: any) => (
+                        <SelectItem value="0">Nenhum serviço específico</SelectItem>
+                        {services && services.length > 0 && services.map((service: any) => (
                           <SelectItem key={service.id} value={service.id.toString()}>
                             {service.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Início *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Fim *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

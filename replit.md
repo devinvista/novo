@@ -245,7 +245,19 @@ Changelog:
     - API endpoints atualizados para validação de acesso multi-regional
     - Dashboard KPIs com suporte a filtros de múltiplas regiões por usuário
 - July 21, 2025. **CONTROLE DE ACESSO MULTI-REGIONAL IMPLEMENTADO** - Sistema completo de múltiplas regiões por usuário
-- July 21, 2025. **MIGRAÇÃO REPLIT AGENT → REPLIT COMPLETA + CONTROLE PÁGINA USUÁRIOS** - Migração finalizada e controle de acesso implementado
+- July 21, 2025. **MIGRAÇÃO REPLIT AGENT → REPLIT COMPLETA + FUNCIONALIDADE OPCIONAL MULTI-SELEÇÃO IMPLEMENTADA** - Migração finalizada e novos recursos implementados
+  - **MIGRAÇÃO REPLIT COMPLETA**: Migração do Replit Agent para Replit standard realizada com sucesso
+    - Todos os pacotes instalados e dependências funcionando
+    - Database SQLite conectado e operacional
+    - Express server servindo na porta 5000 sem erros
+    - Sistema de autenticação e controle de acesso regional funcionando
+  - **KEY RESULTS COM MULTI-SELEÇÃO OPCIONAL**: Implementado suporte a múltiplos indicadores estratégicos e linhas de serviço
+    - Indicadores estratégicos: OPCIONAL, um ou mais por Key Result
+    - Linhas de serviço: OPCIONAL, uma ou mais por Key Result  
+    - Interface de checkboxes para seleção múltipla
+    - Database schema atualizado com campos strategicIndicatorIds e serviceLineIds como arrays JSON
+    - Migração de dados existentes executada com sucesso
+    - Formulário de Key Results redesenhado com multi-seleção intuitiva
 - July 21, 2025. **MIGRAÇÃO COMPLETA PARA REPLIT ENVIRONMENT** - Migração do Replit Agent para ambiente Replit padrão finalizada com sucesso
   - Todos os pacotes e dependências instalados corretamente (tsx, drizzle-orm, express, react, etc)
   - SQLite database conectado e funcionando perfeitamente

@@ -448,6 +448,8 @@ export class DatabaseStorage implements IStorage {
         title: keyResults.title,
         description: keyResults.description,
         strategicIndicatorIds: keyResults.strategicIndicatorIds,
+        serviceLineIds: keyResults.serviceLineIds,
+        serviceId: keyResults.serviceId,
         targetValue: keyResults.targetValue,
         currentValue: keyResults.currentValue,
         unit: keyResults.unit,

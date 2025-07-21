@@ -97,8 +97,8 @@ export const keyResults = sqliteTable("key_results", {
   targetValue: real("target_value").notNull(),
   currentValue: real("current_value").default(0),
   unit: text("unit"),
-  strategicIndicatorIds: text("strategic_indicator_ids").notNull(), // JSON string
-  serviceLineId: integer("service_line_id").references(() => serviceLines.id),
+  strategicIndicatorIds: text("strategic_indicator_ids", { mode: "json" }).$type<number[]>().default([]), // Optional multiple strategic indicators
+  serviceLineIds: text("service_line_ids", { mode: "json" }).$type<number[]>().default([]), // Optional multiple service lines
   serviceId: integer("service_id").references(() => services.id),
   startDate: text("start_date").notNull(),
   endDate: text("end_date").notNull(),
@@ -181,7 +181,6 @@ export const objectivesRelations = relations(objectives, ({ one, many }) => ({
 
 export const keyResultsRelations = relations(keyResults, ({ one, many }) => ({
   objective: one(objectives, { fields: [keyResults.objectiveId], references: [objectives.id] }),
-  serviceLine: one(serviceLines, { fields: [keyResults.serviceLineId], references: [serviceLines.id] }),
   service: one(services, { fields: [keyResults.serviceId], references: [services.id] }),
   actions: many(actions),
   checkpoints: many(checkpoints),
@@ -245,7 +244,8 @@ export const insertKeyResultSchema = createInsertSchema(keyResults).omit({
 }).extend({
   startDate: z.string(),
   endDate: z.string(),
-  strategicIndicatorIds: z.array(z.number()).min(1).transform(val => JSON.stringify(val)),
+  strategicIndicatorIds: z.array(z.number()).optional().default([]),
+  serviceLineIds: z.array(z.number()).optional().default([]),
 });
 
 export const insertActionSchema = createInsertSchema(actions).omit({
