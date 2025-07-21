@@ -1,8 +1,10 @@
-# replit.md
+# OKR Management System - Migração Completa para SQLite
 
 ## Overview
 
-This is a full-stack OKR (Objectives and Key Results) management system built with React, Express.js, and PostgreSQL. The application provides comprehensive functionality for managing organizational objectives, key results, actions, and checkpoints across different regions and service lines. It features role-based access control, real-time progress tracking, and comprehensive reporting capabilities.
+**Status da Migração**: ✅ Sistema migrado com sucesso do Replit Agent para Replit, usando exclusivamente SQLite como banco de dados.
+
+This is a full-stack OKR (Objectives and Key Results) management system built with React, Express.js, and SQLite. The application provides comprehensive functionality for managing organizational objectives, key results, actions, and checkpoints across different regions and service lines. It features role-based access control, real-time progress tracking, and comprehensive reporting capabilities.
 
 ## System Architecture
 
@@ -19,14 +21,15 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 - **Runtime**: Node.js with Express.js framework
 - **Language**: TypeScript with ES modules
 - **Authentication**: Passport.js with local strategy and session-based auth
-- **Session Storage**: In-memory sessions via memorystore
+- **Session Storage**: Sessions in-memory via memorystore (compatible com SQLite)
 - **Password Security**: Node.js crypto module with scrypt hashing
 
 ### Database Architecture
-- **Database**: SQLite with WAL mode for better performance
-- **ORM**: Drizzle ORM with type-safe queries
-- **Schema Management**: Direct table creation with SQL
-- **Connection**: Better-sqlite3 driver with synchronous operations
+- **Database**: SQLite exclusivamente com WAL mode para melhor performance
+- **ORM**: Drizzle ORM com queries type-safe
+- **Schema Management**: Criação direta de tabelas com SQL
+- **Connection**: Driver better-sqlite3 com operações síncronas
+- **Migração**: Sistema completamente migrado do PostgreSQL para SQLite
 
 ## Key Components
 
@@ -117,10 +120,18 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 3. Database migrations applied via Drizzle Kit
 4. Session store configured for production PostgreSQL instance
 
-### Environment Configuration
-- `DATABASE_PATH`: SQLite database file path (default: ./okr.db)
-- `SESSION_SECRET`: Session encryption key (required)
-- `NODE_ENV`: Environment mode (development/production)
+### Environment Configuration  
+- `DATABASE_PATH`: Caminho do arquivo SQLite (padrão: ./okr.db)
+- `SESSION_SECRET`: Chave de criptografia da sessão (obrigatório)
+- `NODE_ENV`: Modo do ambiente (development/production)
+
+### Migração de Banco de Dados
+O sistema foi completamente migrado para usar **exclusivamente SQLite** como banco de dados:
+- ✅ Removidas todas as referências ao PostgreSQL e MySQL
+- ✅ Schema convertido para SQLite usando `sqlite-schema.ts`
+- ✅ Storage layer adaptado para operações SQLite 
+- ✅ Sessions configuradas para funcionar com SQLite
+- ✅ Todos os dados de referência migrados e seedados no SQLite
 
 ### File Structure
 - `/client`: React frontend application
