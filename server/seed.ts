@@ -1,10 +1,23 @@
 import { db } from "./db";
-import { regions, subRegions, serviceLines, strategicIndicators, solutions } from "@shared/schema";
+import { regions, subRegions, serviceLines, strategicIndicators, solutions, services } from "@shared/schema";
 
 async function seed() {
   console.log("🌱 Starting database seed...");
 
   try {
+    // Seed solutions first
+    console.log("Seeding solutions...");
+    const solutionData = [
+      { id: 1, name: "Educação", description: "Soluções em educação" },
+      { id: 2, name: "Saúde", description: "Soluções em saúde" }
+    ];
+
+    try {
+      await db.insert(solutions).values(solutionData);
+    } catch (error) {
+      console.log('Solutions already exist, skipping...');
+    }
+
     // Seed regions
     console.log("Seeding regions...");
     const regionData = [
@@ -59,40 +72,58 @@ async function seed() {
       console.log('Sub-regions already exist, skipping...');
     }
 
-    // Get solutions first
-    console.log("Getting solutions...");
-    const solutionsList = await db.select().from(solutions);
-    const saudeId = solutionsList.find(s => s.name === "Saúde")?.id;
-    const educacaoId = solutionsList.find(s => s.name === "Educação")?.id;
-
-    // Seed service lines
+    // Seed service lines with known solution IDs
     console.log("Seeding service lines...");
     const serviceLineData = [
-      { id: 1, name: "Atenção à Saúde", solutionId: saudeId! },
-      { id: 2, name: "Segurança e Saúde no Trabalho", solutionId: saudeId! },
-      { id: 3, name: "Educação Básica", solutionId: educacaoId! },
-      { id: 4, name: "Educação Superior", solutionId: educacaoId! },
-      { id: 5, name: "Educação Profissional", solutionId: educacaoId! }
+      { id: 1, name: "Atenção à Saúde", description: "Serviços de atenção à saúde", solutionId: 2 },
+      { id: 2, name: "Segurança e Saúde no Trabalho", description: "Serviços de segurança e saúde no trabalho", solutionId: 2 },
+      { id: 3, name: "Educação Básica", description: "Serviços de educação básica", solutionId: 1 },
+      { id: 4, name: "Educação Superior", description: "Serviços de educação superior", solutionId: 1 },
+      { id: 5, name: "Educação Profissional", description: "Serviços de educação profissional", solutionId: 1 }
     ];
 
-    for (const serviceLine of serviceLineData) {
-      await db.insert(serviceLines).values(serviceLine).onConflictDoNothing();
+    try {
+      await db.insert(serviceLines).values(serviceLineData);
+    } catch (error) {
+      console.log('Service lines already exist, skipping...');
+    }
+
+    // Seed services
+    console.log("Seeding services...");
+    const servicesData = [
+      { id: 1, name: "Clínicas Médicas", description: "Serviços de clínicas médicas", serviceLineId: 1 },
+      { id: 2, name: "Odontologia", description: "Serviços odontológicos", serviceLineId: 1 },
+      { id: 3, name: "SESMT", description: "Serviços Especializados em Engenharia de Segurança e em Medicina do Trabalho", serviceLineId: 2 },
+      { id: 4, name: "Ensino Fundamental", description: "Ensino fundamental", serviceLineId: 3 },
+      { id: 5, name: "Ensino Médio", description: "Ensino médio", serviceLineId: 3 },
+      { id: 6, name: "Graduação", description: "Cursos de graduação", serviceLineId: 4 },
+      { id: 7, name: "Pós-graduação", description: "Cursos de pós-graduação", serviceLineId: 4 },
+      { id: 8, name: "Cursos Técnicos", description: "Cursos técnicos profissionais", serviceLineId: 5 },
+      { id: 9, name: "Qualificação Profissional", description: "Cursos de qualificação profissional", serviceLineId: 5 }
+    ];
+
+    try {
+      await db.insert(services).values(servicesData);
+    } catch (error) {
+      console.log('Services already exist, skipping...');
     }
 
     // Seed strategic indicators
     console.log("Seeding strategic indicators...");
     const indicatorData = [
-      { id: 1, name: "Sustentabilidade Operacional", description: "Indicador de sustentabilidade das operações organizacionais", unit: "%", active: true },
-      { id: 2, name: "Receita de Serviços", description: "Receita gerada através da prestação de serviços", unit: "R$", active: true },
-      { id: 3, name: "Matrículas em Educação", description: "Número de matrículas realizadas em programas educacionais", unit: "unidades", active: true },
-      { id: 4, name: "Indústrias Atendidas em Saúde", description: "Quantidade de indústrias atendidas pelos serviços de saúde", unit: "unidades", active: true },
-      { id: 5, name: "Trabalhadores da Indústria Atendidos em Saúde", description: "Número de trabalhadores industriais atendidos pelos serviços de saúde", unit: "pessoas", active: true },
-      { id: 6, name: "Matrículas Presenciais com Mais de 4 Horas", description: "Matrículas em cursos presenciais com carga horária superior a 4 horas", unit: "unidades", active: true },
-      { id: 7, name: "Custo Hora Aluno", description: "Custo por hora de cada aluno nos programas educacionais", unit: "R$/hora", active: true }
+      { id: 1, name: "Sustentabilidade Operacional", description: "Indicador de sustentabilidade das operações organizacionais", unit: "%" },
+      { id: 2, name: "Receita de Serviços", description: "Receita gerada através da prestação de serviços", unit: "R$" },
+      { id: 3, name: "Matrículas em Educação", description: "Número de matrículas realizadas em programas educacionais", unit: "unidades" },
+      { id: 4, name: "Indústrias Atendidas em Saúde", description: "Quantidade de indústrias atendidas pelos serviços de saúde", unit: "unidades" },
+      { id: 5, name: "Trabalhadores da Indústria Atendidos em Saúde", description: "Número de trabalhadores industriais atendidos pelos serviços de saúde", unit: "pessoas" },
+      { id: 6, name: "Matrículas Presenciais com Mais de 4 Horas", description: "Matrículas em cursos presenciais com carga horária superior a 4 horas", unit: "unidades" },
+      { id: 7, name: "Custo Hora Aluno", description: "Custo por hora de cada aluno nos programas educacionais", unit: "R$/hora" }
     ];
 
-    for (const indicator of indicatorData) {
-      await db.insert(strategicIndicators).values(indicator).onConflictDoNothing();
+    try {
+      await db.insert(strategicIndicators).values(indicatorData);
+    } catch (error) {
+      console.log('Strategic indicators already exist, skipping...');
     }
 
     console.log("✅ Database seeded successfully!");
