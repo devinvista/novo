@@ -1,0 +1,69 @@
+Definição de Solução>Linhas de serviço>serviços:
+Solução: Educação; Linha: Educação Básica; Serviço: Educação de Jovens e Adultos
+Solução: Educação; Linha: Educação Básica; Serviço: Educação Infantil
+Solução: Educação; Linha: Educação Básica; Serviço: Ensino Médio
+Solução: Educação; Linha: Educação Continuada; Serviço: Contraturno
+Solução: Educação; Linha: Educação Continuada; Serviço: Cursos SESI
+Solução: Educação; Linha: Educação Continuada; Serviço: Iniciação às Artes
+Solução: Educação; Linha: Educação Continuada; Serviço: Educação para o Mundo do Trabalho
+Solução: Educação; Linha: Educação Continuada; Serviço: Gestão e Formação Educacional
+Solução: Educação; Linha: Evento; Serviço: Mostra Sesi de Educação
+Solução: Saúde; Linha: Atividade Física; Serviço: Eventos de Promoção da Saúde
+Solução: Saúde; Linha: Atividade Física; Serviço: Academias
+Solução: Saúde; Linha: Atividade Física; Serviço: Empresa Fitness
+Solução: Saúde; Linha: Atividade Física; Serviço: Ginástica Laboral
+Solução: Saúde; Linha: Atividade Física; Serviço: Oficinas
+Solução: Saúde; Linha: Atividade Física; Serviço: Competições Esportivas
+Solução: Saúde; Linha: Evento; Serviço: Conecta Saúde
+Solução: Saúde; Linha: Locação de Espaços; Serviço: Locação de Espaços Esportivos
+Solução: Saúde; Linha: Normas Regulamentadoras; Serviço: Gestão de Treinamentos em SSI
+Solução: Saúde; Linha: Normas Regulamentadoras; Serviço: Curso de CIPA
+Solução: Saúde; Linha: Normas Regulamentadoras; Serviço: Normas Regulamentadoras
+Solução: Saúde; Linha: Normas Regulamentadoras; Serviço: SIPAT
+Solução: Saúde; Linha: Nutrição; Serviço: Consulta com Nutricionista
+Solução: Saúde; Linha: Nutrição; Serviço: Oficinas
+Solução: Saúde; Linha: Odontologia; Serviço: Consultas Odontológicas
+Solução: Saúde; Linha: Odontologia; Serviço: Edital - UMO
+Solução: Saúde; Linha: Odontologia; Serviço: Unidades Móveis Odontológicas
+Solução: Saúde; Linha: Parque SESI; Serviço: Parque SESI Canela
+Solução: Saúde; Linha: Promoção da Saúde; Serviço: Eventos de Promoção da Saúde
+Solução: Saúde; Linha: Promoção da Saúde; Serviço: Oficinas
+Solução: Saúde; Linha: Promoção da Saúde; Serviço: Palestras de Promoção da Saúde
+Solução: Saúde; Linha: Promoção da Saúde; Serviço: Workshop de Promoção da Saúde
+Solução: Saúde; Linha: Promoção da Saúde; Serviço: Assessoria Técnica em Promoção da Saúde
+Solução: Saúde; Linha: Promoção da Saúde; Serviço: Consultoria e Assessoria em Saúde no Trabalho
+Solução: Saúde; Linha: Promoção da Saúde; Serviço: Liga Esportiva
+Solução: Saúde; Linha: Promoção da Saúde; Serviço: Programa SESI de Doenças Crônicas Não Transmissíveis
+Solução: Saúde; Linha: Saúde Mental; Serviço: Assessoria Psicossocial
+Solução: Saúde; Linha: Saúde Mental; Serviço: Terapia
+Solução: Saúde; Linha: Saúde Mental; Serviço: Avaliação Psicossocial
+Solução: Saúde; Linha: Saúde Mental; Serviço: Campanhas em Saúde Mental
+Solução: Saúde; Linha: Saúde Mental; Serviço: Desenvolvimento de Pessoas
+Solução: Saúde; Linha: Saúde Mental; Serviço: Mapeamentos em Saúde Mental
+Solução: Saúde; Linha: Saúde Mental; Serviço: Palestras de saúde mental
+Solução: Saúde; Linha: Saúde Mental; Serviço: Workshop de Saúde Mental
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Consultas Ocupacionais
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Saúde Auditiva
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Exames Complementares
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Gestão da Reabilitação
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Gestão de Exames
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Gestão do Absenteísmo
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Palestras de Saúde Ocupacional
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Programa de Controle Médico de Saúde Ocupacional (PCMSO)
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: Exame de Raio X
+Solução: Saúde; Linha: Saúde Ocupacional; Serviço: SESMT
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Ergonomia
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Consultoria em NR
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Diagnóstico de prevenção de acidentes de trabalho (DPAT)
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Laudo de Insalubridade
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Laudo Técnico de Condições Ambientais do Trabalho (LTCAT)
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Palestras de Segurança no Trabalho
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Programa de Condições e Meio Ambiente de Trab. na Ind. da Construção (PCMAT)
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Programa de Gerenciamento de Riscos (PGR)
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Programa de Proteção Respiratória (PPR)
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Assessoria Técnica em Segurança do Trabalho
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Assessoria SIPAT
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Avaliação Quantitativa
+Solução: Saúde; Linha: Segurança do Trabalho; Serviço: Assessoria em Ergonomia
+Solução: Saúde; Linha: Vacinação; Serviço: Campanha de Vacinação
+Solução: Saúde; Linha: Vacinação; Serviço: Clínica de Vacina
