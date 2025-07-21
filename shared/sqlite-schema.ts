@@ -11,8 +11,8 @@ export const users = sqliteTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   role: text("role").notNull().default("operacional"), // admin, gestor, operacional
-  regionId: integer("region_id"),
-  subRegionId: integer("sub_region_id"),
+  regionIds: text("region_ids", { mode: "json" }).$type<number[]>().default([]), // Multiple regions
+  subRegionIds: text("sub_region_ids", { mode: "json" }).$type<number[]>().default([]), // Multiple sub-regions
   gestorId: integer("gestor_id").references(() => users.id), // Reference to manager
   approved: integer("approved", { mode: "boolean" }).notNull().default(false), // Approval status
   approvedAt: text("approved_at"), // When was approved
@@ -136,8 +136,6 @@ export const checkpoints = sqliteTable("checkpoints", {
 
 // Define relationships
 export const usersRelations = relations(users, ({ one, many }) => ({
-  region: one(regions, { fields: [users.regionId], references: [regions.id] }),
-  subRegion: one(subRegions, { fields: [users.subRegionId], references: [subRegions.id] }),
   gestor: one(users, { fields: [users.gestorId], references: [users.id], relationName: "gestorRelation" }),
   subordinates: many(users, { relationName: "gestorRelation" }),
   approvedBy: one(users, { fields: [users.approvedBy], references: [users.id], relationName: "approvedByRelation" }),
@@ -148,13 +146,11 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 
 export const regionsRelations = relations(regions, ({ many }) => ({
   subRegions: many(subRegions),
-  users: many(users),
   objectives: many(objectives),
 }));
 
 export const subRegionsRelations = relations(subRegions, ({ one, many }) => ({
   region: one(regions, { fields: [subRegions.regionId], references: [regions.id] }),
-  users: many(users),
   objectives: many(objectives),
 }));
 

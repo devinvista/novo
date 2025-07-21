@@ -80,7 +80,7 @@ export interface IStorage {
   updateCheckpoint(id: number, checkpoint: Partial<InsertCheckpoint>): Promise<Checkpoint>;
   generateCheckpoints(keyResultId: number): Promise<Checkpoint[]>;
 
-  // Método auxiliar para verificar acesso
+  // Método auxiliar para verificar acesso a múltiplas regiões
   checkUserAccess(currentUserId: number, targetRegionId?: number, targetSubRegionId?: number): Promise<boolean>;
 
   // Analytics and utilities
@@ -162,14 +162,17 @@ export class DatabaseStorage implements IStorage {
       approved: true, 
       approvedAt: sql`CURRENT_TIMESTAMP`,
       approvedBy: approvedBy,
-      regionId: approver.regionId, // User inherits gestor's region
+      regionIds: approver.regionIds || [], // User inherits gestor's regions
+      subRegionIds: approver.subRegionIds || [], // User inherits gestor's sub-regions
     };
 
-    // If sub-region is provided, use it; otherwise inherit from gestor
+    // If sub-region is provided, add it to the user's sub-regions
     if (subRegionId !== undefined) {
-      updateData.subRegionId = subRegionId;
-    } else if (approver.subRegionId) {
-      updateData.subRegionId = approver.subRegionId;
+      const subRegions = [...(updateData.subRegionIds || [])];
+      if (!subRegions.includes(subRegionId)) {
+        subRegions.push(subRegionId);
+      }
+      updateData.subRegionIds = subRegions;
     }
 
     const [user] = await db
@@ -232,11 +235,18 @@ export class DatabaseStorage implements IStorage {
     // Se não há restrições de região/subregião, permite acesso
     if (!targetRegionId && !targetSubRegionId) return true;
     
-    // Verifica acesso por região
-    if (targetRegionId && currentUser.regionId !== targetRegionId) return false;
+    // Usuário tem arrays de regiões e subregiões
+    const userRegionIds = currentUser.regionIds || [];
+    const userSubRegionIds = currentUser.subRegionIds || [];
     
-    // Verifica acesso por subregião
-    if (targetSubRegionId && currentUser.subRegionId !== targetSubRegionId) return false;
+    // Se usuário não tem regiões configuradas, permitir acesso (para compatibilidade)
+    if (userRegionIds.length === 0 && userSubRegionIds.length === 0) return true;
+    
+    // Verifica acesso por região - usuário deve ter acesso à região especificada
+    if (targetRegionId && !userRegionIds.includes(targetRegionId)) return false;
+    
+    // Verifica acesso por subregião - usuário deve ter acesso à subregião especificada
+    if (targetSubRegionId && !userSubRegionIds.includes(targetSubRegionId)) return false;
     
     return true;
   }
