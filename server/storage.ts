@@ -100,8 +100,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
 
   constructor() {
-    const MemStore = MemoryStore(session);
-    this.sessionStore = new MemStore({
+    // Using MemoryStore since we're using SQLite (simulating MySQL)
+    const MemoryStoreConstructor = MemoryStore(session);
+    this.sessionStore = new MemoryStoreConstructor({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
   }

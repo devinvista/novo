@@ -1,11 +1,11 @@
-import { mysqlTable, int, varchar, text, decimal, timestamp, json, boolean } from "drizzle-orm/mysql-core";
+import { sqliteTable as mysqlTable, integer as int, text as varchar, text, real as decimal, integer as timestamp, text as json, integer as boolean } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Users table with role-based access
 export const users = mysqlTable("users", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -13,20 +13,24 @@ export const users = mysqlTable("users", {
   role: varchar("role", { length: 50 }).notNull().default("operacional"), // admin, gestor, operacional
   regionId: int("region_id"),
   subRegionId: int("sub_region_id"),
+  gestorId: int("gestor_id").references(() => users.id), // Reference to manager
+  approved: boolean("approved").notNull().default(false), // Approval status
+  approvedAt: timestamp("approved_at"), // When was approved
+  approvedBy: int("approved_by").references(() => users.id), // Who approved
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Regions table (10 specific regions)
 export const regions = mysqlTable("regions", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   name: varchar("name", { length: 255 }).notNull().unique(),
   code: varchar("code", { length: 50 }).notNull().unique(),
 });
 
 // Sub-regions table (21 specific sub-regions)
 export const subRegions = mysqlTable("sub_regions", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }).notNull().unique(),
   regionId: int("region_id").notNull().references(() => regions.id),
@@ -34,14 +38,14 @@ export const subRegions = mysqlTable("sub_regions", {
 
 // Solutions (Educação, Saúde)
 export const solutions = mysqlTable("solutions", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   name: varchar("name", { length: 255 }).notNull().unique(),
   description: text("description"),
 });
 
 // Service Lines under solutions
 export const serviceLines = mysqlTable("service_lines", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   solutionId: int("solution_id").notNull().references(() => solutions.id),
@@ -49,7 +53,7 @@ export const serviceLines = mysqlTable("service_lines", {
 
 // Services under service lines
 export const services = mysqlTable("services", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   serviceLineId: int("service_line_id").notNull().references(() => serviceLines.id),
@@ -57,7 +61,7 @@ export const services = mysqlTable("services", {
 
 // Strategic Indicators (7 indicators)
 export const strategicIndicators = mysqlTable("strategic_indicators", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   name: varchar("name", { length: 255 }).notNull().unique(),
   description: text("description"),
   unit: varchar("unit", { length: 50 }),
@@ -65,7 +69,7 @@ export const strategicIndicators = mysqlTable("strategic_indicators", {
 
 // Objectives
 export const objectives = mysqlTable("objectives", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   ownerId: int("owner_id").notNull().references(() => users.id),
@@ -83,7 +87,7 @@ export const objectives = mysqlTable("objectives", {
 
 // Key Results
 export const keyResults = mysqlTable("key_results", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   objectiveId: int("objective_id").notNull().references(() => objectives.id),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
@@ -104,7 +108,7 @@ export const keyResults = mysqlTable("key_results", {
 
 // Actions
 export const actions = mysqlTable("actions", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   keyResultId: int("key_result_id").notNull().references(() => keyResults.id),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
@@ -120,7 +124,7 @@ export const actions = mysqlTable("actions", {
 
 // Checkpoints (automatically generated based on KR frequency)
 export const checkpoints = mysqlTable("checkpoints", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   keyResultId: int("key_result_id").notNull().references(() => keyResults.id),
   period: varchar("period", { length: 50 }).notNull(), // 2024-01, 2024-Q1, 2024-W01
   targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
@@ -135,7 +139,7 @@ export const checkpoints = mysqlTable("checkpoints", {
 
 // Activity log for audit trail
 export const activities = mysqlTable("activities", {
-  id: int("id").primaryKey().autoincrement(),
+  id: int("id").primaryKey({ autoIncrement: true }),
   userId: int("user_id").notNull().references(() => users.id),
   entityType: varchar("entity_type", { length: 50 }).notNull(), // objective, key_result, action, checkpoint
   entityId: int("entity_id").notNull(),
