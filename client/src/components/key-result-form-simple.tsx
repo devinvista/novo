@@ -24,7 +24,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     objectiveId: "",
     title: "",
     description: "",
-    strategicIndicatorId: "",
+    strategicIndicatorIds: [] as number[],
+    serviceLineIds: [] as number[],
+    serviceId: undefined as number | undefined,
     targetValue: "0",
     currentValue: "0",
     unit: "",
@@ -43,7 +45,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           objectiveId: keyResult.objectiveId?.toString() || "",
           title: keyResult.title || "",
           description: keyResult.description || "",
-          strategicIndicatorId: keyResult.strategicIndicatorId?.toString() || "",
+          strategicIndicatorIds: keyResult.strategicIndicatorIds || [],
+          serviceLineIds: keyResult.serviceLineIds || [],
+          serviceId: keyResult.serviceId || undefined,
           targetValue: keyResult.targetValue || "0",
           currentValue: keyResult.currentValue || "0",
           unit: keyResult.unit || "",
@@ -58,7 +62,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           objectiveId: "",
           title: "",
           description: "",
-          strategicIndicatorId: "",
+          strategicIndicatorIds: [],
+          serviceLineIds: [],
+          serviceId: undefined,
           targetValue: "0",
           currentValue: "0",
           unit: "",
@@ -88,6 +94,28 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     queryFn: async () => {
       const response = await fetch("/api/strategic-indicators");
       if (!response.ok) throw new Error("Erro ao carregar indicadores estratégicos");
+      return response.json();
+    },
+    enabled: open,
+  });
+
+  // Fetch service lines for dropdown
+  const { data: serviceLines } = useQuery({
+    queryKey: ["/api/service-lines"],
+    queryFn: async () => {
+      const response = await fetch("/api/service-lines");
+      if (!response.ok) throw new Error("Erro ao carregar linhas de serviço");
+      return response.json();
+    },
+    enabled: open,
+  });
+
+  // Fetch services for dropdown
+  const { data: services } = useQuery({
+    queryKey: ["/api/services"],
+    queryFn: async () => {
+      const response = await fetch("/api/services");
+      if (!response.ok) throw new Error("Erro ao carregar serviços");
       return response.json();
     },
     enabled: open,
@@ -162,7 +190,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       objectiveId: parseInt(formData.objectiveId),
       title: formData.title,
       description: formData.description || null,
-      strategicIndicatorId: formData.strategicIndicatorId && formData.strategicIndicatorId !== "" ? parseInt(formData.strategicIndicatorId) : null,
+      strategicIndicatorIds: formData.strategicIndicatorIds,
+      serviceLineIds: formData.serviceLineIds,
+      serviceId: formData.serviceId || null,
       initialValue: "0",
       targetValue: formData.targetValue.toString(),
       currentValue: formData.currentValue.toString(),
@@ -177,7 +207,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     mutation.mutate(processedData);
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | number | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -271,20 +301,91 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="strategicIndicatorId">Indicador Estratégico</Label>
-              <Select value={formData.strategicIndicatorId.toString()} onValueChange={(value) => handleInputChange("strategicIndicatorId", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um indicador" />
-                </SelectTrigger>
-                <SelectContent>
-                  {strategicIndicators?.map((indicator: any) => (
-                    <SelectItem key={indicator.id} value={indicator.id.toString()}>
+              <Label>Indicadores Estratégicos (Opcional)</Label>
+              <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
+                {strategicIndicators && strategicIndicators.length > 0 ? strategicIndicators.map((indicator: any) => (
+                  <div key={indicator.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`indicator-${indicator.id}`}
+                      checked={formData.strategicIndicatorIds.includes(indicator.id)}
+                      onChange={(e) => {
+                        const currentValue = formData.strategicIndicatorIds;
+                        if (e.target.checked) {
+                          setFormData(prev => ({
+                            ...prev,
+                            strategicIndicatorIds: [...currentValue, indicator.id]
+                          }));
+                        } else {
+                          setFormData(prev => ({
+                            ...prev,
+                            strategicIndicatorIds: currentValue.filter((id: number) => id !== indicator.id)
+                          }));
+                        }
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    <label htmlFor={`indicator-${indicator.id}`} className="text-sm font-medium">
                       {indicator.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </label>
+                  </div>
+                )) : (
+                  <p className="text-sm text-gray-500">Nenhum indicador estratégico disponível</p>
+                )}
+              </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Linhas de Serviço (Opcional)</Label>
+            <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
+              {serviceLines && serviceLines.length > 0 ? serviceLines.map((serviceLine: any) => (
+                <div key={serviceLine.id} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`serviceline-${serviceLine.id}`}
+                    checked={formData.serviceLineIds.includes(serviceLine.id)}
+                    onChange={(e) => {
+                      const currentValue = formData.serviceLineIds;
+                      if (e.target.checked) {
+                        setFormData(prev => ({
+                          ...prev,
+                          serviceLineIds: [...currentValue, serviceLine.id]
+                        }));
+                      } else {
+                        setFormData(prev => ({
+                          ...prev,
+                          serviceLineIds: currentValue.filter((id: number) => id !== serviceLine.id)
+                        }));
+                      }
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor={`serviceline-${serviceLine.id}`} className="text-sm font-medium">
+                    {serviceLine.name}
+                  </label>
+                </div>
+              )) : (
+                <p className="text-sm text-gray-500">Nenhuma linha de serviço disponível</p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="serviceId">Serviço Específico (Opcional)</Label>
+            <Select value={formData.serviceId?.toString() || "0"} onValueChange={(value) => handleInputChange("serviceId", value === "0" ? undefined : parseInt(value))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um serviço específico" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Nenhum serviço específico</SelectItem>
+                {services && services.length > 0 && services.map((service: any) => (
+                  <SelectItem key={service.id} value={service.id.toString()}>
+                    {service.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
