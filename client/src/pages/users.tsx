@@ -27,6 +27,9 @@ interface User {
   subRegionId?: number;
   regionIds?: number[];
   subRegionIds?: number[];
+  solutionIds?: number[];
+  serviceLineIds?: number[];
+  serviceIds?: number[];
   active: boolean;
   approved: boolean;
   approvedAt?: string;
@@ -54,6 +57,9 @@ const userFormSchema = z.object({
   role: z.enum(["admin", "gestor", "operacional"]),
   regionIds: z.array(z.number()).optional().default([]),
   subRegionIds: z.array(z.number()).optional().default([]),
+  solutionIds: z.array(z.number()).optional().default([]),
+  serviceLineIds: z.array(z.number()).optional().default([]),
+  serviceIds: z.array(z.number()).optional().default([]),
 }).refine((data) => {
   // Password required only for new users
   if (!data.password || data.password.length === 0) {
@@ -88,6 +94,9 @@ export default function UsersPage() {
       role: "operacional",
       regionIds: [],
       subRegionIds: [],
+      solutionIds: [],
+      serviceLineIds: [],
+      serviceIds: [],
     },
   });
 
@@ -106,6 +115,18 @@ export default function UsersPage() {
 
   const { data: subRegions = [] } = useQuery<SubRegion[]>({
     queryKey: ["/api/sub-regions"],
+  });
+
+  const { data: solutions = [] } = useQuery({
+    queryKey: ["/api/solutions"],
+  });
+
+  const { data: serviceLines = [] } = useQuery({
+    queryKey: ["/api/service-lines"],
+  });
+
+  const { data: services = [] } = useQuery({
+    queryKey: ["/api/services"],
   });
 
   // Mutations
@@ -218,6 +239,9 @@ export default function UsersPage() {
         ...data,
         regionIds: data.regionIds || [],
         subRegionIds: data.subRegionIds || [],
+        solutionIds: data.solutionIds || [],
+        serviceLineIds: data.serviceLineIds || [],
+        serviceIds: data.serviceIds || [],
       };
       
       console.log("Submitting user data:", { ...userData, password: userData.password ? "[HIDDEN]" : undefined });
@@ -249,6 +273,9 @@ export default function UsersPage() {
       role: user.role,
       regionIds: user.regionIds || (user.regionId ? [user.regionId] : []),
       subRegionIds: user.subRegionIds || (user.subRegionId ? [user.subRegionId] : []),
+      solutionIds: user.solutionIds || [],
+      serviceLineIds: user.serviceLineIds || [],
+      serviceIds: user.serviceIds || [],
     });
     setIsDialogOpen(true);
   };
@@ -648,6 +675,215 @@ export default function UsersPage() {
                     }}
                   />
                 )}
+
+                {/* Solution Selection */}
+                <FormField
+                  control={form.control}
+                  name="solutionIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm sm:text-base">Solução</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          if (value === "all") {
+                            field.onChange([]);
+                          } else {
+                            const solutionId = parseInt(value);
+                            const currentValue = field.value || [];
+                            const newValue = currentValue.includes(solutionId)
+                              ? currentValue.filter(id => id !== solutionId)
+                              : [...currentValue, solutionId];
+                            field.onChange(newValue);
+                          }
+                          // Clear service lines and services when solution changes
+                          form.setValue("serviceLineIds", []);
+                          form.setValue("serviceIds", []);
+                        }}
+                        value=""
+                      >
+                        <FormControl>
+                          <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                            <SelectValue placeholder={
+                              !field.value || field.value.length === 0 
+                                ? "Todas as soluções" 
+                                : `${field.value.length} solução(ões) selecionada(s)`
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as soluções</SelectItem>
+                          {solutions.map((solution: any) => {
+                            const isSelected = field.value?.includes(solution.id) || false;
+                            return (
+                              <SelectItem key={solution.id} value={solution.id.toString()}>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onChange={() => {}} // Handled by parent onValueChange
+                                  />
+                                  <span>{solution.name}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      {field.value && field.value.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Selecionadas: {field.value.map((id: number) => 
+                            solutions.find((s: any) => s.id === id)?.name
+                          ).filter(Boolean).join(", ")}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Service Line Selection - Only show if specific solutions are selected */}
+                {form.watch("solutionIds") && form.watch("solutionIds").length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="serviceLineIds"
+                    render={({ field }) => {
+                      const selectedSolutions = form.watch("solutionIds") || [];
+                      const availableServiceLines = serviceLines.filter((sl: any) => 
+                        selectedSolutions.includes(sl.solutionId)
+                      );
+                      
+                      return (
+                        <FormItem>
+                          <FormLabel className="text-sm sm:text-base">Linha de Serviço (Opcional)</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              if (value === "all") {
+                                field.onChange([]);
+                              } else {
+                                const serviceLineId = parseInt(value);
+                                const currentValue = field.value || [];
+                                const newValue = currentValue.includes(serviceLineId)
+                                  ? currentValue.filter(id => id !== serviceLineId)
+                                  : [...currentValue, serviceLineId];
+                                field.onChange(newValue);
+                              }
+                              // Clear services when service line changes
+                              form.setValue("serviceIds", []);
+                            }}
+                            value=""
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                                <SelectValue placeholder={
+                                  !field.value || field.value.length === 0 
+                                    ? "Todas as linhas de serviço" 
+                                    : `${field.value.length} linha(s) selecionada(s)`
+                                } />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="all">Todas as linhas de serviço</SelectItem>
+                              {availableServiceLines.map((serviceLine: any) => {
+                                const isSelected = field.value?.includes(serviceLine.id) || false;
+                                const parentSolution = solutions.find((s: any) => s.id === serviceLine.solutionId);
+                                return (
+                                  <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={isSelected}
+                                        onChange={() => {}} // Handled by parent onValueChange
+                                      />
+                                      <span>{serviceLine.name} ({parentSolution?.name})</span>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                          {field.value && field.value.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Selecionadas: {field.value.map((id: number) => 
+                                serviceLines.find((sl: any) => sl.id === id)?.name
+                              ).filter(Boolean).join(", ")}
+                            </div>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                )}
+
+                {/* Service Selection - Only show if specific service lines are selected */}
+                {form.watch("serviceLineIds") && form.watch("serviceLineIds").length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="serviceIds"
+                    render={({ field }) => {
+                      const selectedServiceLines = form.watch("serviceLineIds") || [];
+                      const availableServices = services.filter((s: any) => 
+                        selectedServiceLines.includes(s.serviceLineId)
+                      );
+                      
+                      return (
+                        <FormItem>
+                          <FormLabel className="text-sm sm:text-base">Serviço (Opcional)</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              if (value === "all") {
+                                field.onChange([]);
+                              } else {
+                                const serviceId = parseInt(value);
+                                const currentValue = field.value || [];
+                                const newValue = currentValue.includes(serviceId)
+                                  ? currentValue.filter(id => id !== serviceId)
+                                  : [...currentValue, serviceId];
+                                field.onChange(newValue);
+                              }
+                            }}
+                            value=""
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                                <SelectValue placeholder={
+                                  !field.value || field.value.length === 0 
+                                    ? "Todos os serviços" 
+                                    : `${field.value.length} serviço(s) selecionado(s)`
+                                } />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="all">Todos os serviços</SelectItem>
+                              {availableServices.map((service: any) => {
+                                const isSelected = field.value?.includes(service.id) || false;
+                                const parentServiceLine = serviceLines.find((sl: any) => sl.id === service.serviceLineId);
+                                return (
+                                  <SelectItem key={service.id} value={service.id.toString()}>
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={isSelected}
+                                        onChange={() => {}} // Handled by parent onValueChange
+                                      />
+                                      <span>{service.name} ({parentServiceLine?.name})</span>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                          {field.value && field.value.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Selecionados: {field.value.map((id: number) => 
+                                services.find((s: any) => s.id === id)?.name
+                              ).filter(Boolean).join(", ")}
+                            </div>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                )}
+
                 <DialogFooter className="pt-4">
                   <Button 
                     type="submit" 
