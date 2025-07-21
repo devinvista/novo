@@ -83,6 +83,11 @@ export default function UsersPage() {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [userToApprove, setUserToApprove] = useState<User | null>(null);
   const [selectedSubRegionForApproval, setSelectedSubRegionForApproval] = useState<string>("");
+  const [selectedRegionsForApproval, setSelectedRegionsForApproval] = useState<number[]>([]);
+  const [selectedSubRegionsForApproval, setSelectedSubRegionsForApproval] = useState<number[]>([]);
+  const [selectedSolutionsForApproval, setSelectedSolutionsForApproval] = useState<number[]>([]);
+  const [selectedServiceLinesForApproval, setSelectedServiceLinesForApproval] = useState<number[]>([]);
+  const [selectedServicesForApproval, setSelectedServicesForApproval] = useState<number[]>([]);
 
   const form = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema),
@@ -219,17 +224,42 @@ export default function UsersPage() {
   });
 
   const approveUserMutation = useMutation({
-    mutationFn: ({ id, subRegionId }: { id: number; subRegionId?: number }) => 
-      apiRequest("PATCH", `/api/users/${id}/approve`, { subRegionId }).then(res => res.json()),
+    mutationFn: ({ 
+      id, 
+      regionIds, 
+      subRegionIds, 
+      solutionIds, 
+      serviceLineIds, 
+      serviceIds 
+    }: { 
+      id: number; 
+      regionIds: number[];
+      subRegionIds: number[];
+      solutionIds: number[];
+      serviceLineIds: number[];
+      serviceIds: number[];
+    }) => 
+      apiRequest("POST", `/api/users/approve`, { 
+        id,
+        regionIds, 
+        subRegionIds, 
+        solutionIds, 
+        serviceLineIds, 
+        serviceIds 
+      }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending-users"] });
       setApprovalDialogOpen(false);
       setUserToApprove(null);
-      setSelectedSubRegionForApproval("");
+      setSelectedRegionsForApproval([]);
+      setSelectedSubRegionsForApproval([]);
+      setSelectedSolutionsForApproval([]);
+      setSelectedServiceLinesForApproval([]);
+      setSelectedServicesForApproval([]);
       toast({
         title: "Usuário aprovado",
-        description: "Usuário aprovado com sucesso e vinculado à sua região!",
+        description: "Usuário aprovado com permissões personalizadas!",
       });
     },
     onError: (error: any) => {
@@ -336,18 +366,26 @@ export default function UsersPage() {
 
   const handleApproveUser = (user: User) => {
     setUserToApprove(user);
+    // Resetar seleções e pré-selecionar todas as permissões do gestor como padrão
+    if (currentUser) {
+      setSelectedRegionsForApproval(currentUser.regionIds || []);
+      setSelectedSubRegionsForApproval(currentUser.subRegionIds || []);
+      setSelectedSolutionsForApproval(currentUser.solutionIds || []);
+      setSelectedServiceLinesForApproval(currentUser.serviceLineIds || []);
+      setSelectedServicesForApproval(currentUser.serviceIds || []);
+    }
     setApprovalDialogOpen(true);
   };
 
   const confirmApproval = () => {
     if (userToApprove) {
-      const subRegionId = selectedSubRegionForApproval && selectedSubRegionForApproval !== "inherit" 
-        ? parseInt(selectedSubRegionForApproval) 
-        : undefined;
-      
       approveUserMutation.mutate({ 
-        id: userToApprove.id, 
-        subRegionId 
+        id: userToApprove.id,
+        regionIds: selectedRegionsForApproval,
+        subRegionIds: selectedSubRegionsForApproval, 
+        solutionIds: selectedSolutionsForApproval,
+        serviceLineIds: selectedServiceLinesForApproval,
+        serviceIds: selectedServicesForApproval
       });
     }
   };
@@ -1078,17 +1116,17 @@ export default function UsersPage() {
 
       {/* Approval Dialog */}
       <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[500px]">
+        <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Aprovar Usuário</DialogTitle>
+            <DialogTitle>Aprovar Usuário - Configurar Permissões</DialogTitle>
             <DialogDescription>
-              Ao aprovar, o usuário será vinculado à sua região ({currentUser?.regionId ? regions.find(r => r.id === currentUser.regionId)?.name : 'N/A'}).
-              Você pode opcionalmente definir uma sub-região específica.
+              Configure as permissões que o usuário terá acesso. As opções são limitadas aos seus próprios acessos.
             </DialogDescription>
           </DialogHeader>
           
           {userToApprove && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* User Info */}
               <div className="space-y-2">
                 <div className="text-sm font-medium">Usuário:</div>
                 <div className="p-3 bg-muted rounded-lg">
@@ -1102,29 +1140,144 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Sub-região (opcional)</label>
-                <Select 
-                  value={selectedSubRegionForApproval} 
-                  onValueChange={setSelectedSubRegionForApproval}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Herdar sub-região do gestor ou escolher específica" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inherit">
-                      Herdar sub-região do gestor ({currentUser?.subRegionId ? subRegions.find(sr => sr.id === currentUser.subRegionId)?.name : 'Nenhuma'})
-                    </SelectItem>
-                    {currentUser?.regionId && getFilteredSubRegions(currentUser.regionId.toString()).map((subRegion) => (
-                      <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
-                        {subRegion.name}
-                      </SelectItem>
+              {/* Regions */}
+              {availableRegions.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Regiões (selecione uma ou mais)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableRegions.map((region) => (
+                      <div key={region.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`region-${region.id}`}
+                          checked={selectedRegionsForApproval.includes(region.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedRegionsForApproval([...selectedRegionsForApproval, region.id]);
+                            } else {
+                              setSelectedRegionsForApproval(selectedRegionsForApproval.filter(id => id !== region.id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`region-${region.id}`} className="text-sm">
+                          {region.name}
+                        </label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-                <div className="text-xs text-muted-foreground">
-                  O usuário será vinculado à região {currentUser?.regionId ? regions.find(r => r.id === currentUser.regionId)?.name : 'N/A'}
+                  </div>
                 </div>
+              )}
+
+              {/* Sub-regions */}
+              {availableSubRegions.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Sub-regiões (selecione uma ou mais)</label>
+                  <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                    {availableSubRegions.map((subRegion) => (
+                      <div key={subRegion.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`subregion-${subRegion.id}`}
+                          checked={selectedSubRegionsForApproval.includes(subRegion.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSubRegionsForApproval([...selectedSubRegionsForApproval, subRegion.id]);
+                            } else {
+                              setSelectedSubRegionsForApproval(selectedSubRegionsForApproval.filter(id => id !== subRegion.id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`subregion-${subRegion.id}`} className="text-sm">
+                          {subRegion.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Solutions */}
+              {availableSolutions.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Soluções (selecione uma ou mais)</label>
+                  <div className="space-y-2">
+                    {availableSolutions.map((solution) => (
+                      <div key={solution.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`solution-${solution.id}`}
+                          checked={selectedSolutionsForApproval.includes(solution.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSolutionsForApproval([...selectedSolutionsForApproval, solution.id]);
+                            } else {
+                              setSelectedSolutionsForApproval(selectedSolutionsForApproval.filter(id => id !== solution.id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`solution-${solution.id}`} className="text-sm">
+                          {solution.name} - {solution.description}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Service Lines */}
+              {availableServiceLines.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Linhas de Serviço (selecione uma ou mais)</label>
+                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                    {availableServiceLines.map((serviceLine) => (
+                      <div key={serviceLine.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`serviceline-${serviceLine.id}`}
+                          checked={selectedServiceLinesForApproval.includes(serviceLine.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedServiceLinesForApproval([...selectedServiceLinesForApproval, serviceLine.id]);
+                            } else {
+                              setSelectedServiceLinesForApproval(selectedServiceLinesForApproval.filter(id => id !== serviceLine.id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`serviceline-${serviceLine.id}`} className="text-sm">
+                          {serviceLine.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Services */}
+              {availableServices.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Serviços (selecione um ou mais)</label>
+                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                    {availableServices.map((service) => (
+                      <div key={service.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`service-${service.id}`}
+                          checked={selectedServicesForApproval.includes(service.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedServicesForApproval([...selectedServicesForApproval, service.id]);
+                            } else {
+                              setSelectedServicesForApproval(selectedServicesForApproval.filter(id => id !== service.id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`service-${service.id}`} className="text-sm">
+                          {service.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="text-xs text-muted-foreground p-3 bg-muted rounded-lg">
+                <strong>Nota:</strong> O usuário terá acesso apenas às permissões selecionadas acima, 
+                que não podem exceder seus próprios acessos como gestor.
               </div>
             </div>
           )}

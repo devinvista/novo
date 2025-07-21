@@ -671,16 +671,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/users/:id/approve", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
+  app.post("/api/users/approve", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
       const { 
+        id,
         regionIds,
         subRegionIds,
         solutionIds,
         serviceLineIds,
         serviceIds
-      } = req.body; // Permissões específicas que o gestor pode definir
+      } = req.body; // ID do usuário + Permissões específicas que o gestor pode definir
 
       console.log(`Approving user ${id} by ${req.user?.id}`);
 
