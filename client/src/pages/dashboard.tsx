@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import Filters from "@/components/filters";
-import EnhancedDashboard from "@/components/enhanced-dashboard";
+import ModernDashboard from "@/components/modern-dashboard";
 
 export default function Dashboard() {
   const [filters, setFilters] = useState({
@@ -25,8 +25,8 @@ export default function Dashboard() {
         
         <Filters filters={filters} onFiltersChange={setFilters} />
         
-        <div className="flex-1 overflow-y-auto p-6">
-          <EnhancedDashboard />
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          <ModernDashboard />
         </div>
       </main>
     </div>
