@@ -194,6 +194,24 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       return;
     }
 
+    // Validate Key Results dates are within Objective date range
+    const selectedObjective = objectives?.find(obj => obj.id === parseInt(formData.objectiveId));
+    if (selectedObjective) {
+      const objectiveStartDate = new Date(selectedObjective.startDate);
+      const objectiveEndDate = new Date(selectedObjective.endDate);
+      const krStartDate = new Date(formData.startDate);
+      const krEndDate = new Date(formData.endDate);
+      
+      if (krStartDate < objectiveStartDate || krEndDate > objectiveEndDate) {
+        toast({
+          title: "Erro de Validação",
+          description: `As datas do resultado-chave devem estar dentro do período do objetivo (${objectiveStartDate.toLocaleDateString('pt-BR')} até ${objectiveEndDate.toLocaleDateString('pt-BR')})`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const processedData = {
       objectiveId: parseInt(formData.objectiveId),
       title: formData.title,
@@ -509,6 +527,28 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Show objective date constraints if objective is selected */}
+              {formData.objectiveId && objectives && (
+                <div className="p-3 mb-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    <strong>📅 Período do objetivo:</strong> {
+                      (() => {
+                        const selectedObj = objectives.find(obj => obj.id.toString() === formData.objectiveId);
+                        if (selectedObj) {
+                          const startDate = new Date(selectedObj.startDate).toLocaleDateString('pt-BR');
+                          const endDate = new Date(selectedObj.endDate).toLocaleDateString('pt-BR');
+                          return `${startDate} até ${endDate}`;
+                        }
+                        return 'Selecione um objetivo';
+                      })()
+                    }
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    ⚠️ As datas do resultado-chave devem estar dentro deste período.
+                  </p>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate" className="text-sm font-semibold flex items-center">
