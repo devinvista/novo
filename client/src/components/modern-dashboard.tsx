@@ -371,6 +371,60 @@ export default function ModernDashboard() {
         </Card>
       </div>
 
+      {/* Resumo Trimestral */}
+      {quarterlyStats && Object.keys(quarterlyStats).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumo por Período Trimestral</CardTitle>
+            <CardDescription>Visão detalhada da distribuição de OKRs nos trimestres</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableQuarters?.slice(0, 6).map((quarter: string) => {
+                const stats = quarterlyStats[quarter];
+                const [year, q] = quarter.split('-Q');
+                const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                const quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
+                
+                return (
+                  <div key={quarter} className="p-4 border rounded-lg bg-gray-50">
+                    <div className="font-semibold text-sm text-[#1a4b9f] mb-2">
+                      {quarterName}
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span>Objetivos:</span>
+                        <Badge variant="secondary" className="bg-[#1a4b9f]/10 text-[#1a4b9f]">
+                          {stats?.objectives || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Key Results:</span>
+                        <Badge variant="secondary" className="bg-[#00b39c]/10 text-[#00b39c]">
+                          {stats?.keyResults || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Ações:</span>
+                        <Badge variant="secondary" className="bg-[#4db74f]/10 text-[#4db74f]">
+                          {stats?.actions || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Checkpoints:</span>
+                        <Badge variant="secondary" className="bg-[#ef5e31]/10 text-[#ef5e31]">
+                          {stats?.checkpoints || 0}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Gráficos principais */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Ações por Sub-região */}
@@ -570,59 +624,6 @@ export default function ModernDashboard() {
         </CardContent>
       </Card>
 
-      {/* Resumo Trimestral */}
-      {quarterlyStats && Object.keys(quarterlyStats).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumo por Período Trimestral</CardTitle>
-            <CardDescription>Visão detalhada da distribuição de OKRs nos trimestres</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availableQuarters?.slice(0, 6).map((quarter: string) => {
-                const stats = quarterlyStats[quarter];
-                const [year, q] = quarter.split('-Q');
-                const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
-                const quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
-                
-                return (
-                  <div key={quarter} className="p-4 border rounded-lg bg-gray-50">
-                    <div className="font-semibold text-sm text-[#1a4b9f] mb-2">
-                      {quarterName}
-                    </div>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span>Objetivos:</span>
-                        <Badge variant="secondary" className="bg-[#1a4b9f]/10 text-[#1a4b9f]">
-                          {stats?.objectives || 0}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Key Results:</span>
-                        <Badge variant="secondary" className="bg-[#00b39c]/10 text-[#00b39c]">
-                          {stats?.keyResults || 0}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Ações:</span>
-                        <Badge variant="secondary" className="bg-[#4db74f]/10 text-[#4db74f]">
-                          {stats?.actions || 0}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Checkpoints:</span>
-                        <Badge variant="secondary" className="bg-[#ef5e31]/10 text-[#ef5e31]">
-                          {stats?.checkpoints || 0}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
