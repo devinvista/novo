@@ -252,7 +252,6 @@ export default function ModernDashboard() {
             )}
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <QuarterlyFilter variant="header" />
             <div className="hidden sm:flex items-center space-x-4">
               <div className="text-right">
                 <div className="text-2xl font-bold">{dashboardData?.totalObjectives || 0}</div>
