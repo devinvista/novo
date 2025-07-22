@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +15,37 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
+
+// Custom validation schema that includes objective date validation
+const createKeyResultValidationSchema = (objectives: any[] = []) => {
+  return insertKeyResultSchema.refine((data) => {
+    if (!data.objectiveId) return true; // Skip validation if no objective selected
+    
+    const selectedObjective = objectives.find(obj => obj.id === parseInt(data.objectiveId as unknown as string));
+    if (!selectedObjective) return true; // Skip if objective not found
+    
+    const objectiveStartDate = new Date(selectedObjective.startDate);
+    const objectiveEndDate = new Date(selectedObjective.endDate);
+    const krStartDate = new Date(data.startDate);
+    const krEndDate = new Date(data.endDate);
+    
+    // Check if KR dates are within objective dates
+    const startDateValid = krStartDate >= objectiveStartDate;
+    const endDateValid = krEndDate <= objectiveEndDate;
+    
+    return startDateValid && endDateValid;
+  }, {
+    message: "As datas do resultado-chave devem estar dentro do período do objetivo",
+    path: ["startDate"], // This will show the error on startDate field
+  }).refine((data) => {
+    // Additional validation: ensure start date is before end date
+    if (!data.startDate || !data.endDate) return true;
+    return new Date(data.startDate) <= new Date(data.endDate);
+  }, {
+    message: "A data de início deve ser anterior à data de fim",
+    path: ["endDate"],
+  });
+};
 
 type KeyResultFormData = z.infer<typeof insertKeyResultSchema>;
 
@@ -64,6 +95,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
 
   // State for selected service line to control services query
   const [selectedServiceLine, setSelectedServiceLine] = useState<string | null>(null);
+  
+  // State for selected objective to show date constraints
+  const [selectedObjectiveId, setSelectedObjectiveId] = useState<string>(keyResult?.objectiveId?.toString() || "");
 
   // Fetch services for dropdown (based on selected service line)
   const { data: services } = useQuery({
@@ -77,8 +111,13 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     enabled: open && !!selectedServiceLine && selectedServiceLine !== "0",
   });
 
+  // Create validation schema with objective date constraints
+  const validationSchema = useMemo(() => {
+    return createKeyResultValidationSchema(objectives || []);
+  }, [objectives]);
+
   const form = useForm<KeyResultFormData>({
-    resolver: zodResolver(insertKeyResultSchema),
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       objectiveId: keyResult?.objectiveId || "",
       title: keyResult?.title || "",
@@ -162,7 +201,10 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Objetivo *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                  <Select onValueChange={(value) => {
+                    field.onChange(value);
+                    setSelectedObjectiveId(value);
+                  }} value={field.value?.toString()}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um objetivo" />
@@ -399,6 +441,28 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 )}
               />
             </div>
+
+            {/* Show objective date constraints if objective is selected */}
+            {selectedObjectiveId && objectives && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800">
+                  <strong>Período do objetivo:</strong> {
+                    (() => {
+                      const selectedObj = objectives.find(obj => obj.id.toString() === selectedObjectiveId);
+                      if (selectedObj) {
+                        const startDate = new Date(selectedObj.startDate).toLocaleDateString('pt-BR');
+                        const endDate = new Date(selectedObj.endDate).toLocaleDateString('pt-BR');
+                        return `${startDate} até ${endDate}`;
+                      }
+                      return 'Selecione um objetivo';
+                    })()
+                  }
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  As datas do resultado-chave devem estar dentro deste período.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
