@@ -64,7 +64,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   const { data: objectives } = useQuery({
     queryKey: ["/api/objectives"],
     queryFn: async () => {
-      const response = await fetch("/api/objectives");
+      const response = await fetch("/api/objectives", {
+        credentials: "include"
+      });
       if (!response.ok) throw new Error("Erro ao carregar objetivos");
       return response.json();
     },
@@ -75,7 +77,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   const { data: strategicIndicators } = useQuery({
     queryKey: ["/api/strategic-indicators"],
     queryFn: async () => {
-      const response = await fetch("/api/strategic-indicators");
+      const response = await fetch("/api/strategic-indicators", {
+        credentials: "include"
+      });
       if (!response.ok) throw new Error("Erro ao carregar indicadores estratégicos");
       return response.json();
     },
@@ -86,7 +90,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   const { data: serviceLines } = useQuery({
     queryKey: ["/api/service-lines"],
     queryFn: async () => {
-      const response = await fetch("/api/service-lines");
+      const response = await fetch("/api/service-lines", {
+        credentials: "include"
+      });
       if (!response.ok) throw new Error("Erro ao carregar linhas de serviço");
       return response.json();
     },
@@ -104,7 +110,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     queryKey: ["/api/services", selectedServiceLine],
     queryFn: async () => {
       if (!selectedServiceLine || selectedServiceLine === "0") return [];
-      const response = await fetch(`/api/services?serviceLineId=${selectedServiceLine}`);
+      const response = await fetch(`/api/services?serviceLineId=${selectedServiceLine}`, {
+        credentials: "include"
+      });
       if (!response.ok) throw new Error("Erro ao carregar serviços");
       return response.json();
     },
