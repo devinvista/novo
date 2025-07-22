@@ -169,6 +169,12 @@ Changelog:
       - Eliminated showQuarterlyFilter prop and QuarterlyFilter import from Header
       - Quarterly filter now exclusively in sidebar as single source of truth
       - Clean page headers with only actions and notifications, no period selectors
+    - **QUARTERLY DATA FILTERING FIXED**: Resolved issue with objectives not appearing across multiple quarters
+      - Fixed getQuarterlyData method to handle "all" periods case properly
+      - Objectives spanning multiple quarters now appear correctly in all relevant quarters
+      - Example: Objective from 01/01/2025 to 31/12/2025 now shows in Q1, Q2, Q3, and Q4 of 2025
+      - Eliminated "Invalid quarter format" errors when selecting "all periods"
+      - Date overlap logic working correctly for quarter-specific filtering
 - July 22, 2025. **QUARTERLY PERIOD MANAGEMENT SYSTEM COMPLETED + REPLIT MIGRATION FINALIZED**
   - **QUARTERLY PERIODS FULLY IMPLEMENTED**: Complete quarterly management system with automatic date-based filtering
     - Quarterly endpoints: `/api/quarters`, `/api/quarters/stats`, `/api/quarters/:period/data` all working correctly

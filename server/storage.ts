@@ -1090,52 +1090,72 @@ export class DatabaseStorage implements IStorage {
     checkpoints: Checkpoint[];
   }> {
     try {
-      // Parse quarter string (e.g., "2025-Q1")
-      const [yearStr, quarterStr] = quarter.split('-Q');
-      const year = parseInt(yearStr);
-      const quarterNumber = parseInt(quarterStr);
-      
-      if (!year || !quarterNumber || quarterNumber < 1 || quarterNumber > 4) {
-        throw new Error("Invalid quarter format. Use YYYY-QX (e.g., 2025-Q1)");
-      }
-
-      // Calculate quarter date range
-      const quarterStartMonth = (quarterNumber - 1) * 3;
-      const quarterStart = new Date(year, quarterStartMonth, 1);
-      const quarterEnd = new Date(year, quarterStartMonth + 3, 0);
-      
-      const quarterStartStr = quarterStart.toISOString().split('T')[0];
-      const quarterEndStr = quarterEnd.toISOString().split('T')[0];
-
-      // For now, return all data for the quarter filter - simplified approach
       // Get all objectives first
       let quarterObjectives = await db.select().from(objectives);
       
-      // Apply regional filters if needed
-      if (filters?.regionId) {
-        quarterObjectives = quarterObjectives.filter(obj => obj.regionId === filters.regionId);
-      }
-      if (filters?.subRegionId) {
-        quarterObjectives = quarterObjectives.filter(obj => obj.subRegionId === filters.subRegionId);
-      }
-      if (filters?.userRegionIds && filters.userRegionIds.length > 0) {
-        quarterObjectives = quarterObjectives.filter(obj => 
-          obj.regionId && filters.userRegionIds!.includes(obj.regionId)
-        );
-      }
-      if (filters?.userSubRegionIds && filters.userSubRegionIds.length > 0) {
-        quarterObjectives = quarterObjectives.filter(obj => 
-          obj.subRegionId && filters.userSubRegionIds!.includes(obj.subRegionId)
-        );
-      }
+      // Handle "all" periods case - return all data without date filtering
+      if (quarter === "all") {
+        // Apply only regional filters, no date filtering
+        if (filters?.regionId) {
+          quarterObjectives = quarterObjectives.filter(obj => obj.regionId === filters.regionId);
+        }
+        if (filters?.subRegionId) {
+          quarterObjectives = quarterObjectives.filter(obj => obj.subRegionId === filters.subRegionId);
+        }
+        if (filters?.userRegionIds && filters.userRegionIds.length > 0) {
+          quarterObjectives = quarterObjectives.filter(obj => 
+            obj.regionId && filters.userRegionIds!.includes(obj.regionId)
+          );
+        }
+        if (filters?.userSubRegionIds && filters.userSubRegionIds.length > 0) {
+          quarterObjectives = quarterObjectives.filter(obj => 
+            obj.subRegionId && filters.userSubRegionIds!.includes(obj.subRegionId)
+          );
+        }
+      } else {
+        // Parse quarter string (e.g., "2025-Q1")
+        const [yearStr, quarterStr] = quarter.split('-Q');
+        const year = parseInt(yearStr);
+        const quarterNumber = parseInt(quarterStr);
+        
+        if (!year || !quarterNumber || quarterNumber < 1 || quarterNumber > 4) {
+          throw new Error("Invalid quarter format. Use YYYY-QX (e.g., 2025-Q1)");
+        }
 
-      // Filter by date range (objectives that overlap with the quarter)
-      quarterObjectives = quarterObjectives.filter(obj => {
-        if (!obj.startDate || !obj.endDate) return false;
-        const objStart = obj.startDate;
-        const objEnd = obj.endDate;
-        return objStart <= quarterEndStr && objEnd >= quarterStartStr;
-      });
+        // Calculate quarter date range
+        const quarterStartMonth = (quarterNumber - 1) * 3;
+        const quarterStart = new Date(year, quarterStartMonth, 1);
+        const quarterEnd = new Date(year, quarterStartMonth + 3, 0);
+        
+        const quarterStartStr = quarterStart.toISOString().split('T')[0];
+        const quarterEndStr = quarterEnd.toISOString().split('T')[0];
+
+        // Apply regional filters first
+        if (filters?.regionId) {
+          quarterObjectives = quarterObjectives.filter(obj => obj.regionId === filters.regionId);
+        }
+        if (filters?.subRegionId) {
+          quarterObjectives = quarterObjectives.filter(obj => obj.subRegionId === filters.subRegionId);
+        }
+        if (filters?.userRegionIds && filters.userRegionIds.length > 0) {
+          quarterObjectives = quarterObjectives.filter(obj => 
+            obj.regionId && filters.userRegionIds!.includes(obj.regionId)
+          );
+        }
+        if (filters?.userSubRegionIds && filters.userSubRegionIds.length > 0) {
+          quarterObjectives = quarterObjectives.filter(obj => 
+            obj.subRegionId && filters.userSubRegionIds!.includes(obj.subRegionId)
+          );
+        }
+
+        // Filter by date range (objectives that overlap with the quarter)
+        quarterObjectives = quarterObjectives.filter(obj => {
+          if (!obj.startDate || !obj.endDate) return false;
+          const objStart = obj.startDate;
+          const objEnd = obj.endDate;
+          return objStart <= quarterEndStr && objEnd >= quarterStartStr;
+        });
+      }
 
       // Get key results for these objectives
       const objectiveIds = quarterObjectives.map(obj => obj.id);
@@ -1163,8 +1183,14 @@ export class DatabaseStorage implements IStorage {
         quarterCheckpoints = await db
           .select()
           .from(checkpoints)
-          .where(inArray(checkpoints.keyResultId, keyResultIds))
-          .then(results => results.filter(cp => cp.period && cp.period.startsWith(quarter)));
+          .where(inArray(checkpoints.keyResultId, keyResultIds));
+          
+        // For specific quarters, filter checkpoints by period
+        if (quarter !== "all") {
+          quarterCheckpoints = quarterCheckpoints.filter(cp => 
+            cp.period && cp.period.startsWith(quarter.split('-Q')[0])
+          );
+        }
       }
 
       return {
