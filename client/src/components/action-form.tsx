@@ -131,6 +131,24 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   });
 
   const onSubmit = (data: ActionFormData) => {
+    // Validate action due date is before linked Key Result end date
+    if (data.dueDate && data.keyResultId) {
+      const selectedKeyResult = keyResults?.find(kr => kr.id === data.keyResultId);
+      if (selectedKeyResult) {
+        const actionDueDate = new Date(data.dueDate);
+        const krEndDate = new Date(selectedKeyResult.endDate);
+        
+        if (actionDueDate > krEndDate) {
+          toast({
+            title: "Erro de Validação",
+            description: `A data de vencimento da ação deve ser anterior ao término do resultado-chave (${krEndDate.toLocaleDateString('pt-BR')})`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     // Clean up the data to handle null values properly
     const cleanedData = {
       ...data,
@@ -262,6 +280,24 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
               <div>
                 <Label htmlFor="dueDate">Data de Vencimento</Label>
+                {form.watch("keyResultId") && keyResults && (
+                  <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800">
+                      <strong>⏰ Limite:</strong> {
+                        (() => {
+                          const selectedKR = keyResults.find(kr => kr.id === form.watch("keyResultId"));
+                          if (selectedKR) {
+                            return `até ${new Date(selectedKR.endDate).toLocaleDateString('pt-BR')}`;
+                          }
+                          return 'Selecione um resultado-chave';
+                        })()
+                      }
+                    </p>
+                    <p className="text-xs text-yellow-600 mt-1">
+                      ⚠️ A data de vencimento deve ser anterior ao fim do resultado-chave.
+                    </p>
+                  </div>
+                )}
                 <Input
                   id="dueDate"
                   type="date"

@@ -705,13 +705,14 @@ Preferred communication style: Simple, everyday language.
     - Authentication system working with session management via MemoryStore
     - All API endpoints responding correctly (objectives, key results, actions, checkpoints, users)
     - Client/server separation maintained with secure practices
-  - **DATE VALIDATION ENHANCEMENT**: Implemented comprehensive date validation for Key Results
-    - Added custom validation schema ensuring Key Results dates must be within Objective date range
-    - Enhanced Key Results form with visual feedback showing Objective period constraints
-    - Real-time validation prevents users from creating Key Results outside Objective timeline
-    - User-friendly error messages in Portuguese explaining date constraints
-    - Visual indicator showing selected Objective's start and end dates
-    - Applied validation to both key-result-form.tsx and key-result-form-simple.tsx components
+  - **COMPREHENSIVE DATE VALIDATION**: Implemented full date validation business rules across system
+    - Added custom validation ensuring Key Results dates must be within Objective date range
+    - Enhanced Key Results forms with visual feedback showing Objective period constraints
+    - Implemented Action due date validation to be before linked Key Result end date
+    - Real-time validation prevents invalid date configurations across the system
+    - User-friendly error messages in Portuguese explaining all date constraints
+    - Visual indicators showing date limits for Key Results and Actions
+    - Applied validation to both standard and simple form components
   - **SECURITY IMPROVEMENTS**: Enhanced security practices during migration
     - Maintained robust client/server separation as per development guidelines
     - Secure password hashing with Node.js crypto module continues working
