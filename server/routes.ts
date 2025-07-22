@@ -378,9 +378,10 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/actions", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
-      const actions = await storage.getActions(keyResultId, req.user.id);
+      const actions = await storage.getActions(keyResultId);
       res.json(actions);
     } catch (error) {
+      console.error("Error fetching actions:", error);
       res.status(500).json({ message: "Erro ao buscar ações" });
     }
   });
@@ -396,7 +397,6 @@ export function registerRoutes(app: Express): Server {
       // Clean up null values
       const requestData = { ...req.body };
       if (requestData.responsibleId === null) requestData.responsibleId = undefined;
-      if (requestData.strategicIndicatorId === null) requestData.strategicIndicatorId = undefined;
       if (requestData.dueDate === null || requestData.dueDate === "") requestData.dueDate = undefined;
       
       const validation = insertActionSchema.parse(requestData);

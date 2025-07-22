@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { z } from "zod";
 
-const actionFormSchema = insertActionSchema.extend({
+const actionFormSchema = insertActionSchema.omit({ strategicIndicatorId: true }).extend({
   keyResultId: z.number().min(1, "Resultado-chave é obrigatório"),
   dueDate: z.string().optional(),
 });
@@ -50,14 +50,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
     },
   });
 
-  const { data: indicators } = useQuery({
-    queryKey: ["/api/strategic-indicators"],
-    queryFn: async () => {
-      const response = await fetch("/api/strategic-indicators");
-      if (!response.ok) throw new Error("Erro ao carregar indicadores");
-      return response.json();
-    },
-  });
+
 
   const form = useForm<ActionFormData>({
     resolver: zodResolver(actionFormSchema),
@@ -68,7 +61,6 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       priority: action?.priority || "medium",
       status: action?.status || "pending",
       responsibleId: action?.responsibleId || null,
-      strategicIndicatorId: action?.strategicIndicatorId || null,
       dueDate: action?.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
     },
   });
@@ -83,7 +75,6 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         priority: action.priority || "medium",
         status: action.status || "pending",
         responsibleId: action.responsibleId || null,
-        strategicIndicatorId: action.strategicIndicatorId || null,
         dueDate: action.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
       });
     } else {
@@ -94,7 +85,6 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         priority: "medium",
         status: "pending",
         responsibleId: null,
-        strategicIndicatorId: null,
         dueDate: "",
       });
     }
@@ -153,7 +143,6 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
     const cleanedData = {
       ...data,
       responsibleId: data.responsibleId || undefined,
-      strategicIndicatorId: data.strategicIndicatorId || undefined,
       dueDate: data.dueDate || undefined,
     };
     
@@ -306,25 +295,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="strategicIndicatorId">Indicador Estratégico</Label>
-              <Select 
-                value={form.watch("strategicIndicatorId")?.toString() || "0"}
-                onValueChange={(value) => form.setValue("strategicIndicatorId", value === "0" ? null : parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um indicador" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Sem indicador</SelectItem>
-                  {indicators?.map((indicator: any) => (
-                    <SelectItem key={indicator.id} value={indicator.id.toString()}>
-                      {indicator.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
           </div>
 
           <div className="flex justify-end space-x-2">

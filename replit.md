@@ -705,7 +705,7 @@ Preferred communication style: Simple, everyday language.
     - Authentication system working with session management via MemoryStore
     - All API endpoints responding correctly (objectives, key results, actions, checkpoints, users)
     - Client/server separation maintained with secure practices
-  - **COMPREHENSIVE DATE VALIDATION**: Implemented full date validation business rules across system
+  - **COMPREHENSIVE DATE VALIDATION + ACTIONS SIMPLIFIED**: Implemented full validation and removed strategic indicators from actions
     - Added custom validation ensuring Key Results dates must be within Objective date range
     - Enhanced Key Results forms with visual feedback showing Objective period constraints
     - Implemented Action due date validation to be before linked Key Result end date
@@ -713,6 +713,11 @@ Preferred communication style: Simple, everyday language.
     - User-friendly error messages in Portuguese explaining all date constraints
     - Visual indicators showing date limits for Key Results and Actions
     - Applied validation to both standard and simple form components
+    - **ACTIONS SIMPLIFIED**: Removed strategic indicators link from actions (actions now link only to key results)
+      - Removed strategicIndicatorId field from action forms and schema
+      - Cleaned up action creation/update logic
+      - Fixed actions API endpoint errors
+      - Simplified action data model per user requirements
   - **SECURITY IMPROVEMENTS**: Enhanced security practices during migration
     - Maintained robust client/server separation as per development guidelines
     - Secure password hashing with Node.js crypto module continues working
