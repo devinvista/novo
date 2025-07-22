@@ -428,7 +428,7 @@ export function registerRoutes(app: Express): Server {
       const actionId = parseInt(req.params.actionId);
       
       // Check access to action
-      const action = await storage.getAction(actionId, req.session.user!.id);
+      const action = await storage.getAction(actionId, req.user.id);
       if (!action) {
         return res.status(404).json({ message: "Action not found or no access" });
       }
@@ -447,14 +447,14 @@ export function registerRoutes(app: Express): Server {
       const actionId = parseInt(req.params.actionId);
       
       // Check access to action
-      const action = await storage.getAction(actionId, req.session.user!.id);
+      const action = await storage.getAction(actionId, req.user.id);
       if (!action) {
         return res.status(404).json({ message: "Action not found or no access" });
       }
 
       const commentData = {
         actionId,
-        userId: req.session.user!.id,
+        userId: req.user.id,
         comment: req.body.comment
       };
 
