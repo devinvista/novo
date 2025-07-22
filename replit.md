@@ -165,6 +165,10 @@ Changelog:
     - Removed unused filter properties from components
     - Resolved QuarterlyFilter reference errors in ModernDashboard
     - Cleaned up component imports and dependencies
+    - **HEADER COMPONENT CLEANED**: Removed final quarterly filter from header component
+      - Eliminated showQuarterlyFilter prop and QuarterlyFilter import from Header
+      - Quarterly filter now exclusively in sidebar as single source of truth
+      - Clean page headers with only actions and notifications, no period selectors
 - July 22, 2025. **QUARTERLY PERIOD MANAGEMENT SYSTEM COMPLETED + REPLIT MIGRATION FINALIZED**
   - **QUARTERLY PERIODS FULLY IMPLEMENTED**: Complete quarterly management system with automatic date-based filtering
     - Quarterly endpoints: `/api/quarters`, `/api/quarters/stats`, `/api/quarters/:period/data` all working correctly
