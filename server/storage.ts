@@ -13,6 +13,7 @@ import { eq, and, desc, sql, asc, inArray } from "drizzle-orm";
 import session from "express-session";
 // @ts-ignore - memorystore types are outdated
 import MemoryStore from "memorystore";
+import { getQuarterlyPeriods, getQuarterlyPeriod, getCurrentQuarter, formatQuarter } from "./quarterly-periods";
 
 export interface IStorage {
   // User management
@@ -101,6 +102,10 @@ export interface IStorage {
   getDashboardKPIs(filters?: {
     regionId?: number;
     subRegionId?: number;
+    userRegionIds?: number[];
+    userSubRegionIds?: number[];
+    period?: string;
+    quarter?: string; // e.g., "2025-Q1"
   }): Promise<{
     totalObjectives: number;
     totalKeyResults: number;
@@ -108,6 +113,29 @@ export interface IStorage {
     totalActions: number;
     completedActions: number;
     overallProgress: number;
+  }>;
+
+  // Quarterly period methods
+  getQuarterlyData(quarter: string, filters?: {
+    regionId?: number;
+    subRegionId?: number;
+    userRegionIds?: number[];
+    userSubRegionIds?: number[];
+  }): Promise<{
+    objectives: Objective[];
+    keyResults: KeyResult[];
+    actions: Action[];
+    checkpoints: Checkpoint[];
+  }>;
+  
+  getAvailableQuarters(): Promise<string[]>;
+  getQuarterlyStats(): Promise<{
+    [quarter: string]: {
+      objectives: number;
+      keyResults: number;
+      actions: number;
+      checkpoints: number;
+    };
   }>;
 
   sessionStore: any;
@@ -915,6 +943,7 @@ export class DatabaseStorage implements IStorage {
     userRegionIds?: number[];
     userSubRegionIds?: number[];
     period?: string;
+    quarter?: string;
   }): Promise<{
     totalObjectives: number;
     totalKeyResults: number;
@@ -923,7 +952,33 @@ export class DatabaseStorage implements IStorage {
     completedActions: number;
     overallProgress: number;
   }> {
-    // Build filter conditions
+    // If quarter filter is specified, use quarterly data
+    if (filters?.quarter) {
+      const quarterData = await this.getQuarterlyData(filters.quarter, {
+        regionId: filters.regionId,
+        subRegionId: filters.subRegionId,
+        userRegionIds: filters.userRegionIds,
+        userSubRegionIds: filters.userSubRegionIds
+      });
+      
+      const totalActions = quarterData.actions.length;
+      const completedActions = quarterData.actions.filter(a => a.status === 'completed').length;
+      const totalObjectives = quarterData.objectives.length;
+      const averageProgress = totalObjectives > 0 
+        ? quarterData.objectives.reduce((sum, obj) => sum + (obj.progress || 0), 0) / totalObjectives 
+        : 0;
+
+      return {
+        totalObjectives,
+        totalKeyResults: quarterData.keyResults.length,
+        averageProgress,
+        totalActions,
+        completedActions,
+        overallProgress: averageProgress,
+      };
+    }
+
+    // Build filter conditions for non-quarterly queries
     const objectiveConditions = [];
     
     // Single region/subregion filters (specific filter)
@@ -1019,6 +1074,207 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating action comment:', error);
       throw error;
+    }
+  }
+
+  // Quarterly period methods
+  async getQuarterlyData(quarter: string, filters?: {
+    regionId?: number;
+    subRegionId?: number;
+    userRegionIds?: number[];
+    userSubRegionIds?: number[];
+  }): Promise<{
+    objectives: Objective[];
+    keyResults: KeyResult[];
+    actions: Action[];
+    checkpoints: Checkpoint[];
+  }> {
+    try {
+      // Parse quarter string (e.g., "2025-Q1")
+      const [yearStr, quarterStr] = quarter.split('-Q');
+      const year = parseInt(yearStr);
+      const quarterNumber = parseInt(quarterStr);
+      
+      if (!year || !quarterNumber || quarterNumber < 1 || quarterNumber > 4) {
+        throw new Error("Invalid quarter format. Use YYYY-QX (e.g., 2025-Q1)");
+      }
+
+      // Calculate quarter date range
+      const quarterStartMonth = (quarterNumber - 1) * 3;
+      const quarterStart = new Date(year, quarterStartMonth, 1);
+      const quarterEnd = new Date(year, quarterStartMonth + 3, 0);
+      
+      const quarterStartStr = quarterStart.toISOString().split('T')[0];
+      const quarterEndStr = quarterEnd.toISOString().split('T')[0];
+
+      // For now, return all data for the quarter filter - simplified approach
+      // Get all objectives first
+      let quarterObjectives = await db.select().from(objectives);
+      
+      // Apply regional filters if needed
+      if (filters?.regionId) {
+        quarterObjectives = quarterObjectives.filter(obj => obj.regionId === filters.regionId);
+      }
+      if (filters?.subRegionId) {
+        quarterObjectives = quarterObjectives.filter(obj => obj.subRegionId === filters.subRegionId);
+      }
+      if (filters?.userRegionIds && filters.userRegionIds.length > 0) {
+        quarterObjectives = quarterObjectives.filter(obj => 
+          obj.regionId && filters.userRegionIds!.includes(obj.regionId)
+        );
+      }
+      if (filters?.userSubRegionIds && filters.userSubRegionIds.length > 0) {
+        quarterObjectives = quarterObjectives.filter(obj => 
+          obj.subRegionId && filters.userSubRegionIds!.includes(obj.subRegionId)
+        );
+      }
+
+      // Filter by date range (objectives that overlap with the quarter)
+      quarterObjectives = quarterObjectives.filter(obj => {
+        if (!obj.startDate || !obj.endDate) return false;
+        const objStart = obj.startDate;
+        const objEnd = obj.endDate;
+        return objStart <= quarterEndStr && objEnd >= quarterStartStr;
+      });
+
+      // Get key results for these objectives
+      const objectiveIds = quarterObjectives.map(obj => obj.id);
+      let quarterKeyResults: KeyResult[] = [];
+      if (objectiveIds.length > 0) {
+        quarterKeyResults = await db
+          .select()
+          .from(keyResults)
+          .where(inArray(keyResults.objectiveId, objectiveIds));
+      }
+
+      // Get actions for these key results
+      const keyResultIds = quarterKeyResults.map(kr => kr.id);
+      let quarterActions: Action[] = [];
+      if (keyResultIds.length > 0) {
+        quarterActions = await db
+          .select()
+          .from(actions)
+          .where(inArray(actions.keyResultId, keyResultIds));
+      }
+
+      // Get checkpoints for these key results
+      let quarterCheckpoints: Checkpoint[] = [];
+      if (keyResultIds.length > 0) {
+        quarterCheckpoints = await db
+          .select()
+          .from(checkpoints)
+          .where(inArray(checkpoints.keyResultId, keyResultIds))
+          .then(results => results.filter(cp => cp.period && cp.period.startsWith(quarter)));
+      }
+
+      return {
+        objectives: quarterObjectives,
+        keyResults: quarterKeyResults,
+        actions: quarterActions,
+        checkpoints: quarterCheckpoints
+      };
+    } catch (error) {
+      console.error('Error getting quarterly data:', error);
+      return {
+        objectives: [],
+        keyResults: [],
+        actions: [],
+        checkpoints: []
+      };
+    }
+  }
+
+  async getAvailableQuarters(): Promise<string[]> {
+    try {
+      // Get date ranges from objectives, key results, and actions
+      const objectiveDates = await db
+        .select({
+          startDate: objectives.startDate,
+          endDate: objectives.endDate
+        })
+        .from(objectives);
+
+      const keyResultDates = await db
+        .select({
+          startDate: keyResults.startDate,
+          endDate: keyResults.endDate
+        })
+        .from(keyResults);
+
+      const actionDates = await db
+        .select({
+          dueDate: actions.dueDate
+        })
+        .from(actions)
+        .where(sql`${actions.dueDate} IS NOT NULL`);
+
+      // Collect all date ranges and calculate quarters
+      const allQuarters = new Set<string>();
+
+      // Process objective dates
+      objectiveDates.forEach(obj => {
+        if (obj.startDate && obj.endDate) {
+          const periods = getQuarterlyPeriods(obj.startDate, obj.endDate);
+          periods.forEach(period => allQuarters.add(period.quarter));
+        }
+      });
+
+      // Process key result dates
+      keyResultDates.forEach(kr => {
+        if (kr.startDate && kr.endDate) {
+          const periods = getQuarterlyPeriods(kr.startDate, kr.endDate);
+          periods.forEach(period => allQuarters.add(period.quarter));
+        }
+      });
+
+      // Process action due dates
+      actionDates.forEach(action => {
+        if (action.dueDate) {
+          const period = getQuarterlyPeriod(action.dueDate);
+          allQuarters.add(period.quarter);
+        }
+      });
+
+      // Convert to sorted array
+      const sortedQuarters = Array.from(allQuarters).sort((a, b) => {
+        const [yearA, quarterA] = a.split('-Q').map(Number);
+        const [yearB, quarterB] = b.split('-Q').map(Number);
+        return yearA === yearB ? quarterA - quarterB : yearA - yearB;
+      });
+
+      return sortedQuarters;
+    } catch (error) {
+      console.error('Error getting available quarters:', error);
+      return [];
+    }
+  }
+
+  async getQuarterlyStats(): Promise<{
+    [quarter: string]: {
+      objectives: number;
+      keyResults: number;
+      actions: number;
+      checkpoints: number;
+    };
+  }> {
+    try {
+      const quarters = await this.getAvailableQuarters();
+      const stats: { [quarter: string]: { objectives: number; keyResults: number; actions: number; checkpoints: number } } = {};
+
+      for (const quarter of quarters) {
+        const data = await this.getQuarterlyData(quarter);
+        stats[quarter] = {
+          objectives: data.objectives.length,
+          keyResults: data.keyResults.length,
+          actions: data.actions.length,
+          checkpoints: data.checkpoints.length
+        };
+      }
+
+      return stats;
+    } catch (error) {
+      console.error('Error getting quarterly stats:', error);
+      return {};
     }
   }
 }

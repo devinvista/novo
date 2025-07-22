@@ -164,7 +164,10 @@ export function registerRoutes(app: Express): Server {
       const filters: any = {
         regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
         subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
+        quarter: req.query.quarter as string || undefined,
       };
+      
+
       
       // Aplicar filtros de acesso baseados no usuário atual (multi-regional)
       if (currentUser.role !== 'admin') {
@@ -184,6 +187,58 @@ export function registerRoutes(app: Express): Server {
       res.json(kpis);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar KPIs do dashboard" });
+    }
+  });
+
+  // Quarterly period endpoints
+  app.get("/api/quarters", requireAuth, async (req: any, res) => {
+    try {
+      const quarters = await storage.getAvailableQuarters();
+      res.json(quarters);
+    } catch (error) {
+      console.error("Error getting quarters:", error);
+      res.status(500).json({ message: "Erro ao buscar períodos trimestrais" });
+    }
+  });
+
+  app.get("/api/quarters/stats", requireAuth, async (req: any, res) => {
+    try {
+      const stats = await storage.getQuarterlyStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting quarterly stats:", error);
+      res.status(500).json({ message: "Erro ao buscar estatísticas trimestrais" });
+    }
+  });
+
+  app.get("/api/quarters/:quarter/data", requireAuth, async (req: any, res) => {
+    try {
+      const { quarter } = req.params;
+      const currentUser = req.user;
+      
+      const filters: any = {
+        regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
+        subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
+      };
+      
+      // Aplicar filtros de acesso baseados no usuário atual
+      if (currentUser.role !== 'admin') {
+        const userRegionIds = currentUser.regionIds || [];
+        const userSubRegionIds = currentUser.subRegionIds || [];
+        
+        if (userRegionIds.length > 0 && !filters.regionId) {
+          filters.userRegionIds = userRegionIds;
+        }
+        if (userSubRegionIds.length > 0 && !filters.subRegionId) {
+          filters.userSubRegionIds = userSubRegionIds;
+        }
+      }
+      
+      const data = await storage.getQuarterlyData(quarter, filters);
+      res.json(data);
+    } catch (error) {
+      console.error("Error getting quarterly data:", error);
+      res.status(500).json({ message: "Erro ao buscar dados do período trimestral" });
     }
   });
 

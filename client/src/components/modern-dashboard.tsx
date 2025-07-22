@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 import {
   Target,
   TrendingUp,
@@ -61,20 +63,50 @@ const CHART_COLORS = [
 ];
 
 export default function ModernDashboard() {
+  const [selectedQuarter, setSelectedQuarter] = useState<string>("");
+
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ["/api/dashboard/kpis"],
+    queryKey: ["/api/dashboard/kpis", selectedQuarter],
+    queryFn: () => {
+      const url = selectedQuarter ? `/api/dashboard/kpis?quarter=${selectedQuarter}` : "/api/dashboard/kpis";
+      return fetch(url, { credentials: "include" }).then(r => r.json());
+    }
   });
 
   const { data: objectives } = useQuery({
-    queryKey: ["/api/objectives"],
+    queryKey: ["/api/objectives", selectedQuarter],
+    queryFn: () => {
+      const url = selectedQuarter 
+        ? `/api/quarters/${selectedQuarter}/data` 
+        : "/api/objectives";
+      return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => 
+        selectedQuarter ? data.objectives : data
+      );
+    }
   });
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results"],
+    queryKey: ["/api/key-results", selectedQuarter],
+    queryFn: () => {
+      const url = selectedQuarter 
+        ? `/api/quarters/${selectedQuarter}/data` 
+        : "/api/key-results";
+      return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => 
+        selectedQuarter ? data.keyResults : data
+      );
+    }
   });
 
   const { data: actions } = useQuery({
-    queryKey: ["/api/actions"],
+    queryKey: ["/api/actions", selectedQuarter],
+    queryFn: () => {
+      const url = selectedQuarter 
+        ? `/api/quarters/${selectedQuarter}/data` 
+        : "/api/actions";
+      return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => 
+        selectedQuarter ? data.actions : data
+      );
+    }
   });
 
   const { data: checkpoints } = useQuery({
@@ -87,6 +119,14 @@ export default function ModernDashboard() {
 
   const { data: strategicIndicators } = useQuery({
     queryKey: ["/api/strategic-indicators"],
+  });
+
+  const { data: availableQuarters } = useQuery({
+    queryKey: ["/api/quarters"],
+  });
+
+  const { data: quarterlyStats } = useQuery({
+    queryKey: ["/api/quarters/stats"],
   });
 
   if (dashboardLoading) {
@@ -175,27 +215,75 @@ export default function ModernDashboard() {
     };
   }).filter((item: any) => item && item.totalKRs > 0) || [];
 
+  // Dados trimestrais para o gráfico
+  const quarterlyData = availableQuarters?.map((quarter: string) => {
+    const stats = quarterlyStats?.[quarter];
+    const [year, q] = quarter.split('-Q');
+    const quarterNames = ['1º Tri', '2º Tri', '3º Tri', '4º Tri'];
+    
+    return {
+      name: `${quarterNames[parseInt(q) - 1]} ${year}`,
+      quarter: quarter,
+      objetivos: stats?.objectives || 0,
+      keyResults: stats?.keyResults || 0,
+      acoes: stats?.actions || 0,
+      checkpoints: stats?.checkpoints || 0
+    };
+  }) || [];
+
   return (
     <div className="space-y-8">
       {/* Header com gradiente FIERGS */}
       <div className="bg-gradient-to-r from-[#1a4b9f] to-[#0091d6] rounded-xl p-8 text-white">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <h1 className="text-3xl font-bold mb-2">Dashboard Executivo</h1>
             <p className="text-blue-100">Visão estratégica dos OKRs organizacionais</p>
+            {selectedQuarter && (
+              <div className="mt-2 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span className="text-sm">
+                  Período: {(() => {
+                    const [year, q] = selectedQuarter.split('-Q');
+                    const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                    return `${quarterNames[parseInt(q) - 1]} ${year}`;
+                  })()}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <div className="text-2xl font-bold">{dashboardData?.totalObjectives || 0}</div>
-              <div className="text-sm text-blue-100">Objetivos</div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">{dashboardData?.totalKeyResults || 0}</div>
-              <div className="text-sm text-blue-100">Key Results</div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">{dashboardData?.totalActions || 0}</div>
-              <div className="text-sm text-blue-100">Ações</div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
+              <SelectTrigger className="w-64 bg-white/10 border-white/20 text-white backdrop-blur-sm">
+                <SelectValue placeholder="🗓️ Todos os períodos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os períodos</SelectItem>
+                {availableQuarters?.map((quarter: string) => {
+                  const [year, q] = quarter.split('-Q');
+                  const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                  const quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
+                  return (
+                    <SelectItem key={quarter} value={quarter}>
+                      {quarterName}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <div className="hidden sm:flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-2xl font-bold">{dashboardData?.totalObjectives || 0}</div>
+                <div className="text-sm text-blue-100">Objetivos</div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold">{dashboardData?.totalKeyResults || 0}</div>
+                <div className="text-sm text-blue-100">Key Results</div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold">{dashboardData?.totalActions || 0}</div>
+                <div className="text-sm text-blue-100">Ações</div>
+              </div>
             </div>
           </div>
         </div>
@@ -446,6 +534,95 @@ export default function ModernDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Distribuição Trimestral */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Calendar className="h-5 w-5 mr-2 text-[#0091d6]" />
+            Distribuição Trimestral
+          </CardTitle>
+          <CardDescription>Evolução dos OKRs ao longo dos trimestres</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {quarterlyData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={quarterlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="objetivos" fill={FIERGS_COLORS.primary} name="Objetivos" />
+                <Bar dataKey="keyResults" fill={FIERGS_COLORS.tertiary} name="Key Results" />
+                <Bar dataKey="acoes" fill={FIERGS_COLORS.secondary} name="Ações" />
+                <Bar dataKey="checkpoints" fill={FIERGS_COLORS.quaternary} name="Checkpoints" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+              <div className="text-center">
+                <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>Carregando dados trimestrais...</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Resumo Trimestral */}
+      {quarterlyStats && Object.keys(quarterlyStats).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumo por Período Trimestral</CardTitle>
+            <CardDescription>Visão detalhada da distribuição de OKRs nos trimestres</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableQuarters?.slice(0, 6).map((quarter: string) => {
+                const stats = quarterlyStats[quarter];
+                const [year, q] = quarter.split('-Q');
+                const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                const quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
+                
+                return (
+                  <div key={quarter} className="p-4 border rounded-lg bg-gray-50">
+                    <div className="font-semibold text-sm text-[#1a4b9f] mb-2">
+                      {quarterName}
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span>Objetivos:</span>
+                        <Badge variant="secondary" className="bg-[#1a4b9f]/10 text-[#1a4b9f]">
+                          {stats?.objectives || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Key Results:</span>
+                        <Badge variant="secondary" className="bg-[#00b39c]/10 text-[#00b39c]">
+                          {stats?.keyResults || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Ações:</span>
+                        <Badge variant="secondary" className="bg-[#4db74f]/10 text-[#4db74f]">
+                          {stats?.actions || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Checkpoints:</span>
+                        <Badge variant="secondary" className="bg-[#ef5e31]/10 text-[#ef5e31]">
+                          {stats?.checkpoints || 0}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
