@@ -1109,7 +1109,9 @@ export class DatabaseStorage implements IStorage {
         }
         if (filters?.userSubRegionIds && filters.userSubRegionIds.length > 0) {
           quarterObjectives = quarterObjectives.filter(obj => 
-            obj.subRegionId && filters.userSubRegionIds!.includes(obj.subRegionId)
+            // Se o objetivo não tem sub-região específica (null), mas a região está permitida, aceita
+            // Ou se tem sub-região e está nas sub-regiões permitidas
+            obj.subRegionId === null || (obj.subRegionId && filters.userSubRegionIds!.includes(obj.subRegionId))
           );
         }
       } else {
@@ -1144,7 +1146,9 @@ export class DatabaseStorage implements IStorage {
         }
         if (filters?.userSubRegionIds && filters.userSubRegionIds.length > 0) {
           quarterObjectives = quarterObjectives.filter(obj => 
-            obj.subRegionId && filters.userSubRegionIds!.includes(obj.subRegionId)
+            // Se o objetivo não tem sub-região específica (null), mas a região está permitida, aceita
+            // Ou se tem sub-região e está nas sub-regiões permitidas
+            obj.subRegionId === null || (obj.subRegionId && filters.userSubRegionIds!.includes(obj.subRegionId))
           );
         }
 
