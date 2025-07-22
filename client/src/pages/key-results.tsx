@@ -132,7 +132,7 @@ export default function KeyResults() {
                             {kr.number}. {kr.title}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Objetivo: {kr.objective.title}
+                            Objetivo: {kr.objective?.title || 'Sem objetivo associado'}
                           </p>
                           {kr.description && (
                             <p className="text-sm text-muted-foreground mt-2">
@@ -174,7 +174,7 @@ export default function KeyResults() {
                         
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                           <span>Frequência: {kr.frequency}</span>
-                          {kr.strategicIndicator && (
+                          {kr.strategicIndicator?.name && (
                             <span>Indicador: {kr.strategicIndicator.name}</span>
                           )}
                         </div>
