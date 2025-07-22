@@ -132,6 +132,23 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
+- January 22, 2025. **FILTRO DE PERÍODO CENTRALIZADO NO MENU LATERAL IMPLEMENTADO**
+  - **FILTRO ÚNICO NO SIDEBAR**: Movido o filtro de período para o menu lateral acima do Dashboard
+    - Adicionado componente QuarterlyFilter no sidebar com variant "sidebar" 
+    - Removido todos os filtros de período duplicados das páginas individuais
+    - Filtro centralizado garante consistência na seleção de período em toda aplicação
+    - Interface limpa sem múltiplos seletores competindo pela atenção do usuário
+  - **PÁGINAS SIMPLIFICADAS**: Limpeza de todas as páginas removendo filtros redundantes
+    - Dashboard: removido QuarterlyFilter da action do Header
+    - Objetivos: removido QuarterlyFilter, mantido apenas botão "Novo Objetivo"
+    - Resultados-Chave: removido QuarterlyFilter, mantido apenas botão "Novo KR"
+    - Ações: removido QuarterlyFilter, mantido filtro por resultado-chave e botão "Nova Ação"
+    - Checkpoints: removido QuarterlyFilter da action do Header
+    - Indicadores: removido QuarterlyFilter da action do Header
+  - **UX MELHORADA**: Experiência do usuário mais fluida e intuitiva
+    - Usuário seleciona período uma vez no sidebar e vê dados filtrados em todas as páginas
+    - Redução de duplicação de controles na interface
+    - Fonte única de verdade para seleção de período elimina inconsistências
 - July 22, 2025. **GLOBAL QUARTERLY FILTER SYSTEM UNIFIED + DUPLICATE PERIOD FILTERS ELIMINATED**
   - **SINGLE PERIOD FILTER SYSTEM**: Successfully unified all period filtering into one global quarterly filter
     - Removed duplicate Filters component from all pages (objectives, indicators, dashboard)

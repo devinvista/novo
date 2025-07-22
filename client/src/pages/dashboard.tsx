@@ -1,7 +1,6 @@
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import ModernDashboard from "@/components/modern-dashboard";
-import QuarterlyFilter from "@/components/quarterly-filter";
 
 export default function Dashboard() {
   return (
@@ -12,7 +11,6 @@ export default function Dashboard() {
         <Header 
           title="Dashboard" 
           description="Visão geral dos objetivos e resultados"
-          action={<QuarterlyFilter variant="compact" />}
         />
         
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">

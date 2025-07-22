@@ -4,7 +4,7 @@ import { Calendar } from "lucide-react";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 
 interface QuarterlyFilterProps {
-  variant?: "header" | "card" | "compact";
+  variant?: "header" | "card" | "compact" | "sidebar";
   className?: string;
 }
 
@@ -37,6 +37,11 @@ export default function QuarterlyFilter({ variant = "header", className = "" }: 
         return {
           trigger: "w-48",
           placeholder: "Período"
+        };
+      case "sidebar":
+        return {
+          trigger: "w-full bg-sidebar-background border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent",
+          placeholder: "Todos os períodos"
         };
       default:
         return {

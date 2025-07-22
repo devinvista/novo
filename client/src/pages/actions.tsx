@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import ActionForm from "@/components/action-form";
 import ActionTimeline from "@/components/action-timeline";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
-import QuarterlyFilter from "@/components/quarterly-filter";
 import {
   Select,
   SelectContent,
@@ -48,7 +47,6 @@ export default function Actions() {
           description="Acompanhe e gerencie as ações dos resultados-chave"
           action={
             <div className="flex gap-4 items-center">
-              <QuarterlyFilter variant="compact" />
               <Select value={keyResultFilter} onValueChange={setKeyResultFilter}>
                 <SelectTrigger className="w-[300px]">
                   <SelectValue placeholder="Filtrar por resultado-chave" />

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import QuarterlyFilter from "@/components/quarterly-filter";
 
 export default function Sidebar() {
   const [location] = useLocation();
@@ -72,6 +73,14 @@ export default function Sidebar() {
             <p className="text-xs text-sidebar-foreground/60">Gestão de Objetivos</p>
           </div>
         </div>
+      </div>
+
+      {/* Quarterly Filter */}
+      <div className="p-4 border-b border-sidebar-border">
+        <div className="text-xs text-sidebar-foreground/60 mb-2 font-medium uppercase tracking-wide">
+          Período
+        </div>
+        <QuarterlyFilter variant="sidebar" />
       </div>
 
       {/* Navigation Menu */}
