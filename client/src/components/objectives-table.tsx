@@ -104,7 +104,7 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
         obj.title,
         obj.description || "",
         obj.region?.name || "",
-        obj.owner.name,
+        obj.owner?.name || "Sem responsável",
         `${parseFloat(obj.progress || "0").toFixed(1)}%`,
         getStatusBadge(parseFloat(obj.progress || "0")).label
       ])
@@ -207,11 +207,11 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
                           <div className="flex items-center space-x-3">
                             <Avatar className="h-8 w-8">
                               <AvatarFallback className="text-xs">
-                                {getUserInitials(objective.owner.name)}
+                                {getUserInitials(objective.owner?.name || "SR")}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-sm text-foreground">
-                              {objective.owner.name}
+                              {objective.owner?.name || "Sem responsável"}
                             </span>
                           </div>
                         </TableCell>
