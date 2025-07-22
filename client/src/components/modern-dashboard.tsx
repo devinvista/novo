@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
+import QuarterlyFilter from "@/components/quarterly-filter";
 import {
   Target,
   TrendingUp,
@@ -63,7 +63,7 @@ const CHART_COLORS = [
 ];
 
 export default function ModernDashboard() {
-  const [selectedQuarter, setSelectedQuarter] = useState<string>("");
+  const { selectedQuarter } = useQuarterlyFilter();
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ["/api/dashboard/kpis", selectedQuarter],
@@ -253,24 +253,7 @@ export default function ModernDashboard() {
             )}
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
-              <SelectTrigger className="w-64 bg-white/10 border-white/20 text-white backdrop-blur-sm">
-                <SelectValue placeholder="🗓️ Todos os períodos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os períodos</SelectItem>
-                {availableQuarters?.map((quarter: string) => {
-                  const [year, q] = quarter.split('-Q');
-                  const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
-                  const quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
-                  return (
-                    <SelectItem key={quarter} value={quarter}>
-                      {quarterName}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+            <QuarterlyFilter variant="header" />
             <div className="hidden sm:flex items-center space-x-4">
               <div className="text-right">
                 <div className="text-2xl font-bold">{dashboardData?.totalObjectives || 0}</div>

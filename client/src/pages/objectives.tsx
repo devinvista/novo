@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ObjectiveForm from "@/components/objective-form";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 
 export default function Objectives() {
   const { user } = useAuth();
+  const { selectedQuarter } = useQuarterlyFilter();
   const [filters, setFilters] = useState({
     regionId: undefined as number | undefined,
     subRegionId: undefined as number | undefined,
@@ -24,16 +26,25 @@ export default function Objectives() {
   const canManageObjectives = user?.role === "admin" || user?.role === "gestor";
 
   const { data: objectives, isLoading } = useQuery({
-    queryKey: ["/api/objectives", filters],
+    queryKey: ["/api/objectives", filters, selectedQuarter],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters.regionId) params.append("regionId", filters.regionId.toString());
-      if (filters.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
-      if (filters.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
-      
-      const response = await fetch(`/api/objectives?${params}`);
-      if (!response.ok) throw new Error("Erro ao carregar objetivos");
-      return response.json();
+      if (selectedQuarter && selectedQuarter !== "all") {
+        // Use quarterly data endpoint
+        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar objetivos trimestrais");
+        const data = await response.json();
+        return data.objectives || [];
+      } else {
+        // Use regular objectives endpoint with filters
+        const params = new URLSearchParams();
+        if (filters.regionId) params.append("regionId", filters.regionId.toString());
+        if (filters.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
+        if (filters.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
+        
+        const response = await fetch(`/api/objectives?${params}`);
+        if (!response.ok) throw new Error("Erro ao carregar objetivos");
+        return response.json();
+      }
     },
   });
 

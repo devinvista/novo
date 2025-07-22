@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ActionForm from "@/components/action-form";
 import ActionTimeline from "@/components/action-timeline";
+import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import {
   Select,
   SelectContent,
@@ -18,9 +19,22 @@ import {
 export default function Actions() {
   const [showForm, setShowForm] = useState(false);
   const [keyResultFilter, setKeyResultFilter] = useState<string>("");
+  const { selectedQuarter } = useQuarterlyFilter();
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results"],
+    queryKey: ["/api/key-results", selectedQuarter],
+    queryFn: async () => {
+      if (selectedQuarter && selectedQuarter !== "all") {
+        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar key results trimestrais");
+        const data = await response.json();
+        return data.keyResults || [];
+      } else {
+        const response = await fetch("/api/key-results", { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar key results");
+        return response.json();
+      }
+    },
   });
 
   return (

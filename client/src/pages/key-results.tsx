@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import KeyResultForm from "@/components/key-result-form-simple";
+import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,16 +16,27 @@ export default function KeyResults() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedKeyResult, setSelectedKeyResult] = useState<any>(null);
   const [, setLocation] = useLocation();
+  const { selectedQuarter } = useQuarterlyFilter();
   
   const { data: keyResults, isLoading, error } = useQuery({
-    queryKey: ["/api/key-results"],
+    queryKey: ["/api/key-results", selectedQuarter],
     queryFn: async () => {
-      const response = await fetch("/api/key-results");
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Erro ao carregar resultados-chave");
+      if (selectedQuarter && selectedQuarter !== "all") {
+        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || "Erro ao carregar resultados-chave trimestrais");
+        }
+        const data = await response.json();
+        return data.keyResults || [];
+      } else {
+        const response = await fetch("/api/key-results", { credentials: "include" });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || "Erro ao carregar resultados-chave");
+        }
+        return response.json();
       }
-      return response.json();
     },
     retry: 1,
     refetchOnWindowFocus: false,

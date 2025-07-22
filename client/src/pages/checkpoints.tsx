@@ -7,26 +7,45 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import CheckpointUpdaterEnhanced from "@/components/checkpoint-updater-enhanced";
 import { Target, Filter } from "lucide-react";
+import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 
 export default function Checkpoints() {
   const [selectedKeyResultId, setSelectedKeyResultId] = useState<number | undefined>(undefined);
+  const { selectedQuarter } = useQuarterlyFilter();
 
   const { data: keyResults, isLoading: isLoadingKeyResults } = useQuery({
-    queryKey: ["/api/key-results"],
+    queryKey: ["/api/key-results", selectedQuarter],
     queryFn: async () => {
-      const response = await fetch("/api/key-results");
-      if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
-      return response.json();
+      if (selectedQuarter && selectedQuarter !== "all") {
+        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar resultados-chave trimestrais");
+        const data = await response.json();
+        return data.keyResults || [];
+      } else {
+        const response = await fetch("/api/key-results", { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
+        return response.json();
+      }
     },
   });
 
   const { data: checkpoints, isLoading: isLoadingCheckpoints } = useQuery({
-    queryKey: ["/api/checkpoints", selectedKeyResultId],
+    queryKey: ["/api/checkpoints", selectedKeyResultId, selectedQuarter],
     queryFn: async () => {
-      const url = selectedKeyResultId ? `/api/checkpoints?keyResultId=${selectedKeyResultId}` : "/api/checkpoints";
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Erro ao carregar checkpoints");
-      return response.json();
+      if (selectedQuarter && selectedQuarter !== "all") {
+        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar checkpoints trimestrais");
+        const data = await response.json();
+        const quarterlyCheckpoints = data.checkpoints || [];
+        return selectedKeyResultId 
+          ? quarterlyCheckpoints.filter((cp: any) => cp.keyResultId === selectedKeyResultId)
+          : quarterlyCheckpoints;
+      } else {
+        const url = selectedKeyResultId ? `/api/checkpoints?keyResultId=${selectedKeyResultId}` : "/api/checkpoints";
+        const response = await fetch(url, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar checkpoints");
+        return response.json();
+      }
     },
   });
 

@@ -1,14 +1,16 @@
 import { ReactNode } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import QuarterlyFilter from "@/components/quarterly-filter";
 
 interface HeaderProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  showQuarterlyFilter?: boolean;
 }
 
-export default function Header({ title, description, action }: HeaderProps) {
+export default function Header({ title, description, action, showQuarterlyFilter = true }: HeaderProps) {
   return (
     <header className="bg-card shadow-sm border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
@@ -19,6 +21,7 @@ export default function Header({ title, description, action }: HeaderProps) {
           )}
         </div>
         <div className="flex items-center space-x-4">
+          {showQuarterlyFilter && <QuarterlyFilter variant="compact" />}
           {action}
           <div className="relative">
             <Button variant="ghost" size="sm" className="text-muted-foreground">
