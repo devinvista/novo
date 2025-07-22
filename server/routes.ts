@@ -422,6 +422,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update action
+  app.put("/api/actions/:id", requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check access to action
+      const existingAction = await storage.getAction(id, req.user.id);
+      if (!existingAction) {
+        return res.status(404).json({ message: "Ação não encontrada ou sem acesso" });
+      }
+      
+      // Clean up null values and validate
+      const requestData = { ...req.body };
+      if (requestData.responsibleId === null) requestData.responsibleId = undefined;
+      if (requestData.dueDate === null || requestData.dueDate === "") requestData.dueDate = undefined;
+      
+      const validation = insertActionSchema.partial().parse(requestData);
+      console.log("Updating action with data:", validation);
+      
+      const updatedAction = await storage.updateAction(id, validation);
+      console.log("Updated action:", updatedAction);
+      
+      res.json(updatedAction);
+    } catch (error) {
+      console.error("Error updating action:", error);
+      if (error instanceof z.ZodError) {
+        console.log("Validation errors:", error.errors);
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao atualizar ação" });
+    }
+  });
+
   // Get action comments
   app.get('/api/actions/:actionId/comments', requireAuth, async (req, res) => {
     try {
