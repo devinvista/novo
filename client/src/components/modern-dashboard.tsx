@@ -4,7 +4,6 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
-import QuarterlyFilter from "@/components/quarterly-filter";
 import {
   Target,
   TrendingUp,

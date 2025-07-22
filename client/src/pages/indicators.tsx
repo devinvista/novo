@@ -1,18 +1,11 @@
-import { useState } from "react";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
-import Filters from "@/components/filters";
 import IndicatorsDashboard from "@/components/indicators-dashboard";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import QuarterlyFilter from "@/components/quarterly-filter";
 
 export default function Indicators() {
   const { selectedQuarter } = useQuarterlyFilter();
-  const [filters, setFilters] = useState({
-    regionId: undefined as number | undefined,
-    subRegionId: undefined as number | undefined,
-    serviceLineId: undefined as number | undefined,
-  });
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -25,10 +18,8 @@ export default function Indicators() {
           action={<QuarterlyFilter variant="compact" />}
         />
         
-        <Filters filters={filters} onFiltersChange={setFilters} />
-        
         <div className="flex-1 overflow-y-auto p-6">
-          <IndicatorsDashboard filters={{ ...filters, quarter: selectedQuarter }} />
+          <IndicatorsDashboard filters={{ quarter: selectedQuarter }} />
         </div>
       </main>
     </div>
