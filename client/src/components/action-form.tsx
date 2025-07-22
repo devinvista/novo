@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { insertActionSchema, type InsertAction } from "@shared/schema";
+import { insertActionSchema, type InsertAction, type ActionComment } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { MessageSquare, Calendar, User } from "lucide-react";
 import { z } from "zod";
 
 const actionFormSchema = insertActionSchema.omit({ strategicIndicatorId: true }).extend({
@@ -31,6 +32,8 @@ interface ActionFormProps {
 export default function ActionForm({ action, onSuccess, open, onOpenChange, defaultKeyResultId }: ActionFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const { data: keyResults } = useQuery({
     queryKey: ["/api/key-results"],
@@ -48,6 +51,18 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       if (!response.ok) throw new Error("Erro ao carregar usuários");
       return response.json();
     },
+  });
+
+  // Fetch comments for the action if editing
+  const { data: comments, refetch: refetchComments } = useQuery({
+    queryKey: ["/api/actions", action?.id, "comments"],
+    queryFn: async () => {
+      if (!action?.id) return [];
+      const response = await fetch(`/api/actions/${action.id}/comments`);
+      if (!response.ok) throw new Error("Erro ao carregar comentários");
+      return response.json();
+    },
+    enabled: !!action?.id && open,
   });
 
 
@@ -120,6 +135,32 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
     },
   });
 
+  const submitComment = async () => {
+    if (!newComment.trim() || !action?.id) return;
+    
+    setIsSubmittingComment(true);
+    try {
+      await apiRequest('POST', `/api/actions/${action.id}/comments`, {
+        comment: newComment.trim()
+      });
+      
+      setNewComment("");
+      refetchComments();
+      toast({
+        title: "Comentário adicionado!",
+        description: "Seu comentário de progresso foi salvo com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao adicionar comentário",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
   const onSubmit = (data: ActionFormData) => {
     // Validate action due date is before linked Key Result end date
     if (data.dueDate && data.keyResultId) {
@@ -152,11 +193,14 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {action ? "Editar Ação" : "Nova Ação"}
           </DialogTitle>
+          <DialogDescription>
+            {action ? "Edite os detalhes da ação e acompanhe o progresso com comentários." : "Crie uma nova ação vinculada a um resultado-chave."}
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
@@ -298,7 +342,76 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
           </div>
 
-          <div className="flex justify-end space-x-2">
+          {/* Seção de Comentários de Progresso - apenas para ações existentes */}
+          {action?.id && (
+            <div className="mt-6 border-t pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Acompanhamento de Progresso
+                </h3>
+              </div>
+              
+              {/* Formulário para novo comentário */}
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <Label htmlFor="newComment" className="text-sm font-medium text-gray-700">
+                  Adicionar comentário de progresso:
+                </Label>
+                <div className="mt-2 space-y-2">
+                  <Textarea
+                    id="newComment"
+                    placeholder="Descreva o progresso, obstáculos enfrentados, próximos passos..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    rows={3}
+                    className="w-full"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={submitComment}
+                      disabled={!newComment.trim() || isSubmittingComment}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {isSubmittingComment ? "Enviando..." : "Adicionar Comentário"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de comentários existentes */}
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {comments && comments.length > 0 ? (
+                  comments.map((comment: any) => (
+                    <div key={comment.id} className="bg-gray-50 p-3 rounded-lg border">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <User className="h-4 w-4" />
+                          <span className="font-medium">{comment.user?.username || 'Usuário'}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(comment.createdAt).toLocaleString('pt-BR')}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-800 leading-relaxed">{comment.comment}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">Nenhum comentário de progresso ainda.</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Adicione comentários para acompanhar o andamento desta ação.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-2 mt-6">
             <Button 
               type="button" 
               variant="outline" 

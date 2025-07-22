@@ -1,12 +1,12 @@
 import { 
   users, regions, subRegions, serviceLines, strategicIndicators, 
-  objectives, keyResults, actions, checkpoints,
+  objectives, keyResults, actions, checkpoints, actionComments,
   solutions, services,
   type User, type InsertUser, type Objective, type InsertObjective,
   type KeyResult, type InsertKeyResult, type Action, type InsertAction,
   type Checkpoint, type InsertCheckpoint, type Region, type SubRegion,
   type ServiceLine, type StrategicIndicator,
-  type Solution, type Service
+  type Solution, type Service, type ActionComment, type InsertActionComment
 } from "@shared/schema";
 import { db, connection } from "./db";
 import { eq, and, desc, sql, asc, inArray } from "drizzle-orm";
@@ -87,6 +87,10 @@ export interface IStorage {
   createCheckpoint(checkpoint: InsertCheckpoint): Promise<Checkpoint>;
   updateCheckpoint(id: number, checkpoint: Partial<InsertCheckpoint>): Promise<Checkpoint>;
   generateCheckpoints(keyResultId: number): Promise<Checkpoint[]>;
+
+  // Action Comments (progress tracking)
+  getActionComments(actionId: number): Promise<(ActionComment & { user: User })[]>;
+  createActionComment(comment: InsertActionComment): Promise<ActionComment>;
 
   // Método auxiliar para verificar acesso a múltiplas regiões
   checkUserAccess(currentUserId: number, targetRegionId?: number, targetSubRegionId?: number): Promise<boolean>;
@@ -986,6 +990,36 @@ export class DatabaseStorage implements IStorage {
       completedActions: Number(actionStats.completed) || 0,
       overallProgress: Number(objectiveStats.avgProgress) || 0,
     };
+  }
+
+  // Action Comments methods
+  async getActionComments(actionId: number): Promise<(ActionComment & { user: User })[]> {
+    try {
+      const comments = await db
+        .select()
+        .from(actionComments)
+        .innerJoin(users, eq(actionComments.userId, users.id))
+        .where(eq(actionComments.actionId, actionId))
+        .orderBy(desc(actionComments.createdAt));
+
+      return comments.map(row => ({
+        ...row.action_comments,
+        user: row.users
+      }));
+    } catch (error) {
+      console.error('Error fetching action comments:', error);
+      throw error;
+    }
+  }
+
+  async createActionComment(comment: InsertActionComment): Promise<ActionComment> {
+    try {
+      const [newComment] = await db.insert(actionComments).values(comment).returning();
+      return newComment;
+    } catch (error) {
+      console.error('Error creating action comment:', error);
+      throw error;
+    }
   }
 }
 

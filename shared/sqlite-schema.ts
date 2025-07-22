@@ -137,6 +137,15 @@ export const checkpoints = sqliteTable("checkpoints", {
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+// Action Comments (progress tracking)
+export const actionComments = sqliteTable("action_comments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  actionId: integer("action_id").notNull().references(() => actions.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  comment: text("comment").notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
 // Define relationships
 export const usersRelations = relations(users, ({ one, many }) => ({
   gestor: one(users, { fields: [users.gestorId], references: [users.id], relationName: "gestorRelation" }),
@@ -186,10 +195,16 @@ export const keyResultsRelations = relations(keyResults, ({ one, many }) => ({
   checkpoints: many(checkpoints),
 }));
 
-export const actionsRelations = relations(actions, ({ one }) => ({
+export const actionsRelations = relations(actions, ({ one, many }) => ({
   keyResult: one(keyResults, { fields: [actions.keyResultId], references: [keyResults.id] }),
   strategicIndicator: one(strategicIndicators, { fields: [actions.strategicIndicatorId], references: [strategicIndicators.id] }),
   responsible: one(users, { fields: [actions.responsibleId], references: [users.id] }),
+  comments: many(actionComments),
+}));
+
+export const actionCommentsRelations = relations(actionComments, ({ one }) => ({
+  action: one(actions, { fields: [actionComments.actionId], references: [actions.id] }),
+  user: one(users, { fields: [actionComments.userId], references: [users.id] }),
 }));
 
 export const checkpointsRelations = relations(checkpoints, ({ one }) => ({
@@ -265,6 +280,11 @@ export const insertCheckpointSchema = createInsertSchema(checkpoints).omit({
   checkDate: z.string(),
 });
 
+export const insertActionCommentSchema = createInsertSchema(actionComments).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -298,3 +318,6 @@ export type InsertAction = z.infer<typeof insertActionSchema>;
 
 export type Checkpoint = typeof checkpoints.$inferSelect;
 export type InsertCheckpoint = z.infer<typeof insertCheckpointSchema>;
+
+export type ActionComment = typeof actionComments.$inferSelect;
+export type InsertActionComment = z.infer<typeof insertActionCommentSchema>;

@@ -422,6 +422,55 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get action comments
+  app.get('/api/actions/:actionId/comments', requireAuth, async (req, res) => {
+    try {
+      const actionId = parseInt(req.params.actionId);
+      
+      // Check access to action
+      const action = await storage.getAction(actionId, req.session.user!.id);
+      if (!action) {
+        return res.status(404).json({ message: "Action not found or no access" });
+      }
+
+      const comments = await storage.getActionComments(actionId);
+      res.json(comments);
+    } catch (error) {
+      console.error('Error fetching action comments:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create action comment
+  app.post('/api/actions/:actionId/comments', requireAuth, async (req, res) => {
+    try {
+      const actionId = parseInt(req.params.actionId);
+      
+      // Check access to action
+      const action = await storage.getAction(actionId, req.session.user!.id);
+      if (!action) {
+        return res.status(404).json({ message: "Action not found or no access" });
+      }
+
+      const commentData = {
+        actionId,
+        userId: req.session.user!.id,
+        comment: req.body.comment
+      };
+
+      const newComment = await storage.createActionComment(commentData);
+      
+      // Return comment with user info
+      const commentWithUser = await storage.getActionComments(actionId);
+      const addedComment = commentWithUser.find(c => c.id === newComment.id);
+      
+      res.status(201).json(addedComment);
+    } catch (error) {
+      console.error('Error creating action comment:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Checkpoints routes
   app.get("/api/checkpoints", requireAuth, async (req: any, res) => {
     try {
