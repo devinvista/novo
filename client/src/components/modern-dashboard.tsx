@@ -258,7 +258,7 @@ export default function ModernDashboard() {
                 <SelectValue placeholder="🗓️ Todos os períodos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os períodos</SelectItem>
+                <SelectItem value="all">Todos os períodos</SelectItem>
                 {availableQuarters?.map((quarter: string) => {
                   const [year, q] = quarter.split('-Q');
                   const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
