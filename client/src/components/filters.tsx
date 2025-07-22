@@ -9,7 +9,6 @@ interface FiltersProps {
     regionId?: number;
     subRegionId?: number;
     serviceLineId?: number;
-    period?: string;
   };
   onFiltersChange: (filters: any) => void;
 }
@@ -43,26 +42,7 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
     },
   });
 
-  // Generate period options based on current date
-  const generatePeriods = () => {
-    const periods = [];
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    
-    // Add quarters for current and previous year
-    for (let year = currentYear - 1; year <= currentYear + 1; year++) {
-      for (let quarter = 1; quarter <= 4; quarter++) {
-        periods.push({
-          value: `${year}-Q${quarter}`,
-          label: `${quarter}º Trimestre ${year}`
-        });
-      }
-    }
-    
-    return periods.reverse(); // Most recent first
-  };
 
-  const periods = generatePeriods();
 
   const handleFilterChange = (key: string, value: string | undefined) => {
     const newFilters = { ...filters };
@@ -149,25 +129,7 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
           </Select>
         </div>
 
-        <div className="flex-1 min-w-48">
-          <Label className="block text-sm font-medium text-foreground mb-1">Período</Label>
-          <Select 
-            value={filters.period || ""} 
-            onValueChange={(value) => handleFilterChange("period", value)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Todos os períodos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os períodos</SelectItem>
-              {periods.map((period) => (
-                <SelectItem key={period.value} value={period.value}>
-                  {period.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
 
         <div className="flex items-end">
           <Button 

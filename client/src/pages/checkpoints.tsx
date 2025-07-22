@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import CheckpointUpdaterEnhanced from "@/components/checkpoint-updater-enhanced";
 import { Target, Filter } from "lucide-react";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
+import QuarterlyFilter from "@/components/quarterly-filter";
 
 export default function Checkpoints() {
   const [selectedKeyResultId, setSelectedKeyResultId] = useState<number | undefined>(undefined);
@@ -61,6 +62,7 @@ export default function Checkpoints() {
         <Header 
           title="Checkpoints" 
           description="Atualize e acompanhe o progresso dos resultados-chave"
+          action={<QuarterlyFilter variant="compact" />}
         />
         
         <div className="flex-1 overflow-y-auto p-6 space-y-6">

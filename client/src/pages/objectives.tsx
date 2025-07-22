@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ObjectiveForm from "@/components/objective-form";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
+import QuarterlyFilter from "@/components/quarterly-filter";
 
 export default function Objectives() {
   const { user } = useAuth();
@@ -17,8 +18,7 @@ export default function Objectives() {
   const [filters, setFilters] = useState({
     regionId: undefined as number | undefined,
     subRegionId: undefined as number | undefined,
-    serviceLineId: undefined as string | undefined,
-    period: undefined as string | undefined,
+    serviceLineId: undefined as number | undefined,
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -57,19 +57,22 @@ export default function Objectives() {
           title="Objetivos" 
           description={canManageObjectives ? "Gerencie todos os objetivos organizacionais" : "Visualize os objetivos organizacionais"}
           action={
-            canManageObjectives ? (
-              <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Objetivo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <ObjectiveForm onSuccess={() => setIsCreateModalOpen(false)} />
-                </DialogContent>
-              </Dialog>
-            ) : null
+            <div className="flex items-center gap-4">
+              <QuarterlyFilter variant="compact" />
+              {canManageObjectives && (
+                <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo Objetivo
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <ObjectiveForm onSuccess={() => setIsCreateModalOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           }
         />
         

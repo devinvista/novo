@@ -6,6 +6,7 @@ import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import KeyResultForm from "@/components/key-result-form-simple";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
+import QuarterlyFilter from "@/components/quarterly-filter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -89,10 +90,13 @@ export default function KeyResults() {
           title="Resultados-Chave" 
           description="Gerencie os KRs vinculados aos objetivos"
           action={
-            <Button onClick={handleCreateKeyResult}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo KR
-            </Button>
+            <div className="flex items-center gap-4">
+              <QuarterlyFilter variant="compact" />
+              <Button onClick={handleCreateKeyResult}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo KR
+              </Button>
+            </div>
           }
         />
         
