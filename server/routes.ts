@@ -8,7 +8,7 @@ import { z } from "zod";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
-  if (!req.isAuthenticated()) {
+  if (!req.isAuthenticated() || !req.user) {
     return res.status(401).json({ message: "Authentication required" });
   }
   next();

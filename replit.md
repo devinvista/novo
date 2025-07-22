@@ -278,6 +278,23 @@ Changelog:
     - Gradientes institucionais no título e botão principal
     - Estados visuais (hover, selecionado) usando variações das cores FIERGS
     - Design profissional alinhado com identidade corporativa
+- July 22, 2025. **MIGRAÇÃO REPLIT AGENT → REPLIT ENVIRONMENT COMPLETA** 
+  - **MIGRAÇÃO FINALIZADA**: Migração completa do Replit Agent para ambiente Replit padrão
+    - Todos os pacotes Node.js instalados e funcionando (tsx, express, drizzle-orm, etc.)
+    - SQLite database conectado e operacional
+    - Express server executando na porta 5000 com Vite frontend
+    - Sistema de autenticação Passport.js funcionando com deserialização correta
+  - **BUG CRÍTICO CORRIGIDO**: Resolvido erro de autenticação em comentários de ações
+    - Problema: `req.user` undefined mesmo com login válido
+    - Causa: Inconsistência entre `req.user` e `req.session.user` no código
+    - Solução: Padronização para uso de `req.user` em todas as rotas
+    - Teste confirmado: Criação e leitura de comentários funcionando (201/200 OK)
+  - **FUNCIONALIDADES VERIFICADAS**: Todos os recursos principais operacionais
+    - Sistema OKR completo (objetivos, key results, ações, checkpoints)
+    - Controle de acesso baseado em roles e regiões
+    - Dashboard com KPIs e visualizações
+    - Multi-seleção de indicadores estratégicos e linhas de serviço
+    - Sistema de comentários em ações (problema reportado pelo usuário resolvido)
 - July 21, 2025. **MIGRAÇÃO COMPLETA PARA REPLIT ENVIRONMENT** - Migração do Replit Agent para ambiente Replit padrão finalizada com sucesso
   - Todos os pacotes e dependências instalados corretamente (tsx, drizzle-orm, express, react, etc)
   - SQLite database conectado e funcionando perfeitamente
