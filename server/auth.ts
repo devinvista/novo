@@ -71,31 +71,23 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        console.log('Login attempt for username:', username);
         const user = await storage.getUserByUsername(username);
-        console.log('User found:', user ? `${user.username} (${user.role})` : 'none');
         
         if (!user) {
-          console.log('User not found');
           return done(null, false);
         }
         
-        console.log('Stored password hash:', user.password);
         const passwordMatch = await comparePasswords(password, user.password);
-        console.log('Password match:', passwordMatch);
         
         if (!passwordMatch) {
-          console.log('Password mismatch');
           return done(null, false);
         }
         
         // Verificar se o usuário está aprovado (exceto admins)
         if (!user.approved && user.role !== 'admin') {
-          console.log('User not approved');
           return done(null, false, { message: "Usuário aguarda aprovação" });
         }
         
-        console.log('Login successful for user:', user.username);
         return done(null, user);
       } catch (error) {
         console.error('Login error:', error);

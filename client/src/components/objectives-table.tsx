@@ -50,7 +50,7 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
   });
 
   const filteredObjectives = objectives?.filter((objective) =>
-    objective.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    objective.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     objective.description?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
