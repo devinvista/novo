@@ -260,6 +260,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
               onClose={() => setIsEditDialogOpen(false)}
               onUpdate={() => {
                 queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
                 setIsEditDialogOpen(false);
               }}
             />

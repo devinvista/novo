@@ -663,11 +663,53 @@ export class MySQLStorage implements IStorage {
     
     const updatedCheckpoint = await this.getCheckpoint(id);
     if (!updatedCheckpoint) throw new Error('Checkpoint not found');
+    
+    // Cascading update: Update the key result's current value based on checkpoint progress
+    if (checkpoint.actualValue !== undefined && updatedCheckpoint.keyResultId) {
+      await this.updateKeyResultProgressFromCheckpoints(updatedCheckpoint.keyResultId);
+    }
+    
     return updatedCheckpoint;
   }
 
   async deleteCheckpoint(id: number): Promise<void> {
     await db.delete(checkpoints).where(eq(checkpoints.id, id));
+  }
+
+  private async updateKeyResultProgressFromCheckpoints(keyResultId: number): Promise<void> {
+    try {
+      // Get all checkpoints for this key result
+      const checkpointsList = await db.select()
+        .from(checkpoints)
+        .where(eq(checkpoints.keyResultId, keyResultId))
+        .orderBy(asc(checkpoints.dueDate));
+
+      if (checkpointsList.length === 0) return;
+
+      // Calculate the current value based on the latest completed checkpoint
+      // or the highest actual value achieved so far
+      let currentValue = 0;
+      let latestProgressDate = null;
+
+      for (const checkpoint of checkpointsList) {
+        const actualValue = Number(checkpoint.actualValue) || 0;
+        if (actualValue > currentValue) {
+          currentValue = actualValue;
+          latestProgressDate = checkpoint.updatedAt;
+        }
+      }
+
+      // Update the key result's current value
+      await db.update(keyResults).set({
+        currentValue: currentValue.toString(),
+        updatedAt: new Date(),
+      }).where(eq(keyResults.id, keyResultId));
+
+      console.log(`Updated key result ${keyResultId} currentValue to ${currentValue} based on checkpoint progress`);
+    } catch (error) {
+      console.error('Error updating key result progress from checkpoints:', error);
+      // Don't throw error to avoid breaking checkpoint update
+    }
   }
 
   async generateCheckpoints(keyResultId: number): Promise<Checkpoint[]> {
