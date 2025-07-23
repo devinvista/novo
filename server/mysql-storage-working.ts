@@ -484,7 +484,7 @@ export class MySQLStorage implements IStorage {
       });
       
       console.log('Insert result for key result:', insertResult);
-      const insertId = insertResult.insertId;
+      const insertId = Array.isArray(insertResult) ? insertResult[0]?.insertId : insertResult.insertId;
       console.log('Insert ID:', insertId, 'Type:', typeof insertId);
       
       if (!insertId || insertId === 0 || isNaN(Number(insertId))) {
@@ -576,7 +576,11 @@ export class MySQLStorage implements IStorage {
       updatedAt: new Date(),
     });
     
-    const insertId = insertResult.insertId;
+    const insertId = Array.isArray(insertResult) ? insertResult[0]?.insertId : insertResult.insertId;
+    if (!insertId || insertId === 0 || isNaN(Number(insertId))) {
+      throw new Error(`Invalid action insert ID: ${insertId}`);
+    }
+    
     const newAction = await this.getAction(Number(insertId));
     if (!newAction) throw new Error('Failed to create action');
     return newAction;
@@ -620,7 +624,11 @@ export class MySQLStorage implements IStorage {
       updatedAt: new Date(),
     });
     
-    const insertId = insertResult.insertId;
+    const insertId = Array.isArray(insertResult) ? insertResult[0]?.insertId : insertResult.insertId;
+    if (!insertId || insertId === 0 || isNaN(Number(insertId))) {
+      throw new Error(`Invalid checkpoint insert ID: ${insertId}`);
+    }
+    
     const newCheckpoint = await this.getCheckpoint(Number(insertId));
     if (!newCheckpoint) throw new Error('Failed to create checkpoint');
     return newCheckpoint;
@@ -756,7 +764,11 @@ export class MySQLStorage implements IStorage {
       createdAt: new Date(),
     });
     
-    const insertId = insertResult.insertId;
+    const insertId = Array.isArray(insertResult) ? insertResult[0]?.insertId : insertResult.insertId;
+    if (!insertId || insertId === 0 || isNaN(Number(insertId))) {
+      throw new Error(`Invalid action comment insert ID: ${insertId}`);
+    }
+    
     const result = await db.select().from(actionComments).where(eq(actionComments.id, Number(insertId))).limit(1);
     if (!result[0]) throw new Error('Failed to create action comment');
     return result[0];
