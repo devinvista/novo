@@ -16,10 +16,21 @@ const BRAZIL_LOCALE = 'pt-BR';
 export function formatDateBR(date: string | Date): string {
   if (!date) return '';
   
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  let dateObj: Date;
+  if (typeof date === 'string') {
+    // Se é uma string ISO (YYYY-MM-DD), criar data sem conversão de timezone
+    if (date.includes('-') && date.length === 10) {
+      const [year, month, day] = date.split('-').map(Number);
+      dateObj = new Date(year, month - 1, day); // month é 0-indexed
+    } else {
+      dateObj = new Date(date);
+    }
+  } else {
+    dateObj = date;
+  }
+  
   if (isNaN(dateObj.getTime())) return '';
   
-  // Use sem timezone para evitar deslocamento de datas ISO
   return dateObj.toLocaleDateString(BRAZIL_LOCALE, {
     day: '2-digit',
     month: '2-digit', 

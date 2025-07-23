@@ -372,12 +372,12 @@ export function registerRoutes(app: Express): Server {
         requestData.unit = "";
       }
       
-      // Convert Brazilian format strings to numbers
-      if (requestData.targetValue && typeof requestData.targetValue === 'string') {
-        requestData.targetValue = parseFloat(requestData.targetValue.toString().replace(',', '.')) || 0;
+      // Keep values as strings for Zod schema validation
+      if (requestData.targetValue && typeof requestData.targetValue === 'number') {
+        requestData.targetValue = requestData.targetValue.toString();
       }
-      if (requestData.initialValue && typeof requestData.initialValue === 'string') {
-        requestData.initialValue = parseFloat(requestData.initialValue.toString().replace(',', '.')) || 0;
+      if (requestData.initialValue && typeof requestData.initialValue === 'number') {
+        requestData.initialValue = requestData.initialValue.toString();
       }
       
       const validation = insertKeyResultSchema.parse(requestData);
