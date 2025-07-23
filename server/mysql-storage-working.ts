@@ -243,6 +243,24 @@ export class MySQLStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<void> {
+    // Delete related records first to avoid foreign key constraint errors
+    
+    // Delete action comments related to this user
+    await db.delete(actionComments).where(eq(actionComments.userId, id));
+    
+    // Update objectives where this user is the owner (set to null)
+    await db.update(objectives).set({ ownerId: null }).where(eq(objectives.ownerId, id));
+    
+    // Update actions where this user is responsible (set to null)
+    await db.update(actions).set({ responsibleId: null }).where(eq(actions.responsibleId, id));
+    
+    // Update users where this user is the gestor (set gestorId to null)
+    await db.update(users).set({ gestorId: null }).where(eq(users.gestorId, id));
+    
+    // Update users where this user approved others (set approvedBy to null)
+    await db.update(users).set({ approvedBy: null }).where(eq(users.approvedBy, id));
+    
+    // Finally delete the user
     await db.delete(users).where(eq(users.id, id));
   }
 

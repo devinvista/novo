@@ -151,6 +151,13 @@ Changelog:
     - Action buttons hidden for users without management permissions
     - Clear visual feedback for all CRUD operations with toast notifications
     - Confirmation dialogs prevent accidental deletions with clear warning messages
+  - **USER DELETE CASCADING FIXED**: Resolved foreign key constraint issue preventing user deletion
+    - Fixed cascading delete functionality to handle related records properly
+    - User deletion now properly updates objectives (set ownerId to null)
+    - User deletion now properly updates actions (set responsibleId to null)
+    - User deletion now properly handles user hierarchy (updates gestorId and approvedBy to null)
+    - Fixed action comments deletion for deleted users
+    - All foreign key constraints properly handled to prevent database errors
   - **SECURITY VALIDATION**: Complete role-based security implementation verified
     - All management operations require admin or gestor role at both frontend and backend levels
     - Authentication properly maintained across all API calls with credentials: "include"
