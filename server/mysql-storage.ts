@@ -6,7 +6,7 @@ import {
   StrategicIndicator, Objective, InsertObjective, KeyResult, InsertKeyResult,
   Action, InsertAction, Checkpoint, InsertCheckpoint, Activity
 } from '../shared/schema';
-import { parseDecimalBR } from './formatters';
+// Removed parseDecimalBR - using parseFloat directly
 
 // MySQL connection configuration for Replit
 const mysqlConfig = {

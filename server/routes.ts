@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema, insertUserSchema } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { z } from "zod";
-import { parseDecimalBR } from "./formatters";
+// Removed parseDecimalBR - using parseFloat directly
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -374,10 +374,10 @@ export function registerRoutes(app: Express): Server {
       
       // Convert Brazilian format strings to numbers
       if (requestData.targetValue && typeof requestData.targetValue === 'string') {
-        requestData.targetValue = parseDecimalBR(requestData.targetValue).toString();
+        requestData.targetValue = parseFloat(requestData.targetValue.toString().replace(',', '.')) || 0;
       }
       if (requestData.initialValue && typeof requestData.initialValue === 'string') {
-        requestData.initialValue = parseDecimalBR(requestData.initialValue).toString();
+        requestData.initialValue = parseFloat(requestData.initialValue.toString().replace(',', '.')) || 0;
       }
       
       const validation = insertKeyResultSchema.parse(requestData);
@@ -396,13 +396,16 @@ export function registerRoutes(app: Express): Server {
       let status = validation.status || 'active';
       if (today < startDate) {
         status = 'pending';
-      } else if (today > endDate && parseDecimalBR("0") < parseDecimalBR(validation.targetValue.toString())) {
+      } else if (today > endDate && 0 < parseFloat(validation.targetValue.toString())) {
         status = 'delayed';
       }
       
+      console.log('Validation data:', validation);
+      console.log('Processing key result with status:', status);
+      
       const keyResult = await storage.createKeyResult({
         ...validation,
-        targetValue: validation.targetValue.toString(),
+        targetValue: validation.targetValue?.toString() || "0",
         initialValue: validation.initialValue?.toString() || "0",
         startDate: validation.startDate,
         endDate: validation.endDate,
