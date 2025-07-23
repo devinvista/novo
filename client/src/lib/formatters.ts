@@ -19,8 +19,8 @@ export function formatDateBR(date: string | Date): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   if (isNaN(dateObj.getTime())) return '';
   
+  // Use sem timezone para evitar deslocamento de datas ISO
   return dateObj.toLocaleDateString(BRAZIL_LOCALE, {
-    timeZone: BRAZIL_TIMEZONE,
     day: '2-digit',
     month: '2-digit', 
     year: 'numeric'
