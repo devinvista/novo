@@ -180,7 +180,14 @@ export class MySQLStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const insertResult = await db.insert(users).values(user);
-    const insertId = insertResult.insertId;
+    
+    // For MySQL2 with Drizzle, insertId is in the first array element
+    const insertId = insertResult[0]?.insertId;
+    
+    if (!insertId || isNaN(Number(insertId))) {
+      throw new Error(`Failed to get valid insert ID: ${insertId}`);
+    }
+    
     const newUser = await this.getUser(Number(insertId));
     if (!newUser) throw new Error('Failed to create user');
     return newUser;
