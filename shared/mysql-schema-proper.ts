@@ -11,11 +11,11 @@ export const users = mysqlTable("users", {
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   role: varchar("role", { length: 50 }).notNull().default("operacional"), // admin, gestor, operacional
-  regionIds: json("region_ids").$type<number[]>().default([]), // Multiple regions
-  subRegionIds: json("sub_region_ids").$type<number[]>().default([]), // Multiple sub-regions
-  solutionIds: json("solution_ids").$type<number[]>().default([]), // Multiple solutions
-  serviceLineIds: json("service_line_ids").$type<number[]>().default([]), // Multiple service lines
-  serviceIds: json("service_ids").$type<number[]>().default([]), // Multiple services
+  regionIds: json("regionIds").$type<number[]>().default([]), // Multiple regions
+  subRegionIds: json("subRegionIds").$type<number[]>().default([]), // Multiple sub-regions
+  solutionIds: json("solutionIds").$type<number[]>().default([]), // Multiple solutions
+  serviceLineIds: json("serviceLineIds").$type<number[]>().default([]), // Multiple service lines
+  serviceIds: json("serviceIds").$type<number[]>().default([]), // Multiple services
   gestorId: int("gestor_id").references(() => users.id), // Reference to manager
   approved: boolean("approved").notNull().default(false), // Approval status
   approvedAt: timestamp("approved_at"), // When was approved
@@ -97,8 +97,8 @@ export const keyResults = mysqlTable("key_results", {
   targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
   currentValue: decimal("current_value", { precision: 15, scale: 2 }).default("0"),
   unit: varchar("unit", { length: 50 }),
-  strategicIndicatorIds: json("strategic_indicator_ids").$type<number[]>().default([]), // Optional multiple strategic indicators
-  serviceLineIds: json("service_line_ids").$type<number[]>().default([]), // Optional multiple service lines
+  strategicIndicatorIds: json("strategicIndicatorIds").$type<number[]>().default([]), // Optional multiple strategic indicators
+  serviceLineIds: json("serviceLineIds").$type<number[]>().default([]), // Optional multiple service lines
   serviceId: int("service_id").references(() => services.id),
   startDate: varchar("start_date", { length: 10 }).notNull(),
   endDate: varchar("end_date", { length: 10 }).notNull(),
