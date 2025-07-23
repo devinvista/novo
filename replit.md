@@ -132,6 +132,29 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
+- July 23, 2025. **FORMATAÇÃO BRASILEIRA ABNT IMPLEMENTADA COMPLETA + SCHEMA MYSQL ATUALIZADO**
+  - **NORMAS ABNT IMPLEMENTADAS**: Sistema completo de formatação decimal brasileira
+    - Todos os campos numéricos agora usam vírgula como separador decimal conforme ABNT NBR 5891
+    - NumberInputBR criado para inputs com formatação brasileira em tempo real
+    - Formatadores client-side (convertBRToUS, convertUSToBR, parseDecimalBR) implementados
+    - Formatadores server-side para conversão entre formatos brasileiro e banco de dados
+    - Validação corrigida para compatibilidade entre frontend string e backend number
+  - **SCHEMA MYSQL ATUALIZADO**: Banco de dados alinhado com schema atual
+    - Colunas JSON strategicIndicatorIds e serviceLineIds já configuradas corretamente
+    - Estrutura da tabela key_results compatível com Drizzle ORM
+    - Validação de valores decimais implementada para evitar erros NaN
+    - Conversão automática de vírgulas para pontos no backend
+    - Credenciais MySQL corretas configuradas (srv1661.hstgr.io, u905571261_okr, Okr2025$)
+  - **COMPONENTES ATUALIZADOS**: Interface brasileira em todos os formulários
+    - key-result-form.tsx com NumberInputBR e formatação ABNT
+    - checkpoint-updater.tsx com valores decimais brasileiros
+    - modern-dashboard.tsx com formatação consistente
+    - Valores padrão nos formulários usando formato brasileiro (0,00)
+  - **SISTEMA COMPLETO**: Formatação brasileira end-to-end funcionando
+    - Frontend: inputs com vírgula, validação brasileira, máscaras de entrada
+    - Backend: conversão automática vírgula→ponto para MySQL, formatadores server-side
+    - Database: valores armazenados corretamente em formato decimal MySQL
+    - Compatibilidade total entre todas as camadas da aplicação
 - July 23, 2025. **REPLIT AGENT TO REPLIT MIGRATION COMPLETED SUCCESSFULLY + CORRECT REGIONAL AND SERVICE STRUCTURE IMPLEMENTED**
   - **MIGRATION FINALIZED**: Successfully completed migration from Replit Agent to standard Replit environment
     - All packages installed and dependencies resolved correctly (nodejs-20, tsx, mysql2, express, drizzle-orm)

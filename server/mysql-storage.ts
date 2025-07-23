@@ -6,14 +6,15 @@ import {
   StrategicIndicator, Objective, InsertObjective, KeyResult, InsertKeyResult,
   Action, InsertAction, Checkpoint, InsertCheckpoint, Activity
 } from '../shared/schema';
+import { parseDecimalBR } from './formatters';
 
 // MySQL connection configuration for Replit
 const mysqlConfig = {
-  host: 'localhost',
+  host: 'srv1661.hstgr.io',
   port: 3306,
-  user: 'root',
-  password: '',
-  database: 'okr_db',
+  user: 'u905571261_okr',
+  password: 'Okr2025$',
+  database: 'u905571261_okr',
   ssl: false,
   connectTimeout: 60000,
   acquireTimeout: 60000,
@@ -591,14 +592,18 @@ export class MySQLStorage implements IStorage {
     try {
       console.log('Creating key result with data:', keyResult);
       
+      // Garantir que valores decimais sejam válidos (usando formatação brasileira)
+      const targetValue = parseDecimalBR(keyResult.targetValue?.toString() || "0");
+      const currentValue = parseDecimalBR(keyResult.initialValue?.toString() || keyResult.currentValue?.toString() || "0");
+      
       const [result] = await pool.execute(
         'INSERT INTO key_results (objective_id, title, description, target_value, current_value, unit, strategicIndicatorIds, serviceLineIds, service_id, start_date, end_date, frequency, status, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           keyResult.objectiveId, 
           keyResult.title, 
           keyResult.description, 
-          keyResult.targetValue, 
-          keyResult.currentValue || 0, 
+          isNaN(targetValue) ? 0 : targetValue,
+          isNaN(currentValue) ? 0 : currentValue, 
           keyResult.unit || null, 
           JSON.stringify(keyResult.strategicIndicatorIds || []), 
           JSON.stringify(keyResult.serviceLineIds || []), 
@@ -612,15 +617,23 @@ export class MySQLStorage implements IStorage {
       );
       
       const insertId = (result as any).insertId;
-      console.log('Insert ID:', insertId, 'Type:', typeof insertId);
+      console.log('Insert ID:', insertId, 'Type:', typeof insertId, 'Result:', result);
       
-      if (!insertId || isNaN(insertId)) {
-        console.error('Invalid insertId:', insertId);
-        throw new Error('Failed to get valid insert ID');
+      // Verificar se o insert foi bem-sucedido
+      if (!insertId || isNaN(Number(insertId))) {
+        console.error('Invalid insertId:', insertId, 'Full result:', result);
+        throw new Error(`Failed to get valid insert ID: ${insertId}`);
       }
       
-      const newKeyResult = await this.getKeyResult(insertId);
-      if (!newKeyResult) throw new Error('Failed to create key result');
+      // Converter para number com segurança
+      const validId = Number(insertId);
+      console.log('Converting to valid ID:', validId);
+      
+      const newKeyResult = await this.getKeyResult(validId);
+      if (!newKeyResult) {
+        console.error('Failed to retrieve created key result with ID:', validId);
+        throw new Error('Failed to create key result');
+      }
       return newKeyResult;
     } catch (error) {
       console.error('Error creating key result:', error);
