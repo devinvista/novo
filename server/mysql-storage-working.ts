@@ -148,8 +148,29 @@ export class MySQLStorage implements IStorage {
     return result[0] ? this.parseUserJsonFields(result[0]) : undefined;
   }
 
-  async getUsers(): Promise<User[]> {
-    const usersResult = await db.select().from(users).orderBy(asc(users.name));
+  async getUsers(currentUserId?: number): Promise<User[]> {
+    let query = db.select().from(users);
+    
+    // Apply hierarchical access control based on current user
+    if (currentUserId) {
+      const currentUser = await this.getUser(currentUserId);
+      if (currentUser) {
+        if (currentUser.role === 'admin') {
+          // Admins can see all users
+          // No additional filtering needed
+        } else if (currentUser.role === 'gestor') {
+          // Gestores can only see themselves and their operational users
+          query = query.where(
+            sql`(${users.id} = ${currentUserId} OR ${users.gestorId} = ${currentUserId})`
+          );
+        } else {
+          // Operacionais can only see themselves
+          query = query.where(eq(users.id, currentUserId));
+        }
+      }
+    }
+    
+    const usersResult = await query.orderBy(asc(users.name));
     return usersResult.map(user => this.parseUserJsonFields(user));
   }
 
@@ -182,8 +203,26 @@ export class MySQLStorage implements IStorage {
     return managers.map(user => this.parseUserJsonFields(user));
   }
 
-  async getPendingUsers(): Promise<User[]> {
-    const pendingUsers = await db.select().from(users).where(eq(users.approved, false)).orderBy(desc(users.createdAt));
+  async getPendingUsers(currentUserId?: number): Promise<User[]> {
+    let query = db.select().from(users).where(eq(users.approved, false));
+    
+    // Apply hierarchical access control for pending users
+    if (currentUserId) {
+      const currentUser = await this.getUser(currentUserId);
+      if (currentUser && currentUser.role === 'gestor') {
+        // Gestores can only see pending users linked to them
+        query = query.where(
+          and(
+            eq(users.approved, false),
+            eq(users.gestorId, currentUserId)
+          )
+        );
+      }
+      // Admins can see all pending users (no additional filtering)
+      // Operacionais cannot see pending users
+    }
+    
+    const pendingUsers = await query.orderBy(desc(users.createdAt));
     return pendingUsers.map(user => this.parseUserJsonFields(user));
   }
 

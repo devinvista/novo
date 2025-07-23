@@ -717,24 +717,11 @@ export function registerRoutes(app: Express): Server {
 
   // TODO: Implement activities feature if needed
 
-  // User management routes
-  app.get("/api/users", requireAuth, async (req, res) => {
+  // User management routes with hierarchical access control
+  app.get("/api/users", requireAuth, async (req: any, res) => {
     try {
-      let users = await storage.getUsers();
-      
-      // Aplicar filtro de acesso baseado no papel do usuário
-      if (req.user?.role === "gestor") {
-        // Gestores veem apenas a si próprios e usuários operacionais vinculados a eles
-        users = users.filter(user => 
-          user.id === req.user?.id || // O próprio gestor
-          (user.role === "operacional" && user.gestorId === req.user?.id) // Operacionais vinculados
-        );
-      } else if (req.user?.role === "operacional") {
-        // Operacionais veem apenas a si próprios
-        users = users.filter(user => user.id === req.user?.id);
-      }
-      // Admins veem todos os usuários (sem filtro)
-      
+      const currentUserId = req.user?.id;
+      const users = await storage.getUsers(currentUserId);
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -752,15 +739,10 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/pending-users", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
+  app.get("/api/pending-users", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
-      let pendingUsers = await storage.getPendingUsers();
-      
-      // Gestores só veem usuários vinculados a eles
-      if (req.user?.role === "gestor") {
-        pendingUsers = pendingUsers.filter(user => (user as any).gestorId === req.user?.id);
-      }
-      
+      const currentUserId = req.user?.id;
+      const pendingUsers = await storage.getPendingUsers(currentUserId);
       res.json(pendingUsers);
     } catch (error) {
       console.error("Error fetching pending users:", error);
