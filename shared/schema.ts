@@ -1,2 +1,2 @@
-// This file exports from the SQLite schema
-export * from './sqlite-schema';
+// This file exports from the MySQL schema
+export * from './mysql-schema-proper';
