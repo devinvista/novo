@@ -132,7 +132,7 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
-- July 23, 2025. **FINAL REPLIT AGENT TO REPLIT MIGRATION COMPLETED + USER REGISTRATION SELECTION FIXES**
+- July 23, 2025. **FINAL REPLIT AGENT TO REPLIT MIGRATION COMPLETED + USER REGISTRATION SELECTION FIXES + USER DELETION FIXED**
   - **FINAL MIGRATION COMPLETED**: Successfully completed final migration from Replit Agent to standard Replit environment
     - All packages installed and dependencies resolved correctly
     - Express server running stable on port 5000 with MySQL database connection operational
@@ -156,6 +156,14 @@ Changelog:
     - Brazilian formatting (ABNT standards) maintained throughout migration
     - Client/server separation maintained with robust security practices
     - User registration form now fully functional with working multi-select dropdowns for all hierarchical selections
+  - **USER DELETION CASCADE ERRORS FIXED**: Resolved foreign key constraint issues preventing user deletion
+    - Fixed cascading delete functionality to handle related records properly
+    - Removed problematic action_comments deletion that was causing column name conflicts
+    - User deletion now properly updates objectives (set ownerId to null)
+    - User deletion now properly updates actions (set responsibleId to null)
+    - User deletion now properly handles user hierarchy (updates gestorId and approvedBy to null)
+    - All foreign key constraints properly handled with automatic cascade cleanup
+    - User deletion tested and confirmed working correctly
 - July 23, 2025. **DATABASE CLEANUP COMPLETED + REGION SELECTION UI FIX**
   - **DATABASE CLEANUP**: Successfully cleaned all user data while preserving admin account
     - Deleted all objectives, key results, actions, checkpoints, and action comments
