@@ -447,6 +447,22 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.delete("/api/key-results/:id", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const existingKeyResult = await storage.getKeyResult(id, req.user.id);
+      if (!existingKeyResult) {
+        return res.status(404).json({ message: "Resultado-chave não encontrado ou sem acesso" });
+      }
+      
+      await storage.deleteKeyResult(id);
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao deletar resultado-chave" });
+    }
+  });
+
   // Actions routes
   app.get("/api/actions", requireAuth, async (req: any, res) => {
     try {

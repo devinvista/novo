@@ -1,22 +1,59 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, Eye, Edit, Activity, Calendar } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Eye, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import KeyResultForm from "@/components/key-result-form-simple";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function KeyResults() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedKeyResult, setSelectedKeyResult] = useState<any>(null);
   const [, setLocation] = useLocation();
   const { selectedQuarter } = useQuarterlyFilter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Check if user can manage key results
+  const canManageKeyResults = user?.role === "admin" || user?.role === "gestor";
+
+  // Delete mutation for key results
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest(`/api/key-results/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      toast({
+        title: "KR deletado",
+        description: "O resultado-chave foi deletado com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao deletar resultado-chave.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteKeyResult = (id: number) => {
+    deleteMutation.mutate(id);
+  };
   
   const { data: keyResults, isLoading, error } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter],
@@ -87,12 +124,14 @@ export default function KeyResults() {
       <main className="flex-1 flex flex-col overflow-hidden">
         <Header 
           title="Resultados-Chave" 
-          description="Gerencie os KRs vinculados aos objetivos"
+          description={canManageKeyResults ? "Gerencie os KRs vinculados aos objetivos" : "Visualize os KRs vinculados aos objetivos"}
           action={
-            <Button onClick={handleCreateKeyResult}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo KR
-            </Button>
+            canManageKeyResults ? (
+              <Button onClick={handleCreateKeyResult}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo KR
+              </Button>
+            ) : undefined
           }
         />
         
@@ -144,9 +183,47 @@ export default function KeyResults() {
                           <Badge variant={statusBadge.variant}>
                             {statusBadge.label}
                           </Badge>
-                          <Button variant="ghost" size="sm" onClick={() => handleEditKeyResult(kr)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          {canManageKeyResults && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditKeyResult(kr)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Editar KR
+                                </DropdownMenuItem>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Deletar KR
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja deletar o resultado-chave "{kr.title}"? 
+                                        Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => handleDeleteKeyResult(kr.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Deletar
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
