@@ -131,24 +131,51 @@ export class MySQLStorage implements IStorage {
   // User management methods
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    return result[0];
+    return result[0] ? this.parseUserJsonFields(result[0]) : undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    return result[0];
+    return result[0] ? this.parseUserJsonFields(result[0]) : undefined;
   }
 
   async getUsers(): Promise<User[]> {
-    return db.select().from(users).orderBy(asc(users.name));
+    const users = await db.select().from(users).orderBy(asc(users.name));
+    return users.map(user => this.parseUserJsonFields(user));
+  }
+
+  // Helper method to parse JSON fields in user objects
+  private parseUserJsonFields(user: any): User {
+    return {
+      ...user,
+      regionIds: Array.isArray(user.regionIds) ? user.regionIds : this.safeJsonParse(user.regionIds, []),
+      subRegionIds: Array.isArray(user.subRegionIds) ? user.subRegionIds : this.safeJsonParse(user.subRegionIds, []),
+      solutionIds: Array.isArray(user.solutionIds) ? user.solutionIds : this.safeJsonParse(user.solutionIds, []),
+      serviceLineIds: Array.isArray(user.serviceLineIds) ? user.serviceLineIds : this.safeJsonParse(user.serviceLineIds, []),
+      serviceIds: Array.isArray(user.serviceIds) ? user.serviceIds : this.safeJsonParse(user.serviceIds, [])
+    };
+  }
+
+  // Helper method to safely parse JSON strings
+  private safeJsonParse(jsonString: any, defaultValue: any[] = []): any[] {
+    if (Array.isArray(jsonString)) return jsonString;
+    if (typeof jsonString !== 'string') return defaultValue;
+    try {
+      const parsed = JSON.parse(jsonString);
+      return Array.isArray(parsed) ? parsed : defaultValue;
+    } catch {
+      return defaultValue;
+    }
   }
 
   async getManagers(): Promise<User[]> {
-    return db.select().from(users).where(eq(users.role, "gestor")).orderBy(asc(users.name));
+    const managers = await db.select().from(users).where(eq(users.role, "gestor")).orderBy(asc(users.name));
+    return managers.map(user => this.parseUserJsonFields(user));
   }
 
   async getPendingUsers(): Promise<User[]> {
-    return db.select().from(users).where(eq(users.approved, false)).orderBy(desc(users.createdAt));
+    const pendingUsers = await db.select().from(users).where(eq(users.approved, false)).orderBy(desc(users.createdAt));
+    return pendingUsers.map(user => this.parseUserJsonFields(user));
   }
 
   async createUser(user: InsertUser): Promise<User> {
