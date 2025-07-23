@@ -547,11 +547,7 @@ export class MySQLStorage implements IStorage {
     keyResult: KeyResult; 
     responsible?: User 
   })[]> {
-    let query = db.select({
-      ...actions,
-      keyResult: keyResults,
-      responsible: users,
-    })
+    let query = db.select()
     .from(actions)
     .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
     .leftJoin(users, eq(actions.responsibleId, users.id));
@@ -563,7 +559,17 @@ export class MySQLStorage implements IStorage {
     const results = await query.orderBy(desc(actions.createdAt));
     
     return results.map(row => ({
-      ...row.actions,
+      id: row.actions.id,
+      keyResultId: row.actions.keyResultId,
+      title: row.actions.title,
+      description: row.actions.description,
+      number: row.actions.number,
+      responsibleId: row.actions.responsibleId,
+      dueDate: row.actions.dueDate,
+      status: row.actions.status,
+      priority: row.actions.priority,
+      createdAt: row.actions.createdAt,
+      updatedAt: row.actions.updatedAt,
       keyResult: row.key_results!,
       responsible: row.users || undefined,
     }));

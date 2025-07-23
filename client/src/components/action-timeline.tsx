@@ -120,13 +120,13 @@ export default function ActionTimeline({ keyResultId, showAll = false }: ActionT
   return (
     <>
       <div className="space-y-3">
-        {displayActions?.map((action: any) => {
+        {displayActions?.map((action: any, index: number) => {
           const daysUntilDue = action.dueDate ? getDaysUntilDue(action.dueDate) : null;
           const isOverdue = daysUntilDue !== null && daysUntilDue < 0 && action.status !== "completed";
 
           return (
             <Card
-              key={action.id}
+              key={action.id || `action-${index}`}
               className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${
                 isOverdue ? "border-red-300 bg-red-50" : ""
               }`}
