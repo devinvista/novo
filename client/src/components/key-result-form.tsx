@@ -16,12 +16,29 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
 
+// Form validation schema that accepts strings for conversion to numbers
+const formKeyResultSchema = z.object({
+  objectiveId: z.string().min(1, "Objetivo é obrigatório"),
+  title: z.string().min(1, "Título é obrigatório"),
+  description: z.string().optional(),
+  targetValue: z.string().min(1, "Valor meta é obrigatório"),
+  initialValue: z.string().optional().default("0"),
+  unit: z.string().optional(),
+  frequency: z.string().min(1, "Frequência é obrigatória"),
+  startDate: z.string().min(1, "Data de início é obrigatória"),
+  endDate: z.string().min(1, "Data de fim é obrigatória"),
+  status: z.string().optional().default("active"),
+  strategicIndicatorIds: z.array(z.number()).optional().default([]),
+  serviceLineIds: z.array(z.number()).optional().default([]),
+  serviceId: z.string().optional(),
+});
+
 // Custom validation schema that includes objective date validation
 const createKeyResultValidationSchema = (objectives: any[] = []) => {
-  return insertKeyResultSchema.refine((data) => {
+  return formKeyResultSchema.refine((data) => {
     if (!data.objectiveId) return true; // Skip validation if no objective selected
     
-    const selectedObjective = objectives.find(obj => obj.id === parseInt(data.objectiveId as unknown as string));
+    const selectedObjective = objectives.find(obj => obj.id === parseInt(data.objectiveId));
     if (!selectedObjective) return true; // Skip if objective not found
     
     const objectiveStartDate = new Date(selectedObjective.startDate);
@@ -47,7 +64,7 @@ const createKeyResultValidationSchema = (objectives: any[] = []) => {
   });
 };
 
-type KeyResultFormData = z.infer<typeof insertKeyResultSchema>;
+type KeyResultFormData = z.infer<typeof formKeyResultSchema>;
 
 interface KeyResultFormProps {
   keyResult?: any;
@@ -123,25 +140,24 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   const form = useForm<KeyResultFormData>({
     resolver: zodResolver(validationSchema),
     defaultValues: {
-      objectiveId: keyResult?.objectiveId || "",
+      objectiveId: keyResult?.objectiveId?.toString() || "",
       title: keyResult?.title || "",
       description: keyResult?.description || "",
       strategicIndicatorIds: keyResult?.strategicIndicatorIds || [],
       serviceLineIds: keyResult?.serviceLineIds || [],
-      serviceId: keyResult?.serviceId || undefined,
-      targetValue: keyResult?.targetValue || "0",
-      currentValue: keyResult?.currentValue || "0",
+      serviceId: keyResult?.serviceId?.toString() || "",
+      targetValue: keyResult?.targetValue?.toString() || "0",
+      initialValue: keyResult?.currentValue?.toString() || "0",
       unit: keyResult?.unit || "",
       frequency: keyResult?.frequency || "monthly",
       startDate: keyResult?.startDate ? new Date(keyResult.startDate).toISOString().split('T')[0] : "",
       endDate: keyResult?.endDate ? new Date(keyResult.endDate).toISOString().split('T')[0] : "",
-      progress: keyResult?.progress || "0",
       status: keyResult?.status || "active",
     },
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: KeyResultFormData) => {
+    mutationFn: async (data: any) => {
       const endpoint = keyResult ? `/api/key-results/${keyResult.id}` : "/api/key-results";
       const method = keyResult ? "PUT" : "POST";
       
@@ -171,13 +187,13 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     // Convert string values to numbers for numeric fields
     const processedData = {
       ...data,
-      objectiveId: parseInt(data.objectiveId as unknown as string),
+      objectiveId: parseInt(data.objectiveId),
       strategicIndicatorIds: data.strategicIndicatorIds || [],
       serviceLineIds: data.serviceLineIds || [],
-      serviceId: data.serviceId ? parseInt(data.serviceId as unknown as string) : undefined,
-      targetValue: parseFloat(data.targetValue as unknown as string),
-      currentValue: parseFloat(data.currentValue as unknown as string) || 0,
-      progress: parseFloat(data.progress as unknown as string) || 0,
+      serviceId: data.serviceId ? parseInt(data.serviceId) : undefined,
+      targetValue: parseFloat(data.targetValue),
+      currentValue: parseFloat(data.initialValue || "0"),
+      progress: 0,
       unit: data.unit || "",
     };
     
@@ -271,7 +287,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                   <FormItem>
                     <FormLabel>Valor Inicial *</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0" {...field} />
+                      <Input type="number" step="0.01" placeholder="0" value={field.value || ""} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -285,7 +301,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                   <FormItem>
                     <FormLabel>Valor Meta *</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0" {...field} />
+                      <Input type="number" step="0.01" placeholder="0" value={field.value || ""} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -293,35 +309,19 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="currentValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor Atual</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unidade</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: %, unidades, R$" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unidade</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: %, unidades, R$" value={field.value || ""} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <FormField

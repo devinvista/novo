@@ -290,6 +290,9 @@ export const insertKeyResultSchema = createInsertSchema(keyResults).omit({
   updatedAt: true,
   progress: true,
   currentValue: true,
+}).extend({
+  targetValue: z.string(),
+  initialValue: z.string().optional().default("0"),
 });
 
 export const insertActionSchema = createInsertSchema(actions).omit({
