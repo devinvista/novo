@@ -685,19 +685,19 @@ export default function UsersPage() {
                           // Clear sub-regions when region changes
                           form.setValue("subRegionIds", []);
                         }}
-                        value={(!field.value || field.value.length === 0) ? "all" : "custom"}
+                        value=""
                       >
                         <FormControl>
                           <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                             <SelectValue placeholder={
                               !field.value || field.value.length === 0 
-                                ? "Todas as regiões" 
+                                ? "Selecionar regiões" 
                                 : `${field.value.length} região(ões) selecionada(s)`
                             } />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="all">Todas as regiões</SelectItem>
+                          <SelectItem value="all">Limpar seleção</SelectItem>
                           {availableRegions.map((region) => {
                             const isSelected = field.value?.includes(region.id) || false;
                             return (
@@ -753,19 +753,19 @@ export default function UsersPage() {
                                 field.onChange(newValue);
                               }
                             }}
-                            value={(!field.value || field.value.length === 0) ? "all" : "custom"}
+                            value=""
                           >
                             <FormControl>
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                                 <SelectValue placeholder={
                                   !field.value || field.value.length === 0 
-                                    ? "Todas as sub-regiões" 
+                                    ? "Selecionar sub-regiões" 
                                     : `${field.value.length} sub-região(ões) selecionada(s)`
                                 } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="all">Todas as sub-regiões</SelectItem>
+                              <SelectItem value="all">Limpar seleção</SelectItem>
                               {filteredSubRegions.map((subRegion) => {
                                 const isSelected = field.value?.includes(subRegion.id) || false;
                                 const parentRegion = availableRegions.find(r => r.id === subRegion.regionId);
@@ -820,19 +820,19 @@ export default function UsersPage() {
                           form.setValue("serviceLineIds", []);
                           form.setValue("serviceIds", []);
                         }}
-                        value={(!field.value || field.value.length === 0) ? "all" : "custom"}
+                        value=""
                       >
                         <FormControl>
                           <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                             <SelectValue placeholder={
                               !field.value || field.value.length === 0 
-                                ? "Todas as soluções" 
+                                ? "Selecionar soluções" 
                                 : `${field.value.length} solução(ões) selecionada(s)`
                             } />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="all">Todas as soluções</SelectItem>
+                          <SelectItem value="all">Limpar seleção</SelectItem>
                           {availableSolutions.map((solution: any) => {
                             const isSelected = field.value?.includes(solution.id) || false;
                             return (
@@ -890,19 +890,19 @@ export default function UsersPage() {
                               // Clear services when service line changes
                               form.setValue("serviceIds", []);
                             }}
-                            value={(!field.value || field.value.length === 0) ? "all" : "custom"}
+                            value=""
                           >
                             <FormControl>
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                                 <SelectValue placeholder={
                                   !field.value || field.value.length === 0 
-                                    ? "Todas as linhas de serviço" 
+                                    ? "Selecionar linhas de serviço" 
                                     : `${field.value.length} linha(s) selecionada(s)`
                                 } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="all">Todas as linhas de serviço</SelectItem>
+                              <SelectItem value="all">Limpar seleção</SelectItem>
                               {filteredServiceLines.map((serviceLine: any) => {
                                 const isSelected = field.value?.includes(serviceLine.id) || false;
                                 const parentSolution = availableSolutions.find((s: any) => s.id === serviceLine.solutionId);
@@ -961,19 +961,19 @@ export default function UsersPage() {
                                 field.onChange(newValue);
                               }
                             }}
-                            value={(!field.value || field.value.length === 0) ? "all" : "custom"}
+                            value=""
                           >
                             <FormControl>
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                                 <SelectValue placeholder={
                                   !field.value || field.value.length === 0 
-                                    ? "Todos os serviços" 
+                                    ? "Selecionar serviços" 
                                     : `${field.value.length} serviço(s) selecionado(s)`
                                 } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="all">Todos os serviços</SelectItem>
+                              <SelectItem value="all">Limpar seleção</SelectItem>
                               {filteredServices.map((service: any) => {
                                 const isSelected = field.value?.includes(service.id) || false;
                                 const parentServiceLine = availableServiceLines.find((sl: any) => sl.id === service.serviceLineId);
@@ -1191,7 +1191,7 @@ export default function UsersPage() {
                       // Clear sub-regions when region changes
                       setSelectedSubRegionsForApproval([]);
                     }}
-                    value={selectedRegionsForApproval.length === 0 ? "all" : "custom"}
+                    value=""
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
@@ -1244,7 +1244,7 @@ export default function UsersPage() {
                         setSelectedSubRegionsForApproval(newValue);
                       }
                     }}
-                    value={selectedSubRegionsForApproval.length === 0 ? "all" : "custom"}
+                    value=""
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
@@ -1301,7 +1301,7 @@ export default function UsersPage() {
                       setSelectedServiceLinesForApproval([]);
                       setSelectedServicesForApproval([]);
                     }}
-                    value={selectedSolutionsForApproval.length === 0 ? "all" : "custom"}
+                    value=""
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
@@ -1356,7 +1356,7 @@ export default function UsersPage() {
                       // Clear services when service line changes
                       setSelectedServicesForApproval([]);
                     }}
-                    value={selectedServiceLinesForApproval.length === 0 ? "all" : "custom"}
+                    value=""
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
@@ -1411,7 +1411,7 @@ export default function UsersPage() {
                         setSelectedServicesForApproval(newValue);
                       }
                     }}
-                    value={selectedServicesForApproval.length === 0 ? "all" : "custom"}
+                    value=""
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
