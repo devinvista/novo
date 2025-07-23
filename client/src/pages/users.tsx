@@ -507,12 +507,41 @@ export default function UsersPage() {
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div />
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            // Reset form when dialog closes
+            setEditingUser(null);
+            form.reset({
+              username: "",
+              name: "",
+              email: "",
+              password: "",
+              role: "operacional",
+              regionIds: [],
+              subRegionIds: [],
+              solutionIds: [],
+              serviceLineIds: [],
+              serviceIds: [],
+            });
+          }
+        }}>
           <DialogTrigger asChild>
             <Button 
               onClick={() => {
                 setEditingUser(null);
-                form.reset();
+                form.reset({
+                  username: "",
+                  name: "",
+                  email: "",
+                  password: "",
+                  role: "operacional",
+                  regionIds: [],
+                  subRegionIds: [],
+                  solutionIds: [],
+                  serviceLineIds: [],
+                  serviceIds: [],
+                });
               }}
               className="w-full sm:w-auto h-10 sm:h-11 text-sm sm:text-base"
             >
@@ -613,7 +642,7 @@ export default function UsersPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm sm:text-base">Função</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                             <SelectValue placeholder="Selecione a função" />
