@@ -11,6 +11,8 @@ import { CalendarDays, Target, TrendingUp, RefreshCw, AlertCircle, Grid3X3, List
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import CheckpointProgressGrid from "./checkpoint-progress-grid";
+import { NumberInputBR } from "@/components/ui/number-input-br";
+import { parseDecimalBR, formatDecimalBR } from "@/lib/formatters";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +23,80 @@ import {
 
 interface CheckpointUpdaterProps {
   keyResultId?: number;
+}
+
+function CheckpointEditFormInline({ checkpoint, onClose, onUpdate }: {
+  checkpoint: any;
+  onClose: () => void;
+  onUpdate: () => void;
+}) {
+  const { toast } = useToast();
+  const [actualValue, setActualValue] = useState(formatDecimalBR(checkpoint.actualValue));
+  const [notes, setNotes] = useState(checkpoint.notes || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await apiRequest("PUT", `/api/checkpoints/${checkpoint.id}`, {
+        actualValue: parseDecimalBR(actualValue),
+        notes,
+      });
+
+      toast({
+        title: "Checkpoint atualizado",
+        description: "O checkpoint foi atualizado com sucesso.",
+      });
+
+      onUpdate();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar checkpoint.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="actualValue">Valor Atual</Label>
+        <NumberInputBR
+          id="actualValue"
+          value={actualValue}
+          onChange={setActualValue}
+          placeholder="0,00"
+        />
+        <p className="text-sm text-muted-foreground">
+          Meta: {formatDecimalBR(checkpoint.targetValue)}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="notes">Observações</Label>
+        <Input
+          id="notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Adicione observações (opcional)"
+        />
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Salvando..." : "Salvar"}
+        </Button>
+      </div>
+    </form>
+  );
 }
 
 export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpdaterProps) {
@@ -141,6 +217,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
           checkpoints={checkpoints} 
           keyResultId={keyResultId}
           onCheckpointClick={(checkpoint) => {
+            console.log('Checkpoint clicked, opening dialog:', checkpoint);
             setSelectedCheckpoint(checkpoint);
             setIsEditDialogOpen(true);
           }}
@@ -167,6 +244,28 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
           ))}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atualizar Checkpoint</DialogTitle>
+            <DialogDescription>
+              {selectedCheckpoint && `Período: ${selectedCheckpoint.period}`}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedCheckpoint && (
+            <CheckpointEditFormInline 
+              checkpoint={selectedCheckpoint}
+              onClose={() => setIsEditDialogOpen(false)}
+              onUpdate={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
+                setIsEditDialogOpen(false);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
