@@ -40,17 +40,27 @@ const createKeyResultValidationSchema = (objectives: any[] = []) => {
   return formKeyResultSchema.refine((data) => {
     if (!data.objectiveId) return true; // Skip validation if no objective selected
     
-    const selectedObjective = objectives.find(obj => obj.id === parseInt(data.objectiveId));
+    const selectedObjective = objectives.find((obj: any) => obj.id === parseInt(data.objectiveId));
     if (!selectedObjective) return true; // Skip if objective not found
     
-    const objectiveStartDate = new Date(selectedObjective.startDate);
-    const objectiveEndDate = new Date(selectedObjective.endDate);
-    const krStartDate = new Date(data.startDate);
-    const krEndDate = new Date(data.endDate);
+    // Use string comparison for more reliable date validation (YYYY-MM-DD format)
+    const objectiveStartDate = selectedObjective.startDate;
+    const objectiveEndDate = selectedObjective.endDate;
+    const krStartDate = data.startDate;
+    const krEndDate = data.endDate;
     
-    // Check if KR dates are within objective dates
+    // Check if KR dates are within objective dates using string comparison
     const startDateValid = krStartDate >= objectiveStartDate;
     const endDateValid = krEndDate <= objectiveEndDate;
+    
+    console.log('Date validation:', {
+      objectiveStartDate,
+      objectiveEndDate,
+      krStartDate,
+      krEndDate,
+      startDateValid,
+      endDateValid
+    });
     
     return startDateValid && endDateValid;
   }, {
@@ -59,7 +69,7 @@ const createKeyResultValidationSchema = (objectives: any[] = []) => {
   }).refine((data) => {
     // Additional validation: ensure start date is before end date
     if (!data.startDate || !data.endDate) return true;
-    return new Date(data.startDate) <= new Date(data.endDate);
+    return data.startDate <= data.endDate; // Use string comparison
   }, {
     message: "A data de início deve ser anterior à data de fim",
     path: ["endDate"],
