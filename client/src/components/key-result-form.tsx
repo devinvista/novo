@@ -481,7 +481,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 <p className="text-sm text-blue-800">
                   <strong>Período do objetivo:</strong> {
                     (() => {
-                      const selectedObj = objectives.find(obj => obj.id.toString() === selectedObjectiveId);
+                      const selectedObj = objectives.find((obj: any) => obj.id.toString() === selectedObjectiveId);
                       if (selectedObj) {
                         const startDate = new Date(selectedObj.startDate).toLocaleDateString('pt-BR');
                         const endDate = new Date(selectedObj.endDate).toLocaleDateString('pt-BR');

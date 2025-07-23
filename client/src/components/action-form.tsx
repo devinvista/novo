@@ -14,10 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { MessageSquare, Calendar, User } from "lucide-react";
 import { z } from "zod";
 
-const actionFormSchema = insertActionSchema.omit({ strategicIndicatorId: true }).extend({
-  keyResultId: z.number().min(1, "Resultado-chave é obrigatório"),
-  dueDate: z.string().optional(),
-});
+// Use the proper insert schema directly
+const actionFormSchema = insertActionSchema;
 
 type ActionFormData = z.infer<typeof actionFormSchema>;
 
@@ -164,7 +162,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   const onSubmit = (data: ActionFormData) => {
     // Validate action due date is before linked Key Result end date
     if (data.dueDate && data.keyResultId) {
-      const selectedKeyResult = keyResults?.find(kr => kr.id === data.keyResultId);
+      const selectedKeyResult = keyResults?.find((kr: any) => kr.id === data.keyResultId);
       if (selectedKeyResult) {
         const actionDueDate = new Date(data.dueDate);
         const krEndDate = new Date(selectedKeyResult.endDate);
@@ -318,7 +316,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     <p className="text-sm text-yellow-800">
                       <strong>⏰ Limite:</strong> {
                         (() => {
-                          const selectedKR = keyResults.find(kr => kr.id === form.watch("keyResultId"));
+                          const selectedKR = keyResults.find((kr: any) => kr.id === form.watch("keyResultId"));
                           if (selectedKR) {
                             return `até ${new Date(selectedKR.endDate).toLocaleDateString('pt-BR')}`;
                           }
