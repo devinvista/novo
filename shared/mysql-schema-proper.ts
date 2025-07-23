@@ -16,10 +16,10 @@ export const users: any = mysqlTable("users", {
   solutionIds: json("solutionIds").$type<number[]>().default([]), // Multiple solutions
   serviceLineIds: json("serviceLineIds").$type<number[]>().default([]), // Multiple service lines
   serviceIds: json("serviceIds").$type<number[]>().default([]), // Multiple services
-  gestorId: int("gestor_id").references(() => users.id), // Reference to manager
+  gestorId: int("gestorId").references(() => users.id), // Reference to manager
   approved: boolean("approved").notNull().default(false), // Approval status
-  approvedAt: timestamp("approved_at"), // When was approved
-  approvedBy: int("approved_by").references(() => users.id), // Who approved
+  approvedAt: timestamp("approvedAt"), // When was approved
+  approvedBy: int("approvedBy").references(() => users.id), // Who approved
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
