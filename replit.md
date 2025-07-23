@@ -23,10 +23,10 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 - **Password Security**: Node.js crypto module with scrypt hashing
 
 ### Database Architecture
-- **Database**: SQLite for local development (PostgreSQL explicitly avoided per user request)
+- **Database**: MySQL production server (srv1661.hstgr.io:3306)
 - **ORM**: Drizzle ORM with type-safe queries
-- **Schema Management**: Direct SQLite table creation via setup scripts
-- **Connection**: Better-sqlite3 with foreign key constraints enabled
+- **Schema Management**: MySQL schema with proper relationships and constraints
+- **Connection**: MySQL2 connection pool with secure authentication
 
 ## Key Components
 
@@ -67,8 +67,8 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ### Authentication Flow
 1. User submits credentials to `/api/login`
-2. Passport validates against database with password verification
-3. Session created and stored in PostgreSQL
+2. Passport validates against MySQL database with password verification
+3. Session created and stored in MemoryStore for development
 4. Client receives user data and updates auth context
 5. Protected routes check authentication status
 

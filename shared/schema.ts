@@ -1,2 +1,2 @@
-// This file exports from the SQLite schema for Replit environment
-export * from './sqlite-schema';
+// This file exports from the MySQL schema for production
+export * from './mysql-schema-proper';

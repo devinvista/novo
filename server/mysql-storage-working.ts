@@ -8,7 +8,7 @@ import {
   type ServiceLine, type StrategicIndicator,
   type Solution, type Service, type ActionComment, type InsertActionComment
 } from "@shared/schema";
-import { db, connection } from "./mysql-db";
+import { db, connection } from "./db";
 import { eq, and, desc, sql, asc, inArray } from "drizzle-orm";
 import session from "express-session";
 // @ts-ignore - memorystore types are outdated
