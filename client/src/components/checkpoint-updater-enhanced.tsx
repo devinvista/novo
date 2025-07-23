@@ -140,6 +140,11 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
         <CheckpointProgressGrid 
           checkpoints={checkpoints} 
           keyResultId={keyResultId}
+          onCheckpointClick={(checkpoint) => {
+            setSelectedCheckpoint(checkpoint);
+            setIsEditDialogOpen(true);
+          }}
+          onRegenerateCheckpoints={() => regenerateMutation.mutate()}
         />
       )}
       
