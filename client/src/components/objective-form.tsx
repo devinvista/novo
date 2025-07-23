@@ -52,7 +52,9 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
   const { data: regions } = useQuery({
     queryKey: ["/api/regions"],
     queryFn: async () => {
-      const response = await fetch("/api/regions");
+      const response = await fetch("/api/regions", {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error("Erro ao carregar regiões");
       return response.json();
     },
@@ -61,7 +63,9 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
   const { data: subRegions } = useQuery({
     queryKey: ["/api/sub-regions"],
     queryFn: async () => {
-      const response = await fetch("/api/sub-regions");
+      const response = await fetch("/api/sub-regions", {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error("Erro ao carregar sub-regiões");
       return response.json();
     },

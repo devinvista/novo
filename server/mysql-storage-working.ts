@@ -248,7 +248,7 @@ export class MySQLStorage implements IStorage {
 
   // Reference data methods
   async getRegions(): Promise<Region[]> {
-    return db.select().from(regions).orderBy(asc(regions.name));
+    return db.select().from(regions).orderBy(asc(regions.id));
   }
 
   async getSubRegions(regionId?: number): Promise<SubRegion[]> {
@@ -256,7 +256,7 @@ export class MySQLStorage implements IStorage {
     if (regionId) {
       query.where(eq(subRegions.regionId, regionId));
     }
-    return query.orderBy(asc(subRegions.name));
+    return query.orderBy(asc(subRegions.id));
   }
 
   async getSolutions(): Promise<Solution[]> {

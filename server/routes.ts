@@ -54,6 +54,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const user = req.user;
       let regions = await storage.getRegions();
+      console.log(`Found ${regions.length} regions for user ${user.username} (role: ${user.role})`);
       
       // Aplicar filtro regional para usuários não-admin
       if (user && user.role !== 'admin') {
@@ -61,11 +62,13 @@ export function registerRoutes(app: Express): Server {
         if (userRegionIds.length > 0) {
           // Filtrar apenas as regiões que o usuário tem acesso
           regions = regions.filter(region => userRegionIds.includes(region.id));
+          console.log(`Filtered to ${regions.length} regions for non-admin user`);
         }
       }
       
       res.json(regions);
     } catch (error) {
+      console.error("Error fetching regions:", error);
       res.status(500).json({ message: "Erro ao buscar regiões" });
     }
   });
