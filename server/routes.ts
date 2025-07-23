@@ -466,11 +466,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Actions routes
+  // Actions routes with hierarchical access control
   app.get("/api/actions", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
-      const actions = await storage.getActions(keyResultId);
+      // Include currentUserId for hierarchical access control
+      const actions = await storage.getActions(keyResultId, req.user.id);
       res.json(actions);
     } catch (error) {
       console.error("Error fetching actions:", error);
@@ -615,11 +616,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Checkpoints routes
+  // Checkpoints routes with hierarchical access control
   app.get("/api/checkpoints", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
       console.log(`Fetching checkpoints for keyResultId: ${keyResultId}`);
+      // Use currentUserId for hierarchical access control
       const checkpoints = await storage.getCheckpoints(keyResultId, req.user.id);
       console.log(`Found ${checkpoints.length} checkpoints`);
       res.json(checkpoints);

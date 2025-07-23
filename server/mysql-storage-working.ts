@@ -294,7 +294,12 @@ export class MySQLStorage implements IStorage {
   }
 
   async getUserById(id: number): Promise<User | undefined> {
-    return this.getUser(id);
+    try {
+      return await this.getUser(id);
+    } catch (error) {
+      console.error(`Error getting user by ID ${id}:`, error);
+      return undefined;
+    }
   }
 
   async deleteUser(id: number): Promise<void> {
@@ -554,7 +559,7 @@ export class MySQLStorage implements IStorage {
     await db.delete(objectives).where(eq(objectives.id, id));
   }
 
-  // Key Results methods
+  // Key Results methods with hierarchical access control
   async getKeyResults(objectiveId?: number, currentUserId?: number): Promise<(KeyResult & { 
     objective: Objective; 
     strategicIndicator?: StrategicIndicator 
@@ -563,8 +568,30 @@ export class MySQLStorage implements IStorage {
     .from(keyResults)
     .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
 
+    const conditions = [];
+    
     if (objectiveId) {
-      query = query.where(eq(keyResults.objectiveId, objectiveId));
+      conditions.push(eq(keyResults.objectiveId, objectiveId));
+    }
+
+    // Apply hierarchical access control
+    if (currentUserId) {
+      const user = await this.getUserById(currentUserId);
+      if (user && user.role !== 'admin') {
+        const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
+        const userSubRegionIds = Array.isArray(user.subRegionIds) ? user.subRegionIds : [];
+        
+        // Filter by user's accessible regions/sub-regions through objectives
+        if (userSubRegionIds.length > 0) {
+          conditions.push(inArray(objectives.subRegionId, userSubRegionIds));
+        } else if (userRegionIds.length > 0) {
+          conditions.push(inArray(objectives.regionId, userRegionIds));
+        }
+      }
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
     }
 
     const results = await query.orderBy(desc(keyResults.createdAt));
@@ -661,7 +688,7 @@ export class MySQLStorage implements IStorage {
     await db.delete(keyResults).where(eq(keyResults.id, id));
   }
 
-  // Actions methods
+  // Actions methods with hierarchical access control
   async getActions(keyResultId?: number, currentUserId?: number): Promise<(Action & { 
     keyResult: KeyResult; 
     responsible?: User 
@@ -669,10 +696,33 @@ export class MySQLStorage implements IStorage {
     let query = db.select()
     .from(actions)
     .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
+    .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
     .leftJoin(users, eq(actions.responsibleId, users.id));
 
+    const conditions = [];
+    
     if (keyResultId) {
-      query = query.where(eq(actions.keyResultId, keyResultId));
+      conditions.push(eq(actions.keyResultId, keyResultId));
+    }
+
+    // Apply hierarchical access control through objectives
+    if (currentUserId) {
+      const user = await this.getUserById(currentUserId);
+      if (user && user.role !== 'admin') {
+        const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
+        const userSubRegionIds = Array.isArray(user.subRegionIds) ? user.subRegionIds : [];
+        
+        // Filter by user's accessible regions/sub-regions through objectives
+        if (userSubRegionIds.length > 0) {
+          conditions.push(inArray(objectives.subRegionId, userSubRegionIds));
+        } else if (userRegionIds.length > 0) {
+          conditions.push(inArray(objectives.regionId, userRegionIds));
+        }
+      }
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
     }
 
     const results = await query.orderBy(desc(actions.createdAt));
@@ -741,15 +791,64 @@ export class MySQLStorage implements IStorage {
     await db.delete(actions).where(eq(actions.id, id));
   }
 
-  // Checkpoints methods
+  // Checkpoints methods with hierarchical access control
   async getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<Checkpoint[]> {
     let query = db.select().from(checkpoints);
     
+    const conditions = [];
+    
     if (keyResultId) {
-      query = query.where(eq(checkpoints.keyResultId, keyResultId));
+      conditions.push(eq(checkpoints.keyResultId, keyResultId));
     }
 
-    return query.orderBy(asc(checkpoints.dueDate));
+    // Apply hierarchical access control through key results and objectives
+    if (currentUserId) {
+      const user = await this.getUserById(currentUserId);
+      if (user && user.role !== 'admin') {
+        const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
+        const userSubRegionIds = Array.isArray(user.subRegionIds) ? user.subRegionIds : [];
+        
+        // Join with key results and objectives to apply regional filtering
+        query = query
+          .leftJoin(keyResults, eq(checkpoints.keyResultId, keyResults.id))
+          .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
+        
+        // Filter by user's accessible regions/sub-regions
+        if (userSubRegionIds.length > 0) {
+          conditions.push(inArray(objectives.subRegionId, userSubRegionIds));
+        } else if (userRegionIds.length > 0) {
+          conditions.push(inArray(objectives.regionId, userRegionIds));
+        }
+      }
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const results = await query.orderBy(asc(checkpoints.dueDate));
+    
+    // If we joined with other tables, map to only checkpoint data
+    if (currentUserId) {
+      const user = await this.getUserById(currentUserId);
+      if (user && user.role !== 'admin') {
+        return results.map((row: any) => ({
+          id: row.checkpoints?.id || row.id,
+          keyResultId: row.checkpoints?.keyResultId || row.keyResultId,
+          title: row.checkpoints?.title || row.title,
+          description: row.checkpoints?.description || row.description,
+          targetValue: row.checkpoints?.targetValue || row.targetValue,
+          actualValue: row.checkpoints?.actualValue || row.actualValue,
+          dueDate: row.checkpoints?.dueDate || row.dueDate,
+          status: row.checkpoints?.status || row.status,
+          notes: row.checkpoints?.notes || row.notes,
+          createdAt: row.checkpoints?.createdAt || row.createdAt,
+          updatedAt: row.checkpoints?.updatedAt || row.updatedAt,
+        }));
+      }
+    }
+    
+    return results;
   }
 
   async getCheckpoint(id: number, currentUserId?: number): Promise<Checkpoint | undefined> {
