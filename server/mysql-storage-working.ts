@@ -140,8 +140,8 @@ export class MySQLStorage implements IStorage {
   }
 
   async getUsers(): Promise<User[]> {
-    const users = await db.select().from(users).orderBy(asc(users.name));
-    return users.map(user => this.parseUserJsonFields(user));
+    const usersResult = await db.select().from(users).orderBy(asc(users.name));
+    return usersResult.map(user => this.parseUserJsonFields(user));
   }
 
   // Helper method to parse JSON fields in user objects
