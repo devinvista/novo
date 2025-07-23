@@ -1,6 +1,95 @@
 /**
- * Funções utilitárias para formatação de números seguindo padrão brasileiro ABNT
+ * Funções utilitárias para formatação de números e datas seguindo padrão brasileiro ABNT
  * Vírgula como separador decimal, ponto como separador de milhar
+ * Formato de data: DD/MM/AAAA, timezone Brasil (UTC-3)
+ */
+
+// Configurações de timezone e formatação para Brasil
+const BRAZIL_TIMEZONE = 'America/Sao_Paulo'; // UTC-3
+const BRAZIL_LOCALE = 'pt-BR';
+
+/**
+ * FUNÇÕES DE DATA - PADRÃO BRASILEIRO
+ */
+
+// Formata data para exibição brasileira (DD/MM/AAAA)
+export function formatDateBR(date: string | Date): string {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) return '';
+  
+  return dateObj.toLocaleDateString(BRAZIL_LOCALE, {
+    timeZone: BRAZIL_TIMEZONE,
+    day: '2-digit',
+    month: '2-digit', 
+    year: 'numeric'
+  });
+}
+
+// Formata data e hora para exibição brasileira (DD/MM/AAAA HH:mm)
+export function formatDateTimeBR(date: string | Date): string {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) return '';
+  
+  return dateObj.toLocaleString(BRAZIL_LOCALE, {
+    timeZone: BRAZIL_TIMEZONE,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+// Converte data DD/MM/AAAA para formato ISO (AAAA-MM-DD) para backend
+export function convertDateBRToISO(dateBR: string): string {
+  if (!dateBR) return '';
+  
+  const parts = dateBR.split('/');
+  if (parts.length !== 3) return '';
+  
+  const [day, month, year] = parts;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
+// Converte data ISO (AAAA-MM-DD) para formato brasileiro (DD/MM/AAAA)
+export function convertISOToDateBR(isoDate: string): string {
+  if (!isoDate) return '';
+  
+  const parts = isoDate.split('-');
+  if (parts.length !== 3) return '';
+  
+  const [year, month, day] = parts;
+  return `${day}/${month}/${year}`;
+}
+
+// Obtém data atual no timezone do Brasil
+export function getCurrentDateBR(): Date {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: BRAZIL_TIMEZONE }));
+}
+
+// Valida formato de data brasileira (DD/MM/AAAA)
+export function isValidDateBR(dateBR: string): boolean {
+  if (!dateBR) return false;
+  
+  const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+  const match = dateBR.match(regex);
+  
+  if (!match) return false;
+  
+  const [, day, month, year] = match;
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  
+  return date.getDate() === parseInt(day) &&
+         date.getMonth() === parseInt(month) - 1 &&
+         date.getFullYear() === parseInt(year);
+}
+
+/**
+ * FUNÇÕES DE NÚMERO - PADRÃO BRASILEIRO ABNT
  */
 
 // Converte string com vírgula para float (padrão brasileiro para banco)

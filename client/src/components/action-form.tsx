@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { MessageSquare, Calendar, User } from "lucide-react";
 import { z } from "zod";
+import { formatDateBR } from "@/lib/formatters";
 
 // Use the proper insert schema directly
 const actionFormSchema = insertActionSchema;
@@ -170,7 +171,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         if (actionDueDate > krEndDate) {
           toast({
             title: "Erro de Validação",
-            description: `A data de vencimento da ação deve ser anterior ao término do resultado-chave (${krEndDate.toLocaleDateString('pt-BR')})`,
+            description: `A data de vencimento da ação deve ser anterior ao término do resultado-chave (${formatDateBR(selectedKeyResult.endDate)})`,
             variant: "destructive",
           });
           return;
@@ -318,7 +319,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                         (() => {
                           const selectedKR = keyResults.find((kr: any) => kr.id === form.watch("keyResultId"));
                           if (selectedKR) {
-                            return `até ${new Date(selectedKR.endDate).toLocaleDateString('pt-BR')}`;
+                            return `até ${formatDateBR(selectedKR.endDate)}`;
                           }
                           return 'Selecione um resultado-chave';
                         })()

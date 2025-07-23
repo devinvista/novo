@@ -73,7 +73,12 @@ export default function RecentActivities() {
       return `há ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`;
     }
     
-    return date.toLocaleDateString('pt-BR');
+    return date.toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   return (

@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
 import { NumberInputBR } from "@/components/ui/number-input-br";
-import { parseDecimalBR, convertBRToUS, convertUSToBR } from "@/lib/formatters";
+import { parseDecimalBR, convertBRToUS, convertUSToBR, formatDateBR } from "@/lib/formatters";
 
 // Form validation schema that accepts strings for conversion to numbers
 const formKeyResultSchema = z.object({
@@ -493,8 +493,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                     (() => {
                       const selectedObj = objectives.find((obj: any) => obj.id.toString() === selectedObjectiveId);
                       if (selectedObj) {
-                        const startDate = new Date(selectedObj.startDate).toLocaleDateString('pt-BR');
-                        const endDate = new Date(selectedObj.endDate).toLocaleDateString('pt-BR');
+                        const startDate = formatDateBR(selectedObj.startDate);
+                        const endDate = formatDateBR(selectedObj.endDate);
                         return `${startDate} até ${endDate}`;
                       }
                       return 'Selecione um objetivo';

@@ -1,3 +1,6 @@
+// Configure timezone for Brazil (UTC-3)
+process.env.TZ = 'America/Sao_Paulo';
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
