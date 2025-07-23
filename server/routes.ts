@@ -359,7 +359,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/key-results", requireAuth, async (req: any, res) => {
+  app.post("/api/key-results", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       // Transform strategicIndicatorId to strategicIndicatorIds if needed
       const requestData = { ...req.body };
@@ -422,7 +422,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/key-results/:id", requireAuth, async (req: any, res) => {
+  app.put("/api/key-results/:id", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const validation = insertKeyResultSchema.partial().parse(req.body);

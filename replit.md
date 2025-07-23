@@ -132,6 +132,28 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
+- July 23, 2025. **COMPLETE CRUD OPERATIONS WITH ROLE-BASED ACCESS CONTROL IMPLEMENTED**
+  - **ROLE-BASED ACCESS CONTROL COMPLETED**: Full CRUD operations restricted to administrators and managers
+    - Frontend: Only admin and gestor roles see create/edit/delete buttons and forms
+    - Backend: All POST, PUT, DELETE routes protected with requireRole(["admin", "gestor"]) middleware
+    - Objectives: Create, Read, Update, Delete all properly secured with role validation
+    - Key Results: Create, Read, Update, Delete all properly secured with role validation
+    - Regular users (operacional role) can only view data, cannot modify any content
+  - **DELETE FUNCTIONALITY ENHANCED**: Added comprehensive delete functionality with confirmation dialogs
+    - Key Results page now includes delete button in dropdown menu with confirmation dialog
+    - Objectives table already had delete functionality - confirmed working with proper role restrictions
+    - Delete operations include proper error handling and success notifications
+    - All delete operations cascade properly and update cache automatically
+  - **USER EXPERIENCE IMPROVEMENTS**: Enhanced interface based on user role
+    - Page descriptions change based on user permissions (Gerencie vs Visualize)
+    - Action buttons hidden for users without management permissions
+    - Clear visual feedback for all CRUD operations with toast notifications
+    - Confirmation dialogs prevent accidental deletions with clear warning messages
+  - **SECURITY VALIDATION**: Complete role-based security implementation verified
+    - All management operations require admin or gestor role at both frontend and backend levels
+    - Authentication properly maintained across all API calls with credentials: "include"
+    - Database operations respect user access permissions and regional restrictions
+    - Fixed apiRequest parameter order issue that was causing authentication failures
 - July 23, 2025. **REPLIT AGENT TO REPLIT MIGRATION COMPLETED SUCCESSFULLY + CHECKPOINT CLICK DIALOG + CUMULATIVE TARGET VALUES FIXED**
   - **CHECKPOINT DIALOG IMPLEMENTED**: Fixed onCheckpointClick functionality completely
     - Resolved TypeError by adding missing onCheckpointClick props to CheckpointProgressGrid
