@@ -83,16 +83,21 @@ export default function AnimatedProgressRing({
 
   return (
     <motion.div
-      className="relative inline-flex flex-col items-center"
+      className="relative inline-flex flex-col items-center cursor-pointer select-none"
       onHoverStart={() => {
         setIsHovered(true);
         onHover?.();
       }}
       onHoverEnd={() => setIsHovered(false)}
-      onClick={onClick}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('AnimatedProgressRing clicked!', { status, progress, period });
+        onClick?.();
+      }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      style={{ cursor: onClick ? 'pointer' : 'default' }}
+      style={{ cursor: 'pointer' }}
     >
       {/* Progress Ring Container */}
       <motion.div
