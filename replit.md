@@ -132,17 +132,19 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
-- July 23, 2025. **COMPLETE CRUD OPERATIONS WITH ROLE-BASED ACCESS CONTROL IMPLEMENTED**
-  - **ROLE-BASED ACCESS CONTROL COMPLETED**: Full CRUD operations restricted to administrators and managers
-    - Frontend: Only admin and gestor roles see create/edit/delete buttons and forms
-    - Backend: All POST, PUT, DELETE routes protected with requireRole(["admin", "gestor"]) middleware
-    - Objectives: Create, Read, Update, Delete all properly secured with role validation
-    - Key Results: Create, Read, Update, Delete all properly secured with role validation
-    - Regular users (operacional role) can only view data, cannot modify any content
+- July 23, 2025. **UPDATED ROLE-BASED ACCESS CONTROL WITH OPERATIONAL USER PERMISSIONS**
+  - **OPERATIONAL USER PERMISSIONS IMPLEMENTED**: Updated permission structure per user requirements
+    - Objectives and Key Results: Only admin and gestor roles can create, edit, and delete
+    - Actions and Checkpoints: All authenticated users (admin, gestor, operacional) can create, edit, and delete
+    - Backend: Objectives/Key Results routes protected with requireRole(["admin", "gestor"]) middleware
+    - Backend: Actions/Checkpoints routes use requireAuth only (available to all authenticated users)
+    - Frontend: Permission checks updated to reflect new structure
   - **DELETE FUNCTIONALITY ENHANCED**: Added comprehensive delete functionality with confirmation dialogs
-    - Key Results page now includes delete button in dropdown menu with confirmation dialog
+    - Key Results page includes delete button in dropdown menu with confirmation dialog
+    - Actions page now includes delete functionality with dropdown menu and confirmation dialog
+    - Added DELETE routes for actions and checkpoints in backend API
     - Objectives table already had delete functionality - confirmed working with proper role restrictions
-    - Delete operations include proper error handling and success notifications
+    - Delete operations include proper error handling, success notifications, and cache invalidation
     - All delete operations cascade properly and update cache automatically
   - **USER EXPERIENCE IMPROVEMENTS**: Enhanced interface based on user role
     - Page descriptions change based on user permissions (Gerencie vs Visualize)

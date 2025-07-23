@@ -544,6 +544,25 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Delete action
+  app.delete("/api/actions/:id", requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check access to action
+      const existingAction = await storage.getAction(id, req.user.id);
+      if (!existingAction) {
+        return res.status(404).json({ message: "Ação não encontrada ou sem acesso" });
+      }
+      
+      await storage.deleteAction(id);
+      res.sendStatus(204);
+    } catch (error) {
+      console.error("Error deleting action:", error);
+      res.status(500).json({ message: "Erro ao deletar ação" });
+    }
+  });
+
   // Get action comments
   app.get('/api/actions/:actionId/comments', requireAuth, async (req, res) => {
     try {
@@ -672,6 +691,24 @@ export function registerRoutes(app: Express): Server {
       res.json(checkpoint);
     } catch (error) {
       res.status(500).json({ message: "Erro ao atualizar checkpoint" });
+    }
+  });
+
+  // Delete checkpoint
+  app.delete("/api/checkpoints/:id", requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const existingCheckpoint = await storage.getCheckpoint(id, req.user.id);
+      if (!existingCheckpoint) {
+        return res.status(404).json({ message: "Checkpoint não encontrado ou sem acesso" });
+      }
+      
+      await storage.deleteCheckpoint(id);
+      res.sendStatus(204);
+    } catch (error) {
+      console.error("Error deleting checkpoint:", error);
+      res.status(500).json({ message: "Erro ao deletar checkpoint" });
     }
   });
 

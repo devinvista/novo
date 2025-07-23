@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { CheckCircle, Circle, Clock, AlertCircle } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { CheckCircle, Circle, Clock, AlertCircle, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import ActionForm from "./action-form";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ActionTimelineProps {
   keyResultId?: number;
@@ -17,6 +35,27 @@ interface ActionTimelineProps {
 export default function ActionTimeline({ keyResultId, showAll = false }: ActionTimelineProps) {
   const [editingAction, setEditingAction] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
+  const [deleteActionId, setDeleteActionId] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const deleteActionMutation = useMutation({
+    mutationFn: (actionId: number) => apiRequest("DELETE", `/api/actions/${actionId}`),
+    onSuccess: () => {
+      toast({
+        title: "Sucesso",
+        description: "Ação deletada com sucesso",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
+      setDeleteActionId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao deletar ação",
+        variant: "destructive",
+      });
+    },
+  });
 
   const { data: actions, isLoading } = useQuery({
     queryKey: ["/api/actions", keyResultId],
@@ -127,13 +166,9 @@ export default function ActionTimeline({ keyResultId, showAll = false }: ActionT
           return (
             <Card
               key={action.id || `action-${index}`}
-              className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${
+              className={`p-4 hover:shadow-md transition-shadow ${
                 isOverdue ? "border-red-300 bg-red-50" : ""
               }`}
-              onClick={() => {
-                setEditingAction(action);
-                setShowForm(true);
-              }}
             >
               <div className="flex items-start space-x-3">
                 <div className="mt-0.5">{getStatusIcon(action.status)}</div>
@@ -158,10 +193,37 @@ export default function ActionTimeline({ keyResultId, showAll = false }: ActionT
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <Badge className={getPriorityColor(action.priority)}>
-                        {action.priority === "high" ? "Alta" : 
-                         action.priority === "medium" ? "Média" : "Baixa"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getPriorityColor(action.priority)}>
+                          {action.priority === "high" ? "Alta" : 
+                           action.priority === "medium" ? "Média" : "Baixa"}
+                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setEditingAction(action);
+                                setShowForm(true);
+                              }}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => setDeleteActionId(action.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Deletar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                       <Badge className={getStatusColor(action.status)}>
                         {action.status === "completed" ? "Concluída" :
                          action.status === "in_progress" ? "Em Progresso" :
@@ -212,6 +274,26 @@ export default function ActionTimeline({ keyResultId, showAll = false }: ActionT
         onOpenChange={setShowForm}
         defaultKeyResultId={keyResultId}
       />
+
+      <AlertDialog open={deleteActionId !== null} onOpenChange={() => setDeleteActionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar esta ação? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteActionId && deleteActionMutation.mutate(deleteActionId)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
