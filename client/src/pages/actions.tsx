@@ -53,7 +53,7 @@ export default function Actions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value=" ">Todos os resultados</SelectItem>
-                  {keyResults?.filter((kr: any) => kr && kr.id).map((kr: any) => (
+                  {keyResults?.filter((kr: any) => kr && kr.id && kr.title).map((kr: any) => (
                     <SelectItem key={kr.id} value={kr.id.toString()}>
                       {kr.title}
                     </SelectItem>

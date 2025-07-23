@@ -440,10 +440,7 @@ export class MySQLStorage implements IStorage {
     objective: Objective; 
     strategicIndicator?: StrategicIndicator 
   })[]> {
-    let query = db.select({
-      ...keyResults,
-      objective: objectives,
-    })
+    let query = db.select()
     .from(keyResults)
     .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
 
@@ -454,7 +451,25 @@ export class MySQLStorage implements IStorage {
     const results = await query.orderBy(desc(keyResults.createdAt));
     
     return results.map(row => ({
-      ...row.key_results,
+      id: row.key_results.id,
+      objectiveId: row.key_results.objectiveId,
+      title: row.key_results.title,
+      description: row.key_results.description,
+      strategicIndicatorIds: row.key_results.strategicIndicatorIds,
+      serviceLineIds: row.key_results.serviceLineIds,
+      serviceId: row.key_results.serviceId,
+      initialValue: row.key_results.initialValue,
+      targetValue: row.key_results.targetValue,
+      currentValue: row.key_results.currentValue,
+      unit: row.key_results.unit,
+      frequency: row.key_results.frequency,
+      startDate: row.key_results.startDate,
+      endDate: row.key_results.endDate,
+      status: row.key_results.status,
+      progress: row.key_results.progress,
+      number: row.key_results.number,
+      createdAt: row.key_results.createdAt,
+      updatedAt: row.key_results.updatedAt,
       objective: row.objectives!,
       strategicIndicator: undefined, // We'll handle strategic indicators separately
     }));
