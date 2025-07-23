@@ -1,16 +1,18 @@
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
-import * as schema from "@shared/schema";
+import * as schema from "@shared/mysql-schema-final";
 
 // MySQL connection configuration
 const connectionConfig = {
-  host: process.env.MYSQL_HOST!,
+  host: process.env.MYSQL_HOST || 'srv1661.hstgr.io',
   port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USERNAME!,
-  password: process.env.MYSQL_PASSWORD!,
-  database: process.env.MYSQL_DATABASE!,
+  user: process.env.MYSQL_USERNAME || 'u905571261_okr',
+  password: process.env.MYSQL_PASSWORD || 'Okr2025$',
+  database: process.env.MYSQL_DATABASE || 'u905571261_okr',
   multipleStatements: true,
 };
+
+console.log('Connecting to MySQL database at:', `${connectionConfig.host}:${connectionConfig.port}`);
 
 // Create MySQL connection pool
 const pool = mysql.createPool({

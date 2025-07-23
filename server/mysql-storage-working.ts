@@ -7,8 +7,8 @@ import {
   type Checkpoint, type InsertCheckpoint, type Region, type SubRegion,
   type ServiceLine, type StrategicIndicator,
   type Solution, type Service, type ActionComment, type InsertActionComment
-} from "@shared/schema";
-import { db, connection } from "./db";
+} from "@shared/mysql-schema-final";
+import { db, connection } from "./mysql-db";
 import { eq, and, desc, sql, asc, inArray } from "drizzle-orm";
 import session from "express-session";
 // @ts-ignore - memorystore types are outdated
