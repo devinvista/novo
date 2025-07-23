@@ -683,12 +683,15 @@ export class MySQLStorage implements IStorage {
       // Delete existing checkpoints
       await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
 
-      // Generate new checkpoints based on frequency
+      // Generate new checkpoints based on frequency  
       const checkpointsToCreate = [];
       const startDate = new Date(keyResult.startDate);
       const endDate = new Date(keyResult.endDate);
       const frequency = keyResult.frequency;
+      const totalTarget = Number(keyResult.targetValue);
       
+      // First, calculate all checkpoint periods to determine total count
+      const periods = [];
       let currentDate = new Date(startDate);
       let checkpointNumber = 1;
       
@@ -714,15 +717,9 @@ export class MySQLStorage implements IStorage {
         
         if (nextDate > endDate) nextDate = endDate;
         
-        const targetValue = Number(keyResult.targetValue) / this.getFrequencyCount(frequency, startDate, endDate) * checkpointNumber;
-        
-        checkpointsToCreate.push({
-          keyResultId,
-          title: `Checkpoint ${checkpointNumber}`,
-          targetValue: targetValue.toString(),
-          actualValue: "0",
-          status: "pending" as const,
-          dueDate: nextDate.toISOString().split('T')[0],
+        periods.push({
+          number: checkpointNumber,
+          dueDate: nextDate,
         });
         
         currentDate = new Date(nextDate);
@@ -730,6 +727,25 @@ export class MySQLStorage implements IStorage {
         checkpointNumber++;
         
         if (nextDate >= endDate) break;
+      }
+
+      // Now create checkpoints with cumulative targets (last checkpoint = total target)
+      const totalPeriods = periods.length;
+      for (let i = 0; i < periods.length; i++) {
+        const period = periods[i];
+        const isLastCheckpoint = i === periods.length - 1;
+        
+        // Target is cumulative: each checkpoint builds up to the total
+        const targetValue = isLastCheckpoint ? totalTarget : (totalTarget / totalPeriods) * (i + 1);
+        
+        checkpointsToCreate.push({
+          keyResultId,
+          title: `Checkpoint ${period.number}`,
+          targetValue: targetValue.toString(),
+          actualValue: "0",
+          status: "pending" as const,
+          dueDate: period.dueDate.toISOString().split('T')[0],
+        });
       }
 
       // Insert all checkpoints
