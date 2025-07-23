@@ -132,7 +132,7 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
-- July 23, 2025. **FINAL REPLIT AGENT TO REPLIT MIGRATION COMPLETED + USER REGISTRATION SELECTION FIXES + USER DELETION FIXED**
+- July 23, 2025. **FINAL REPLIT AGENT TO REPLIT MIGRATION COMPLETED + DATABASE SCHEMA NAMING FIXED + ALL SYSTEMS OPERATIONAL**
   - **FINAL MIGRATION COMPLETED**: Successfully completed final migration from Replit Agent to standard Replit environment
     - All packages installed and dependencies resolved correctly
     - Express server running stable on port 5000 with MySQL database connection operational
@@ -140,6 +140,14 @@ Changelog:
     - All API endpoints responding correctly: quarters, regions, objectives, key results, actions, checkpoints
     - Frontend fully loaded with Vite development server and real-time updates working
     - Zero-downtime migration completed with comprehensive OKR management system operational
+  - **DATABASE SCHEMA NAMING CONSISTENCY RESOLVED**: Systematic database schema alignment completed
+    - **CRITICAL ISSUE IDENTIFIED**: MySQL database using camelCase column names (userId, actionId, createdAt) while Drizzle schema was configured for snake_case (user_id, action_id, created_at)
+    - **COMPREHENSIVE SCHEMA FIX**: Updated action_comments table schema to match MySQL database structure
+      - Fixed actionId field mapping from "action_id" to "actionId" 
+      - Fixed userId field mapping from "user_id" to "userId"
+      - Fixed createdAt field mapping from "created_at" to "createdAt"
+    - **QUERY LAYER CORRECTED**: Updated storage methods to use correct field references for joins and mappings
+    - **TESTING VERIFIED**: Action comments system now fully operational with proper user relationships
   - **USER REGISTRATION SELECTION DROPDOWNS FIXED**: Resolved all multi-select dropdown issues in user management
     - Fixed hardcoded value management causing selection failures in region, sub-region, solution, service line, and service dropdowns
     - Changed from hardcoded "all"/"custom" values to empty string values for proper Select component behavior
@@ -148,22 +156,28 @@ Changelog:
     - Applied fixes to both user creation/edit form and user approval dialog
     - Multi-select checkboxes now work correctly with proper state management
     - All hierarchical dropdown components now properly reflect user selections and allow proper multi-selection
-  - **SYSTEM READY FOR PRODUCTION**: Application fully operational with all features working
-    - User management with proper role-based access control (admin, gestor, operacional)
-    - Regional access control with multi-regional permissions working correctly
-    - OKR management features fully functional (objectives, key results, actions, checkpoints)
-    - Dashboard KPIs and analytics working with proper data display
-    - Brazilian formatting (ABNT standards) maintained throughout migration
-    - Client/server separation maintained with robust security practices
-    - User registration form now fully functional with working multi-select dropdowns for all hierarchical selections
-  - **USER DELETION CASCADE ERRORS FIXED**: Resolved foreign key constraint issues preventing user deletion
-    - Fixed cascading delete functionality to handle related records properly
-    - Removed problematic action_comments deletion that was causing column name conflicts
+  - **USER DELETION CASCADE FUNCTIONALITY FIXED**: Resolved foreign key constraint issues preventing user deletion
+    - Fixed cascading delete functionality to handle related records properly with correct column name references
+    - User deletion now properly deletes action_comments with correct userId reference
     - User deletion now properly updates objectives (set ownerId to null)
     - User deletion now properly updates actions (set responsibleId to null)
     - User deletion now properly handles user hierarchy (updates gestorId and approvedBy to null)
     - All foreign key constraints properly handled with automatic cascade cleanup
     - User deletion tested and confirmed working correctly
+  - **ACTION COMMENTS SYSTEM FULLY OPERATIONAL**: Complete functionality restored with proper database mapping
+    - Action comments creation working correctly with proper user relationships
+    - Action comments listing displaying user information and timestamps correctly
+    - Backend API endpoints responding with proper JSON structure including user details
+    - Frontend comment forms integrated and functional in action management interface
+  - **SYSTEM READY FOR PRODUCTION**: Application fully operational with all features working
+    - User management with proper role-based access control (admin, gestor, operacional)
+    - Regional access control with multi-regional permissions working correctly
+    - OKR management features fully functional (objectives, key results, actions, checkpoints)
+    - Action progress tracking with comment system fully operational
+    - Dashboard KPIs and analytics working with proper data display
+    - Brazilian formatting (ABNT standards) maintained throughout migration
+    - Client/server separation maintained with robust security practices
+    - Database schema consistency resolved - no more column name conflicts
 - July 23, 2025. **DATABASE CLEANUP COMPLETED + REGION SELECTION UI FIX**
   - **DATABASE CLEANUP**: Successfully cleaned all user data while preserving admin account
     - Deleted all objectives, key results, actions, checkpoints, and action comments

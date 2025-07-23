@@ -142,10 +142,10 @@ export const checkpoints = mysqlTable("checkpoints", {
 // Action Comments
 export const actionComments = mysqlTable("action_comments", {
   id: int("id").primaryKey().autoincrement(),
-  actionId: int("action_id").notNull().references(() => actions.id),
+  actionId: int("actionId").notNull().references(() => actions.id),
   userId: int("userId").notNull().references(() => users.id),
   comment: text("comment").notNull(),
-  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  createdAt: timestamp("createdAt").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Relations

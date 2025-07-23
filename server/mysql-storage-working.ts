@@ -253,8 +253,8 @@ export class MySQLStorage implements IStorage {
     try {
       // Delete related records first to avoid foreign key constraint errors
       
-      // Skip action comments deletion - they will be handled by cascading constraints
-      // The foreign key constraint will handle cleanup automatically
+      // Delete action comments related to this user (now with correct column name)
+      await db.delete(actionComments).where(eq(actionComments.userId, id));
       
       // Update objectives where this user is the owner (set to null)
       await db.update(objectives).set({ ownerId: null }).where(eq(objectives.ownerId, id));
@@ -852,17 +852,18 @@ export class MySQLStorage implements IStorage {
 
   // Action Comments methods
   async getActionComments(actionId: number): Promise<(ActionComment & { user: User })[]> {
-    const results = await db.select({
-      ...actionComments,
-      user: users,
-    })
+    const results = await db.select()
     .from(actionComments)
     .leftJoin(users, eq(actionComments.userId, users.id))
     .where(eq(actionComments.actionId, actionId))
     .orderBy(desc(actionComments.createdAt));
     
     return results.map(row => ({
-      ...row.action_comments,
+      id: row.action_comments.id,
+      actionId: row.action_comments.actionId,
+      userId: row.action_comments.userId,
+      comment: row.action_comments.comment,
+      createdAt: row.action_comments.createdAt,
       user: row.users!,
     }));
   }
