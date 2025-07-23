@@ -576,11 +576,12 @@ export class MySQLStorage implements IStorage {
     if (!this.connected) return undefined;
     
     // Validate that id is a valid number and not NaN
-    if (isNaN(id) || !Number.isInteger(id)) {
-      console.error('Invalid key result ID:', id);
+    if (isNaN(id) || !Number.isInteger(id) || id <= 0) {
+      console.error('Invalid key result ID:', id, 'Type:', typeof id);
       return undefined;
     }
     
+    console.log('Getting key result with ID:', id, 'Type:', typeof id);
     const [rows] = await pool.execute('SELECT * FROM key_results WHERE id = ?', [id]);
     const keyResults = rows as KeyResult[];
     return keyResults.length > 0 ? keyResults[0] : undefined;
@@ -592,9 +593,9 @@ export class MySQLStorage implements IStorage {
     try {
       console.log('Creating key result with data:', keyResult);
       
-      // Garantir que valores decimais sejam válidos (usando formatação brasileira)
-      const targetValue = parseDecimalBR(keyResult.targetValue?.toString() || "0");
-      const currentValue = parseDecimalBR(keyResult.initialValue?.toString() || keyResult.currentValue?.toString() || "0");
+      // Garantir que valores decimais sejam válidos (convertendo strings para números)
+      const targetValue = parseFloat(keyResult.targetValue?.toString() || "0") || 0;
+      const currentValue = parseFloat(keyResult.initialValue?.toString() || "0") || 0;
       
       const [result] = await pool.execute(
         'INSERT INTO key_results (objective_id, title, description, target_value, current_value, unit, strategicIndicatorIds, serviceLineIds, service_id, start_date, end_date, frequency, status, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -620,16 +621,26 @@ export class MySQLStorage implements IStorage {
       console.log('Insert ID:', insertId, 'Type:', typeof insertId, 'Result:', result);
       
       // Verificar se o insert foi bem-sucedido
-      if (!insertId || isNaN(Number(insertId))) {
-        console.error('Invalid insertId:', insertId, 'Full result:', result);
-        throw new Error(`Failed to get valid insert ID: ${insertId}`);
+      if (!insertId) {
+        console.error('No insertId returned. Full result:', result);
+        throw new Error('Failed to get insert ID from database');
       }
       
       // Converter para number com segurança
       const validId = Number(insertId);
-      console.log('Converting to valid ID:', validId);
+      if (isNaN(validId) || validId <= 0) {
+        console.error('Invalid insertId after conversion:', validId, 'Original:', insertId);
+        throw new Error(`Invalid insert ID: ${insertId} -> ${validId}`);
+      }
+      console.log('Successfully converted ID:', validId);
       
-      const newKeyResult = await this.getKeyResult(validId);
+      // Buscar o key result criado diretamente
+      const [rows] = await pool.execute(
+        'SELECT * FROM key_results WHERE id = ?', 
+        [validId]
+      );
+      
+      const newKeyResult = (rows as any[])[0];
       if (!newKeyResult) {
         console.error('Failed to retrieve created key result with ID:', validId);
         throw new Error('Failed to create key result');
