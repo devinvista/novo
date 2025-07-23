@@ -32,7 +32,7 @@ export default function KeyResults() {
   // Delete mutation for key results
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/key-results/${id}`, "DELETE");
+      await apiRequest("DELETE", `/api/key-results/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
