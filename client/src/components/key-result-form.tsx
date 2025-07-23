@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
 import { NumberInputBR } from "@/components/ui/number-input-br";
-import { parseDecimalBR, convertBRToUS } from "@/lib/formatters";
+import { parseDecimalBR, convertBRToUS, convertUSToBR } from "@/lib/formatters";
 
 // Form validation schema that accepts strings for conversion to numbers
 const formKeyResultSchema = z.object({
@@ -148,8 +148,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       strategicIndicatorIds: keyResult?.strategicIndicatorIds || [],
       serviceLineIds: keyResult?.serviceLineIds || [],
       serviceId: keyResult?.serviceId?.toString() || "",
-      targetValue: keyResult?.targetValue?.toString() || "0",
-      initialValue: keyResult?.currentValue?.toString() || "0",
+      targetValue: keyResult?.targetValue ? convertUSToBR(keyResult.targetValue.toString()) : "",
+      initialValue: keyResult?.currentValue ? convertUSToBR(keyResult.currentValue.toString()) : "0,00",
       unit: keyResult?.unit || "",
       frequency: keyResult?.frequency || "monthly",
       startDate: keyResult?.startDate ? new Date(keyResult.startDate).toISOString().split('T')[0] : "",
@@ -186,16 +186,15 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   });
 
   const onSubmit = (data: KeyResultFormData) => {
-    // Convert string values to numbers for numeric fields using Brazilian formatting
+    // Convert values properly for server schema (expects strings)
     const processedData = {
       ...data,
       objectiveId: parseInt(data.objectiveId),
       strategicIndicatorIds: data.strategicIndicatorIds || [],
       serviceLineIds: data.serviceLineIds || [],
       serviceId: data.serviceId ? parseInt(data.serviceId) : undefined,
-      targetValue: parseDecimalBR(data.targetValue), // Usa formatação brasileira
-      currentValue: parseDecimalBR(data.initialValue || "0"), // Usa formatação brasileira
-      progress: 0,
+      targetValue: convertBRToUS(data.targetValue || "0"), // Converte vírgula para ponto como string
+      initialValue: convertBRToUS(data.initialValue || "0"), // Converte vírgula para ponto como string
       unit: data.unit || "",
     };
     

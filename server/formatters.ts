@@ -5,11 +5,13 @@
 
 // Converte string brasileira (vírgula) para float do banco de dados
 export function parseDecimalBR(value: string | number): number {
-  if (typeof value === "number") return value;
-  if (!value || value === "") return 0;
+  if (typeof value === "number") {
+    return isNaN(value) ? 0 : value;
+  }
+  if (!value || value === "" || value === null || value === undefined) return 0;
   
   // Remove espaços e substitui vírgula por ponto para parseFloat
-  const cleanValue = value.toString().replace(/\s/g, "").replace(",", ".");
+  const cleanValue = value.toString().trim().replace(/\s/g, "").replace(",", ".");
   const parsed = parseFloat(cleanValue);
   return isNaN(parsed) ? 0 : parsed;
 }

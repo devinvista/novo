@@ -372,6 +372,14 @@ export function registerRoutes(app: Express): Server {
         requestData.unit = "";
       }
       
+      // Convert Brazilian format strings to numbers
+      if (requestData.targetValue && typeof requestData.targetValue === 'string') {
+        requestData.targetValue = parseDecimalBR(requestData.targetValue).toString();
+      }
+      if (requestData.initialValue && typeof requestData.initialValue === 'string') {
+        requestData.initialValue = parseDecimalBR(requestData.initialValue).toString();
+      }
+      
       const validation = insertKeyResultSchema.parse(requestData);
       
       // Verificar se o usuário tem acesso ao objetivo
@@ -395,6 +403,7 @@ export function registerRoutes(app: Express): Server {
       const keyResult = await storage.createKeyResult({
         ...validation,
         targetValue: validation.targetValue.toString(),
+        initialValue: validation.initialValue?.toString() || "0",
         startDate: validation.startDate,
         endDate: validation.endDate,
         status,

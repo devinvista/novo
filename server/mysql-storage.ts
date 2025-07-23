@@ -571,8 +571,14 @@ export class MySQLStorage implements IStorage {
     return rows as any[];
   }
 
-  async getKeyResult(id: number): Promise<KeyResult | undefined> {
+  async getKeyResult(id: number, userId?: number): Promise<KeyResult | undefined> {
     if (!this.connected) return undefined;
+    
+    // Validate that id is a valid number and not NaN
+    if (isNaN(id) || !Number.isInteger(id)) {
+      console.error('Invalid key result ID:', id);
+      return undefined;
+    }
     
     const [rows] = await pool.execute('SELECT * FROM key_results WHERE id = ?', [id]);
     const keyResults = rows as KeyResult[];
@@ -586,7 +592,7 @@ export class MySQLStorage implements IStorage {
       console.log('Creating key result with data:', keyResult);
       
       const [result] = await pool.execute(
-        'INSERT INTO key_results (objective_id, title, description, target_value, current_value, unit, strategic_indicator_ids, service_line_id, service_id, start_date, end_date, frequency, status, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO key_results (objective_id, title, description, target_value, current_value, unit, strategicIndicatorIds, serviceLineIds, service_id, start_date, end_date, frequency, status, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           keyResult.objectiveId, 
           keyResult.title, 
@@ -595,7 +601,7 @@ export class MySQLStorage implements IStorage {
           keyResult.currentValue || 0, 
           keyResult.unit || null, 
           JSON.stringify(keyResult.strategicIndicatorIds || []), 
-          keyResult.serviceLineId || null, 
+          JSON.stringify(keyResult.serviceLineIds || []), 
           keyResult.serviceId || null, 
           keyResult.startDate, 
           keyResult.endDate, 
@@ -606,6 +612,13 @@ export class MySQLStorage implements IStorage {
       );
       
       const insertId = (result as any).insertId;
+      console.log('Insert ID:', insertId, 'Type:', typeof insertId);
+      
+      if (!insertId || isNaN(insertId)) {
+        console.error('Invalid insertId:', insertId);
+        throw new Error('Failed to get valid insert ID');
+      }
+      
       const newKeyResult = await this.getKeyResult(insertId);
       if (!newKeyResult) throw new Error('Failed to create key result');
       return newKeyResult;
