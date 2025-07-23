@@ -119,8 +119,14 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Gestor deve ser selecionado para o registro." });
       }
 
+      // Parse gestorId to number and validate
+      const gestorId = parseInt(req.body.gestorId);
+      if (isNaN(gestorId)) {
+        return res.status(400).json({ message: "ID do gestor inválido." });
+      }
+
       // Verificar se o gestor existe e é válido
-      const gestor = await storage.getUserById(req.body.gestorId);
+      const gestor = await storage.getUserById(gestorId);
       if (!gestor || (gestor.role !== 'gestor' && gestor.role !== 'admin')) {
         return res.status(400).json({ message: "Gestor selecionado inválido." });
       }
@@ -130,7 +136,7 @@ export function setupAuth(app: Express) {
         ...req.body,
         role: 'operacional', // Forçar role operacional
         approved: false,     // Aguardar aprovação
-        gestorId: req.body.gestorId, // Vincular ao gestor selecionado
+        gestorId: gestorId, // Vincular ao gestor selecionado (número)
         password: await hashPassword(req.body.password)
       };
 
