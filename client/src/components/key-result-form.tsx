@@ -99,24 +99,20 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     enabled: open,
   });
 
-  // State for selected service line to control services query
-  const [selectedServiceLine, setSelectedServiceLine] = useState<string | null>(null);
-  
   // State for selected objective to show date constraints
   const [selectedObjectiveId, setSelectedObjectiveId] = useState<string>(keyResult?.objectiveId?.toString() || "");
 
-  // Fetch services for dropdown (based on selected service line)
+  // Fetch all services for filtering
   const { data: services } = useQuery({
-    queryKey: ["/api/services", selectedServiceLine],
+    queryKey: ["/api/services"],
     queryFn: async () => {
-      if (!selectedServiceLine || selectedServiceLine === "0") return [];
-      const response = await fetch(`/api/services?serviceLineId=${selectedServiceLine}`, {
+      const response = await fetch("/api/services", {
         credentials: "include"
       });
       if (!response.ok) throw new Error("Erro ao carregar serviços");
       return response.json();
     },
-    enabled: open && !!selectedServiceLine && selectedServiceLine !== "0",
+    enabled: open,
   });
 
   // Create validation schema with objective date constraints
@@ -405,7 +401,17 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                               if (e.target.checked) {
                                 field.onChange([...currentValue, serviceLine.id]);
                               } else {
-                                field.onChange(currentValue.filter((id: number) => id !== serviceLine.id));
+                                const newServiceLineIds = currentValue.filter((id: number) => id !== serviceLine.id);
+                                field.onChange(newServiceLineIds);
+                                
+                                // Clear service if it's no longer valid after removing service line
+                                const currentServiceId = form.getValues('serviceId');
+                                if (currentServiceId && services) {
+                                  const currentService = services.find((s: any) => s.id === currentServiceId);
+                                  if (currentService && currentService.serviceLineId === serviceLine.id) {
+                                    form.setValue('serviceId', undefined);
+                                  }
+                                }
                               }
                             }}
                             className="rounded border-gray-300"
@@ -437,11 +443,19 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="0">Nenhum serviço específico</SelectItem>
-                        {services && services.length > 0 && services.map((service: any) => (
-                          <SelectItem key={service.id} value={service.id.toString()}>
-                            {service.name}
-                          </SelectItem>
-                        ))}
+                        {services && services.length > 0 && 
+                          services
+                            .filter((service: any) => {
+                              const selectedServiceLineIds = form.watch('serviceLineIds') || [];
+                              return selectedServiceLineIds.length === 0 || 
+                                selectedServiceLineIds.includes(service.serviceLineId);
+                            })
+                            .map((service: any) => (
+                              <SelectItem key={service.id} value={service.id.toString()}>
+                                {service.name}
+                              </SelectItem>
+                            ))
+                        }
                       </SelectContent>
                     </Select>
                     <FormMessage />

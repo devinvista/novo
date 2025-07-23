@@ -477,7 +477,9 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                           } else {
                             setFormData(prev => ({
                               ...prev,
-                              serviceLineIds: currentValue.filter((id: number) => id !== serviceLine.id)
+                              serviceLineIds: currentValue.filter((id: number) => id !== serviceLine.id),
+                              // Clear service if it's no longer valid after removing service line
+                              serviceId: services?.find((s: any) => s.id === prev.serviceId)?.serviceLineId === serviceLine.id ? undefined : prev.serviceId
                             }));
                           }
                         }}
@@ -516,11 +518,18 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">🔹 Nenhum serviço específico</SelectItem>
-                    {services && services.length > 0 && services.map((service: any) => (
-                      <SelectItem key={service.id} value={service.id.toString()}>
-                        {service.name}
-                      </SelectItem>
-                    ))}
+                    {services && services.length > 0 && 
+                      services
+                        .filter((service: any) => 
+                          formData.serviceLineIds.length === 0 || 
+                          formData.serviceLineIds.includes(service.serviceLineId)
+                        )
+                        .map((service: any) => (
+                          <SelectItem key={service.id} value={service.id.toString()}>
+                            {service.name}
+                          </SelectItem>
+                        ))
+                    }
                   </SelectContent>
                 </Select>
               </div>
