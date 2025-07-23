@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Users table with role-based access
-export const users = mysqlTable("users", {
+export const users: any = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
@@ -149,7 +149,7 @@ export const actionComments = mysqlTable("action_comments", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many, one }) => ({
+export const usersRelations: any = relations(users, ({ many, one }) => ({
   objectives: many(objectives),
   keyResults: many(keyResults),
   actions: many(actions),

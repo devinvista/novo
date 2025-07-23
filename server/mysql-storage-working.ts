@@ -118,6 +118,7 @@ export interface IStorage {
 
 export class MySQLStorage implements IStorage {
   sessionStore: session.SessionStore;
+  connected: boolean = true;
 
   constructor() {
     // Use MemoryStore for session management in Replit
@@ -665,6 +666,22 @@ export class MySQLStorage implements IStorage {
   // Quarterly data
   async getQuarterlyPeriods(): Promise<string[]> {
     return getQuarterlyPeriods();
+  }
+
+  async getAvailableQuarters(): Promise<string[]> {
+    return getQuarterlyPeriods();
+  }
+
+  async getQuarterlyStats(period: string = 'all'): Promise<any> {
+    const data = await this.getQuarterlyData(period);
+    return {
+      totalObjectives: data.objectives.length,
+      totalKeyResults: data.keyResults.length,
+      totalActions: data.actions.length,
+      completedObjectives: data.objectives.filter(o => o.status === 'completed').length,
+      completedKeyResults: data.keyResults.filter(kr => kr.status === 'completed').length,
+      completedActions: data.actions.filter(a => a.status === 'completed').length,
+    };
   }
 
   async getQuarterlyData(period: string, currentUserId?: number): Promise<{

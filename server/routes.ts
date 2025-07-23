@@ -203,7 +203,8 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/quarters/stats", requireAuth, async (req: any, res) => {
     try {
-      const stats = await storage.getQuarterlyStats();
+      const period = req.query.period as string || 'all';
+      const stats = await storage.getQuarterlyStats(period);
       res.json(stats);
     } catch (error) {
       console.error("Error getting quarterly stats:", error);
@@ -349,7 +350,7 @@ export function registerRoutes(app: Express): Server {
       res.json(keyResults);
     } catch (error) {
       console.error("Error in /api/key-results:", error);
-      res.status(500).json({ message: "Erro ao buscar resultados-chave", error: error.message });
+      res.status(500).json({ message: "Erro ao buscar resultados-chave", error: (error as Error).message });
     }
   });
 
@@ -400,7 +401,7 @@ export function registerRoutes(app: Express): Server {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
-      res.status(500).json({ message: "Erro ao criar resultado-chave", error: error.message });
+      res.status(500).json({ message: "Erro ao criar resultado-chave", error: (error as Error).message });
     }
   });
 
@@ -516,7 +517,7 @@ export function registerRoutes(app: Express): Server {
       const actionId = parseInt(req.params.actionId);
       
       // Check access to action
-      const action = await storage.getAction(actionId, req.user.id);
+      const action = await storage.getAction(actionId, req.user?.id);
       if (!action) {
         return res.status(404).json({ message: "Action not found or no access" });
       }
@@ -535,14 +536,14 @@ export function registerRoutes(app: Express): Server {
       const actionId = parseInt(req.params.actionId);
       
       // Check access to action
-      const action = await storage.getAction(actionId, req.user.id);
+      const action = await storage.getAction(actionId, req.user?.id);
       if (!action) {
         return res.status(404).json({ message: "Action not found or no access" });
       }
 
       const commentData = {
         actionId,
-        userId: req.user.id,
+        userId: req.user?.id,
         comment: req.body.comment
       };
 
@@ -684,7 +685,7 @@ export function registerRoutes(app: Express): Server {
       
       // Gestores só veem usuários vinculados a eles
       if (req.user?.role === "gestor") {
-        pendingUsers = pendingUsers.filter(user => user.gestorId === req.user?.id);
+        pendingUsers = pendingUsers.filter(user => (user as any).gestorId === req.user?.id);
       }
       
       res.json(pendingUsers);
@@ -704,10 +705,10 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Hash password
-      userData.password = await hashPassword(userData.password);
+      userData.password = await hashPassword(userData.password as string);
 
       // Users created by admins/gestores are auto-approved
-      userData.approved = true;
+      (userData as any).approved = true;
 
       const user = await storage.createUser(userData);
       res.json(user);
