@@ -119,12 +119,12 @@ export default function KeyResults() {
             </div>
           ) : (
             <div className="grid gap-6">
-              {keyResults && keyResults.length > 0 ? keyResults.map((kr: any) => {
+              {keyResults && keyResults.length > 0 ? keyResults.map((kr: any, index: number) => {
                 const progress = parseFloat(kr.progress) || 0;
                 const statusBadge = getStatusBadge(kr.status || 'active');
                 
                 return (
-                  <Card key={kr.id} className="hover:shadow-md transition-shadow">
+                  <Card key={kr.id || `kr-${index}`} className="hover:shadow-md transition-shadow">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">

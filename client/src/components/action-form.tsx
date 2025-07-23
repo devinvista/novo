@@ -54,7 +54,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
   // Fetch comments for the action if editing
   const { data: comments, refetch: refetchComments } = useQuery({
-    queryKey: ["/api/actions", action?.id, "comments"],
+    queryKey: ["/api/actions", action?.id?.toString() || "none", "comments"],
     queryFn: async () => {
       if (!action?.id) return [];
       const response = await fetch(`/api/actions/${action.id}/comments`);
