@@ -691,13 +691,13 @@ export default function UsersPage() {
                           <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                             <SelectValue placeholder={
                               !field.value || field.value.length === 0 
-                                ? "Selecionar regiões" 
+                                ? "Todas as regiões" 
                                 : `${field.value.length} região(ões) selecionada(s)`
                             } />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="all">Limpar seleção</SelectItem>
+                          <SelectItem value="all">Todas as regiões</SelectItem>
                           {availableRegions.map((region) => {
                             const isSelected = field.value?.includes(region.id) || false;
                             return (
@@ -759,13 +759,13 @@ export default function UsersPage() {
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                                 <SelectValue placeholder={
                                   !field.value || field.value.length === 0 
-                                    ? "Selecionar sub-regiões" 
+                                    ? "Todas as sub-regiões" 
                                     : `${field.value.length} sub-região(ões) selecionada(s)`
                                 } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="all">Limpar seleção</SelectItem>
+                              <SelectItem value="all">Todas as sub-regiões</SelectItem>
                               {filteredSubRegions.map((subRegion) => {
                                 const isSelected = field.value?.includes(subRegion.id) || false;
                                 const parentRegion = availableRegions.find(r => r.id === subRegion.regionId);
@@ -826,13 +826,13 @@ export default function UsersPage() {
                           <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                             <SelectValue placeholder={
                               !field.value || field.value.length === 0 
-                                ? "Selecionar soluções" 
+                                ? "Todas as soluções" 
                                 : `${field.value.length} solução(ões) selecionada(s)`
                             } />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="all">Limpar seleção</SelectItem>
+                          <SelectItem value="all">Todas as soluções</SelectItem>
                           {availableSolutions.map((solution: any) => {
                             const isSelected = field.value?.includes(solution.id) || false;
                             return (
@@ -896,13 +896,13 @@ export default function UsersPage() {
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                                 <SelectValue placeholder={
                                   !field.value || field.value.length === 0 
-                                    ? "Selecionar linhas de serviço" 
+                                    ? "Todas as linhas de serviço" 
                                     : `${field.value.length} linha(s) selecionada(s)`
                                 } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="all">Limpar seleção</SelectItem>
+                              <SelectItem value="all">Todas as linhas de serviço</SelectItem>
                               {filteredServiceLines.map((serviceLine: any) => {
                                 const isSelected = field.value?.includes(serviceLine.id) || false;
                                 const parentSolution = availableSolutions.find((s: any) => s.id === serviceLine.solutionId);
@@ -967,13 +967,13 @@ export default function UsersPage() {
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                                 <SelectValue placeholder={
                                   !field.value || field.value.length === 0 
-                                    ? "Selecionar serviços" 
+                                    ? "Todos os serviços" 
                                     : `${field.value.length} serviço(s) selecionado(s)`
                                 } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="all">Limpar seleção</SelectItem>
+                              <SelectItem value="all">Todos os serviços</SelectItem>
                               {filteredServices.map((service: any) => {
                                 const isSelected = field.value?.includes(service.id) || false;
                                 const parentServiceLine = availableServiceLines.find((sl: any) => sl.id === service.serviceLineId);
