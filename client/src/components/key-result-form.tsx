@@ -15,6 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
+import { NumberInputBR } from "@/components/ui/number-input-br";
+import { parseDecimalBR, convertBRToUS } from "@/lib/formatters";
 
 // Form validation schema that accepts strings for conversion to numbers
 const formKeyResultSchema = z.object({
@@ -184,15 +186,15 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   });
 
   const onSubmit = (data: KeyResultFormData) => {
-    // Convert string values to numbers for numeric fields
+    // Convert string values to numbers for numeric fields using Brazilian formatting
     const processedData = {
       ...data,
       objectiveId: parseInt(data.objectiveId),
       strategicIndicatorIds: data.strategicIndicatorIds || [],
       serviceLineIds: data.serviceLineIds || [],
       serviceId: data.serviceId ? parseInt(data.serviceId) : undefined,
-      targetValue: parseFloat(data.targetValue),
-      currentValue: parseFloat(data.initialValue || "0"),
+      targetValue: parseDecimalBR(data.targetValue), // Usa formatação brasileira
+      currentValue: parseDecimalBR(data.initialValue || "0"), // Usa formatação brasileira
       progress: 0,
       unit: data.unit || "",
     };
@@ -287,7 +289,12 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                   <FormItem>
                     <FormLabel>Valor Inicial *</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0" value={field.value || ""} onChange={field.onChange} />
+                      <NumberInputBR 
+                        placeholder="0,00" 
+                        value={field.value || ""} 
+                        onChange={field.onChange}
+                        decimals={2}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -301,7 +308,12 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                   <FormItem>
                     <FormLabel>Valor Meta *</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0" value={field.value || ""} onChange={field.onChange} />
+                      <NumberInputBR 
+                        placeholder="0,00" 
+                        value={field.value || ""} 
+                        onChange={field.onChange}
+                        decimals={2}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

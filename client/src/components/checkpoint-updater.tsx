@@ -12,6 +12,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { NumberInputBR } from "@/components/ui/number-input-br";
+import { parseDecimalBR, formatDecimalBR } from "@/lib/formatters";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +50,7 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
   const updateMutation = useMutation({
     mutationFn: async (data: { id: number; actualValue: string; notes: string }) => {
       await apiRequest("PUT", `/api/checkpoints/${data.id}`, {
-        actualValue: data.actualValue,
+        actualValue: parseDecimalBR(data.actualValue), // Converte formato brasileiro
         notes: data.notes,
       });
     },
@@ -267,13 +269,12 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
           <div className="space-y-4">
             <div>
               <Label htmlFor="actualValue">Valor Atual *</Label>
-              <Input
+              <NumberInputBR
                 id="actualValue"
-                type="number"
-                step="0.01"
                 value={actualValue}
-                onChange={(e) => setActualValue(e.target.value)}
-                placeholder="Digite o valor alcançado"
+                onChange={setActualValue}
+                placeholder="0,00"
+                decimals={2}
               />
               <p className="text-sm text-gray-500 mt-1">
                 Meta: {selectedCheckpoint?.targetValue} {selectedCheckpoint?.keyResult?.unit}

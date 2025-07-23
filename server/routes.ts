@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema, insertUserSchema } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { z } from "zod";
+import { parseDecimalBR } from "./formatters";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -387,7 +388,7 @@ export function registerRoutes(app: Express): Server {
       let status = validation.status || 'active';
       if (today < startDate) {
         status = 'pending';
-      } else if (today > endDate && parseFloat("0") < parseFloat(validation.targetValue.toString())) {
+      } else if (today > endDate && parseDecimalBR("0") < parseDecimalBR(validation.targetValue.toString())) {
         status = 'delayed';
       }
       
