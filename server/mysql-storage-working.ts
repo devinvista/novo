@@ -322,11 +322,43 @@ export class MySQLStorage implements IStorage {
     const results = await query.orderBy(desc(objectives.createdAt));
     
     return results.map(row => ({
-      ...row.objectives,
-      owner: row.users!,
-      region: row.regions || undefined,
-      subRegion: row.sub_regions || undefined,
-      serviceLine: row.service_lines || undefined,
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      ownerId: row.ownerId,
+      regionId: row.regionId,
+      subRegionId: row.subRegionId, 
+      startDate: row.startDate,
+      endDate: row.endDate,
+      status: row.status,
+      progress: row.progress,
+      period: row.period,
+      serviceLineId: row.serviceLineId,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      owner: {
+        id: row.owner.id,
+        username: row.owner.username,
+        name: row.owner.name,
+        email: row.owner.email,
+        role: row.owner.role,
+      },
+      region: row.region ? {
+        id: row.region.id,
+        name: row.region.name,
+        code: row.region.code,
+      } : undefined,
+      subRegion: row.subRegion ? {
+        id: row.subRegion.id,
+        name: row.subRegion.name,
+        code: row.subRegion.code,
+        regionId: row.subRegion.regionId,
+      } : undefined,
+      serviceLine: row.serviceLine ? {
+        id: row.serviceLine.id,
+        name: row.serviceLine.name,
+        solutionId: row.serviceLine.solutionId,
+      } : undefined,
     }));
   }
 
@@ -336,16 +368,56 @@ export class MySQLStorage implements IStorage {
   }
 
   async createObjective(objective: InsertObjective): Promise<Objective> {
-    const insertResult = await db.insert(objectives).values({
-      ...objective,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    
-    const insertId = insertResult.insertId;
-    const newObjective = await this.getObjective(Number(insertId));
-    if (!newObjective) throw new Error('Failed to create objective');
-    return newObjective;
+    try {
+      // Use raw SQL for the insert to ensure we get the ID properly
+      const query = `
+        INSERT INTO objectives (title, description, owner_id, region_id, sub_region_id, start_date, end_date, status, progress)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      
+      const [result] = await connection.execute(query, [
+        objective.title,
+        objective.description,
+        objective.ownerId,
+        objective.regionId || null,
+        objective.subRegionId || null,
+        objective.startDate,
+        objective.endDate,
+        objective.status || 'active',
+        objective.progress || 0
+      ]);
+      
+      const insertId = (result as any).insertId;
+      console.log('Raw SQL insert result:', result);
+      console.log('Insert ID:', insertId);
+      
+      if (!insertId || insertId === 0) {
+        throw new Error('Failed to get insert ID from database');
+      }
+      
+      // Return the objective data directly without calling getObjective to avoid the NaN issue
+      const createdObjective = {
+        id: Number(insertId),
+        title: objective.title,
+        description: objective.description,
+        ownerId: objective.ownerId,
+        regionId: objective.regionId,
+        subRegionId: objective.subRegionId,
+        startDate: objective.startDate,
+        endDate: objective.endDate,
+        status: objective.status || 'active',
+        progress: objective.progress || 0,
+        period: null,
+        serviceLineId: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      return createdObjective as Objective;
+    } catch (error) {
+      console.error('Error creating objective:', error);
+      throw new Error('Failed to create objective: ' + (error as Error).message);
+    }
   }
 
   async updateObjective(id: number, objective: Partial<InsertObjective>): Promise<Objective> {

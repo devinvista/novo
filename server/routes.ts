@@ -300,10 +300,11 @@ export function registerRoutes(app: Express): Server {
       const objective = await storage.createObjective(validation);
       res.status(201).json(objective);
     } catch (error) {
+      console.error('Error creating objective:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
-      res.status(500).json({ message: "Erro ao criar objetivo" });
+      res.status(500).json({ message: "Erro ao criar objetivo", details: error.message });
     }
   });
 
