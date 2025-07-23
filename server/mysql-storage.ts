@@ -641,24 +641,27 @@ export class MySQLStorage implements IStorage {
         ]
       );
       
-      console.log('Raw INSERT result structure:', JSON.stringify(insertResult, null, 2));
-      
-      // MySQL2 retorna [ResultSetHeader, FieldPacket[]]
+      // MySQL2 com pool.execute retorna [ResultSetHeader, FieldPacket[]]
       const resultSetHeader = insertResult[0] as any;
-      console.log('ResultSetHeader:', JSON.stringify(resultSetHeader, null, 2));
+      console.log('INSERT ResultSetHeader:', {
+        fieldCount: resultSetHeader.fieldCount,
+        affectedRows: resultSetHeader.affectedRows, 
+        insertId: resultSetHeader.insertId,
+        info: resultSetHeader.info
+      });
       
-      // insertId está no primeiro elemento do array (ResultSetHeader)
+      // Extrair insertId do ResultSetHeader
       if (!resultSetHeader || typeof resultSetHeader.insertId === 'undefined') {
-        console.error('No insertId in ResultSetHeader. Full result:', insertResult);
-        throw new Error('Failed to get insert ID from MySQL database - no insertId in result');
+        console.error('No insertId in ResultSetHeader');
+        throw new Error('Failed to get insert ID from MySQL database');
       }
       
       const insertId = Number(resultSetHeader.insertId);
-      console.log('Extracted insertId:', insertId, 'Type:', typeof insertId, 'isNaN:', isNaN(insertId));
+      console.log('Final insertId:', insertId, 'Type:', typeof insertId);
       
       if (isNaN(insertId) || insertId <= 0) {
-        console.error('Invalid insertId after extraction:', insertId, 'Original ResultSetHeader:', resultSetHeader);
-        throw new Error(`Invalid insert ID extracted: ${insertId}`);
+        console.error('Invalid insertId:', insertId);
+        throw new Error(`Invalid insert ID: ${insertId}`);
       }
       
       // Usar o insertId válido para buscar o registro criado
