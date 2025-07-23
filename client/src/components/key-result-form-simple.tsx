@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Target, Calendar, TrendingUp, Settings, Users, Briefcase, CheckCircle2 } from "lucide-react";
+import { formatDateBR } from "@/lib/formatters";
 
 interface KeyResultFormProps {
   keyResult?: any;
@@ -32,12 +33,14 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     serviceLineIds: [] as number[],
     serviceId: undefined as number | undefined,
     targetValue: "0",
+    initialValue: "0",
     currentValue: "0",
     unit: "",
     frequency: "monthly",
     startDate: "",
     endDate: "",
     status: "active",
+    progress: 0,
   });
 
   // Reset form when dialog opens/closes or keyResult changes
@@ -52,8 +55,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           strategicIndicatorIds: keyResult.strategicIndicatorIds || [],
           serviceLineIds: keyResult.serviceLineIds || [],
           serviceId: keyResult.serviceId || undefined,
-          initialValue: keyResult.initialValue?.toString() || "0",
           targetValue: keyResult.targetValue?.toString() || "0",
+          initialValue: keyResult.initialValue?.toString() || "0",
           currentValue: keyResult.currentValue?.toString() || "0",
           unit: keyResult.unit || "",
           frequency: keyResult.frequency || "monthly",
@@ -71,8 +74,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           strategicIndicatorIds: [],
           serviceLineIds: [],
           serviceId: undefined,
-          initialValue: "0",
           targetValue: "0",
+          initialValue: "0",
           currentValue: "0",
           unit: "",
           frequency: "monthly",
@@ -203,7 +206,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     }
 
     // Validate Key Results dates are within Objective date range
-    const selectedObjective = objectives?.find(obj => obj.id === parseInt(formData.objectiveId));
+    const selectedObjective = objectives?.find((obj: any) => obj.id === parseInt(formData.objectiveId));
     if (selectedObjective) {
       const objectiveStartDate = new Date(selectedObjective.startDate);
       const objectiveEndDate = new Date(selectedObjective.endDate);
@@ -213,7 +216,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       if (krStartDate < objectiveStartDate || krEndDate > objectiveEndDate) {
         toast({
           title: "Erro de Validação",
-          description: `As datas do resultado-chave devem estar dentro do período do objetivo (${objectiveStartDate.toLocaleDateString('pt-BR')} até ${objectiveEndDate.toLocaleDateString('pt-BR')})`,
+          description: `As datas do resultado-chave devem estar dentro do período do objetivo (${formatDateBR(selectedObjective.startDate)} até ${formatDateBR(selectedObjective.endDate)})`,
           variant: "destructive",
         });
         return;
@@ -227,14 +230,12 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       strategicIndicatorIds: formData.strategicIndicatorIds,
       serviceLineIds: formData.serviceLineIds,
       serviceId: formData.serviceId || null,
-      initialValue: parseFloat(String(formData.initialValue || "0")) || 0,
-      targetValue: parseFloat(String(formData.targetValue || "0")) || 0,
-      currentValue: parseFloat(String(formData.currentValue || "0")) || 0,
+      initialValue: String(formData.initialValue || "0"), // Keep as string for schema
+      targetValue: String(formData.targetValue || "0"), // Keep as string for schema
       unit: formData.unit || null,
       frequency: formData.frequency,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      progress: parseFloat(String(formData.progress || "0")) || 0,
       status: formData.status,
     };
     
@@ -550,10 +551,10 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                   <p className="text-sm text-blue-800">
                     <strong>📅 Período do objetivo:</strong> {
                       (() => {
-                        const selectedObj = objectives.find(obj => obj.id.toString() === formData.objectiveId);
+                        const selectedObj = objectives.find((obj: any) => obj.id.toString() === formData.objectiveId);
                         if (selectedObj) {
-                          const startDate = new Date(selectedObj.startDate).toLocaleDateString('pt-BR');
-                          const endDate = new Date(selectedObj.endDate).toLocaleDateString('pt-BR');
+                          const startDate = formatDateBR(selectedObj.startDate);
+                          const endDate = formatDateBR(selectedObj.endDate);
                           return `${startDate} até ${endDate}`;
                         }
                         return 'Selecione um objetivo';
