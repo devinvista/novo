@@ -656,7 +656,7 @@ export default function UsersPage() {
                           // Clear sub-regions when region changes
                           form.setValue("subRegionIds", []);
                         }}
-                        value="all"
+                        value={(!field.value || field.value.length === 0) ? "all" : "custom"}
                       >
                         <FormControl>
                           <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
@@ -724,7 +724,7 @@ export default function UsersPage() {
                                 field.onChange(newValue);
                               }
                             }}
-                            value="all"
+                            value={(!field.value || field.value.length === 0) ? "all" : "custom"}
                           >
                             <FormControl>
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
@@ -791,7 +791,7 @@ export default function UsersPage() {
                           form.setValue("serviceLineIds", []);
                           form.setValue("serviceIds", []);
                         }}
-                        value="all"
+                        value={(!field.value || field.value.length === 0) ? "all" : "custom"}
                       >
                         <FormControl>
                           <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
@@ -861,7 +861,7 @@ export default function UsersPage() {
                               // Clear services when service line changes
                               form.setValue("serviceIds", []);
                             }}
-                            value="all"
+                            value={(!field.value || field.value.length === 0) ? "all" : "custom"}
                           >
                             <FormControl>
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
@@ -932,7 +932,7 @@ export default function UsersPage() {
                                 field.onChange(newValue);
                               }
                             }}
-                            value="all"
+                            value={(!field.value || field.value.length === 0) ? "all" : "custom"}
                           >
                             <FormControl>
                               <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
@@ -1162,7 +1162,7 @@ export default function UsersPage() {
                       // Clear sub-regions when region changes
                       setSelectedSubRegionsForApproval([]);
                     }}
-                    value="all"
+                    value={selectedRegionsForApproval.length === 0 ? "all" : "custom"}
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
@@ -1215,7 +1215,7 @@ export default function UsersPage() {
                         setSelectedSubRegionsForApproval(newValue);
                       }
                     }}
-                    value="all"
+                    value={selectedSubRegionsForApproval.length === 0 ? "all" : "custom"}
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
@@ -1272,7 +1272,7 @@ export default function UsersPage() {
                       setSelectedServiceLinesForApproval([]);
                       setSelectedServicesForApproval([]);
                     }}
-                    value="all"
+                    value={selectedSolutionsForApproval.length === 0 ? "all" : "custom"}
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
@@ -1327,7 +1327,7 @@ export default function UsersPage() {
                       // Clear services when service line changes
                       setSelectedServicesForApproval([]);
                     }}
-                    value="all"
+                    value={selectedServiceLinesForApproval.length === 0 ? "all" : "custom"}
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
@@ -1382,7 +1382,7 @@ export default function UsersPage() {
                         setSelectedServicesForApproval(newValue);
                       }
                     }}
-                    value="all"
+                    value={selectedServicesForApproval.length === 0 ? "all" : "custom"}
                   >
                     <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
                       <SelectValue placeholder={
