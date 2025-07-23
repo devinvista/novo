@@ -94,7 +94,12 @@ export interface IStorage {
   createActionComment(comment: InsertActionComment): Promise<ActionComment>;
 
   // Dashboard and Analytics
-  getDashboardKPIs(filters?: { quarter?: string; currentUserId?: number }): Promise<{
+  getDashboardKPIs(filters?: { 
+    quarter?: string; 
+    currentUserId?: number;
+    userRegionIds?: number[];
+    userSubRegionIds?: number[];
+  }): Promise<{
     totalObjectives: number;
     totalKeyResults: number;
     totalActions: number;
@@ -106,7 +111,11 @@ export interface IStorage {
   
   // Quarterly data
   getQuarterlyPeriods(): Promise<string[]>;
-  getQuarterlyData(period: string, currentUserId?: number): Promise<{
+  getQuarterlyData(period: string, filters?: {
+    currentUserId?: number;
+    userRegionIds?: number[];
+    userSubRegionIds?: number[];
+  }): Promise<{
     objectives: (Objective & { owner: User; region?: Region; subRegion?: SubRegion })[];
     keyResults: (KeyResult & { objective: Objective })[];
     actions: (Action & { keyResult: KeyResult; responsible?: User })[];
@@ -313,13 +322,15 @@ export class MySQLStorage implements IStorage {
     return db.select().from(strategicIndicators).orderBy(asc(strategicIndicators.name));
   }
 
-  // Objectives methods
+  // Objectives methods with hierarchical access control
   async getObjectives(filters: {
     regionId?: number;
     subRegionId?: number;
     serviceLineId?: number;
     ownerId?: number;
     currentUserId?: number;
+    userRegionIds?: number[];
+    userSubRegionIds?: number[];
   } = {}): Promise<(Objective & { 
     owner: User; 
     region?: Region; 
@@ -345,6 +356,31 @@ export class MySQLStorage implements IStorage {
     if (filters.serviceLineId) conditions.push(eq(objectives.serviceLineId, filters.serviceLineId));
     if (filters.ownerId) conditions.push(eq(objectives.ownerId, filters.ownerId));
 
+    // Apply hierarchical access control
+    if (filters.currentUserId) {
+      const user = await this.getUserById(filters.currentUserId);
+      if (user && user.role !== 'admin') {
+        const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
+        const userSubRegionIds = Array.isArray(user.subRegionIds) ? user.subRegionIds : [];
+        
+        // Hierarchical filtering: if user has specific sub-regions, filter by those
+        // Otherwise, if user has regions, show all sub-regions within those regions
+        if (userSubRegionIds.length > 0) {
+          conditions.push(inArray(objectives.subRegionId, userSubRegionIds));
+        } else if (userRegionIds.length > 0) {
+          conditions.push(inArray(objectives.regionId, userRegionIds));
+        }
+      }
+    }
+
+    // Apply filters from KPI dashboard (multi-regional)
+    if (filters.userRegionIds && filters.userRegionIds.length > 0) {
+      conditions.push(inArray(objectives.regionId, filters.userRegionIds));
+    }
+    if (filters.userSubRegionIds && filters.userSubRegionIds.length > 0) {
+      conditions.push(inArray(objectives.subRegionId, filters.userSubRegionIds));
+    }
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
@@ -367,11 +403,24 @@ export class MySQLStorage implements IStorage {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       owner: {
-        id: row.owner.id,
-        username: row.owner.username,
-        name: row.owner.name,
-        email: row.owner.email,
-        role: row.owner.role,
+        id: row.owner?.id || 0,
+        username: row.owner?.username || '',
+        name: row.owner?.name || '',
+        email: row.owner?.email || '',
+        role: row.owner?.role || 'operacional',
+        gestorId: row.owner?.gestorId || null,
+        regionIds: row.owner?.regionIds || [],
+        subRegionIds: row.owner?.subRegionIds || [],
+        solutionIds: row.owner?.solutionIds || [],
+        serviceLineIds: row.owner?.serviceLineIds || [],
+        serviceIds: row.owner?.serviceIds || [],
+        password: row.owner?.password || '',
+        active: row.owner?.active || false,
+        createdAt: row.owner?.createdAt || '',
+        updatedAt: row.owner?.updatedAt || '',
+        approved: row.owner?.approved || false,
+        approvedAt: row.owner?.approvedAt || null,
+        approvedBy: row.owner?.approvedBy || null,
       },
       region: row.region ? {
         id: row.region.id,
@@ -388,6 +437,7 @@ export class MySQLStorage implements IStorage {
         id: row.serviceLine.id,
         name: row.serviceLine.name,
         solutionId: row.serviceLine.solutionId,
+        description: row.serviceLine.description,
       } : undefined,
     }));
   }

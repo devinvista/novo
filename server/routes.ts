@@ -38,7 +38,7 @@ export function registerRoutes(app: Express): Server {
       
       // Aplicar filtro de soluções para usuários não-admin
       if (user && user.role !== 'admin') {
-        const userSolutionIds = user.solutionIds || [];
+        const userSolutionIds = Array.isArray(user.solutionIds) ? user.solutionIds : [];
         if (userSolutionIds.length > 0) {
           // Filtrar apenas as soluções que o usuário tem acesso
           solutions = solutions.filter(solution => userSolutionIds.includes(solution.id));
@@ -55,15 +55,18 @@ export function registerRoutes(app: Express): Server {
     try {
       const user = req.user;
       let regions = await storage.getRegions();
-      console.log(`Found ${regions.length} regions for user ${user.username} (role: ${user.role})`);
       
-      // Aplicar filtro regional para usuários não-admin
-      if (user && user.role !== 'admin') {
-        const userRegionIds = user.regionIds || [];
+      if (user) {
+        console.log(`Found ${regions.length} regions for user ${user.username} (role: ${user.role})`);
+        
+        // Aplicar filtro regional para usuários não-admin
+        if (user.role !== 'admin') {
+        const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
         if (userRegionIds.length > 0) {
           // Filtrar apenas as regiões que o usuário tem acesso
           regions = regions.filter(region => userRegionIds.includes(region.id));
           console.log(`Filtered to ${regions.length} regions for non-admin user`);
+        }
         }
       }
       
@@ -80,16 +83,16 @@ export function registerRoutes(app: Express): Server {
       const regionId = req.query.regionId ? parseInt(req.query.regionId as string) : undefined;
       let subRegions = await storage.getSubRegions(regionId);
       
-      // Aplicar filtro regional para usuários não-admin
+      // Aplicar filtro hierárquico para usuários não-admin
       if (user && user.role !== 'admin') {
-        const userSubRegionIds = user.subRegionIds || [];
-        const userRegionIds = user.regionIds || [];
+        const userSubRegionIds = Array.isArray(user.subRegionIds) ? user.subRegionIds : [];
+        const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
         
+        // Controle hierárquico: se tem sub-regiões específicas, mostrar apenas essas
+        // Se tem apenas regiões, mostrar todas as sub-regiões dessas regiões
         if (userSubRegionIds.length > 0) {
-          // Filtrar apenas as sub-regiões que o usuário tem acesso
           subRegions = subRegions.filter(subRegion => userSubRegionIds.includes(subRegion.id));
         } else if (userRegionIds.length > 0) {
-          // Se usuário não tem sub-regiões específicas, filtrar por região
           subRegions = subRegions.filter(subRegion => userRegionIds.includes(subRegion.regionId));
         }
       }
@@ -106,16 +109,16 @@ export function registerRoutes(app: Express): Server {
       const solutionId = req.query.solutionId ? parseInt(req.query.solutionId as string) : undefined;
       let serviceLines = await storage.getServiceLines(solutionId);
       
-      // Aplicar filtro de linhas de serviço para usuários não-admin
+      // Aplicar filtro hierárquico de linhas de serviço para usuários não-admin
       if (user && user.role !== 'admin') {
-        const userServiceLineIds = user.serviceLineIds || [];
-        const userSolutionIds = user.solutionIds || [];
+        const userServiceLineIds = Array.isArray(user.serviceLineIds) ? user.serviceLineIds : [];
+        const userSolutionIds = Array.isArray(user.solutionIds) ? user.solutionIds : [];
         
+        // Controle hierárquico: se tem linhas específicas, mostrar apenas essas
+        // Se tem apenas soluções, mostrar todas as linhas dessas soluções
         if (userServiceLineIds.length > 0) {
-          // Filtrar apenas as linhas de serviço que o usuário tem acesso
           serviceLines = serviceLines.filter(serviceLine => userServiceLineIds.includes(serviceLine.id));
         } else if (userSolutionIds.length > 0) {
-          // Se usuário não tem linhas específicas, filtrar por solução
           serviceLines = serviceLines.filter(serviceLine => userSolutionIds.includes(serviceLine.solutionId));
         }
       }
@@ -132,16 +135,16 @@ export function registerRoutes(app: Express): Server {
       const serviceLineId = req.query.serviceLineId ? parseInt(req.query.serviceLineId as string) : undefined;
       let services = await storage.getServices(serviceLineId);
       
-      // Aplicar filtro de serviços para usuários não-admin
+      // Aplicar filtro hierárquico de serviços para usuários não-admin
       if (user && user.role !== 'admin') {
-        const userServiceIds = user.serviceIds || [];
-        const userServiceLineIds = user.serviceLineIds || [];
+        const userServiceIds = Array.isArray(user.serviceIds) ? user.serviceIds : [];
+        const userServiceLineIds = Array.isArray(user.serviceLineIds) ? user.serviceLineIds : [];
         
+        // Controle hierárquico: se tem serviços específicos, mostrar apenas esses
+        // Se tem apenas linhas de serviço, mostrar todos os serviços dessas linhas
         if (userServiceIds.length > 0) {
-          // Filtrar apenas os serviços que o usuário tem acesso
           services = services.filter(service => userServiceIds.includes(service.id));
         } else if (userServiceLineIds.length > 0) {
-          // Se usuário não tem serviços específicos, filtrar por linha de serviço
           services = services.filter(service => userServiceLineIds.includes(service.serviceLineId));
         }
       }
