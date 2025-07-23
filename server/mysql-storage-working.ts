@@ -461,25 +461,48 @@ export class MySQLStorage implements IStorage {
   }
 
   async getKeyResult(id: number, currentUserId?: number): Promise<KeyResult | undefined> {
-    const result = await db.select().from(keyResults).where(eq(keyResults.id, id)).limit(1);
-    return result[0];
+    if (!id || isNaN(id)) {
+      console.error('Invalid ID provided to getKeyResult:', id);
+      return undefined;
+    }
+    
+    try {
+      const result = await db.select().from(keyResults).where(eq(keyResults.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error in getKeyResult for ID', id, ':', error);
+      return undefined;
+    }
   }
 
   async createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult> {
-    const insertResult = await db.insert(keyResults).values({
-      ...keyResult,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    
-    const insertId = insertResult.insertId;
-    const newKeyResult = await this.getKeyResult(Number(insertId));
-    if (!newKeyResult) throw new Error('Failed to create key result');
-    
-    // Generate checkpoints automatically
-    await this.generateCheckpoints(Number(insertId));
-    
-    return newKeyResult;
+    try {
+      const insertResult = await db.insert(keyResults).values({
+        ...keyResult,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      console.log('Insert result for key result:', insertResult);
+      const insertId = insertResult.insertId;
+      console.log('Insert ID:', insertId, 'Type:', typeof insertId);
+      
+      if (!insertId || insertId === 0 || isNaN(Number(insertId))) {
+        throw new Error(`Invalid insert ID: ${insertId}. Expected a valid number.`);
+      }
+      
+      const keyResultId = Number(insertId);
+      const newKeyResult = await this.getKeyResult(keyResultId);
+      if (!newKeyResult) throw new Error('Failed to retrieve created key result');
+      
+      // Generate checkpoints automatically
+      await this.generateCheckpoints(keyResultId);
+      
+      return newKeyResult;
+    } catch (error) {
+      console.error('Error in createKeyResult:', error);
+      throw new Error(`Failed to create key result: ${(error as Error).message}`);
+    }
   }
 
   async updateKeyResult(id: number, keyResult: Partial<InsertKeyResult>): Promise<KeyResult> {
@@ -619,70 +642,79 @@ export class MySQLStorage implements IStorage {
   }
 
   async generateCheckpoints(keyResultId: number): Promise<Checkpoint[]> {
-    // Get the key result details
-    const keyResult = await this.getKeyResult(keyResultId);
-    if (!keyResult) throw new Error('Key result not found');
-
-    // Delete existing checkpoints
-    await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
-
-    // Generate new checkpoints based on frequency
-    const checkpointsToCreate = [];
-    const startDate = new Date(keyResult.startDate);
-    const endDate = new Date(keyResult.endDate);
-    const frequency = keyResult.frequency;
+    if (!keyResultId || isNaN(keyResultId)) {
+      throw new Error(`Invalid keyResultId: ${keyResultId}`);
+    }
     
-    let currentDate = new Date(startDate);
-    let checkpointNumber = 1;
-    
-    while (currentDate <= endDate) {
-      let nextDate: Date;
+    try {
+      // Get the key result details
+      const keyResult = await this.getKeyResult(keyResultId);
+      if (!keyResult) throw new Error('Key result not found');
+
+      // Delete existing checkpoints
+      await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
+
+      // Generate new checkpoints based on frequency
+      const checkpointsToCreate = [];
+      const startDate = new Date(keyResult.startDate);
+      const endDate = new Date(keyResult.endDate);
+      const frequency = keyResult.frequency;
       
-      switch (frequency) {
-        case 'weekly':
-          nextDate = new Date(currentDate);
-          nextDate.setDate(currentDate.getDate() + 7);
-          break;
-        case 'monthly':
-          nextDate = new Date(currentDate);
-          nextDate.setMonth(currentDate.getMonth() + 1);
-          break;
-        case 'quarterly':
-          nextDate = new Date(currentDate);
-          nextDate.setMonth(currentDate.getMonth() + 3);
-          break;
-        default:
-          nextDate = new Date(endDate);
+      let currentDate = new Date(startDate);
+      let checkpointNumber = 1;
+      
+      while (currentDate <= endDate) {
+        let nextDate: Date;
+        
+        switch (frequency) {
+          case 'weekly':
+            nextDate = new Date(currentDate);
+            nextDate.setDate(currentDate.getDate() + 7);
+            break;
+          case 'monthly':
+            nextDate = new Date(currentDate);
+            nextDate.setMonth(currentDate.getMonth() + 1);
+            break;
+          case 'quarterly':
+            nextDate = new Date(currentDate);
+            nextDate.setMonth(currentDate.getMonth() + 3);
+            break;
+          default:
+            nextDate = new Date(endDate);
+        }
+        
+        if (nextDate > endDate) nextDate = endDate;
+        
+        const targetValue = Number(keyResult.targetValue) / this.getFrequencyCount(frequency, startDate, endDate) * checkpointNumber;
+        
+        checkpointsToCreate.push({
+          keyResultId,
+          title: `Checkpoint ${checkpointNumber}`,
+          targetValue: targetValue.toString(),
+          actualValue: "0",
+          status: "pending" as const,
+          dueDate: nextDate.toISOString().split('T')[0],
+        });
+        
+        currentDate = new Date(nextDate);
+        currentDate.setDate(currentDate.getDate() + 1);
+        checkpointNumber++;
+        
+        if (nextDate >= endDate) break;
       }
-      
-      if (nextDate > endDate) nextDate = endDate;
-      
-      const targetValue = Number(keyResult.targetValue) / this.getFrequencyCount(frequency, startDate, endDate) * checkpointNumber;
-      
-      checkpointsToCreate.push({
-        keyResultId,
-        title: `Checkpoint ${checkpointNumber}`,
-        targetValue: targetValue.toString(),
-        actualValue: "0",
-        status: "pending" as const,
-        dueDate: nextDate.toISOString().split('T')[0],
-      });
-      
-      currentDate = new Date(nextDate);
-      currentDate.setDate(currentDate.getDate() + 1);
-      checkpointNumber++;
-      
-      if (nextDate >= endDate) break;
-    }
 
-    // Insert all checkpoints
-    const createdCheckpoints: Checkpoint[] = [];
-    for (const checkpoint of checkpointsToCreate) {
-      const created = await this.createCheckpoint(checkpoint);
-      createdCheckpoints.push(created);
-    }
+      // Insert all checkpoints
+      const createdCheckpoints: Checkpoint[] = [];
+      for (const checkpoint of checkpointsToCreate) {
+        const created = await this.createCheckpoint(checkpoint);
+        createdCheckpoints.push(created);
+      }
 
-    return createdCheckpoints;
+      return createdCheckpoints;
+    } catch (error) {
+      console.error('Error in generateCheckpoints for keyResultId', keyResultId, ':', error);
+      throw new Error(`Failed to generate checkpoints: ${(error as Error).message}`);
+    }
   }
 
   private getFrequencyCount(frequency: string, startDate: Date, endDate: Date): number {
