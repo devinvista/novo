@@ -604,7 +604,24 @@ export class MySQLStorage implements IStorage {
         processedInitial: currentValue
       });
       
-      const [result] = await pool.execute(
+      console.log('About to execute INSERT with values:', [
+        keyResult.objectiveId, 
+        keyResult.title, 
+        keyResult.description, 
+        isNaN(targetValue) ? 0 : targetValue,
+        isNaN(currentValue) ? 0 : currentValue, 
+        keyResult.unit || null, 
+        JSON.stringify(keyResult.strategicIndicatorIds || []), 
+        JSON.stringify(keyResult.serviceLineIds || []), 
+        keyResult.serviceId || null, 
+        keyResult.startDate, 
+        keyResult.endDate, 
+        keyResult.frequency, 
+        keyResult.status || 'active', 
+        keyResult.progress || '0'
+      ]);
+      
+      const insertResult = await pool.execute(
         'INSERT INTO key_results (objective_id, title, description, target_value, current_value, unit, strategicIndicatorIds, serviceLineIds, service_id, start_date, end_date, frequency, status, progress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           keyResult.objectiveId, 
@@ -624,36 +641,40 @@ export class MySQLStorage implements IStorage {
         ]
       );
       
-      const insertResult = result as any;
-      let insertId: number;
+      console.log('Raw INSERT result structure:', JSON.stringify(insertResult, null, 2));
       
-      // MySQL2 retorna insertId diretamente
-      if (insertResult.insertId !== undefined) {
-        insertId = parseInt(insertResult.insertId.toString());
-      } else {
-        console.error('No insertId in result:', insertResult);
-        throw new Error('Failed to get insert ID from database');
+      // MySQL2 retorna [ResultSetHeader, FieldPacket[]]
+      const resultSetHeader = insertResult[0] as any;
+      console.log('ResultSetHeader:', JSON.stringify(resultSetHeader, null, 2));
+      
+      // insertId está no primeiro elemento do array (ResultSetHeader)
+      if (!resultSetHeader || typeof resultSetHeader.insertId === 'undefined') {
+        console.error('No insertId in ResultSetHeader. Full result:', insertResult);
+        throw new Error('Failed to get insert ID from MySQL database - no insertId in result');
       }
       
-      console.log('Insert ID extracted:', insertId, 'Type:', typeof insertId);
+      const insertId = Number(resultSetHeader.insertId);
+      console.log('Extracted insertId:', insertId, 'Type:', typeof insertId, 'isNaN:', isNaN(insertId));
       
-      // Verificar se é um número válido
       if (isNaN(insertId) || insertId <= 0) {
-        console.error('Invalid insertId:', insertId, 'Original result:', insertResult);
-        throw new Error(`Invalid insert ID: ${insertId}`);
+        console.error('Invalid insertId after extraction:', insertId, 'Original ResultSetHeader:', resultSetHeader);
+        throw new Error(`Invalid insert ID extracted: ${insertId}`);
       }
       
-      // Buscar o key result criado diretamente com ID válido
+      // Usar o insertId válido para buscar o registro criado
+      console.log('About to SELECT with insertId:', insertId);
       const [rows] = await pool.execute(
         'SELECT * FROM key_results WHERE id = ?', 
         [insertId]
       );
       
+      console.log('SELECT result rows:', rows);
       const newKeyResult = (rows as any[])[0];
       if (!newKeyResult) {
-        console.error('Failed to retrieve created key result with ID:', validId);
-        throw new Error('Failed to create key result');
+        console.error('Failed to retrieve created key result with ID:', insertId);
+        throw new Error('Failed to create key result - record not found after insert');
       }
+      console.log('Successfully created and retrieved key result:', newKeyResult);
       return newKeyResult;
     } catch (error) {
       console.error('Error creating key result:', error);
