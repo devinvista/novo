@@ -132,6 +132,13 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
+- July 23, 2025. **DATABASE CLEANUP COMPLETED + REGION SELECTION UI FIX**
+  - **DATABASE CLEANUP**: Successfully cleaned all user data while preserving admin account
+    - Deleted all objectives, key results, actions, checkpoints, and action comments
+    - Deleted all users except admin user (username: admin)
+    - Deleted activities table records that were causing foreign key constraint errors
+    - Reference data maintained: regions, sub-regions, solutions, service lines, services, strategic indicators
+    - Database ready for fresh data entry with clean state
 - July 23, 2025. **REPLIT AGENT TO REPLIT MIGRATION COMPLETED + REGION SELECTION UI FIX**
   - **MIGRATION COMPLETED SUCCESSFULLY**: Final migration from Replit Agent to standard Replit environment completed
     - All packages installed and dependencies resolved correctly
