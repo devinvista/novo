@@ -101,7 +101,7 @@ export const checkpoints = mysqlTable("checkpoints", {
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
-// Action Comments table (camelCase)
+// Action Comments table (camelCase matching MySQL structure)
 export const actionComments = mysqlTable("action_comments", {
   id: int("id").primaryKey().autoincrement(),
   actionId: int("actionId").notNull().references(() => actions.id),

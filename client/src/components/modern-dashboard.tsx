@@ -82,8 +82,13 @@ export default function ModernDashboard() {
         ? `/api/quarters/${selectedQuarter}/data` 
         : "/api/objectives";
       return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        const results = selectedQuarter && selectedQuarter !== 'all' ? data.objectives : data;
-        return Array.isArray(results) ? results : [];
+        if (selectedQuarter && selectedQuarter !== 'all') {
+          // Para trimestres específicos, usamos os dados do endpoint de quarterly data
+          return data.objectives || [];
+        } else {
+          // Para 'all' ou sem filtro, usamos dados diretos dos objetivos
+          return Array.isArray(data) ? data : [];
+        }
       }).catch(() => []);
     }
   });
@@ -95,9 +100,12 @@ export default function ModernDashboard() {
         ? `/api/quarters/${selectedQuarter}/data` 
         : "/api/key-results";
       return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        const results = selectedQuarter && selectedQuarter !== 'all' ? data.keyResults : data;
-        return Array.isArray(results) ? results : [];
-      });
+        if (selectedQuarter && selectedQuarter !== 'all') {
+          return data.keyResults || [];
+        } else {
+          return Array.isArray(data) ? data : [];
+        }
+      }).catch(() => []);
     }
   });
 
@@ -108,9 +116,12 @@ export default function ModernDashboard() {
         ? `/api/quarters/${selectedQuarter}/data` 
         : "/api/actions";
       return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        const results = selectedQuarter && selectedQuarter !== 'all' ? data.actions : data;
-        return Array.isArray(results) ? results : [];
-      });
+        if (selectedQuarter && selectedQuarter !== 'all') {
+          return data.actions || [];
+        } else {
+          return Array.isArray(data) ? data : [];
+        }
+      }).catch(() => []);
     }
   });
 

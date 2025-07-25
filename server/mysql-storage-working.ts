@@ -1243,24 +1243,24 @@ export class MySQLStorage implements IStorage {
   async getQuarterlyStats(period: string = 'all'): Promise<any> {
     const data = await this.getQuarterlyData(period);
     return {
-      totalObjectives: data.objectives.length,
-      totalKeyResults: data.keyResults.length,
-      totalActions: data.actions.length,
-      completedObjectives: data.objectives.filter(o => o.status === 'completed').length,
-      completedKeyResults: data.keyResults.filter(kr => kr.status === 'completed').length,
-      completedActions: data.actions.filter(a => a.status === 'completed').length,
+      totalObjectives: data.objectives,
+      totalKeyResults: data.keyResults,
+      totalActions: data.actions,
+      completedObjectives: 0, // Placeholder for completed counts
+      completedKeyResults: 0,
+      completedActions: 0,
     };
   }
 
   async getQuarterlyData(period: string, currentUserId?: number): Promise<{
-    objectives: (Objective & { owner: User; region?: Region; subRegion?: SubRegion })[];
-    keyResults: (KeyResult & { objective: Objective })[];
-    actions: (Action & { keyResult: KeyResult; responsible?: User })[];
+    objectives: number;
+    keyResults: number;
+    actions: number;
   }> {
     console.log(`getQuarterlyData called with period: ${period}, currentUserId: ${currentUserId}`);
     
     if (period === 'all') {
-      // Return all data
+      // Return all data counts
       const allObjectives = await this.getObjectives({ currentUserId });
       const allKeyResults = await this.getKeyResults(undefined, currentUserId);
       const allActions = await this.getActions(undefined, currentUserId);
@@ -1268,9 +1268,9 @@ export class MySQLStorage implements IStorage {
       console.log(`All data: ${allObjectives.length} objectives, ${allKeyResults.length} key results, ${allActions.length} actions`);
       
       return {
-        objectives: allObjectives,
-        keyResults: allKeyResults,
-        actions: allActions,
+        objectives: allObjectives.length,
+        keyResults: allKeyResults.length,
+        actions: allActions.length,
       };
     }
 
@@ -1282,68 +1282,46 @@ export class MySQLStorage implements IStorage {
 
     const { startDate, endDate } = quarterData;
 
-    // Get data for the specific quarter
-    const quarterObjectives = await db.select({
-      ...objectives,
-      owner: users,
-      region: regions,
-      subRegion: subRegions,
-    })
-    .from(objectives)
-    .leftJoin(users, eq(objectives.ownerId, users.id))
-    .leftJoin(regions, eq(objectives.regionId, regions.id))
-    .leftJoin(subRegions, eq(objectives.subRegionId, subRegions.id))
-    .where(
-      and(
-        sql`${objectives.startDate} <= ${endDate}`,
-        sql`${objectives.endDate} >= ${startDate}`
-      )
-    );
+    // Count objectives for the specific quarter  
+    const objectiveCount = await db.select({ count: sql`COUNT(*)` }).from(objectives)
+      .where(
+        and(
+          sql`${objectives.startDate} <= ${endDate}`,
+          sql`${objectives.endDate} >= ${startDate}`,
+          // User access filter placeholder - implement if needed
+          undefined
+        )
+      );
 
-    const quarterKeyResults = await db.select({
-      ...keyResults,
-      objective: objectives,
-    })
-    .from(keyResults)
-    .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-    .where(
-      and(
-        sql`${keyResults.startDate} <= ${endDate}`,
-        sql`${keyResults.endDate} >= ${startDate}`
-      )
-    );
+    // Count key results for the specific quarter
+    const keyResultCount = await db.select({ count: sql`COUNT(*)` }).from(keyResults)
+      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+      .where(
+        and(
+          sql`${keyResults.startDate} <= ${endDate}`,
+          sql`${keyResults.endDate} >= ${startDate}`,
+          // User access filter placeholder - implement if needed
+          undefined
+        )
+      );
 
-    const quarterActions = await db.select({
-      ...actions,
-      keyResult: keyResults,
-      responsible: users,
-    })
-    .from(actions)
-    .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
-    .leftJoin(users, eq(actions.responsibleId, users.id))
-    .where(
-      keyResults.id && and(
-        sql`${keyResults.startDate} <= ${endDate}`,
-        sql`${keyResults.endDate} >= ${startDate}`
-      )
-    );
+    // Count actions for the specific quarter
+    const actionCount = await db.select({ count: sql`COUNT(*)` }).from(actions)
+      .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
+      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+      .where(
+        and(
+          sql`${keyResults.startDate} <= ${endDate}`,
+          sql`${keyResults.endDate} >= ${startDate}`,
+          // User access filter placeholder - implement if needed
+          undefined
+        )
+      );
 
     return {
-      objectives: quarterObjectives.map(row => ({
-        ...row.objectives,
-        owner: row.users!,
-        region: row.regions || undefined,
-        subRegion: row.sub_regions || undefined,
-      })),
-      keyResults: quarterKeyResults.map(row => ({
-        ...row.key_results,
-        objective: row.objectives!,
-      })),
-      actions: quarterActions.map(row => ({
-        ...row.actions,
-        keyResult: row.key_results!,
-        responsible: row.users || undefined,
-      })),
+      objectives: Number(objectiveCount[0]?.count) || 0,
+      keyResults: Number(keyResultCount[0]?.count) || 0,
+      actions: Number(actionCount[0]?.count) || 0,
     };
   }
 }

@@ -71,7 +71,7 @@ export default function QuarterlyFilter({ variant = "header", className = "" }: 
                   const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
                   return `${quarterNames[parseInt(q) - 1]} ${year}`;
                 })()
-              : (quarter?.name || quarterValue);
+              : (quarter?.name || quarterValue || quarter);
             
             return (
               <SelectItem key={quarterValue} value={quarterValue}>
