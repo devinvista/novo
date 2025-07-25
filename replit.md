@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a full-stack OKR (Objectives and Key Results) management system built with React, Express.js, and PostgreSQL. The application provides comprehensive functionality for managing organizational objectives, key results, actions, and checkpoints across different regions and service lines. It features role-based access control, real-time progress tracking, and comprehensive reporting capabilities.
+This is a full-stack OKR (Objectives and Key Results) management system built with React, Express.js, and MySQL. The application provides comprehensive functionality for managing organizational objectives, key results, actions, and checkpoints across different regions and service lines. It features role-based access control, real-time progress tracking, and comprehensive reporting capabilities.
 
 ## System Architecture
 
@@ -19,7 +19,7 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 - **Runtime**: Node.js with Express.js framework
 - **Language**: TypeScript with ES modules
 - **Authentication**: Passport.js with local strategy and session-based auth
-- **Session Storage**: PostgreSQL sessions via connect-pg-simple
+- **Session Storage**: MySQL
 - **Password Security**: Node.js crypto module with scrypt hashing
 
 ### Database Architecture
