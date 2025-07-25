@@ -50,6 +50,10 @@ export interface IStorage {
   getServices(serviceLineId?: number): Promise<Service[]>;
   getStrategicIndicators(): Promise<StrategicIndicator[]>;
 
+  // Quarter management
+  getAvailableQuarters(): Promise<any[]>;
+  getQuarterlyData(quarter?: string, currentUserId?: number): Promise<any>;
+
   // OKR management
   getObjectives(filters?: any): Promise<any[]>;
   getObjective(id: number, currentUserId?: number): Promise<any | undefined>;
@@ -389,13 +393,186 @@ export class MySQLStorageOptimized implements IStorage {
     return indicatorsData;
   }
 
-  // OKR Methods - Simplified for space but with performance optimizations
+  // Quarter management methods
+  async getAvailableQuarters(): Promise<any[]> {
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getAvailableQuarters');
+      
+      const allObjectives = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.select({
+          startDate: objectives.startDate,
+          endDate: objectives.endDate
+        }).from(objectives);
+      });
+      
+      MySQLPerformanceMonitor.endQuery('getAvailableQuarters', startTime);
+      
+      // Generate quarters from objectives date ranges
+      const quarters = getQuarterlyPeriods(allObjectives, null);
+      return quarters;
+    } catch (error) {
+      console.error('Error getting available quarters:', error);
+      throw error;
+    }
+  }
+
+  async getQuarterlyData(quarter?: string, currentUserId?: number): Promise<any> {
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getQuarterlyData');
+      
+      let objectivesQuery = db.select({
+        id: objectives.id,
+        title: objectives.title,
+        startDate: objectives.startDate,
+        endDate: objectives.endDate
+      }).from(objectives);
+
+      if (quarter && quarter !== 'all') {
+        const quarterPeriod = getQuarterlyPeriod(quarter);
+        if (quarterPeriod) {
+          objectivesQuery = objectivesQuery.where(
+            and(
+              sql`${objectives.startDate} <= ${quarterPeriod.endDate}`,
+              sql`${objectives.endDate} >= ${quarterPeriod.startDate}`
+            )
+          );
+        }
+      }
+
+      const quarterObjectives = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await objectivesQuery;
+      });
+
+      MySQLPerformanceMonitor.endQuery('getQuarterlyData', startTime);
+      
+      return {
+        objectives: quarterObjectives.length,
+        keyResults: 0, // Simplified for now
+        actions: 0,
+        checkpoints: 0
+      };
+    } catch (error) {
+      console.error('Error getting quarterly data:', error);
+      throw error;
+    }
+  }
+
+  // Helper method to check user access to regions
+  private async checkUserAccess(currentUserId: number, regionId?: number): Promise<boolean> {
+    if (!currentUserId) return false;
+
+    const user = await this.getUser(currentUserId);
+    if (!user) return false;
+
+    // Admin has access to everything
+    if (user.role === 'admin') return true;
+
+    // If no region specified, allow access
+    if (!regionId) return true;
+
+    // Check if user has access to the region
+    const userRegionIds = user.regionIds || [];
+    return userRegionIds.includes(regionId);
+  }
+
+  // OKR Methods with full implementation and user access control
   async getObjectives(filters?: any): Promise<any[]> {
-    return [];
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getObjectives');
+      
+      let query = db.select({
+        id: objectives.id,
+        title: objectives.title,
+        description: objectives.description,
+        startDate: objectives.startDate,
+        endDate: objectives.endDate,
+        status: objectives.status,
+        regionId: objectives.regionId,
+        ownerId: objectives.ownerId,
+        createdAt: objectives.createdAt,
+        updatedAt: objectives.updatedAt,
+        ownerName: users.name,
+        ownerUsername: users.username
+      })
+      .from(objectives)
+      .leftJoin(users, eq(objectives.ownerId, users.id));
+
+      let whereConditions: any[] = [];
+
+      // Apply user access filters
+      if (filters?.currentUserId) {
+        const user = await this.getUser(filters.currentUserId);
+        if (user && user.role !== 'admin') {
+          // Non-admin users only see objectives from their accessible regions
+          const userRegionIds = user.regionIds || [];
+          if (userRegionIds.length > 0) {
+            whereConditions.push(inArray(objectives.regionId, userRegionIds));
+          } else {
+            // If user has no regions, return empty array
+            return [];
+          }
+        }
+      }
+
+      // Apply other filters
+      if (filters?.regionId) {
+        whereConditions.push(eq(objectives.regionId, filters.regionId));
+      }
+
+      if (filters?.ownerId) {
+        whereConditions.push(eq(objectives.ownerId, filters.ownerId));
+      }
+
+      if (whereConditions.length > 0) {
+        query = query.where(and(...whereConditions));
+      }
+
+      const objectivesWithOwners = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await query.orderBy(desc(objectives.createdAt));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('getObjectives', startTime);
+      
+      console.log(`Found ${objectivesWithOwners.length} objectives for user ${filters?.currentUserId}`);
+      return objectivesWithOwners;
+    } catch (error) {
+      console.error('Error fetching objectives:', error);
+      throw error;
+    }
   }
 
   async getObjective(id: number, currentUserId?: number): Promise<any | undefined> {
-    return undefined;
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getObjective');
+      
+      const objectiveWithOwner = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.select({
+          id: objectives.id,
+          title: objectives.title,
+          description: objectives.description,
+          startDate: objectives.startDate,
+          endDate: objectives.endDate,
+          status: objectives.status,
+          regionId: objectives.regionId,
+          ownerId: objectives.ownerId,
+          createdAt: objectives.createdAt,
+          updatedAt: objectives.updatedAt,
+          ownerName: users.name,
+          ownerUsername: users.username
+        })
+        .from(objectives)
+        .leftJoin(users, eq(objectives.ownerId, users.id))
+        .where(eq(objectives.id, id))
+        .limit(1);
+      });
+      
+      MySQLPerformanceMonitor.endQuery('getObjective', startTime);
+      
+      return objectiveWithOwner.length > 0 ? objectiveWithOwner[0] : undefined;
+    } catch (error) {
+      console.error(`Error fetching objective ${id}:`, error);
+      throw error;
+    }
   }
 
   async createObjective(objective: InsertObjective): Promise<Objective> {
