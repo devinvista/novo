@@ -53,6 +53,8 @@ export interface IStorage {
   // Quarter management
   getAvailableQuarters(): Promise<any[]>;
   getQuarterlyData(quarter?: string, currentUserId?: number): Promise<any>;
+  getQuarterlyStats(): Promise<any[]>;
+  getDashboardKPIs(currentUserId?: number): Promise<any>;
 
   // OKR management
   getObjectives(filters?: any): Promise<any[]>;
@@ -453,6 +455,68 @@ export class MySQLStorageOptimized implements IStorage {
       };
     } catch (error) {
       console.error('Error getting quarterly data:', error);
+      throw error;
+    }
+  }
+
+  async getQuarterlyStats(): Promise<any[]> {
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getQuarterlyStats');
+      
+      const allObjectives = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.select({
+          startDate: objectives.startDate,
+          endDate: objectives.endDate
+        }).from(objectives);
+      });
+      
+      MySQLPerformanceMonitor.endQuery('getQuarterlyStats', startTime);
+      
+      // Generate quarterly stats
+      const quarters = getQuarterlyPeriods(allObjectives, null);
+      const stats = [];
+      
+      for (const quarter of quarters) {
+        const quarterData = await this.getQuarterlyData(quarter.id);
+        stats.push({
+          period: quarter.id,
+          name: quarter.name,
+          ...quarterData
+        });
+      }
+      
+      return stats;
+    } catch (error) {
+      console.error('Error getting quarterly stats:', error);
+      throw error;
+    }
+  }
+
+  async getDashboardKPIs(currentUserId?: number): Promise<any> {
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getDashboardKPIs');
+      
+      // Get basic counts with user access control
+      const objectivesResult = await this.getObjectives({ currentUserId });
+      const objectivesCount = objectivesResult.length;
+      
+      // For now, return basic KPIs - can be expanded later
+      const kpis = {
+        objectives: objectivesCount,
+        keyResults: 0, // Simplified for now
+        actions: 0,
+        checkpoints: 0,
+        completionRate: 0,
+        onTrackObjectives: 0,
+        delayedObjectives: 0,
+        activeUsers: 1
+      };
+      
+      MySQLPerformanceMonitor.endQuery('getDashboardKPIs', startTime);
+      
+      return kpis;
+    } catch (error) {
+      console.error('Error getting dashboard KPIs:', error);
       throw error;
     }
   }

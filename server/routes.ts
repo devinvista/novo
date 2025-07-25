@@ -190,7 +190,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const kpis = await storage.getDashboardKPIs(filters);
+      const kpis = await storage.getDashboardKPIs(currentUser.id);
       res.json(kpis);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar KPIs do dashboard" });
@@ -211,7 +211,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/quarters/stats", requireAuth, async (req: any, res) => {
     try {
       const period = req.query.period as string || 'all';
-      const stats = await storage.getQuarterlyStats(period);
+      const stats = await storage.getQuarterlyStats();
       res.json(stats);
     } catch (error) {
       console.error("Error getting quarterly stats:", error);
