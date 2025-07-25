@@ -410,8 +410,23 @@ export class MySQLStorageOptimized implements IStorage {
       MySQLPerformanceMonitor.endQuery('getAvailableQuarters', startTime);
       
       // Generate quarters from objectives date ranges
+      if (allObjectives.length === 0) {
+        // Return default quarters for current year if no objectives exist
+        return [
+          { id: '2025-Q1', name: 'Q1 2025', startDate: '2025-01-01', endDate: '2025-03-31' },
+          { id: '2025-Q2', name: 'Q2 2025', startDate: '2025-04-01', endDate: '2025-06-30' },
+          { id: '2025-Q3', name: 'Q3 2025', startDate: '2025-07-01', endDate: '2025-09-30' },
+          { id: '2025-Q4', name: 'Q4 2025', startDate: '2025-10-01', endDate: '2025-12-31' }
+        ];
+      }
+      
       const quarters = getQuarterlyPeriods(allObjectives, null);
-      return quarters;
+      return quarters.length > 0 ? quarters : [
+        { id: '2025-Q1', name: 'Q1 2025', startDate: '2025-01-01', endDate: '2025-03-31' },
+        { id: '2025-Q2', name: 'Q2 2025', startDate: '2025-04-01', endDate: '2025-06-30' },
+        { id: '2025-Q3', name: 'Q3 2025', startDate: '2025-07-01', endDate: '2025-09-30' },
+        { id: '2025-Q4', name: 'Q4 2025', startDate: '2025-10-01', endDate: '2025-12-31' }
+      ];
     } catch (error) {
       console.error('Error getting available quarters:', error);
       throw error;
@@ -496,19 +511,30 @@ export class MySQLStorageOptimized implements IStorage {
     try {
       const startTime = MySQLPerformanceMonitor.startQuery('getDashboardKPIs');
       
-      // Get basic counts with user access control
+      // Get comprehensive counts with user access control
       const objectivesResult = await this.getObjectives({ currentUserId });
-      const objectivesCount = objectivesResult.length;
+      const keyResultsResult = await this.getKeyResults({ currentUserId });
+      const actionsResult = await this.getActions({ currentUserId });
       
-      // For now, return basic KPIs - can be expanded later
+      const objectivesCount = objectivesResult.length;
+      const keyResultsCount = keyResultsResult.length;
+      const actionsCount = actionsResult.length;
+      
+      // Calculate completion rates
+      const completedObjectives = objectivesResult.filter(obj => obj.status === 'completed').length;
+      const onTrackObjectives = objectivesResult.filter(obj => obj.status === 'active').length;
+      const delayedObjectives = objectivesResult.filter(obj => obj.status === 'delayed').length;
+      
+      const completionRate = objectivesCount > 0 ? Math.round((completedObjectives / objectivesCount) * 100) : 0;
+      
       const kpis = {
         objectives: objectivesCount,
-        keyResults: 0, // Simplified for now
-        actions: 0,
-        checkpoints: 0,
-        completionRate: 0,
-        onTrackObjectives: 0,
-        delayedObjectives: 0,
+        keyResults: keyResultsCount,
+        actions: actionsCount,
+        checkpoints: 0, // Will implement when checkpoints are needed
+        completionRate,
+        onTrackObjectives,
+        delayedObjectives,
         activeUsers: 1
       };
       
@@ -657,7 +683,66 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async getKeyResults(filters?: any): Promise<any[]> {
-    return [];
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getKeyResults');
+      
+      let query = db.select({
+        id: keyResults.id,
+        title: keyResults.title,
+        description: keyResults.description,
+        targetValue: keyResults.targetValue,
+        currentValue: keyResults.currentValue,
+        unit: keyResults.unit,
+        startDate: keyResults.startDate,
+        endDate: keyResults.endDate,
+        status: keyResults.status,
+        objectiveId: keyResults.objectiveId,
+        strategicIndicatorIds: keyResults.strategicIndicatorIds,
+        serviceLineIds: keyResults.serviceLineIds,
+        createdAt: keyResults.createdAt,
+        updatedAt: keyResults.updatedAt
+      })
+      .from(keyResults);
+
+      let whereConditions: any[] = [];
+
+      // Apply user access filters
+      if (filters?.currentUserId) {
+        const user = await this.getUser(filters.currentUserId);
+        if (user && user.role !== 'admin') {
+          // Get user's accessible objectives first
+          const userObjectives = await this.getObjectives({ currentUserId: filters.currentUserId });
+          const objectiveIds = userObjectives.map(obj => obj.id);
+          if (objectiveIds.length > 0) {
+            whereConditions.push(inArray(keyResults.objectiveId, objectiveIds));
+          } else {
+            return [];
+          }
+        }
+      }
+
+      // Apply other filters
+      if (filters?.objectiveId) {
+        whereConditions.push(eq(keyResults.objectiveId, filters.objectiveId));
+      }
+
+      if (whereConditions.length > 0) {
+        query = query.where(and(...whereConditions));
+      }
+
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await query;
+      });
+
+      MySQLPerformanceMonitor.endQuery('getKeyResults', startTime);
+      console.log(`Fetching key results for objectiveId: ${filters?.objectiveId}`);
+      console.log(`Key results found: ${result.length}`);
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching key results:', error);
+      throw error;
+    }
   }
 
   async getKeyResult(id: number, currentUserId?: number): Promise<any | undefined> {
@@ -682,7 +767,67 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async getActions(filters?: any): Promise<any[]> {
-    return [];
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getActions');
+      
+      let query = db.select({
+        id: actions.id,
+        title: actions.title,
+        description: actions.description,
+        priority: actions.priority,
+        status: actions.status,
+        dueDate: actions.dueDate,
+        keyResultId: actions.keyResultId,
+        responsibleId: actions.responsibleId,
+        createdAt: actions.createdAt,
+        updatedAt: actions.updatedAt,
+        responsibleName: users.name,
+        responsibleUsername: users.username
+      })
+      .from(actions)
+      .leftJoin(users, eq(actions.responsibleId, users.id));
+
+      let whereConditions: any[] = [];
+
+      // Apply user access filters
+      if (filters?.currentUserId) {
+        const user = await this.getUser(filters.currentUserId);
+        if (user && user.role !== 'admin') {
+          // Get user's accessible key results first
+          const userKeyResults = await this.getKeyResults({ currentUserId: filters.currentUserId });
+          const keyResultIds = userKeyResults.map(kr => kr.id);
+          if (keyResultIds.length > 0) {
+            whereConditions.push(inArray(actions.keyResultId, keyResultIds));
+          } else {
+            return [];
+          }
+        }
+      }
+
+      // Apply other filters
+      if (filters?.keyResultId) {
+        whereConditions.push(eq(actions.keyResultId, filters.keyResultId));
+      }
+
+      if (filters?.responsibleId) {
+        whereConditions.push(eq(actions.responsibleId, filters.responsibleId));
+      }
+
+      if (whereConditions.length > 0) {
+        query = query.where(and(...whereConditions));
+      }
+
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await query;
+      });
+
+      MySQLPerformanceMonitor.endQuery('getActions', startTime);
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching actions:', error);
+      throw error;
+    }
   }
 
   async getAction(id: number, currentUserId?: number): Promise<any | undefined> {
