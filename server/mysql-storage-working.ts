@@ -1313,18 +1313,24 @@ export class MySQLStorage implements IStorage {
         // data_inicio_objetivo <= data_fim_trimestre AND data_fim_objetivo >= data_inicio_trimestre
         sql`${objectives.startDate} <= '${endDate}'`,
         sql`${objectives.endDate} >= '${startDate}'`,
-        // Aplicar filtros de acesso do usuário se não for admin
-        currentUserId ? this.getUserAccessCondition(currentUserId, objectives) : undefined
+        // Aplicar filtros de acesso do usuário - só objetivos do usuário atual
+        currentUserId ? eq(objectives.ownerId, currentUserId) : undefined
       )
     );
 
     console.log(`Found ${quarterObjectives.length} objectives in quarter ${period}`);
+    console.log(`SQL Query Debug: startDate=${startDate}, endDate=${endDate}, currentUserId=${currentUserId}`);
     
     // Debug: mostrar todos os objetivos encontrados
     if (quarterObjectives.length > 0) {
       quarterObjectives.forEach(row => {
         console.log(`  Objective: ${row.objectives.title} (${row.objectives.startDate} to ${row.objectives.endDate})`);
       });
+    } else {
+      console.log("  No objectives found - debugging SQL query...");
+      // Test if there are any objectives for this user at all
+      const allUserObjectives = await db.select({ count: sql`COUNT(*)` }).from(objectives).where(eq(objectives.ownerId, currentUserId!));
+      console.log(`  Total objectives for user ${currentUserId}: ${allUserObjectives[0]?.count}`);
     }
 
     // Key Results que pertencem aos objetivos do trimestre (herdam sobreposição)
@@ -1374,7 +1380,7 @@ export class MySQLStorage implements IStorage {
     const result = {
       objectives: quarterObjectives.map(row => ({
         ...row.objectives,
-        owner: this.parseUserJsonFields(row.users!),
+        owner: row.users ? this.parseUserJsonFields(row.users) : undefined,
         region: row.regions || undefined,
         subRegion: row.subRegions || undefined,
       })),
