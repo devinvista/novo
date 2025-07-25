@@ -9,11 +9,11 @@ import {
   type Solution, type Service, type ActionComment, type InsertActionComment
 } from "@shared/mysql-schema-final";
 import { db, connection } from "./mysql-db";
-import { eq, and, desc, sql, asc, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, asc, inArray, or } from "drizzle-orm";
 import session from "express-session";
 // @ts-ignore - memorystore types are outdated
 import MemoryStore from "memorystore";
-import { getQuarterlyPeriods, getQuarterlyPeriod, getCurrentQuarter, formatQuarter } from "./quarterly-periods";
+import { getQuarterlyPeriods } from "./quarterly-periods";
 import { MySQLPerformanceCache, MySQLPerformanceMonitor, MySQLConnectionOptimizer } from './mysql-performance-cache';
 
 // Session store configuration for MySQL
@@ -1243,24 +1243,24 @@ export class MySQLStorage implements IStorage {
   async getQuarterlyStats(period: string = 'all'): Promise<any> {
     const data = await this.getQuarterlyData(period);
     return {
-      totalObjectives: data.objectives,
-      totalKeyResults: data.keyResults,
-      totalActions: data.actions,
-      completedObjectives: 0, // Placeholder for completed counts
-      completedKeyResults: 0,
-      completedActions: 0,
+      totalObjectives: data.objectives.length,
+      totalKeyResults: data.keyResults.length,
+      totalActions: data.actions.length,
+      completedObjectives: data.objectives.filter(o => o.status === 'completed').length,
+      completedKeyResults: data.keyResults.filter(kr => kr.status === 'completed').length,
+      completedActions: data.actions.filter(a => a.status === 'completed').length,
     };
   }
 
   async getQuarterlyData(period: string, currentUserId?: number): Promise<{
-    objectives: number;
-    keyResults: number;
-    actions: number;
+    objectives: (Objective & { owner: User; region?: Region; subRegion?: SubRegion })[];
+    keyResults: (KeyResult & { objective: Objective })[];
+    actions: (Action & { keyResult: KeyResult; responsible?: User })[];
   }> {
     console.log(`getQuarterlyData called with period: ${period}, currentUserId: ${currentUserId}`);
     
     if (period === 'all') {
-      // Return all data counts
+      // Return all data
       const allObjectives = await this.getObjectives({ currentUserId });
       const allKeyResults = await this.getKeyResults(undefined, currentUserId);
       const allActions = await this.getActions(undefined, currentUserId);
@@ -1268,60 +1268,112 @@ export class MySQLStorage implements IStorage {
       console.log(`All data: ${allObjectives.length} objectives, ${allKeyResults.length} key results, ${allActions.length} actions`);
       
       return {
-        objectives: allObjectives.length,
-        keyResults: allKeyResults.length,
-        actions: allActions.length,
+        objectives: allObjectives,
+        keyResults: allKeyResults,
+        actions: allActions,
       };
     }
 
     // Parse quarter period (e.g., "2025-Q1")
-    const quarterData = getQuarterlyPeriod(period);
-    if (!quarterData) {
+    // Converter período trimestral para datas de início e fim
+    const [year, quarter] = period.split('-Q');
+    const quarterNum = parseInt(quarter);
+    const quarterStartMonth = (quarterNum - 1) * 3;
+    const quarterStart = new Date(parseInt(year), quarterStartMonth, 1);
+    const quarterEnd = new Date(parseInt(year), quarterStartMonth + 3, 0);
+    
+    const quarterData = {
+      startDate: quarterStart.toISOString().split('T')[0], // YYYY-MM-DD
+      endDate: quarterEnd.toISOString().split('T')[0]      // YYYY-MM-DD
+    };
+    if (!quarterData.startDate || !quarterData.endDate) {
       throw new Error(`Invalid quarter format: ${period}`);
     }
 
     const { startDate, endDate } = quarterData;
 
-    // Count objectives for the specific quarter  
-    const objectiveCount = await db.select({ count: sql`COUNT(*)` }).from(objectives)
-      .where(
-        and(
-          sql`${objectives.startDate} <= ${endDate}`,
-          sql`${objectives.endDate} >= ${startDate}`,
-          // User access filter placeholder - implement if needed
-          undefined
-        )
-      );
+    // LÓGICA DE SOBREPOSIÇÃO: Buscar objetivos que têm qualquer sobreposição com o trimestre
+    // Se período do objetivo (obj.start_date até obj.end_date) sobrepõe com trimestre (startDate até endDate)
+    // Condição: obj.start_date <= endDate AND obj.end_date >= startDate
+    const quarterObjectives = await db.select({
+      objectives: objectives,
+      users: users,
+      regions: regions,
+      subRegions: subRegions,
+    })
+    .from(objectives)
+    .leftJoin(users, eq(objectives.ownerId, users.id))
+    .leftJoin(regions, eq(objectives.regionId, regions.id))
+    .leftJoin(subRegions, eq(objectives.subRegionId, subRegions.id))
+    .where(
+      and(
+        // Lógica de sobreposição: objetivo sobrepõe com trimestre se:
+        // data_inicio_objetivo <= data_fim_trimestre AND data_fim_objetivo >= data_inicio_trimestre
+        sql`${objectives.startDate} <= ${endDate}`,
+        sql`${objectives.endDate} >= ${startDate}`
+      )
+    );
 
-    // Count key results for the specific quarter
-    const keyResultCount = await db.select({ count: sql`COUNT(*)` }).from(keyResults)
+    // Key Results que pertencem aos objetivos do trimestre (herdam sobreposição)
+    const objectiveIds = quarterObjectives.map(row => row.objectives.id);
+    
+    let quarterKeyResults: any[] = [];
+    if (objectiveIds.length > 0) {
+      quarterKeyResults = await db.select({
+        keyResults: keyResults,
+        objectives: objectives,
+      })
+      .from(keyResults)
       .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
       .where(
-        and(
-          sql`${keyResults.startDate} <= ${endDate}`,
-          sql`${keyResults.endDate} >= ${startDate}`,
-          // User access filter placeholder - implement if needed
-          undefined
+        // Key Results podem ter sua própria sobreposição OU herdar do objetivo
+        or(
+          // Sobreposição direta do Key Result com o trimestre
+          and(
+            sql`${keyResults.startDate} <= ${endDate}`,
+            sql`${keyResults.endDate} >= ${startDate}`
+          ),
+          // OU Key Result pertence a objetivo que sobrepõe com o trimestre
+          inArray(keyResults.objectiveId, objectiveIds)
         )
       );
+    }
 
-    // Count actions for the specific quarter
-    const actionCount = await db.select({ count: sql`COUNT(*)` }).from(actions)
+    // Actions que pertencem aos Key Results do trimestre
+    const keyResultIds = quarterKeyResults.map(row => row.keyResults.id);
+    
+    let quarterActions: any[] = [];
+    if (keyResultIds.length > 0) {
+      quarterActions = await db.select({
+        actions: actions,
+        keyResults: keyResults,
+        users: users,
+      })
+      .from(actions)
       .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
-      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+      .leftJoin(users, eq(actions.responsibleId, users.id))
       .where(
-        and(
-          sql`${keyResults.startDate} <= ${endDate}`,
-          sql`${keyResults.endDate} >= ${startDate}`,
-          // User access filter placeholder - implement if needed
-          undefined
-        )
+        // Actions herdam a sobreposição do Key Result
+        inArray(actions.keyResultId, keyResultIds)
       );
+    }
 
     return {
-      objectives: Number(objectiveCount[0]?.count) || 0,
-      keyResults: Number(keyResultCount[0]?.count) || 0,
-      actions: Number(actionCount[0]?.count) || 0,
+      objectives: quarterObjectives.map(row => ({
+        ...row.objectives,
+        owner: this.parseUserJsonFields(row.users!),
+        region: row.regions || undefined,
+        subRegion: row.subRegions || undefined,
+      })),
+      keyResults: quarterKeyResults.map(row => ({
+        ...row.keyResults,
+        objective: row.objectives!,
+      })),
+      actions: quarterActions.map(row => ({
+        ...row.actions,
+        keyResult: row.keyResults!,
+        responsible: row.users ? this.parseUserJsonFields(row.users) : undefined,
+      })),
     };
   }
 }
