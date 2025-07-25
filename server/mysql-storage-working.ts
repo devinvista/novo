@@ -857,11 +857,15 @@ export class MySQLStorage implements IStorage {
   }
 
   async createCheckpoint(checkpoint: InsertCheckpoint): Promise<Checkpoint> {
-    const insertResult = await db.insert(checkpoints).values({
+    // Ensure all date fields are proper Date objects
+    const checkpointData = {
       ...checkpoint,
+      dueDate: checkpoint.dueDate instanceof Date ? checkpoint.dueDate : new Date(checkpoint.dueDate),
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    };
+    
+    const insertResult = await db.insert(checkpoints).values(checkpointData);
     
     const insertId = Array.isArray(insertResult) ? insertResult[0]?.insertId : insertResult.insertId;
     if (!insertId || insertId === 0 || isNaN(Number(insertId))) {
@@ -1004,7 +1008,7 @@ export class MySQLStorage implements IStorage {
           targetValue: targetValue.toString(),
           actualValue: "0",
           status: "pending" as const,
-          dueDate: period.dueDate.toISOString().split('T')[0],
+          dueDate: new Date(period.dueDate),
         });
       }
 
