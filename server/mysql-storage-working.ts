@@ -370,6 +370,25 @@ export class MySQLStorage implements IStorage {
   }
 
   // Objectives methods with hierarchical access control
+  // OTIMIZADO: Cache de dados de referência para reduzir joins
+  private referenceCache = new Map<string, any>();
+  private referenceCacheExpiry = new Map<string, number>();
+
+  private async getCachedReference<T>(key: string, fetcher: () => Promise<T[]>): Promise<T[]> {
+    const now = Date.now();
+    const expiry = this.referenceCacheExpiry.get(key);
+    
+    if (expiry && now < expiry && this.referenceCache.has(key)) {
+      return this.referenceCache.get(key);
+    }
+    
+    const data = await fetcher();
+    this.referenceCache.set(key, data);
+    this.referenceCacheExpiry.set(key, now + this.CACHE_TTL);
+    
+    return data;
+  }
+
   async getObjectives(filters: {
     regionId?: number;
     subRegionId?: number;
@@ -384,18 +403,20 @@ export class MySQLStorage implements IStorage {
     subRegion?: SubRegion; 
     serviceLine?: ServiceLine 
   })[]> {
-    let query = db.select({
-      ...objectives,
-      owner: users,
-      region: regions,
-      subRegion: subRegions,
-      serviceLine: serviceLines,
-    })
-    .from(objectives)
-    .leftJoin(users, eq(objectives.ownerId, users.id))
-    .leftJoin(regions, eq(objectives.regionId, regions.id))
-    .leftJoin(subRegions, eq(objectives.subRegionId, subRegions.id))
-    .leftJoin(serviceLines, eq(objectives.serviceLineId, serviceLines.id));
+    // OTIMIZAÇÃO: Construir consulta baseada em filtros específicos
+    const hasSpecificFilters = filters.regionId || filters.subRegionId || filters.serviceLineId || filters.ownerId;
+    
+    let query = db.select()
+      .from(objectives)
+      .leftJoin(users, eq(objectives.ownerId, users.id));
+
+    // OTIMIZAÇÃO: Só fazer joins necessários baseados nos filtros
+    if (hasSpecificFilters || filters.currentUserId) {
+      query = query
+        .leftJoin(regions, eq(objectives.regionId, regions.id))
+        .leftJoin(subRegions, eq(objectives.subRegionId, subRegions.id))
+        .leftJoin(serviceLines, eq(objectives.serviceLineId, serviceLines.id));
+    }
 
     const conditions = [];
     if (filters.regionId) conditions.push(eq(objectives.regionId, filters.regionId));
@@ -403,15 +424,13 @@ export class MySQLStorage implements IStorage {
     if (filters.serviceLineId) conditions.push(eq(objectives.serviceLineId, filters.serviceLineId));
     if (filters.ownerId) conditions.push(eq(objectives.ownerId, filters.ownerId));
 
-    // Apply hierarchical access control
+    // OTIMIZAÇÃO: Cache do usuário atual
     if (filters.currentUserId) {
-      const user = await this.getUserById(filters.currentUserId);
+      const user = await this.getCachedUser(filters.currentUserId);
       if (user && user.role !== 'admin') {
         const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
         const userSubRegionIds = Array.isArray(user.subRegionIds) ? user.subRegionIds : [];
         
-        // Hierarchical filtering: if user has specific sub-regions, filter by those
-        // Otherwise, if user has regions, show all sub-regions within those regions
         if (userSubRegionIds.length > 0) {
           conditions.push(inArray(objectives.subRegionId, userSubRegionIds));
         } else if (userRegionIds.length > 0) {
@@ -434,57 +453,69 @@ export class MySQLStorage implements IStorage {
 
     const results = await query.orderBy(desc(objectives.createdAt));
     
+    // OTIMIZAÇÃO: Se não temos joins, buscar dados de referência separadamente via cache
+    if (!hasSpecificFilters && !filters.currentUserId) {
+      const [regionsMap, subRegionsMap, serviceLinesMap] = await Promise.all([
+        this.getCachedReference('regions', () => this.getRegions()).then(regions => new Map(regions.map(r => [r.id, r]))),
+        this.getCachedReference('subRegions', () => this.getSubRegions()).then(subRegions => new Map(subRegions.map(sr => [sr.id, sr]))),
+        this.getCachedReference('serviceLines', () => this.getServiceLines()).then(serviceLines => new Map(serviceLines.map(sl => [sl.id, sl])))
+      ]);
+
+      return results.map(row => ({
+        id: row.objectives.id,
+        title: row.objectives.title,
+        description: row.objectives.description,
+        ownerId: row.objectives.ownerId,
+        regionId: row.objectives.regionId,
+        subRegionId: row.objectives.subRegionId,
+        startDate: row.objectives.startDate,
+        endDate: row.objectives.endDate,
+        status: row.objectives.status,
+        progress: row.objectives.progress,
+        period: row.objectives.period,
+        serviceLineId: row.objectives.serviceLineId,
+        createdAt: row.objectives.createdAt,
+        updatedAt: row.objectives.updatedAt,
+        owner: this.parseUserJsonFields(row.users!),
+        region: row.objectives.regionId ? regionsMap.get(row.objectives.regionId) : undefined,
+        subRegion: row.objectives.subRegionId ? subRegionsMap.get(row.objectives.subRegionId) : undefined,
+        serviceLine: row.objectives.serviceLineId ? serviceLinesMap.get(row.objectives.serviceLineId) : undefined,
+      }));
+    }
+
+    // OTIMIZAÇÃO: Mapeamento com joins quando necessário
     return results.map(row => ({
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      ownerId: row.ownerId,
-      regionId: row.regionId,
-      subRegionId: row.subRegionId, 
-      startDate: row.startDate,
-      endDate: row.endDate,
-      status: row.status,
-      progress: row.progress,
-      period: row.period,
-      serviceLineId: row.serviceLineId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      owner: {
-        id: row.owner?.id || 0,
-        username: row.owner?.username || '',
-        name: row.owner?.name || '',
-        email: row.owner?.email || '',
-        role: row.owner?.role || 'operacional',
-        gestorId: row.owner?.gestorId || null,
-        regionIds: row.owner?.regionIds || [],
-        subRegionIds: row.owner?.subRegionIds || [],
-        solutionIds: row.owner?.solutionIds || [],
-        serviceLineIds: row.owner?.serviceLineIds || [],
-        serviceIds: row.owner?.serviceIds || [],
-        password: row.owner?.password || '',
-        active: row.owner?.active || false,
-        createdAt: row.owner?.createdAt || '',
-        updatedAt: row.owner?.updatedAt || '',
-        approved: row.owner?.approved || false,
-        approvedAt: row.owner?.approvedAt || null,
-        approvedBy: row.owner?.approvedBy || null,
-      },
-      region: row.region ? {
-        id: row.region.id,
-        name: row.region.name,
-        code: row.region.code,
+      id: row.objectives.id,
+      title: row.objectives.title,
+      description: row.objectives.description,
+      ownerId: row.objectives.ownerId,
+      regionId: row.objectives.regionId,
+      subRegionId: row.objectives.subRegionId,
+      startDate: row.objectives.startDate,
+      endDate: row.objectives.endDate,
+      status: row.objectives.status,
+      progress: row.objectives.progress,
+      period: row.objectives.period,
+      serviceLineId: row.objectives.serviceLineId,
+      createdAt: row.objectives.createdAt,
+      updatedAt: row.objectives.updatedAt,
+      owner: this.parseUserJsonFields(row.users!),
+      region: row.regions ? {
+        id: row.regions.id,
+        name: row.regions.name,
+        code: row.regions.code,
       } : undefined,
-      subRegion: row.subRegion ? {
-        id: row.subRegion.id,
-        name: row.subRegion.name,
-        code: row.subRegion.code,
-        regionId: row.subRegion.regionId,
+      subRegion: row.sub_regions ? {
+        id: row.sub_regions.id,
+        name: row.sub_regions.name,
+        code: row.sub_regions.code,
+        regionId: row.sub_regions.regionId,
       } : undefined,
-      serviceLine: row.serviceLine ? {
-        id: row.serviceLine.id,
-        name: row.serviceLine.name,
-        solutionId: row.serviceLine.solutionId,
-        description: row.serviceLine.description,
+      serviceLine: row.service_lines ? {
+        id: row.service_lines.id,
+        name: row.service_lines.name,
+        solutionId: row.service_lines.solutionId,
+        description: row.service_lines.description,
       } : undefined,
     }));
   }
@@ -692,11 +723,60 @@ export class MySQLStorage implements IStorage {
     await db.delete(keyResults).where(eq(keyResults.id, id));
   }
 
-  // Actions methods with hierarchical access control
+  // OTIMIZADO: Actions methods com cache de usuário e consulta simplificada
+  private userCache = new Map<number, User>();
+  private userCacheExpiry = new Map<number, number>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+  private async getCachedUser(userId: number): Promise<User | undefined> {
+    const now = Date.now();
+    const expiry = this.userCacheExpiry.get(userId);
+    
+    if (expiry && now < expiry && this.userCache.has(userId)) {
+      return this.userCache.get(userId);
+    }
+    
+    const user = await this.getUserById(userId);
+    if (user) {
+      this.userCache.set(userId, user);
+      this.userCacheExpiry.set(userId, now + this.CACHE_TTL);
+    }
+    
+    return user;
+  }
+
   async getActions(keyResultId?: number, currentUserId?: number): Promise<(Action & { 
     keyResult: KeyResult; 
     responsible?: User 
   })[]> {
+    // OTIMIZAÇÃO: Se keyResultId específico, consulta simplificada sem joins desnecessários
+    if (keyResultId) {
+      const simpleQuery = db.select()
+        .from(actions)
+        .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
+        .leftJoin(users, eq(actions.responsibleId, users.id))
+        .where(eq(actions.keyResultId, keyResultId))
+        .orderBy(desc(actions.createdAt));
+      
+      const results = await simpleQuery;
+      return results.map(row => ({
+        id: row.actions.id,
+        keyResultId: row.actions.keyResultId,
+        title: row.actions.title,
+        description: row.actions.description,
+        number: row.actions.number,
+        responsibleId: row.actions.responsibleId,
+        dueDate: row.actions.dueDate,
+        status: row.actions.status,
+        priority: row.actions.priority,
+        createdAt: row.actions.createdAt,
+        updatedAt: row.actions.updatedAt,
+        keyResult: row.key_results!,
+        responsible: row.users || undefined,
+      }));
+    }
+
+    // OTIMIZAÇÃO: Consulta complexa apenas quando necessário
     let query = db.select()
     .from(actions)
     .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
@@ -704,14 +784,10 @@ export class MySQLStorage implements IStorage {
     .leftJoin(users, eq(actions.responsibleId, users.id));
 
     const conditions = [];
-    
-    if (keyResultId) {
-      conditions.push(eq(actions.keyResultId, keyResultId));
-    }
 
-    // Apply hierarchical access control through objectives
+    // OTIMIZAÇÃO: Cache do usuário para evitar múltiplas consultas
     if (currentUserId) {
-      const user = await this.getUserById(currentUserId);
+      const user = await this.getCachedUser(currentUserId);
       if (user && user.role !== 'admin') {
         const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
         const userSubRegionIds = Array.isArray(user.subRegionIds) ? user.subRegionIds : [];
@@ -1093,7 +1169,11 @@ export class MySQLStorage implements IStorage {
     return result[0];
   }
 
-  // Dashboard and Analytics
+  // OTIMIZADO: Dashboard KPIs com cache e consulta única
+  private dashboardCache = new Map<string, any>();
+  private dashboardCacheExpiry = new Map<string, number>();
+  private readonly DASHBOARD_CACHE_TTL = 2 * 60 * 1000; // 2 minutos
+
   async getDashboardKPIs(filters: { quarter?: string; currentUserId?: number } = {}): Promise<{
     totalObjectives: number;
     totalKeyResults: number;
@@ -1103,26 +1183,43 @@ export class MySQLStorage implements IStorage {
     completedActions: number;
     averageProgress: number;
   }> {
-    // Get counts
-    const [objCount] = await db.select({ count: sql<number>`count(*)` }).from(objectives);
-    const [krCount] = await db.select({ count: sql<number>`count(*)` }).from(keyResults);
-    const [actionCount] = await db.select({ count: sql<number>`count(*)` }).from(actions);
+    const cacheKey = `dashboard_${filters.quarter || 'all'}_${filters.currentUserId || 'all'}`;
+    const now = Date.now();
+    const expiry = this.dashboardCacheExpiry.get(cacheKey);
     
-    const [completedObj] = await db.select({ count: sql<number>`count(*)` }).from(objectives).where(eq(objectives.status, 'completed'));
-    const [completedKr] = await db.select({ count: sql<number>`count(*)` }).from(keyResults).where(eq(keyResults.status, 'completed'));
-    const [completedAct] = await db.select({ count: sql<number>`count(*)` }).from(actions).where(eq(actions.status, 'completed'));
-    
-    const [avgProgress] = await db.select({ avg: sql<number>`avg(CAST(progress AS DECIMAL))` }).from(objectives);
+    if (expiry && now < expiry && this.dashboardCache.has(cacheKey)) {
+      return this.dashboardCache.get(cacheKey);
+    }
 
-    return {
-      totalObjectives: objCount.count,
-      totalKeyResults: krCount.count,
-      totalActions: actionCount.count,
-      completedObjectives: completedObj.count,
-      completedKeyResults: completedKr.count,
-      completedActions: completedAct.count,
-      averageProgress: avgProgress.avg || 0,
+    // OTIMIZAÇÃO: Consulta única com múltiplos agregados
+    const [dashboardStats] = await db.select({
+      totalObjectives: sql<number>`COUNT(DISTINCT o.id)`,
+      totalKeyResults: sql<number>`COUNT(DISTINCT kr.id)`,
+      totalActions: sql<number>`COUNT(DISTINCT a.id)`,
+      completedObjectives: sql<number>`COUNT(DISTINCT CASE WHEN o.status = 'completed' THEN o.id END)`,
+      completedKeyResults: sql<number>`COUNT(DISTINCT CASE WHEN kr.status = 'completed' THEN kr.id END)`,
+      completedActions: sql<number>`COUNT(DISTINCT CASE WHEN a.status = 'completed' THEN a.id END)`,
+      averageProgress: sql<number>`AVG(CAST(o.progress AS DECIMAL))`
+    })
+    .from(objectives.as('o'))
+    .leftJoin(keyResults.as('kr'), eq(sql`o.id`, sql`kr.objective_id`))
+    .leftJoin(actions.as('a'), eq(sql`kr.id`, sql`a.key_result_id`));
+
+    const result = {
+      totalObjectives: dashboardStats.totalObjectives || 0,
+      totalKeyResults: dashboardStats.totalKeyResults || 0,
+      totalActions: dashboardStats.totalActions || 0,
+      completedObjectives: dashboardStats.completedObjectives || 0,
+      completedKeyResults: dashboardStats.completedKeyResults || 0,
+      completedActions: dashboardStats.completedActions || 0,
+      averageProgress: dashboardStats.averageProgress || 0,
     };
+
+    // Cache do resultado
+    this.dashboardCache.set(cacheKey, result);
+    this.dashboardCacheExpiry.set(cacheKey, now + this.DASHBOARD_CACHE_TTL);
+
+    return result;
   }
 
   // Quarterly data

@@ -85,7 +85,7 @@ export function setupAuth(app: Express) {
         
         // Verificar se o usuário está aprovado (exceto admins)
         if (!user.approved && user.role !== 'admin') {
-          return done(null, false, { message: "Usuário aguarda aprovação" });
+          return done(null, false, { message: "Usuário aguarda aprovação do gestor" });
         }
         
         return done(null, user);
@@ -111,7 +111,7 @@ export function setupAuth(app: Express) {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username já existe" });
+        return res.status(400).json({ message: "Nome de usuário já existe" });
       }
 
       // Validar se gestorId foi fornecido

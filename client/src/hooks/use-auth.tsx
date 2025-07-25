@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       toast({
-        title: "Login failed",
+        title: "Falha no login",
         description: error.message,
         variant: "destructive",
       });
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       toast({
-        title: "Logout failed",
+        title: "Erro ao sair",
         description: error.message,
         variant: "destructive",
       });
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
 }

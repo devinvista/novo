@@ -50,9 +50,9 @@ interface SubRegion {
 }
 
 const userFormSchema = z.object({
-  username: z.string().min(3, "Username deve ter pelo menos 3 caracteres"),
+  username: z.string().min(3, "Usuário deve ter pelo menos 3 caracteres"),
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("Email deve ser válido"),
+  email: z.string().email("E-mail deve ser válido"),
   password: z.string().optional(),
   role: z.enum(["admin", "gestor", "operacional"]),
   regionIds: z.array(z.number()).optional().default([]),

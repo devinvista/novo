@@ -10,7 +10,7 @@ import { z } from "zod";
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ message: "Authentication required" });
+    return res.status(401).json({ message: "Autenticação necessária" });
   }
   next();
 }
@@ -18,7 +18,7 @@ function requireAuth(req: any, res: any, next: any) {
 function requireRole(roles: string[]) {
   return (req: any, res: any, next: any) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Insufficient permissions" });
+      return res.status(403).json({ message: "Permissões insuficientes" });
     }
     next();
   };
@@ -344,7 +344,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteObjective(id);
       res.sendStatus(204);
     } catch (error) {
-      res.status(500).json({ message: "Erro ao deletar objetivo" });
+      res.status(500).json({ message: "Erro ao excluir objetivo" });
     }
   });
 
@@ -460,7 +460,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteKeyResult(id);
       res.sendStatus(204);
     } catch (error) {
-      res.status(500).json({ message: "Erro ao deletar resultado-chave" });
+      res.status(500).json({ message: "Erro ao excluir resultado-chave" });
     }
   });
 
@@ -561,7 +561,7 @@ export function registerRoutes(app: Express): Server {
       res.sendStatus(204);
     } catch (error) {
       console.error("Error deleting action:", error);
-      res.status(500).json({ message: "Erro ao deletar ação" });
+      res.status(500).json({ message: "Erro ao excluir ação" });
     }
   });
 
@@ -573,14 +573,14 @@ export function registerRoutes(app: Express): Server {
       // Check access to action
       const action = await storage.getAction(actionId, req.user?.id);
       if (!action) {
-        return res.status(404).json({ message: "Action not found or no access" });
+        return res.status(404).json({ message: "Ação não encontrada ou sem acesso" });
       }
 
       const comments = await storage.getActionComments(actionId);
       res.json(comments);
     } catch (error) {
       console.error('Error fetching action comments:', error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
 
@@ -592,7 +592,7 @@ export function registerRoutes(app: Express): Server {
       // Check access to action
       const action = await storage.getAction(actionId, req.user?.id);
       if (!action) {
-        return res.status(404).json({ message: "Action not found or no access" });
+        return res.status(404).json({ message: "Ação não encontrada ou sem acesso" });
       }
 
       const commentData = {
@@ -610,7 +610,7 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(addedComment);
     } catch (error) {
       console.error('Error creating action comment:', error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
 
@@ -711,7 +711,7 @@ export function registerRoutes(app: Express): Server {
       res.sendStatus(204);
     } catch (error) {
       console.error("Error deleting checkpoint:", error);
-      res.status(500).json({ message: "Erro ao deletar checkpoint" });
+      res.status(500).json({ message: "Erro ao excluir checkpoint" });
     }
   });
 
@@ -818,7 +818,7 @@ export function registerRoutes(app: Express): Server {
       
       // Não permitir deletar a si mesmo
       if (id === req.user?.id) {
-        return res.status(400).json({ message: "Não é possível deletar seu próprio usuário" });
+        return res.status(400).json({ message: "Não é possível excluir seu próprio usuário" });
       }
 
       // Verificar se o usuário pode deletar este usuário
@@ -829,14 +829,14 @@ export function registerRoutes(app: Express): Server {
 
       // Gestores só podem deletar usuários operacionais
       if (req.user?.role === "gestor" && targetUser.role !== "operacional") {
-        return res.status(403).json({ message: "Sem permissão para deletar este usuário" });
+        return res.status(403).json({ message: "Sem permissão para excluir este usuário" });
       }
 
       await storage.deleteUser(id);
-      res.json({ message: "Usuário deletado com sucesso" });
+      res.json({ message: "Usuário excluído com sucesso" });
     } catch (error) {
       console.error("Error deleting user:", error);
-      res.status(500).json({ message: "Erro ao deletar usuário" });
+      res.status(500).json({ message: "Erro ao excluir usuário" });
     }
   });
 
