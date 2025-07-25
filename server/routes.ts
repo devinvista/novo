@@ -379,9 +379,7 @@ export function registerRoutes(app: Express): Server {
       if (requestData.targetValue && typeof requestData.targetValue === 'number') {
         requestData.targetValue = requestData.targetValue.toString();
       }
-      if (requestData.initialValue && typeof requestData.initialValue === 'number') {
-        requestData.initialValue = requestData.initialValue.toString();
-      }
+      // Remove initialValue handling - not in MySQL schema
       
       const validation = insertKeyResultSchema.parse(requestData);
       
@@ -409,7 +407,7 @@ export function registerRoutes(app: Express): Server {
       const keyResult = await storage.createKeyResult({
         ...validation,
         targetValue: validation.targetValue?.toString() || "0",
-        initialValue: validation.initialValue?.toString() || "0",
+        // initialValue removed - not in MySQL schema
         startDate: validation.startDate,
         endDate: validation.endDate,
         status,
@@ -599,7 +597,7 @@ export function registerRoutes(app: Express): Server {
 
       const commentData = {
         actionId,
-        userId: req.user?.id,
+        userId: req.user.id,
         comment: req.body.comment
       };
 

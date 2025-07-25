@@ -1,2 +1,2 @@
-// This file exports from the MySQL schema for production
-export * from './mysql-schema-proper';
+// MySQL schema for production - using final optimized MySQL schema
+export * from './mysql-schema-final';

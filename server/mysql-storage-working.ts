@@ -15,6 +15,9 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { getQuarterlyPeriods, getQuarterlyPeriod, getCurrentQuarter, formatQuarter } from "./quarterly-periods";
 
+// Session store configuration for MySQL
+const sessionStore = MemoryStore(session);
+
 export interface IStorage {
   // User management
   getUser(id: number): Promise<User | undefined>;
@@ -122,11 +125,11 @@ export interface IStorage {
   }>;
 
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class MySQLStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any;
   connected: boolean = true;
 
   constructor() {

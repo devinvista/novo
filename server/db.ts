@@ -1,7 +1,7 @@
 // MySQL database connection for production
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
-import * as schema from '@shared/schema';
+import * as schema from '@shared/mysql-schema-final';
 
 // MySQL connection configuration
 const connectionConfig = {
