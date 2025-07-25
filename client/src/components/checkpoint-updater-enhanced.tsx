@@ -156,7 +156,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
           <CardDescription>
             {keyResultId 
               ? "Este resultado-chave ainda não possui checkpoints configurados."
-              : "Selecione um resultado-chave para visualizar seus checkpoints."
+              : "Nenhum checkpoint encontrado para os resultados-chave acessíveis."
             }
           </CardDescription>
         </CardHeader>

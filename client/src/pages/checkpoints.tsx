@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import CheckpointUpdaterEnhanced from "@/components/checkpoint-updater-enhanced";
+import { NextCheckpointsOverview } from "@/components/next-checkpoints-overview";
 import { Target, Filter } from "lucide-react";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 
@@ -64,6 +65,11 @@ export default function Checkpoints() {
         />
         
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Overview of Next Checkpoints - only shown when no specific key result is selected */}
+          {!selectedKeyResultId && (
+            <NextCheckpointsOverview />
+          )}
+
           {/* Filter Section */}
           <Card>
             <CardHeader>

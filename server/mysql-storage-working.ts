@@ -562,7 +562,8 @@ export class MySQLStorage implements IStorage {
   // Key Results methods with hierarchical access control
   async getKeyResults(objectiveId?: number, currentUserId?: number): Promise<(KeyResult & { 
     objective: Objective; 
-    strategicIndicator?: StrategicIndicator 
+    strategicIndicator?: StrategicIndicator;
+    nextCheckpoint?: Checkpoint;
   })[]> {
     let query = db.select()
     .from(keyResults)
@@ -793,13 +794,30 @@ export class MySQLStorage implements IStorage {
 
   // Checkpoints methods with hierarchical access control
   async getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<Checkpoint[]> {
-    let query = db.select().from(checkpoints);
+    // If specific keyResultId is provided, simple query without access control joins
+    if (keyResultId) {
+      const query = db.select().from(checkpoints)
+        .where(eq(checkpoints.keyResultId, keyResultId))
+        .orderBy(asc(checkpoints.dueDate));
+      return await query;
+    }
+
+    // For general queries, apply hierarchical access control
+    let query = db.select({
+      id: checkpoints.id,
+      keyResultId: checkpoints.keyResultId,
+      title: checkpoints.title,
+      description: checkpoints.description,
+      targetValue: checkpoints.targetValue,
+      actualValue: checkpoints.actualValue,
+      dueDate: checkpoints.dueDate,
+      status: checkpoints.status,
+      notes: checkpoints.notes,
+      createdAt: checkpoints.createdAt,
+      updatedAt: checkpoints.updatedAt,
+    }).from(checkpoints);
     
     const conditions = [];
-    
-    if (keyResultId) {
-      conditions.push(eq(checkpoints.keyResultId, keyResultId));
-    }
 
     // Apply hierarchical access control through key results and objectives
     if (currentUserId) {
@@ -827,27 +845,6 @@ export class MySQLStorage implements IStorage {
     }
 
     const results = await query.orderBy(asc(checkpoints.dueDate));
-    
-    // If we joined with other tables, map to only checkpoint data
-    if (currentUserId) {
-      const user = await this.getUserById(currentUserId);
-      if (user && user.role !== 'admin') {
-        return results.map((row: any) => ({
-          id: row.checkpoints?.id || row.id,
-          keyResultId: row.checkpoints?.keyResultId || row.keyResultId,
-          title: row.checkpoints?.title || row.title,
-          description: row.checkpoints?.description || row.description,
-          targetValue: row.checkpoints?.targetValue || row.targetValue,
-          actualValue: row.checkpoints?.actualValue || row.actualValue,
-          dueDate: row.checkpoints?.dueDate || row.dueDate,
-          status: row.checkpoints?.status || row.status,
-          notes: row.checkpoints?.notes || row.notes,
-          createdAt: row.checkpoints?.createdAt || row.createdAt,
-          updatedAt: row.checkpoints?.updatedAt || row.updatedAt,
-        }));
-      }
-    }
-    
     return results;
   }
 
