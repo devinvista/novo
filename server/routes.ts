@@ -308,7 +308,7 @@ export function registerRoutes(app: Express): Server {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
-      res.status(500).json({ message: "Erro ao criar objetivo", details: error.message });
+      res.status(500).json({ message: "Erro ao criar objetivo", details: error instanceof Error ? error.message : 'Erro desconhecido' });
     }
   });
 
@@ -597,7 +597,7 @@ export function registerRoutes(app: Express): Server {
 
       const commentData = {
         actionId,
-        userId: req.user.id,
+        userId: req.user!.id,
         comment: req.body.comment
       };
 
@@ -808,7 +808,7 @@ export function registerRoutes(app: Express): Server {
       res.json(user);
     } catch (error) {
       console.error("Error updating user:", error);
-      res.status(500).json({ message: "Erro ao atualizar usuário", error: error.message });
+      res.status(500).json({ message: "Erro ao atualizar usuário", error: error instanceof Error ? error.message : 'Erro desconhecido' });
     }
   });
 
@@ -911,24 +911,24 @@ export function registerRoutes(app: Express): Server {
       // Herdar permissões do gestor se não foram especificadas
       if (gestor) {
         finalPermissions.regionIds = finalPermissions.regionIds.length > 0 
-          ? finalPermissions.regionIds.filter(id => (gestor.regionIds || []).includes(id))
-          : gestor.regionIds || [];
+          ? finalPermissions.regionIds.filter((id: number) => (gestor.regionIds as number[] || []).includes(id))
+          : gestor.regionIds as number[] || [];
         
         finalPermissions.subRegionIds = finalPermissions.subRegionIds.length > 0 
-          ? finalPermissions.subRegionIds.filter(id => (gestor.subRegionIds || []).includes(id))
-          : gestor.subRegionIds || [];
+          ? finalPermissions.subRegionIds.filter((id: number) => (gestor.subRegionIds as number[] || []).includes(id))
+          : gestor.subRegionIds as number[] || [];
           
         finalPermissions.solutionIds = finalPermissions.solutionIds.length > 0 
-          ? finalPermissions.solutionIds.filter(id => (gestor.solutionIds || []).includes(id))
-          : gestor.solutionIds || [];
+          ? finalPermissions.solutionIds.filter((id: number) => (gestor.solutionIds as number[] || []).includes(id))
+          : gestor.solutionIds as number[] || [];
           
         finalPermissions.serviceLineIds = finalPermissions.serviceLineIds.length > 0 
-          ? finalPermissions.serviceLineIds.filter(id => (gestor.serviceLineIds || []).includes(id))
-          : gestor.serviceLineIds || [];
+          ? finalPermissions.serviceLineIds.filter((id: number) => (gestor.serviceLineIds as number[] || []).includes(id))
+          : gestor.serviceLineIds as number[] || [];
           
         finalPermissions.serviceIds = finalPermissions.serviceIds.length > 0 
-          ? finalPermissions.serviceIds.filter(id => (gestor.serviceIds || []).includes(id))
-          : gestor.serviceIds || [];
+          ? finalPermissions.serviceIds.filter((id: number) => (gestor.serviceIds as number[] || []).includes(id))
+          : gestor.serviceIds as number[] || [];
       }
 
       // Aprovar usuário com permissões herdadas/configuradas
@@ -937,7 +937,7 @@ export function registerRoutes(app: Express): Server {
       res.json(user);
     } catch (error) {
       console.error("Error approving user:", error);
-      res.status(500).json({ message: "Erro ao aprovar usuário", error: error.message });
+      res.status(500).json({ message: "Erro ao aprovar usuário", error: error instanceof Error ? error.message : 'Erro desconhecido' });
     }
   });
 

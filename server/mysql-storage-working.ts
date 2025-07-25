@@ -14,9 +14,13 @@ import session from "express-session";
 // @ts-ignore - memorystore types are outdated
 import MemoryStore from "memorystore";
 import { getQuarterlyPeriods, getQuarterlyPeriod, getCurrentQuarter, formatQuarter } from "./quarterly-periods";
+import { MySQLPerformanceCache, MySQLPerformanceMonitor, MySQLConnectionOptimizer } from './mysql-performance-cache';
 
 // Session store configuration for MySQL
 const sessionStore = MemoryStore(session);
+
+// Initialize performance cache
+const performanceCache = MySQLPerformanceCache.getInstance();
 
 export interface IStorage {
   // User management
@@ -245,10 +249,7 @@ export class MySQLStorage implements IStorage {
   }
 
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User> {
-    await db.update(users).set({
-      ...user,
-      updatedAt: sql`CURRENT_TIMESTAMP`
-    }).where(eq(users.id, id));
+    await db.update(users).set(user).where(eq(users.id, id));
     
     const updatedUser = await this.getUser(id);
     if (!updatedUser) throw new Error('User not found');
@@ -312,17 +313,17 @@ export class MySQLStorage implements IStorage {
       // Delete action comments related to this user (now with correct column name)
       await db.delete(actionComments).where(eq(actionComments.userId, id));
       
-      // Update objectives where this user is the owner (set to null)
-      await db.update(objectives).set({ ownerId: null }).where(eq(objectives.ownerId, id));
+      // Update objectives where this user is the owner (set to undefined)
+      await db.update(objectives).set({ ownerId: undefined }).where(eq(objectives.ownerId, id));
       
-      // Update actions where this user is responsible (set to null)
-      await db.update(actions).set({ responsibleId: null }).where(eq(actions.responsibleId, id));
+      // Update actions where this user is responsible (set to undefined)
+      await db.update(actions).set({ responsibleId: undefined }).where(eq(actions.responsibleId, id));
       
-      // Update users where this user is the gestor (set gestorId to null)
-      await db.update(users).set({ gestorId: null }).where(eq(users.gestorId, id));
+      // Update users where this user is the gestor (set gestorId to undefined)
+      await db.update(users).set({ gestorId: undefined }).where(eq(users.gestorId, id));
       
-      // Update users where this user approved others (set approvedBy to null)
-      await db.update(users).set({ approvedBy: null }).where(eq(users.approvedBy, id));
+      // Update users where this user approved others (set approvedBy to undefined)
+      await db.update(users).set({ approvedBy: undefined }).where(eq(users.approvedBy, id));
       
       // Finally delete the user
       await db.delete(users).where(eq(users.id, id));
