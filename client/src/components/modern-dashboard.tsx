@@ -232,14 +232,22 @@ export default function ModernDashboard() {
   }).filter((item: any) => item && item.totalKRs > 0) || [];
 
   // Dados trimestrais para o gráfico
-  const quarterlyData = availableQuarters?.map((quarter: string) => {
-    const stats = quarterlyStats?.[quarter];
-    const [year, q] = quarter.split('-Q');
-    const quarterNames = ['1º Tri', '2º Tri', '3º Tri', '4º Tri'];
+  const quarterlyData = availableQuarters?.map((quarter: any) => {
+    const quarterValue = typeof quarter === 'string' ? quarter : quarter.id;
+    const stats = quarterlyStats?.[quarterValue];
+    
+    let quarterName;
+    if (typeof quarter === 'string' && quarter.includes('-Q')) {
+      const [year, q] = quarter.split('-Q');
+      const quarterNames = ['1º Tri', '2º Tri', '3º Tri', '4º Tri'];
+      quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
+    } else {
+      quarterName = quarter?.name || quarterValue || quarter;
+    }
     
     return {
-      name: `${quarterNames[parseInt(q) - 1]} ${year}`,
-      quarter: quarter,
+      name: quarterName,
+      quarter: quarterValue,
       objetivos: stats?.objectives || 0,
       keyResults: stats?.keyResults || 0,
       acoes: stats?.actions || 0,
@@ -260,9 +268,12 @@ export default function ModernDashboard() {
                 <Calendar className="h-4 w-4" />
                 <span className="text-sm">
                   Período: {(() => {
-                    const [year, q] = selectedQuarter.split('-Q');
-                    const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
-                    return `${quarterNames[parseInt(q) - 1]} ${year}`;
+                    if (typeof selectedQuarter === 'string' && selectedQuarter.includes('-Q')) {
+                      const [year, q] = selectedQuarter.split('-Q');
+                      const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                      return `${quarterNames[parseInt(q) - 1]} ${year}`;
+                    }
+                    return selectedQuarter;
                   })()}
                 </span>
               </div>
@@ -378,14 +389,21 @@ export default function ModernDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availableQuarters?.slice(0, 6).map((quarter: string) => {
-                const stats = quarterlyStats[quarter];
-                const [year, q] = quarter.split('-Q');
-                const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
-                const quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
+              {availableQuarters?.slice(0, 6).map((quarter: any) => {
+                const quarterValue = typeof quarter === 'string' ? quarter : quarter.id;
+                const stats = quarterlyStats[quarterValue];
+                
+                let quarterName;
+                if (typeof quarter === 'string' && quarter.includes('-Q')) {
+                  const [year, q] = quarter.split('-Q');
+                  const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                  quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
+                } else {
+                  quarterName = quarter?.name || quarterValue || quarter;
+                }
                 
                 return (
-                  <div key={quarter} className="p-4 border rounded-lg bg-gray-50">
+                  <div key={quarterValue} className="p-4 border rounded-lg bg-gray-50">
                     <div className="font-semibold text-sm text-[#1a4b9f] mb-2">
                       {quarterName}
                     </div>

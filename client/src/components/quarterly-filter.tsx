@@ -62,13 +62,20 @@ export default function QuarterlyFilter({ variant = "header", className = "" }: 
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos os períodos</SelectItem>
-          {availableQuarters?.map((quarter: string) => {
-            const [year, q] = quarter.split('-Q');
-            const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
-            const quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
+          {availableQuarters?.map((quarter: any) => {
+            // Handle both string and object formats
+            const quarterValue = typeof quarter === 'string' ? quarter : quarter.id;
+            const quarterDisplay = typeof quarter === 'string' && quarter.includes('-Q')
+              ? (() => {
+                  const [year, q] = quarter.split('-Q');
+                  const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                  return `${quarterNames[parseInt(q) - 1]} ${year}`;
+                })()
+              : (quarter?.name || quarterValue);
+            
             return (
-              <SelectItem key={quarter} value={quarter}>
-                {quarterName}
+              <SelectItem key={quarterValue} value={quarterValue}>
+                {quarterDisplay}
               </SelectItem>
             );
           })}

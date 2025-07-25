@@ -1229,7 +1229,10 @@ export class MySQLStorage implements IStorage {
   }
 
   async getAvailableQuarters(): Promise<string[]> {
-    return getQuarterlyPeriods();
+    // Get quarters for current year as fallback
+    const currentYear = new Date().getFullYear();
+    const quarters = [`${currentYear}-Q1`, `${currentYear}-Q2`, `${currentYear}-Q3`, `${currentYear}-Q4`];
+    return quarters;
   }
 
   async getQuarterlyStats(period: string = 'all'): Promise<any> {
