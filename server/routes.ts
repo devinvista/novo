@@ -224,25 +224,16 @@ export function registerRoutes(app: Express): Server {
       const { quarter } = req.params;
       const currentUser = req.user;
       
-      const filters: any = {
-        regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
-        subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
-      };
-      
-      // Aplicar filtros de acesso baseados no usuário atual
-      if (currentUser.role !== 'admin') {
-        const userRegionIds = currentUser.regionIds || [];
-        const userSubRegionIds = currentUser.subRegionIds || [];
-        
-        if (userRegionIds.length > 0 && !filters.regionId) {
-          filters.userRegionIds = userRegionIds;
-        }
-        if (userSubRegionIds.length > 0 && !filters.subRegionId) {
-          filters.userSubRegionIds = userSubRegionIds;
-        }
-      }
+      console.log(`API /quarters/${quarter}/data called by user ${currentUser.username} (${currentUser.id})`);
       
       const data = await storage.getQuarterlyData(quarter, currentUser.id);
+      
+      console.log(`API returning data:`, {
+        objectives: data.objectives.length,
+        keyResults: data.keyResults.length,
+        actions: data.actions.length
+      });
+      
       res.json(data);
     } catch (error) {
       console.error("Error getting quarterly data:", error);

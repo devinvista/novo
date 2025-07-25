@@ -76,12 +76,14 @@ export default function ModernDashboard() {
   });
 
   const { data: objectives = [] } = useQuery({
-    queryKey: ["/api/objectives", selectedQuarter],
+    queryKey: ["/api/objectives", selectedQuarter, Date.now()],
     queryFn: () => {
       const url = selectedQuarter && selectedQuarter !== 'all'
         ? `/api/quarters/${selectedQuarter}/data` 
         : "/api/objectives";
+      console.log(`Frontend objectives: fetching from ${url} for quarter ${selectedQuarter}`);
       return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
+        console.log(`Frontend objectives: received data`, data);
         if (selectedQuarter && selectedQuarter !== 'all') {
           // Para trimestres específicos, retorna dados do quarterly endpoint (arrays)
           return Array.isArray(data.objectives) ? data.objectives : [];
@@ -90,7 +92,9 @@ export default function ModernDashboard() {
           return Array.isArray(data) ? data : [];
         }
       }).catch(() => []);
-    }
+    },
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   const { data: keyResults } = useQuery({
