@@ -803,19 +803,7 @@ export class MySQLStorage implements IStorage {
     }
 
     // For general queries, apply hierarchical access control
-    let query = db.select({
-      id: checkpoints.id,
-      keyResultId: checkpoints.keyResultId,
-      title: checkpoints.title,
-      description: checkpoints.description,
-      targetValue: checkpoints.targetValue,
-      actualValue: checkpoints.actualValue,
-      dueDate: checkpoints.dueDate,
-      status: checkpoints.status,
-      notes: checkpoints.notes,
-      createdAt: checkpoints.createdAt,
-      updatedAt: checkpoints.updatedAt,
-    }).from(checkpoints);
+    let query = db.select().from(checkpoints);
     
     const conditions = [];
 
@@ -828,8 +816,8 @@ export class MySQLStorage implements IStorage {
         
         // Join with key results and objectives to apply regional filtering
         query = query
-          .leftJoin(keyResults, eq(checkpoints.keyResultId, keyResults.id))
-          .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
+          .innerJoin(keyResults, eq(checkpoints.keyResultId, keyResults.id))
+          .innerJoin(objectives, eq(keyResults.objectiveId, objectives.id));
         
         // Filter by user's accessible regions/sub-regions
         if (userSubRegionIds.length > 0) {
@@ -845,6 +833,27 @@ export class MySQLStorage implements IStorage {
     }
 
     const results = await query.orderBy(asc(checkpoints.dueDate));
+    
+    // If we joined with other tables for access control, map to only checkpoint data
+    if (currentUserId) {
+      const user = await this.getUserById(currentUserId);
+      if (user && user.role !== 'admin' && results.length > 0 && results[0].checkpoints) {
+        return results.map((row: any) => ({
+          id: row.checkpoints.id,
+          keyResultId: row.checkpoints.keyResultId,
+          title: row.checkpoints.title,
+          description: row.checkpoints.description,
+          targetValue: row.checkpoints.targetValue,
+          actualValue: row.checkpoints.actualValue,
+          dueDate: row.checkpoints.dueDate,
+          status: row.checkpoints.status,
+          notes: row.checkpoints.notes,
+          createdAt: row.checkpoints.createdAt,
+          updatedAt: row.checkpoints.updatedAt,
+        }));
+      }
+    }
+    
     return results;
   }
 
@@ -874,19 +883,27 @@ export class MySQLStorage implements IStorage {
     return newCheckpoint;
   }
 
-  async updateCheckpoint(id: number, checkpoint: Partial<InsertCheckpoint>): Promise<Checkpoint> {
-    await db.update(checkpoints).set({
-      ...checkpoint,
+  async updateCheckpoint(id: number, updates: Partial<InsertCheckpoint>): Promise<Checkpoint> {
+    // Ensure all date fields are proper Date objects
+    const updateData = {
+      ...updates,
       updatedAt: new Date(),
-    }).where(eq(checkpoints.id, id));
+    };
+    
+    // Convert dueDate to Date object if provided
+    if (updateData.dueDate && !(updateData.dueDate instanceof Date)) {
+      updateData.dueDate = new Date(updateData.dueDate);
+    }
+    
+    await db.update(checkpoints)
+      .set(updateData)
+      .where(eq(checkpoints.id, id));
     
     const updatedCheckpoint = await this.getCheckpoint(id);
-    if (!updatedCheckpoint) throw new Error('Checkpoint not found');
+    if (!updatedCheckpoint) throw new Error('Failed to update checkpoint');
     
-    // Cascading update: Update the key result's current value based on checkpoint progress
-    if (checkpoint.actualValue !== undefined && updatedCheckpoint.keyResultId) {
-      await this.updateKeyResultProgressFromCheckpoints(updatedCheckpoint.keyResultId);
-    }
+    // Update key result progress based on checkpoint progress
+    await this.updateKeyResultProgressFromCheckpoints(updatedCheckpoint.keyResultId);
     
     return updatedCheckpoint;
   }
