@@ -1291,6 +1291,8 @@ export class MySQLStorage implements IStorage {
     }
 
     const { startDate, endDate } = quarterData;
+    
+    console.log(`Quarterly filter: period=${period}, startDate=${startDate}, endDate=${endDate}`);
 
     // LÓGICA DE SOBREPOSIÇÃO: Buscar objetivos que têm qualquer sobreposição com o trimestre
     // Se período do objetivo (obj.start_date até obj.end_date) sobrepõe com trimestre (startDate até endDate)
@@ -1309,10 +1311,19 @@ export class MySQLStorage implements IStorage {
       and(
         // Lógica de sobreposição: objetivo sobrepõe com trimestre se:
         // data_inicio_objetivo <= data_fim_trimestre AND data_fim_objetivo >= data_inicio_trimestre
-        sql`${objectives.startDate} <= ${endDate}`,
-        sql`${objectives.endDate} >= ${startDate}`
+        sql`${objectives.startDate} <= '${endDate}'`,
+        sql`${objectives.endDate} >= '${startDate}'`
       )
     );
+
+    console.log(`Found ${quarterObjectives.length} objectives in quarter ${period}`);
+    
+    // Debug: mostrar todos os objetivos encontrados
+    if (quarterObjectives.length > 0) {
+      quarterObjectives.forEach(row => {
+        console.log(`  Objective: ${row.objectives.title} (${row.objectives.startDate} to ${row.objectives.endDate})`);
+      });
+    }
 
     // Key Results que pertencem aos objetivos do trimestre (herdam sobreposição)
     const objectiveIds = quarterObjectives.map(row => row.objectives.id);
@@ -1330,8 +1341,8 @@ export class MySQLStorage implements IStorage {
         or(
           // Sobreposição direta do Key Result com o trimestre
           and(
-            sql`${keyResults.startDate} <= ${endDate}`,
-            sql`${keyResults.endDate} >= ${startDate}`
+            sql`${keyResults.startDate} <= '${endDate}'`,
+            sql`${keyResults.endDate} >= '${startDate}'`
           ),
           // OU Key Result pertence a objetivo que sobrepõe com o trimestre
           inArray(keyResults.objectiveId, objectiveIds)
@@ -1358,7 +1369,7 @@ export class MySQLStorage implements IStorage {
       );
     }
 
-    return {
+    const result = {
       objectives: quarterObjectives.map(row => ({
         ...row.objectives,
         owner: this.parseUserJsonFields(row.users!),
@@ -1375,6 +1386,9 @@ export class MySQLStorage implements IStorage {
         responsible: row.users ? this.parseUserJsonFields(row.users) : undefined,
       })),
     };
+    
+    console.log(`Returning quarterly data: ${result.objectives.length} objectives, ${result.keyResults.length} key results, ${result.actions.length} actions`);
+    return result;
   }
 }
 
