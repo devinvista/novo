@@ -254,7 +254,8 @@ export default function ModernDashboard() {
     let quarterName;
     if (typeof quarter === 'string' && quarter.includes('-Q')) {
       const [year, q] = quarter.split('-Q');
-      quarterName = `${q}T ${year}`;
+      const quarterNames = ['1º Tri', '2º Tri', '3º Tri', '4º Tri'];
+      quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
     } else {
       quarterName = quarter?.name || quarterValue || quarter;
     }
@@ -284,7 +285,8 @@ export default function ModernDashboard() {
                   Período: {(() => {
                     if (typeof selectedQuarter === 'string' && selectedQuarter.includes('-Q')) {
                       const [year, q] = selectedQuarter.split('-Q');
-                      return `${q}T ${year}`;
+                      const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                      return `${quarterNames[parseInt(q) - 1]} ${year}`;
                     }
                     return selectedQuarter;
                   })()}
@@ -409,7 +411,8 @@ export default function ModernDashboard() {
                 let quarterName;
                 if (typeof quarter === 'string' && quarter.includes('-Q')) {
                   const [year, q] = quarter.split('-Q');
-                  quarterName = `${q}T ${year}`;
+                  const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                  quarterName = `${quarterNames[parseInt(q) - 1]} ${year}`;
                 } else {
                   quarterName = quarter?.name || quarterValue || quarter;
                 }

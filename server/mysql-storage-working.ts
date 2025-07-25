@@ -1229,13 +1229,13 @@ export class MySQLStorage implements IStorage {
   }
 
   async getAvailableQuarters(): Promise<any[]> {
-    // Return quarters for current year with Portuguese format "1T 2025"
+    // Return quarters for current year with Portuguese names
     const currentYear = new Date().getFullYear();
     const quarters = [
-      { id: `${currentYear}-Q1`, name: `1T ${currentYear}`, startDate: `${currentYear}-01-01`, endDate: `${currentYear}-03-31` },
-      { id: `${currentYear}-Q2`, name: `2T ${currentYear}`, startDate: `${currentYear}-04-01`, endDate: `${currentYear}-06-30` },
-      { id: `${currentYear}-Q3`, name: `3T ${currentYear}`, startDate: `${currentYear}-07-01`, endDate: `${currentYear}-09-30` },
-      { id: `${currentYear}-Q4`, name: `4T ${currentYear}`, startDate: `${currentYear}-10-01`, endDate: `${currentYear}-12-31` }
+      { id: `${currentYear}-Q1`, name: `1º Trimestre ${currentYear}`, startDate: `${currentYear}-01-01`, endDate: `${currentYear}-03-31` },
+      { id: `${currentYear}-Q2`, name: `2º Trimestre ${currentYear}`, startDate: `${currentYear}-04-01`, endDate: `${currentYear}-06-30` },
+      { id: `${currentYear}-Q3`, name: `3º Trimestre ${currentYear}`, startDate: `${currentYear}-07-01`, endDate: `${currentYear}-09-30` },
+      { id: `${currentYear}-Q4`, name: `4º Trimestre ${currentYear}`, startDate: `${currentYear}-10-01`, endDate: `${currentYear}-12-31` }
     ];
     return quarters;
   }

@@ -68,7 +68,8 @@ export default function QuarterlyFilter({ variant = "header", className = "" }: 
             const quarterDisplay = typeof quarter === 'string' && quarter.includes('-Q')
               ? (() => {
                   const [year, q] = quarter.split('-Q');
-                  return `${q}T ${year}`;
+                  const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
+                  return `${quarterNames[parseInt(q) - 1]} ${year}`;
                 })()
               : (quarter?.name || quarterValue || quarter);
             
