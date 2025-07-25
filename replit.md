@@ -132,6 +132,12 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
+- July 25, 2025. **FORMATAÇÃO PERÍODO BRASILEIRA IMPLEMENTADA + DEBUGGING COMPLETO + SISTEMA OKR TOTALMENTE FUNCIONAL + MÉTODOS IMPLEMENTADOS**
+  - **FORMATAÇÃO BRASILEIRA DE PERÍODOS**: Implementado formato brasileiro "1T 2025", "2T 2025", "3T 2025", "4T 2025"
+    - Substituído formato "1º Trimestre 2025" pelo formato compacto "1T 2025" conforme solicitado
+    - Atualizado filtro de período no sidebar e dashboard para usar nova formatação
+    - Mantida compatibilidade com backend que usa formato "-Q1", "-Q2", etc.
+    - Interface mais limpa e brasileira para seleção de períodos trimestrais
 - July 25, 2025. **DEBUGGING COMPLETO + SISTEMA OKR TOTALMENTE FUNCIONAL + MÉTODOS IMPLEMENTADOS**
   - **DEBUGGING SISTEMÁTICO COMPLETO**: Identificados e corrigidos todos os problemas do sistema OKR
     - Diagnosticado fluxo completo: Objetivos → Key Results → Ações → Checkpoints → Dashboard
