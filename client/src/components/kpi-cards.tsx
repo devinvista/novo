@@ -48,7 +48,7 @@ export default function KPICards({ data, isLoading }: KPICardsProps) {
 
   const kpis = [
     {
-      title: "Objetivos Ativos",
+      title: "Objetivos",
       value: data.totalObjectives,
       icon: Target,
       color: "bg-blue-100",
@@ -66,7 +66,7 @@ export default function KPICards({ data, isLoading }: KPICardsProps) {
       isPositive: true,
     },
     {
-      title: "Taxa de Atingimento",
+      title: "Taxa de Progresso",
       value: `${data.averageProgress.toFixed(1)}%`,
       icon: TrendingUp,
       color: "bg-orange-100",

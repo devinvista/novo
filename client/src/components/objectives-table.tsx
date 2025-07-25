@@ -36,14 +36,14 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
       toast({
-        title: "Objetivo deletado",
-        description: "O objetivo foi deletado com sucesso.",
+        title: "Objetivo excluído",
+        description: "O objetivo foi excluído com sucesso.",
       });
     },
     onError: () => {
       toast({
         title: "Erro",
-        description: "Erro ao deletar objetivo.",
+        description: "Erro ao excluir objetivo.",
         variant: "destructive",
       });
     },

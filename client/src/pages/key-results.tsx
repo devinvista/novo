@@ -38,14 +38,14 @@ export default function KeyResults() {
       queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       toast({
-        title: "KR deletado",
-        description: "O resultado-chave foi deletado com sucesso.",
+        title: "Resultado-chave excluído",
+        description: "O resultado-chave foi excluído com sucesso.",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Erro",
-        description: error.message || "Erro ao deletar resultado-chave.",
+        description: error.message || "Erro ao excluir resultado-chave.",
         variant: "destructive",
       });
     },
