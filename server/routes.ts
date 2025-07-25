@@ -242,7 +242,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const data = await storage.getQuarterlyData(quarter, filters);
+      const data = await storage.getQuarterlyData(quarter, currentUser.id);
       res.json(data);
     } catch (error) {
       console.error("Error getting quarterly data:", error);

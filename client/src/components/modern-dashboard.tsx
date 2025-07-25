@@ -68,7 +68,9 @@ export default function ModernDashboard() {
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ["/api/dashboard/kpis", selectedQuarter],
     queryFn: () => {
-      const url = selectedQuarter ? `/api/dashboard/kpis?quarter=${selectedQuarter}` : "/api/dashboard/kpis";
+      const url = selectedQuarter && selectedQuarter !== 'all' 
+        ? `/api/dashboard/kpis?quarter=${selectedQuarter}` 
+        : "/api/dashboard/kpis";
       return fetch(url, { credentials: "include" }).then(r => r.json());
     }
   });
@@ -76,11 +78,11 @@ export default function ModernDashboard() {
   const { data: objectives = [] } = useQuery({
     queryKey: ["/api/objectives", selectedQuarter],
     queryFn: () => {
-      const url = selectedQuarter 
+      const url = selectedQuarter && selectedQuarter !== 'all'
         ? `/api/quarters/${selectedQuarter}/data` 
         : "/api/objectives";
       return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        const results = selectedQuarter ? data.objectives : data;
+        const results = selectedQuarter && selectedQuarter !== 'all' ? data.objectives : data;
         return Array.isArray(results) ? results : [];
       }).catch(() => []);
     }
@@ -89,11 +91,11 @@ export default function ModernDashboard() {
   const { data: keyResults } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter],
     queryFn: () => {
-      const url = selectedQuarter 
+      const url = selectedQuarter && selectedQuarter !== 'all'
         ? `/api/quarters/${selectedQuarter}/data` 
         : "/api/key-results";
       return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        const results = selectedQuarter ? data.keyResults : data;
+        const results = selectedQuarter && selectedQuarter !== 'all' ? data.keyResults : data;
         return Array.isArray(results) ? results : [];
       });
     }
@@ -102,11 +104,11 @@ export default function ModernDashboard() {
   const { data: actions = [] } = useQuery({
     queryKey: ["/api/actions", selectedQuarter],
     queryFn: () => {
-      const url = selectedQuarter 
+      const url = selectedQuarter && selectedQuarter !== 'all'
         ? `/api/quarters/${selectedQuarter}/data` 
         : "/api/actions";
       return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        const results = selectedQuarter ? data.actions : data;
+        const results = selectedQuarter && selectedQuarter !== 'all' ? data.actions : data;
         return Array.isArray(results) ? results : [];
       });
     }
@@ -141,7 +143,9 @@ export default function ModernDashboard() {
   const { data: quarterlyStats = {} } = useQuery({
     queryKey: ["/api/quarters/stats"],
     queryFn: () => {
-      return fetch("/api/quarters/stats", { credentials: "include" }).then(r => r.json()).catch(() => ({}));
+      return fetch("/api/quarters/stats", { credentials: "include" }).then(r => r.json()).then(data => 
+        data || {}
+      ).catch(() => ({}));
     }
   });
 

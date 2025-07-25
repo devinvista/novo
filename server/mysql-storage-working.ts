@@ -1228,10 +1228,15 @@ export class MySQLStorage implements IStorage {
     return getQuarterlyPeriods();
   }
 
-  async getAvailableQuarters(): Promise<string[]> {
-    // Get quarters for current year as fallback
+  async getAvailableQuarters(): Promise<any[]> {
+    // Return quarters for current year with Portuguese names
     const currentYear = new Date().getFullYear();
-    const quarters = [`${currentYear}-Q1`, `${currentYear}-Q2`, `${currentYear}-Q3`, `${currentYear}-Q4`];
+    const quarters = [
+      { id: `${currentYear}-Q1`, name: `1º Trimestre ${currentYear}`, startDate: `${currentYear}-01-01`, endDate: `${currentYear}-03-31` },
+      { id: `${currentYear}-Q2`, name: `2º Trimestre ${currentYear}`, startDate: `${currentYear}-04-01`, endDate: `${currentYear}-06-30` },
+      { id: `${currentYear}-Q3`, name: `3º Trimestre ${currentYear}`, startDate: `${currentYear}-07-01`, endDate: `${currentYear}-09-30` },
+      { id: `${currentYear}-Q4`, name: `4º Trimestre ${currentYear}`, startDate: `${currentYear}-10-01`, endDate: `${currentYear}-12-31` }
+    ];
     return quarters;
   }
 
@@ -1252,11 +1257,15 @@ export class MySQLStorage implements IStorage {
     keyResults: (KeyResult & { objective: Objective })[];
     actions: (Action & { keyResult: KeyResult; responsible?: User })[];
   }> {
+    console.log(`getQuarterlyData called with period: ${period}, currentUserId: ${currentUserId}`);
+    
     if (period === 'all') {
       // Return all data
       const allObjectives = await this.getObjectives({ currentUserId });
       const allKeyResults = await this.getKeyResults(undefined, currentUserId);
       const allActions = await this.getActions(undefined, currentUserId);
+      
+      console.log(`All data: ${allObjectives.length} objectives, ${allKeyResults.length} key results, ${allActions.length} actions`);
       
       return {
         objectives: allObjectives,
