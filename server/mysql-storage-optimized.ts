@@ -19,8 +19,7 @@ import { MySQLPerformanceCache, MySQLPerformanceMonitor, MySQLConnectionOptimize
 // Session store configuration for MySQL
 const sessionStore = MemoryStore(session);
 
-// Initialize performance cache
-const performanceCache = MySQLPerformanceCache.getInstance();
+// Performance cache and monitoring are handled by static classes
 
 export interface IStorage {
   // User management
@@ -854,7 +853,135 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async getKeyResult(id: number, currentUserId?: number): Promise<any | undefined> {
-    return undefined;
+    if (!id || isNaN(id)) {
+      console.error('Invalid ID provided to getKeyResult:', id);
+      return undefined;
+    }
+    
+    try {
+      const result = await db.select().from(keyResults).where(eq(keyResults.id, id)).limit(1);
+      
+      if (result.length > 0) {
+        const keyResult = result[0];
+        // Parse JSON fields if needed
+        if (typeof keyResult.strategicIndicatorIds === 'string') {
+          try {
+            keyResult.strategicIndicatorIds = JSON.parse(keyResult.strategicIndicatorIds);
+          } catch (e) {
+            keyResult.strategicIndicatorIds = [];
+          }
+        }
+        if (typeof keyResult.serviceLineIds === 'string') {
+          try {
+            keyResult.serviceLineIds = JSON.parse(keyResult.serviceLineIds);
+          } catch (e) {
+            keyResult.serviceLineIds = [];
+          }
+        }
+        
+        return keyResult;
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error('Error in getKeyResult for ID', id, ':', error);
+      return undefined;
+    }
+  }
+
+  async generateCheckpoints(keyResultId: number): Promise<any[]> {
+    if (!keyResultId || isNaN(keyResultId)) {
+      throw new Error(`Invalid keyResultId: ${keyResultId}`);
+    }
+    
+    try {
+      // Get the key result details
+      const keyResult = await this.getKeyResult(keyResultId);
+      if (!keyResult) throw new Error('Key result not found');
+
+      // Delete existing checkpoints
+      await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
+
+      // Generate new checkpoints based on frequency  
+      const checkpointsToCreate = [];
+      const startDate = new Date(keyResult.startDate);
+      const endDate = new Date(keyResult.endDate);
+      const frequency = keyResult.frequency || 'monthly';
+      const totalTarget = Number(keyResult.targetValue);
+      
+      // First, calculate all checkpoint periods to determine total count
+      const periods = [];
+      let currentDate = new Date(startDate);
+      let checkpointNumber = 1;
+      
+      while (currentDate <= endDate) {
+        let nextDate: Date;
+        
+        switch (frequency) {
+          case 'weekly':
+            nextDate = new Date(currentDate);
+            nextDate.setDate(currentDate.getDate() + 7);
+            break;
+          case 'monthly':
+            nextDate = new Date(currentDate);
+            nextDate.setMonth(currentDate.getMonth() + 1);
+            break;
+          case 'quarterly':
+            nextDate = new Date(currentDate);
+            nextDate.setMonth(currentDate.getMonth() + 3);
+            break;
+          default:
+            nextDate = new Date(endDate);
+        }
+        
+        if (nextDate > endDate) nextDate = endDate;
+        
+        periods.push({
+          number: checkpointNumber,
+          dueDate: nextDate,
+        });
+        
+        currentDate = new Date(nextDate);
+        currentDate.setDate(currentDate.getDate() + 1);
+        checkpointNumber++;
+        
+        if (nextDate >= endDate) break;
+      }
+
+      // Now create checkpoints with cumulative targets (last checkpoint = total target)
+      const totalPeriods = periods.length;
+      for (let i = 0; i < periods.length; i++) {
+        const period = periods[i];
+        const isLastCheckpoint = i === periods.length - 1;
+        
+        // Target is cumulative: each checkpoint builds up to the total
+        const targetValue = isLastCheckpoint ? totalTarget : Math.round((totalTarget / totalPeriods) * (i + 1) * 100) / 100;
+        
+        checkpointsToCreate.push({
+          keyResultId,
+          period: `Checkpoint ${period.number}`,
+          targetValue: targetValue.toString(),
+          actualValue: "0",
+          status: "pending" as const,
+          dueDate: period.dueDate,
+        });
+      }
+
+      // Insert all checkpoints
+      const createdCheckpoints: any[] = [];
+      for (const checkpoint of checkpointsToCreate) {
+        const [result] = await db.insert(checkpoints).values(checkpoint);
+        createdCheckpoints.push({
+          id: result.insertId,
+          ...checkpoint
+        });
+      }
+
+      return createdCheckpoints;
+    } catch (error) {
+      console.error('Error in generateCheckpoints for keyResultId', keyResultId, ':', error);
+      throw new Error(`Failed to generate checkpoints: ${(error as Error).message}`);
+    }
   }
 
   async createKeyResult(keyResult: InsertKeyResult): Promise<KeyResult> {
