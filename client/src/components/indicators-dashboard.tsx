@@ -10,6 +10,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 interface IndicatorsDashboardProps {
+  selectedQuarter?: string;
   filters?: {
     regionId?: number;
     subRegionId?: number;
@@ -19,20 +20,27 @@ interface IndicatorsDashboardProps {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
-export default function IndicatorsDashboard({ filters }: IndicatorsDashboardProps) {
+export default function IndicatorsDashboard({ selectedQuarter, filters }: IndicatorsDashboardProps) {
   const { data: indicators, isLoading: indicatorsLoading } = useQuery({
     queryKey: ["/api/strategic-indicators"],
   });
 
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
-    queryKey: ["/api/key-results", filters],
+    queryKey: ["/api/key-results", selectedQuarter, filters],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
-      
-      const response = await fetch(`/api/key-results?${params}`);
-      if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
-      return response.json();
+      if (selectedQuarter && selectedQuarter !== "all") {
+        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar resultados-chave trimestrais");
+        const data = await response.json();
+        return data.keyResults || [];
+      } else {
+        const params = new URLSearchParams();
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const response = await fetch(`/api/key-results?${params}`, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
+        return response.json();
+      }
     },
   });
 

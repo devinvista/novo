@@ -72,7 +72,8 @@ export default function Actions() {
           <Card className="p-6">
             <ActionTimeline 
               keyResultId={keyResultFilter ? parseInt(keyResultFilter) : undefined} 
-              showAll={true} 
+              showAll={true}
+              selectedQuarter={selectedQuarter}
             />
           </Card>
         </div>

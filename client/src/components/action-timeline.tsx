@@ -30,9 +30,10 @@ import {
 interface ActionTimelineProps {
   keyResultId?: number;
   showAll?: boolean;
+  selectedQuarter?: string;
 }
 
-export default function ActionTimeline({ keyResultId, showAll = false }: ActionTimelineProps) {
+export default function ActionTimeline({ keyResultId, showAll = false, selectedQuarter }: ActionTimelineProps) {
   const [editingAction, setEditingAction] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const [deleteActionId, setDeleteActionId] = useState<number | null>(null);
@@ -58,12 +59,26 @@ export default function ActionTimeline({ keyResultId, showAll = false }: ActionT
   });
 
   const { data: actions, isLoading } = useQuery({
-    queryKey: ["/api/actions", keyResultId],
+    queryKey: ["/api/actions", keyResultId, selectedQuarter],
     queryFn: async () => {
-      const params = keyResultId ? `?keyResultId=${keyResultId}` : "";
-      const response = await fetch(`/api/actions${params}`);
-      if (!response.ok) throw new Error("Erro ao carregar ações");
-      return response.json();
+      if (selectedQuarter && selectedQuarter !== "all") {
+        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar ações trimestrais");
+        const data = await response.json();
+        let actions = data.actions || [];
+        
+        // Filter by keyResultId if specified
+        if (keyResultId) {
+          actions = actions.filter((action: any) => action.keyResult?.id === keyResultId);
+        }
+        
+        return actions;
+      } else {
+        const params = keyResultId ? `?keyResultId=${keyResultId}` : "";
+        const response = await fetch(`/api/actions${params}`, { credentials: "include" });
+        if (!response.ok) throw new Error("Erro ao carregar ações");
+        return response.json();
+      }
     },
   });
 
