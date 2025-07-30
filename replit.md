@@ -234,6 +234,14 @@ Changelog:
     - Sidebar e componentes UI: totalmente em português brasileiro
     - Sistema de comentários de ações: mensagens traduzidas
     - Gerenciamento de usuários: todas as mensagens e validações em português
+- July 30, 2025. **CHECKPOINT TERMINOLOGY UPDATED + QUARTERLY PERIOD FILTERING SYSTEM COMPLETELY FIXED**
+  - **TERMINOLOGY CHANGE IMPLEMENTED**: Changed "regenerar" to "recriar" throughout the checkpoint system per user request
+    - Updated backend API endpoint from `/api/key-results/:id/regenerate-checkpoints` to `/api/key-results/:id/recreate-checkpoints`
+    - Changed frontend mutation names from `regenerateMutation` to `recreateMutation`
+    - Updated toast messages from "regenerados" to "recriados" for consistency
+    - Updated button labels from "Regenerar" to "Recriar" and "Gerar Checkpoints" to "Criar Checkpoints"
+    - Fixed all TypeScript errors related to the naming changes
+    - Verified system functionality: checkpoint recreation working correctly with new terminology
 - July 30, 2025. **QUARTERLY PERIOD FILTERING SYSTEM COMPLETELY FIXED + ACTIONTIMELINE QUARTERLY SUPPORT + TYPESCRIPT ERRORS RESOLVED**
   - **QUARTERLY FILTERING SYSTEM FIXED**: Resolved critical issues preventing period filtering from working properly across all pages
     - Fixed ActionTimeline component to properly receive and use selectedQuarter parameter from quarterly filter context

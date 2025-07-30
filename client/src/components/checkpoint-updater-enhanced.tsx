@@ -117,22 +117,22 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
     enabled: !!keyResultId,
   });
 
-  const regenerateMutation = useMutation({
+  const recreateMutation = useMutation({
     mutationFn: async () => {
       if (!keyResultId) throw new Error("Key Result ID é necessário");
-      await apiRequest("POST", `/api/key-results/${keyResultId}/regenerate-checkpoints`, {});
+      await apiRequest("POST", `/api/key-results/${keyResultId}/recreate-checkpoints`, {});
     },
     onSuccess: () => {
       toast({
-        title: "Checkpoints regenerados",
-        description: "Os checkpoints foram regenerados com base na frequência do resultado-chave.",
+        title: "Checkpoints recriados",
+        description: "Os checkpoints foram recriados com base na frequência do resultado-chave.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
     },
     onError: () => {
       toast({
         title: "Erro",
-        description: "Erro ao regenerar checkpoints.",
+        description: "Erro ao recriar checkpoints.",
         variant: "destructive",
       });
     },
@@ -163,12 +163,12 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
         {keyResultId && (
           <CardContent>
             <Button 
-              onClick={() => regenerateMutation.mutate()}
-              disabled={regenerateMutation.isPending}
+              onClick={() => recreateMutation.mutate()}
+              disabled={recreateMutation.isPending}
               className="w-full"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${regenerateMutation.isPending ? 'animate-spin' : ''}`} />
-              {regenerateMutation.isPending ? "Gerando..." : "Gerar Checkpoints"}
+              <RefreshCw className={`h-4 w-4 mr-2 ${recreateMutation.isPending ? 'animate-spin' : ''}`} />
+              {recreateMutation.isPending ? "Criando..." : "Gerar Checkpoints"}
             </Button>
           </CardContent>
         )}
@@ -201,12 +201,12 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
           </Button>
           {keyResultId && (
             <Button 
-              onClick={() => regenerateMutation.mutate()}
-              disabled={regenerateMutation.isPending}
+              onClick={() => recreateMutation.mutate()}
+              disabled={recreateMutation.isPending}
               size="sm"
               variant="outline"
             >
-              <RefreshCw className={`h-4 w-4 ${regenerateMutation.isPending ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${recreateMutation.isPending ? 'animate-spin' : ''}`} />
             </Button>
           )}
         </div>
@@ -215,13 +215,12 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
       {viewMode === "grid" && keyResultId && (
         <CheckpointProgressGrid 
           checkpoints={checkpoints} 
-          keyResultId={keyResultId}
           onCheckpointClick={(checkpoint) => {
             console.log('Checkpoint clicked, opening dialog:', checkpoint);
             setSelectedCheckpoint(checkpoint);
             setIsEditDialogOpen(true);
           }}
-          onRegenerateCheckpoints={() => regenerateMutation.mutate()}
+          onRegenerateCheckpoints={() => recreateMutation.mutate()}
         />
       )}
       

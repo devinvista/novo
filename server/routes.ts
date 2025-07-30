@@ -635,7 +635,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/key-results/:id/regenerate-checkpoints", requireAuth, async (req: any, res) => {
+  app.post("/api/key-results/:id/recreate-checkpoints", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = parseInt(req.params.id);
       
@@ -648,8 +648,8 @@ export function registerRoutes(app: Express): Server {
       const checkpoints = await storage.generateCheckpoints(keyResultId);
       res.json(checkpoints);
     } catch (error) {
-      console.error("Error regenerating checkpoints:", error);
-      res.status(500).json({ message: "Erro ao regenerar checkpoints" });
+      console.error("Error recreating checkpoints:", error);
+      res.status(500).json({ message: "Erro ao recriar checkpoints" });
     }
   });
 

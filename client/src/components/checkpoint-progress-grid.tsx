@@ -41,7 +41,7 @@ export default function CheckpointProgressGrid({
               className="w-full"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
-              Gerar Checkpoints
+              Criar Checkpoints
             </Button>
           </CardContent>
         )}
@@ -98,7 +98,7 @@ export default function CheckpointProgressGrid({
                 size="sm"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
-                Regenerar
+                Recriar
               </Button>
             )}
           </div>
