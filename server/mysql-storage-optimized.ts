@@ -584,14 +584,46 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async getDashboardKPIs(currentUserId?: number): Promise<any> {
+  async getDashboardKPIs(currentUserId?: number, filters?: any): Promise<any> {
     try {
       const startTime = MySQLPerformanceMonitor.startQuery('getDashboardKPIs');
       
-      // Get comprehensive counts with user access control
-      const objectivesResult = await this.getObjectives({ currentUserId });
-      const keyResultsResult = await this.getKeyResults({ currentUserId });
-      const actionsResult = await this.getActions({ currentUserId });
+      // Get comprehensive counts with user access control and quarterly filtering
+      const objectivesFilters = { currentUserId, ...filters };
+      
+      let objectivesResult, keyResultsResult, actionsResult;
+      
+      if (filters?.quarter && filters.quarter !== 'all') {
+        // Use quarterly data filtering
+        const quarterlyData = await this.getQuarterlyData(filters.quarter, currentUserId);
+        
+        // Get the full objective objects for the quarter
+        const allObjectives = await this.getObjectives({ currentUserId });
+        objectivesResult = allObjectives.filter(obj => {
+          const startDate = new Date(obj.startDate);
+          const endDate = new Date(obj.endDate);
+          const [year, quarter] = filters.quarter.split('-Q');
+          const quarterStart = new Date(parseInt(year), (parseInt(quarter) - 1) * 3, 1);
+          const quarterEnd = new Date(parseInt(year), parseInt(quarter) * 3, 0);
+          
+          return (startDate <= quarterEnd && endDate >= quarterStart);
+        });
+        
+        // Get related key results and actions for quarterly objectives
+        const objectiveIds = objectivesResult.map(obj => obj.id);
+        const allKeyResults = await this.getKeyResults({ currentUserId });
+        const allActions = await this.getActions({ currentUserId });
+        
+        keyResultsResult = allKeyResults.filter(kr => objectiveIds.includes(kr.objectiveId));
+        const keyResultIds = keyResultsResult.map(kr => kr.id);
+        actionsResult = allActions.filter(action => keyResultIds.includes(action.keyResultId));
+        
+      } else {
+        // Use regular filtering for all periods
+        objectivesResult = await this.getObjectives(objectivesFilters);
+        keyResultsResult = await this.getKeyResults({ currentUserId });
+        actionsResult = await this.getActions({ currentUserId });
+      }
       
       const objectivesCount = objectivesResult.length;
       const keyResultsCount = keyResultsResult.length;

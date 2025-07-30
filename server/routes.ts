@@ -190,7 +190,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const kpis = await storage.getDashboardKPIs(currentUser.id);
+      const kpis = await storage.getDashboardKPIs(currentUser.id, filters);
       res.json(kpis);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar KPIs do dashboard" });
