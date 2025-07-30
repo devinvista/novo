@@ -168,7 +168,7 @@ export default function KeyResults() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <CardTitle className="text-lg">
-                            {kr.number}. {kr.title}
+                            {kr.title}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             Objetivo: {kr.objective?.title || 'Sem objetivo associado'}
