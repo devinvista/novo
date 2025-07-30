@@ -1,7 +1,7 @@
 // Utility functions for quarterly period calculations
 
 export interface QuarterlyPeriod {
-  quarter: string; // e.g., "2025-Q1"
+  quarter: string; // e.g., "2025-T1"
   year: number;
   quarterNumber: 1 | 2 | 3 | 4;
   startDate: Date;
@@ -29,7 +29,7 @@ export function getQuarterlyPeriods(startDate: string | Date, endDate: string | 
     const quarterStart = new Date(year, quarterStartMonth, 1);
     const quarterEnd = new Date(year, quarterStartMonth + 3, 0); // Last day of quarter
     
-    const quarter = `${year}-Q${quarterNumber}`;
+    const quarter = `${year}-T${quarterNumber}`;
     
     // Check if this quarter overlaps with our date range
     const overlapStart = new Date(Math.max(start.getTime(), quarterStart.getTime()));
@@ -66,7 +66,7 @@ export function getQuarterlyPeriod(date: string | Date): QuarterlyPeriod {
   const quarterEnd = new Date(year, quarterStartMonth + 3, 0);
   
   return {
-    quarter: `${year}-Q${quarterNumber}`,
+    quarter: `${year}-T${quarterNumber}`,
     year,
     quarterNumber,
     startDate: quarterStart,
@@ -93,7 +93,7 @@ export function getCurrentQuarter(): QuarterlyPeriod {
  */
 export function getQuartersForYear(year: number): QuarterlyPeriod[] {
   return [1, 2, 3, 4].map(quarterNumber => ({
-    quarter: `${year}-Q${quarterNumber}`,
+    quarter: `${year}-T${quarterNumber}`,
     year,
     quarterNumber: quarterNumber as 1 | 2 | 3 | 4,
     startDate: new Date(year, (quarterNumber - 1) * 3, 1),
@@ -105,7 +105,7 @@ export function getQuartersForYear(year: number): QuarterlyPeriod[] {
  * Format quarterly period for display
  */
 export function formatQuarter(quarter: string): string {
-  const [year, q] = quarter.split('-Q');
+  const [year, q] = quarter.split('-T');
   const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
   return `${quarterNames[parseInt(q) - 1]} ${year}`;
 }

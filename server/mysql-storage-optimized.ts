@@ -413,19 +413,19 @@ export class MySQLStorageOptimized implements IStorage {
       if (allObjectives.length === 0) {
         // Return default quarters for current year if no objectives exist
         return [
-          { id: '2025-Q1', name: 'Q1 2025', startDate: '2025-01-01', endDate: '2025-03-31' },
-          { id: '2025-Q2', name: 'Q2 2025', startDate: '2025-04-01', endDate: '2025-06-30' },
-          { id: '2025-Q3', name: 'Q3 2025', startDate: '2025-07-01', endDate: '2025-09-30' },
-          { id: '2025-Q4', name: 'Q4 2025', startDate: '2025-10-01', endDate: '2025-12-31' }
+          { id: '2025-T1', name: 'T1 2025', startDate: '2025-01-01', endDate: '2025-03-31' },
+          { id: '2025-T2', name: 'T2 2025', startDate: '2025-04-01', endDate: '2025-06-30' },
+          { id: '2025-T3', name: 'T3 2025', startDate: '2025-07-01', endDate: '2025-09-30' },
+          { id: '2025-T4', name: 'T4 2025', startDate: '2025-10-01', endDate: '2025-12-31' }
         ];
       }
       
       const quarters = getQuarterlyPeriods(allObjectives, null);
       return quarters.length > 0 ? quarters : [
-        { id: '2025-Q1', name: 'Q1 2025', startDate: '2025-01-01', endDate: '2025-03-31' },
-        { id: '2025-Q2', name: 'Q2 2025', startDate: '2025-04-01', endDate: '2025-06-30' },
-        { id: '2025-Q3', name: 'Q3 2025', startDate: '2025-07-01', endDate: '2025-09-30' },
-        { id: '2025-Q4', name: 'Q4 2025', startDate: '2025-10-01', endDate: '2025-12-31' }
+        { id: '2025-T1', name: 'T1 2025', startDate: '2025-01-01', endDate: '2025-03-31' },
+        { id: '2025-T2', name: 'T2 2025', startDate: '2025-04-01', endDate: '2025-06-30' },
+        { id: '2025-T3', name: 'T3 2025', startDate: '2025-07-01', endDate: '2025-09-30' },
+        { id: '2025-T4', name: 'T4 2025', startDate: '2025-10-01', endDate: '2025-12-31' }
       ];
     } catch (error) {
       console.error('Error getting available quarters:', error);
@@ -469,8 +469,8 @@ export class MySQLStorageOptimized implements IStorage {
 
       // Apply quarterly filtering if quarter is specified
       if (quarter && quarter !== 'all') {
-        // Parse quarter string like "2025-Q1" to get dates
-        const quarterMatch = quarter.match(/(\d{4})-Q(\d)/);
+        // Parse quarter string like "2025-T1" to get dates
+        const quarterMatch = quarter.match(/(\d{4})-T(\d)/);
         if (quarterMatch) {
           const year = parseInt(quarterMatch[1]);
           const quarterNum = parseInt(quarterMatch[2]);
@@ -602,7 +602,7 @@ export class MySQLStorageOptimized implements IStorage {
         objectivesResult = allObjectives.filter(obj => {
           const startDate = new Date(obj.startDate);
           const endDate = new Date(obj.endDate);
-          const [year, quarter] = filters.quarter.split('-Q');
+          const [year, quarter] = filters.quarter.split('-T');
           const quarterStart = new Date(parseInt(year), (parseInt(quarter) - 1) * 3, 1);
           const quarterEnd = new Date(parseInt(year), parseInt(quarter) * 3, 0);
           

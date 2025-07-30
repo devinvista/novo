@@ -234,7 +234,7 @@ Changelog:
     - Sidebar e componentes UI: totalmente em português brasileiro
     - Sistema de comentários de ações: mensagens traduzidas
     - Gerenciamento de usuários: todas as mensagens e validações em português
-- July 30, 2025. **REPLIT AGENT TO REPLIT MIGRATION COMPLETED + QUARTERLY FILTERING FIXED**
+- July 30, 2025. **REPLIT AGENT TO REPLIT MIGRATION COMPLETED + QUARTERLY FILTERING FIXED + PORTUGUESE QUARTER NAMING IMPLEMENTED**
   - **MIGRATION SUCCESSFULLY COMPLETED**: Final migration from Replit Agent to standard Replit environment completed
     - All packages installed and dependencies resolved correctly (nodejs-20, tsx, mysql2, express, drizzle-orm)
     - Express server running stable on port 5000 with MySQL database connection operational at srv1661.hstgr.io:3306
@@ -243,12 +243,19 @@ Changelog:
     - Frontend fully loaded with Vite development server and real-time updates working
     - Zero-downtime migration completed with comprehensive OKR management system operational
   - **QUARTERLY FILTERING SYSTEM FIXED**: Resolved quarterly period filtering issues completely
-    - Fixed getQuarterlyData method to properly parse quarter strings (e.g., "2025-Q1") into date ranges
+    - Fixed getQuarterlyData method to properly parse quarter strings (e.g., "2025-T1") into date ranges
     - Implemented correct date overlap logic for objectives spanning multiple quarters
     - Added user access control to quarterly data filtering (respects regional permissions)
     - Enhanced quarterly filtering to include related key results, actions, and checkpoints counts
     - Verified quarterly filtering: objectives with date ranges spanning multiple quarters now correctly appear in all relevant quarters
-    - Example: Objective "OOOOO" (2025-01-01 to 2025-12-31) correctly appears in Q1, Q2, Q3, and Q4 of 2025
+    - Example: Objective "OOOOO" (2025-01-01 to 2025-12-31) correctly appears in T1, T2, T3, and T4 of 2025
+  - **PORTUGUESE QUARTER NAMING IMPLEMENTED**: Changed quarter naming from English to Portuguese standard
+    - Updated all quarter IDs from "2025-Q1" format to "2025-T1" format (T1, T2, T3, T4)
+    - Modified backend storage layers (mysql-storage-optimized.ts, mysql-storage-working.ts) to use T format
+    - Updated quarterly-periods.ts utility functions to generate T-format quarters
+    - Frontend quarterly filter component updated to handle T-format quarter parsing
+    - All API endpoints now return Portuguese quarter format: T1 2025, T2 2025, T3 2025, T4 2025
+    - Display names show proper Portuguese format: "1º Trimestre 2025", "2º Trimestre 2025", etc.
   - **SYSTEM OPERATIONAL STATUS**: Complete OKR management system fully functional with quarterly filtering
     - ✅ Authentication system operational with MySQL native connection and session management
     - ✅ User management with role-based access control (admin, gestor, operacional) working

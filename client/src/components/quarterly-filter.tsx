@@ -65,10 +65,10 @@ export default function QuarterlyFilter({ variant = "header", className = "" }: 
           {availableQuarters?.map((quarter: any) => {
             // Handle both string and object formats
             const quarterValue = typeof quarter === 'string' ? quarter : quarter.id;
-            const quarterDisplay = typeof quarter === 'string' && quarter.includes('-Q')
+            const quarterDisplay = typeof quarter === 'string' && quarter.includes('-T')
               ? (() => {
-                  if (typeof quarter === 'string' && quarter.includes('-Q')) {
-                    const [year, q] = quarter.split('-Q');
+                  if (typeof quarter === 'string' && quarter.includes('-T')) {
+                    const [year, q] = quarter.split('-T');
                     const quarterNames = ['1º Trimestre', '2º Trimestre', '3º Trimestre', '4º Trimestre'];
                     return `${quarterNames[parseInt(q) - 1]} ${year}`;
                   }

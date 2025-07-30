@@ -1274,9 +1274,9 @@ export class MySQLStorage implements IStorage {
       };
     }
 
-    // Parse quarter period (e.g., "2025-Q1")
+    // Parse quarter period (e.g., "2025-T1")
     // Converter período trimestral para datas de início e fim
-    const [year, quarter] = period.split('-Q');
+    const [year, quarter] = period.split('-T');
     const quarterNum = parseInt(quarter);
     const quarterStartMonth = (quarterNum - 1) * 3;
     const quarterStart = new Date(parseInt(year), quarterStartMonth, 1);

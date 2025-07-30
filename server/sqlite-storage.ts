@@ -428,7 +428,7 @@ export class SQLiteStorage implements IStorage {
   
   // Quarterly data - basic implementation
   async getQuarterlyPeriods(): Promise<string[]> {
-    return ['2024-Q1', '2024-Q2', '2024-Q3', '2024-Q4', '2025-Q1', '2025-Q2', '2025-Q3', '2025-Q4'];
+    return ['2024-T1', '2024-T2', '2024-T3', '2024-T4', '2025-T1', '2025-T2', '2025-T3', '2025-T4'];
   }
 
   async getQuarterlyData(period: string, currentUserId?: number): Promise<{
