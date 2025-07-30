@@ -224,15 +224,7 @@ export function registerRoutes(app: Express): Server {
       const { quarter } = req.params;
       const currentUser = req.user;
       
-      console.log(`API /quarters/${quarter}/data called by user ${currentUser.username} (${currentUser.id})`);
-      
       const data = await storage.getQuarterlyData(quarter, currentUser.id);
-      
-      console.log(`API returning data:`, {
-        objectives: data.objectives.length,
-        keyResults: data.keyResults.length,
-        actions: data.actions.length
-      });
       
       res.json(data);
     } catch (error) {

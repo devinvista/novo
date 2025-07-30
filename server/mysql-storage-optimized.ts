@@ -437,20 +437,46 @@ export class MySQLStorageOptimized implements IStorage {
     try {
       const startTime = MySQLPerformanceMonitor.startQuery('getQuarterlyData');
       
+      // Build base query for objectives with access control
       let objectivesQuery = db.select({
         id: objectives.id,
         title: objectives.title,
         startDate: objectives.startDate,
-        endDate: objectives.endDate
+        endDate: objectives.endDate,
+        regionId: objectives.regionId
       }).from(objectives);
 
+      // Apply user access control if user is provided
+      if (currentUserId) {
+        const user = await this.getUser(currentUserId);
+        if (user && user.role !== 'admin') {
+          const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
+          if (userRegionIds.length > 0) {
+            objectivesQuery = objectivesQuery.where(
+              inArray(objectives.regionId, userRegionIds)
+            );
+          }
+        }
+      }
+
+      // Apply quarterly filtering if quarter is specified
       if (quarter && quarter !== 'all') {
-        const quarterPeriod = getQuarterlyPeriod(quarter);
-        if (quarterPeriod) {
+        // Parse quarter string like "2025-Q1" to get dates
+        const quarterMatch = quarter.match(/(\d{4})-Q(\d)/);
+        if (quarterMatch) {
+          const year = parseInt(quarterMatch[1]);
+          const quarterNum = parseInt(quarterMatch[2]);
+          
+          // Calculate quarter start and end dates
+          const quarterStartMonth = (quarterNum - 1) * 3;
+          const quarterStartDate = `${year}-${String(quarterStartMonth + 1).padStart(2, '0')}-01`;
+          const quarterEndMonth = quarterStartMonth + 2;
+          const quarterEndDate = `${year}-${String(quarterEndMonth + 1).padStart(2, '0')}-${new Date(year, quarterEndMonth + 1, 0).getDate()}`;
+          
           objectivesQuery = objectivesQuery.where(
             and(
-              sql`${objectives.startDate} <= ${quarterPeriod.endDate}`,
-              sql`${objectives.endDate} >= ${quarterPeriod.startDate}`
+              sql`${objectives.startDate} <= ${quarterEndDate}`,
+              sql`${objectives.endDate} >= ${quarterStartDate}`
             )
           );
         }
@@ -460,13 +486,56 @@ export class MySQLStorageOptimized implements IStorage {
         return await objectivesQuery;
       });
 
+      // Get related key results, actions, and checkpoints for the objectives
+      const objectiveIds = quarterObjectives.map(obj => obj.id);
+      let relatedKeyResults = 0;
+      let relatedActions = 0;
+      let relatedCheckpoints = 0;
+
+      if (objectiveIds.length > 0) {
+        // Count key results for these objectives
+        const keyResultsCount = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+          return await db.select({ count: sql<number>`count(*)` })
+            .from(keyResults)
+            .where(inArray(keyResults.objectiveId, objectiveIds));
+        });
+        relatedKeyResults = keyResultsCount[0]?.count || 0;
+
+        // Get key result IDs for actions and checkpoints
+        const keyResultIds = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+          return await db.select({ id: keyResults.id })
+            .from(keyResults)
+            .where(inArray(keyResults.objectiveId, objectiveIds));
+        });
+
+        const krIds = keyResultIds.map(kr => kr.id);
+        
+        if (krIds.length > 0) {
+          // Count actions for these key results
+          const actionsCount = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+            return await db.select({ count: sql<number>`count(*)` })
+              .from(actions)
+              .where(inArray(actions.keyResultId, krIds));
+          });
+          relatedActions = actionsCount[0]?.count || 0;
+
+          // Count checkpoints for these key results
+          const checkpointsCount = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+            return await db.select({ count: sql<number>`count(*)` })
+              .from(checkpoints)
+              .where(inArray(checkpoints.keyResultId, krIds));
+          });
+          relatedCheckpoints = checkpointsCount[0]?.count || 0;
+        }
+      }
+
       MySQLPerformanceMonitor.endQuery('getQuarterlyData', startTime);
       
       return {
         objectives: quarterObjectives.length,
-        keyResults: 0, // Simplified for now
-        actions: 0,
-        checkpoints: 0
+        keyResults: relatedKeyResults,
+        actions: relatedActions,
+        checkpoints: relatedCheckpoints
       };
     } catch (error) {
       console.error('Error getting quarterly data:', error);
