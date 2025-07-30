@@ -27,7 +27,7 @@ export default function Objectives() {
         const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar objetivos trimestrais");
         const data = await response.json();
-        return data.objectives || [];
+        return Array.isArray(data.objectives) ? data.objectives : [];
       } else {
         // Use regular objectives endpoint
         const response = await fetch(`/api/objectives`);

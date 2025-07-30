@@ -437,14 +437,22 @@ export class MySQLStorageOptimized implements IStorage {
     try {
       const startTime = MySQLPerformanceMonitor.startQuery('getQuarterlyData');
       
-      // Build base query for objectives with access control
+      // Build base query for objectives with access control (complete objective data)
       let objectivesQuery = db.select({
         id: objectives.id,
         title: objectives.title,
+        description: objectives.description,
         startDate: objectives.startDate,
         endDate: objectives.endDate,
-        regionId: objectives.regionId
-      }).from(objectives);
+        status: objectives.status,
+        regionId: objectives.regionId,
+        ownerId: objectives.ownerId,
+        createdAt: objectives.createdAt,
+        updatedAt: objectives.updatedAt,
+        ownerName: users.name,
+        ownerUsername: users.username
+      }).from(objectives)
+      .leftJoin(users, eq(objectives.ownerId, users.id));
 
       // Apply user access control if user is provided
       if (currentUserId) {
@@ -532,7 +540,7 @@ export class MySQLStorageOptimized implements IStorage {
       MySQLPerformanceMonitor.endQuery('getQuarterlyData', startTime);
       
       return {
-        objectives: quarterObjectives.length,
+        objectives: quarterObjectives,
         keyResults: relatedKeyResults,
         actions: relatedActions,
         checkpoints: relatedCheckpoints
