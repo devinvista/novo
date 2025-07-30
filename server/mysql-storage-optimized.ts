@@ -496,44 +496,37 @@ export class MySQLStorageOptimized implements IStorage {
 
       // Get related key results, actions, and checkpoints for the objectives
       const objectiveIds = quarterObjectives.map(obj => obj.id);
-      let relatedKeyResults = 0;
-      let relatedActions = 0;
-      let relatedCheckpoints = 0;
+      let quarterKeyResults: any[] = [];
+      let quarterActions: any[] = [];
 
       if (objectiveIds.length > 0) {
-        // Count key results for these objectives
-        const keyResultsCount = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-          return await db.select({ count: sql<number>`count(*)` })
-            .from(keyResults)
-            .where(inArray(keyResults.objectiveId, objectiveIds));
-        });
-        relatedKeyResults = keyResultsCount[0]?.count || 0;
-
-        // Get key result IDs for actions and checkpoints
-        const keyResultIds = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-          return await db.select({ id: keyResults.id })
-            .from(keyResults)
-            .where(inArray(keyResults.objectiveId, objectiveIds));
+        // Get full key results data for these objectives
+        quarterKeyResults = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+          return await db.select({
+            keyResults: keyResults,
+            objectives: objectives,
+          })
+          .from(keyResults)
+          .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+          .where(inArray(keyResults.objectiveId, objectiveIds));
         });
 
-        const krIds = keyResultIds.map(kr => kr.id);
+        // Get key result IDs for actions
+        const krIds = quarterKeyResults.map(row => row.keyResults.id);
         
         if (krIds.length > 0) {
-          // Count actions for these key results
-          const actionsCount = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-            return await db.select({ count: sql<number>`count(*)` })
-              .from(actions)
-              .where(inArray(actions.keyResultId, krIds));
+          // Get full actions data for these key results
+          quarterActions = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+            return await db.select({
+              actions: actions,
+              keyResults: keyResults,
+              users: users,
+            })
+            .from(actions)
+            .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
+            .leftJoin(users, eq(actions.responsibleId, users.id))
+            .where(inArray(actions.keyResultId, krIds));
           });
-          relatedActions = actionsCount[0]?.count || 0;
-
-          // Count checkpoints for these key results
-          const checkpointsCount = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-            return await db.select({ count: sql<number>`count(*)` })
-              .from(checkpoints)
-              .where(inArray(checkpoints.keyResultId, krIds));
-          });
-          relatedCheckpoints = checkpointsCount[0]?.count || 0;
         }
       }
 
@@ -541,9 +534,15 @@ export class MySQLStorageOptimized implements IStorage {
       
       return {
         objectives: quarterObjectives,
-        keyResults: relatedKeyResults,
-        actions: relatedActions,
-        checkpoints: relatedCheckpoints
+        keyResults: quarterKeyResults.map(row => ({
+          ...row.keyResults,
+          objective: row.objectives!,
+        })),
+        actions: quarterActions.map(row => ({
+          ...row.actions,
+          keyResult: row.keyResults!,
+          responsible: row.users ? this.parseUserJsonFields(row.users) : undefined,
+        })),
       };
     } catch (error) {
       console.error('Error getting quarterly data:', error);
