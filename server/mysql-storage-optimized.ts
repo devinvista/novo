@@ -19,7 +19,7 @@ import { MySQLPerformanceCache, MySQLPerformanceMonitor, MySQLConnectionOptimize
 // Session store configuration for MySQL
 const sessionStore = MemoryStore(session);
 
-// Performance cache and monitoring instances
+// Initialize performance cache
 const performanceCache = MySQLPerformanceCache.getInstance();
 
 export interface IStorage {
@@ -469,8 +469,8 @@ export class MySQLStorageOptimized implements IStorage {
 
       // Apply quarterly filtering if quarter is specified
       if (quarter && quarter !== 'all') {
-        // Parse quarter string like "2025-T1" or "2025-Q1" to get dates
-        const quarterMatch = quarter.match(/(\d{4})-[TQ](\d)/);
+        // Parse quarter string like "2025-T1" to get dates
+        const quarterMatch = quarter.match(/(\d{4})-T(\d)/);
         if (quarterMatch) {
           const year = parseInt(quarterMatch[1]);
           const quarterNum = parseInt(quarterMatch[2]);
@@ -601,16 +601,9 @@ export class MySQLStorageOptimized implements IStorage {
         objectivesResult = allObjectives.filter(obj => {
           const startDate = new Date(obj.startDate);
           const endDate = new Date(obj.endDate);
-          // Parse quarter string like "2025-T1" or "2025-Q1" to get dates
-          const quarterMatch = filters.quarter.match(/(\d{4})-[TQ](\d)/);
-          if (!quarterMatch) {
-            throw new Error(`Invalid quarter format: ${filters.quarter}`);
-          }
-          
-          const year = parseInt(quarterMatch[1]);
-          const quarterNum = parseInt(quarterMatch[2]);
-          const quarterStart = new Date(year, (quarterNum - 1) * 3, 1);
-          const quarterEnd = new Date(year, quarterNum * 3, 0);
+          const [year, quarter] = filters.quarter.split('-T');
+          const quarterStart = new Date(parseInt(year), (parseInt(quarter) - 1) * 3, 1);
+          const quarterEnd = new Date(parseInt(year), parseInt(quarter) * 3, 0);
           
           return (startDate <= quarterEnd && endDate >= quarterStart);
         });
@@ -861,134 +854,39 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async getKeyResult(id: number, currentUserId?: number): Promise<any | undefined> {
-    if (!id || isNaN(id)) {
-      console.error('Invalid ID provided to getKeyResult:', id);
-      return undefined;
-    }
-    
     try {
-      const result = await db.select().from(keyResults).where(eq(keyResults.id, id)).limit(1);
-      
-      if (result.length > 0) {
-        const keyResult = result[0];
-        // Parse JSON fields if needed
-        if (typeof keyResult.strategicIndicatorIds === 'string') {
-          try {
-            keyResult.strategicIndicatorIds = JSON.parse(keyResult.strategicIndicatorIds);
-          } catch (e) {
-            keyResult.strategicIndicatorIds = [];
-          }
-        }
-        if (typeof keyResult.serviceLineIds === 'string') {
-          try {
-            keyResult.serviceLineIds = JSON.parse(keyResult.serviceLineIds);
-          } catch (e) {
-            keyResult.serviceLineIds = [];
-          }
-        }
-        
-        return keyResult;
-      }
-      
-      return undefined;
+      const result = await db.select({
+        keyResults: keyResults,
+        objectives: objectives,
+      })
+      .from(keyResults)
+      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+      .where(eq(keyResults.id, id))
+      .limit(1);
+
+      if (result.length === 0) return undefined;
+
+      const row = result[0];
+      return {
+        id: row.keyResults.id,
+        objectiveId: row.keyResults.objectiveId,
+        title: row.keyResults.title,
+        description: row.keyResults.description,
+        targetValue: row.keyResults.targetValue,
+        currentValue: row.keyResults.currentValue,
+        unit: row.keyResults.unit,
+        frequency: row.keyResults.frequency,
+        startDate: row.keyResults.startDate,
+        endDate: row.keyResults.endDate,
+        status: row.keyResults.status,
+        progress: row.keyResults.progress,
+        createdAt: row.keyResults.createdAt,
+        updatedAt: row.keyResults.updatedAt,
+        objective: row.objectives,
+      };
     } catch (error) {
-      console.error('Error in getKeyResult for ID', id, ':', error);
+      console.error('Error in getKeyResult:', error);
       return undefined;
-    }
-  }
-
-  async generateCheckpoints(keyResultId: number): Promise<any[]> {
-    if (!keyResultId || isNaN(keyResultId)) {
-      throw new Error(`Invalid keyResultId: ${keyResultId}`);
-    }
-    
-    try {
-      // Get the key result details
-      const keyResult = await this.getKeyResult(keyResultId);
-      if (!keyResult) throw new Error('Key result not found');
-
-      // Delete existing checkpoints
-      await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
-
-      // Generate new checkpoints based on frequency  
-      const checkpointsToCreate = [];
-      const startDate = new Date(keyResult.startDate);
-      const endDate = new Date(keyResult.endDate);
-      const frequency = keyResult.frequency || 'monthly';
-      const totalTarget = Number(keyResult.targetValue);
-      
-      // First, calculate all checkpoint periods to determine total count
-      const periods = [];
-      let currentDate = new Date(startDate);
-      let checkpointNumber = 1;
-      
-      while (currentDate <= endDate) {
-        let nextDate: Date;
-        
-        switch (frequency) {
-          case 'weekly':
-            nextDate = new Date(currentDate);
-            nextDate.setDate(currentDate.getDate() + 7);
-            break;
-          case 'monthly':
-            nextDate = new Date(currentDate);
-            nextDate.setMonth(currentDate.getMonth() + 1);
-            break;
-          case 'quarterly':
-            nextDate = new Date(currentDate);
-            nextDate.setMonth(currentDate.getMonth() + 3);
-            break;
-          default:
-            nextDate = new Date(endDate);
-        }
-        
-        if (nextDate > endDate) nextDate = endDate;
-        
-        periods.push({
-          number: checkpointNumber,
-          dueDate: nextDate,
-        });
-        
-        currentDate = new Date(nextDate);
-        currentDate.setDate(currentDate.getDate() + 1);
-        checkpointNumber++;
-        
-        if (nextDate >= endDate) break;
-      }
-
-      // Now create checkpoints with cumulative targets (last checkpoint = total target)
-      const totalPeriods = periods.length;
-      for (let i = 0; i < periods.length; i++) {
-        const period = periods[i];
-        const isLastCheckpoint = i === periods.length - 1;
-        
-        // Target is cumulative: each checkpoint builds up to the total
-        const targetValue = isLastCheckpoint ? totalTarget : Math.round((totalTarget / totalPeriods) * (i + 1) * 100) / 100;
-        
-        checkpointsToCreate.push({
-          keyResultId,
-          period: `Checkpoint ${period.number}`,
-          targetValue: targetValue.toString(),
-          actualValue: "0",
-          status: "pending" as const,
-          dueDate: period.dueDate,
-        });
-      }
-
-      // Insert all checkpoints
-      const createdCheckpoints: any[] = [];
-      for (const checkpoint of checkpointsToCreate) {
-        const [result] = await db.insert(checkpoints).values(checkpoint);
-        createdCheckpoints.push({
-          id: result.insertId,
-          ...checkpoint
-        });
-      }
-
-      return createdCheckpoints;
-    } catch (error) {
-      console.error('Error in generateCheckpoints for keyResultId', keyResultId, ':', error);
-      throw new Error(`Failed to generate checkpoints: ${(error as Error).message}`);
     }
   }
 
@@ -1095,7 +993,56 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<any[]> {
-    return [];
+    try {
+      console.log('getCheckpoints called with:', { keyResultId, currentUserId });
+
+      let query = db.select({
+        checkpoints: checkpoints,
+        keyResults: keyResults,
+        objectives: objectives,
+      })
+      .from(checkpoints)
+      .leftJoin(keyResults, eq(checkpoints.keyResultId, keyResults.id))
+      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
+
+      // Apply filters
+      const conditions = [];
+      if (keyResultId) {
+        console.log('Filtering by keyResultId:', keyResultId);
+        conditions.push(eq(checkpoints.keyResultId, keyResultId));
+      }
+
+      // Apply user access control (admin sees all, others see only their objectives)
+      if (currentUserId && currentUserId !== undefined) {
+        const user = await this.getUser(currentUserId);
+        console.log('User for access control:', user?.username, user?.role);
+        if (user && user.role !== 'admin') {
+          console.log('Non-admin user, filtering by ownerId');
+          conditions.push(eq(objectives.ownerId, currentUserId));
+        } else {
+          console.log('Admin user, no ownership filtering');
+        }
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      console.log('Executing checkpoints query with conditions length:', conditions.length);
+
+      const results = await query.orderBy(asc(checkpoints.dueDate));
+
+      console.log('Found', results.length, 'checkpoint results');
+
+      return results.map(row => ({
+        ...row.checkpoints,
+        keyResult: row.keyResults,
+        objective: row.objectives,
+      }));
+    } catch (error) {
+      console.error('Error in getCheckpoints:', error);
+      return [];
+    }
   }
 
   async updateCheckpoint(id: number, data: any): Promise<Checkpoint> {
@@ -1105,7 +1052,114 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async generateCheckpoints(keyResultId: number): Promise<Checkpoint[]> {
-    return [];
+    if (!keyResultId || isNaN(keyResultId)) {
+      throw new Error(`Invalid keyResultId: ${keyResultId}`);
+    }
+    
+    try {
+      // Get the key result details
+      const keyResult = await this.getKeyResult(keyResultId);
+      if (!keyResult) throw new Error('Key result not found');
+      
+      console.log('Generating checkpoints for key result:', keyResult.id, keyResult.title);
+      console.log('Key result dates:', keyResult.startDate, 'to', keyResult.endDate, 'frequency:', keyResult.frequency);
+
+      // Delete existing checkpoints
+      await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
+
+      // Generate new checkpoints based on frequency  
+      const checkpointsToCreate = [];
+      const startDate = new Date(keyResult.startDate);
+      const endDate = new Date(keyResult.endDate);
+      const frequency = keyResult.frequency;
+      const totalTarget = Number(keyResult.targetValue);
+      
+      // First, calculate all checkpoint periods to determine total count
+      const periods = [];
+      let currentDate = new Date(startDate);
+      let checkpointNumber = 1;
+      
+      while (currentDate <= endDate) {
+        let nextDate: Date;
+        
+        switch (frequency) {
+          case 'weekly':
+            nextDate = new Date(currentDate);
+            nextDate.setDate(currentDate.getDate() + 7);
+            break;
+          case 'monthly':
+            nextDate = new Date(currentDate);
+            nextDate.setMonth(currentDate.getMonth() + 1);
+            break;
+          case 'quarterly':
+            nextDate = new Date(currentDate);
+            nextDate.setMonth(currentDate.getMonth() + 3);
+            break;
+          default:
+            nextDate = new Date(endDate);
+        }
+        
+        if (nextDate > endDate) nextDate = endDate;
+        
+        periods.push({
+          number: checkpointNumber,
+          dueDate: nextDate,
+        });
+        
+        currentDate = new Date(nextDate);
+        currentDate.setDate(currentDate.getDate() + 1);
+        checkpointNumber++;
+        
+        if (nextDate >= endDate) break;
+      }
+
+      // Now create checkpoints with cumulative targets (last checkpoint = total target)
+      const totalPeriods = periods.length;
+      for (let i = 0; i < periods.length; i++) {
+        const period = periods[i];
+        const isLastCheckpoint = i === periods.length - 1;
+        
+        // Target is cumulative: each checkpoint builds up to the total
+        const targetValue = isLastCheckpoint ? totalTarget : (totalTarget / totalPeriods) * (i + 1);
+        
+        checkpointsToCreate.push({
+          keyResultId,
+          title: `Checkpoint ${period.number}`,
+          period: `Period ${period.number}`,
+          targetValue: targetValue.toString(),
+          actualValue: "0",
+          status: "pending" as const,
+          dueDate: new Date(period.dueDate),
+        });
+      }
+
+      // Insert all checkpoints
+      const createdCheckpoints: Checkpoint[] = [];
+      for (const checkpoint of checkpointsToCreate) {
+        const result = await db.insert(checkpoints).values({
+          keyResultId: checkpoint.keyResultId,
+          title: checkpoint.title,
+          period: checkpoint.period,
+          targetValue: checkpoint.targetValue,
+          actualValue: checkpoint.actualValue,
+          status: checkpoint.status,
+          dueDate: checkpoint.dueDate,
+        });
+        
+        const insertId = result[0]?.insertId;
+        if (insertId) {
+          const newCheckpoint = await db.select().from(checkpoints).where(eq(checkpoints.id, Number(insertId))).limit(1);
+          if (newCheckpoint[0]) {
+            createdCheckpoints.push(newCheckpoint[0]);
+          }
+        }
+      }
+
+      return createdCheckpoints;
+    } catch (error) {
+      console.error('Error in generateCheckpoints for keyResultId', keyResultId, ':', error);
+      throw new Error(`Failed to generate checkpoints: ${(error as Error).message}`);
+    }
   }
 
   async getActionComments(actionId: number): Promise<any[]> {

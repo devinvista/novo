@@ -9,7 +9,7 @@ import {
   type Solution, type Service, type ActionComment, type InsertActionComment
 } from "@shared/mysql-schema-final";
 import { db, connection } from "./mysql-db";
-import { eq, and, desc, sql, asc, inArray, or, lte, gte } from "drizzle-orm";
+import { eq, and, desc, sql, asc, inArray, or } from "drizzle-orm";
 import session from "express-session";
 // @ts-ignore - memorystore types are outdated
 import MemoryStore from "memorystore";
@@ -1274,28 +1274,13 @@ export class MySQLStorage implements IStorage {
       };
     }
 
-    // Parse quarter period (e.g., "2025-T1" or "2025-Q1")
+    // Parse quarter period (e.g., "2025-T1")
     // Converter período trimestral para datas de início e fim
-    let yearStr: string, quarterStr: string;
-    
-    if (period.includes('-T')) {
-      [yearStr, quarterStr] = period.split('-T');
-    } else if (period.includes('-Q')) {
-      [yearStr, quarterStr] = period.split('-Q');
-    } else {
-      throw new Error(`Invalid quarter format: ${period}. Expected format: YYYY-T1 or YYYY-Q1`);
-    }
-    
-    const year = parseInt(yearStr);
-    const quarterNum = parseInt(quarterStr);
-    
-    if (isNaN(year) || isNaN(quarterNum) || quarterNum < 1 || quarterNum > 4) {
-      throw new Error(`Invalid quarter format: ${period}. Quarter must be 1-4`);
-    }
-    
+    const [year, quarter] = period.split('-T');
+    const quarterNum = parseInt(quarter);
     const quarterStartMonth = (quarterNum - 1) * 3;
-    const quarterStart = new Date(year, quarterStartMonth, 1);
-    const quarterEnd = new Date(year, quarterStartMonth + 3, 0);
+    const quarterStart = new Date(parseInt(year), quarterStartMonth, 1);
+    const quarterEnd = new Date(parseInt(year), quarterStartMonth + 3, 0);
     
     const quarterData = {
       startDate: quarterStart.toISOString().split('T')[0], // YYYY-MM-DD
@@ -1326,8 +1311,8 @@ export class MySQLStorage implements IStorage {
       and(
         // Lógica de sobreposição: objetivo sobrepõe com trimestre se:
         // data_inicio_objetivo <= data_fim_trimestre AND data_fim_objetivo >= data_inicio_trimestre
-        sql`${objectives.startDate} <= ${endDate}`,
-        sql`${objectives.endDate} >= ${startDate}`,
+        sql`${objectives.startDate} <= '${endDate}'`,
+        sql`${objectives.endDate} >= '${startDate}'`,
         // Aplicar filtros de acesso do usuário - só objetivos do usuário atual
         currentUserId ? eq(objectives.ownerId, currentUserId) : undefined
       )
@@ -1364,8 +1349,8 @@ export class MySQLStorage implements IStorage {
         or(
           // Sobreposição direta do Key Result com o trimestre
           and(
-            sql`${keyResults.startDate} <= ${endDate}`,
-            sql`${keyResults.endDate} >= ${startDate}`
+            sql`${keyResults.startDate} <= '${endDate}'`,
+            sql`${keyResults.endDate} >= '${startDate}'`
           ),
           // OU Key Result pertence a objetivo que sobrepõe com o trimestre
           inArray(keyResults.objectiveId, objectiveIds)
