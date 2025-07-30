@@ -87,7 +87,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
   };
 
   const getIndicatorStats = (indicatorId: number) => {
-    if (!keyResults) return { count: 0, avgProgress: 0, inProgress: 0, completed: 0 };
+    if (!Array.isArray(keyResults)) return { count: 0, avgProgress: 0, inProgress: 0, completed: 0 };
     
     const relatedKRs = keyResults.filter((kr: any) => kr.strategicIndicatorId === indicatorId);
     const avgProgress = relatedKRs.length > 0 
@@ -106,7 +106,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
   };
 
   const getIndicatorChartData = () => {
-    if (!indicators || !keyResults) return [];
+    if (!Array.isArray(indicators) || !Array.isArray(keyResults)) return [];
     
     return indicators.map((indicator: any, index: number) => {
       const stats = getIndicatorStats(indicator.id);
@@ -122,7 +122,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
 
   const isLoading = indicatorsLoading || keyResultsLoading;
   const chartData = getIndicatorChartData();
-  const totalKRs = keyResults?.length || 0;
+  const totalKRs = Array.isArray(keyResults) ? keyResults.length : 0;
 
   return (
     <div className="space-y-6">
@@ -134,7 +134,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{indicators?.length || 0}</div>
+            <div className="text-2xl font-bold">{Array.isArray(indicators) ? indicators.length : 0}</div>
             <p className="text-xs text-muted-foreground">Indicadores estratégicos ativos</p>
           </CardContent>
         </Card>
@@ -157,7 +157,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {keyResults && keyResults.length > 0
+              {Array.isArray(keyResults) && keyResults.length > 0
                 ? (keyResults.reduce((sum: number, kr: any) => sum + parseFloat(kr.progress || "0"), 0) / keyResults.length).toFixed(1)
                 : "0"}%
             </div>
@@ -172,7 +172,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {keyResults && keyResults.length > 0
+              {Array.isArray(keyResults) && keyResults.length > 0
                 ? ((keyResults.filter((kr: any) => kr.status === "completed").length / keyResults.length) * 100).toFixed(0)
                 : "0"}%
             </div>
@@ -201,7 +201,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {chartData.map((entry, index) => (
+                    {chartData.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -255,7 +255,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
             </Card>
           ))
         ) : (
-          indicators?.map((indicator: any) => {
+          Array.isArray(indicators) ? indicators.map((indicator: any) => {
             const stats = getIndicatorStats(indicator.id);
             const colorClass = getIndicatorColor(indicator.name);
             
@@ -308,7 +308,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
                 </CardContent>
               </Card>
             );
-          })
+          }) : []
         )}
       </div>
     </div>

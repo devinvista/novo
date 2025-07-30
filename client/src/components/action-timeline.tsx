@@ -65,7 +65,7 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
         const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar ações trimestrais");
         const data = await response.json();
-        let actions = data.actions || [];
+        let actions = Array.isArray(data.actions) ? data.actions : [];
         
         // Filter by keyResultId if specified
         if (keyResultId) {
@@ -77,7 +77,8 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
         const params = keyResultId ? `?keyResultId=${keyResultId}` : "";
         const response = await fetch(`/api/actions${params}`, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar ações");
-        return response.json();
+        const result = await response.json();
+        return Array.isArray(result) ? result : [];
       }
     },
   });
@@ -127,18 +128,21 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
     return diffDays;
   };
 
-  const sortedActions = actions?.sort((a: any, b: any) => {
+  const sortedActions = Array.isArray(actions) ? actions.sort((a: any, b: any) => {
     // Prioridade: alta > média > baixa
-    const priorityOrder = { high: 0, medium: 1, low: 2 };
-    if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    const priorityOrder: { [key: string]: number } = { high: 0, medium: 1, low: 2 };
+    const aPriority = priorityOrder[a.priority] ?? 2;
+    const bPriority = priorityOrder[b.priority] ?? 2;
+    
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
     }
     // Depois por data de vencimento
     if (a.dueDate && b.dueDate) {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     }
     return 0;
-  });
+  }) : [];
 
   const displayActions = showAll ? sortedActions : sortedActions?.slice(0, 5);
 
