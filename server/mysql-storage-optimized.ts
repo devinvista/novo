@@ -19,7 +19,8 @@ import { MySQLPerformanceCache, MySQLPerformanceMonitor, MySQLConnectionOptimize
 // Session store configuration for MySQL
 const sessionStore = MemoryStore(session);
 
-// Performance cache and monitoring are handled by static classes
+// Performance cache and monitoring instances
+const performanceCache = MySQLPerformanceCache.getInstance();
 
 export interface IStorage {
   // User management
