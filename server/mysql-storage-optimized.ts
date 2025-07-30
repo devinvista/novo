@@ -469,8 +469,8 @@ export class MySQLStorageOptimized implements IStorage {
 
       // Apply quarterly filtering if quarter is specified
       if (quarter && quarter !== 'all') {
-        // Parse quarter string like "2025-T1" to get dates
-        const quarterMatch = quarter.match(/(\d{4})-T(\d)/);
+        // Parse quarter string like "2025-T1" or "2025-Q1" to get dates
+        const quarterMatch = quarter.match(/(\d{4})-[TQ](\d)/);
         if (quarterMatch) {
           const year = parseInt(quarterMatch[1]);
           const quarterNum = parseInt(quarterMatch[2]);
@@ -601,9 +601,16 @@ export class MySQLStorageOptimized implements IStorage {
         objectivesResult = allObjectives.filter(obj => {
           const startDate = new Date(obj.startDate);
           const endDate = new Date(obj.endDate);
-          const [year, quarter] = filters.quarter.split('-T');
-          const quarterStart = new Date(parseInt(year), (parseInt(quarter) - 1) * 3, 1);
-          const quarterEnd = new Date(parseInt(year), parseInt(quarter) * 3, 0);
+          // Parse quarter string like "2025-T1" or "2025-Q1" to get dates
+          const quarterMatch = filters.quarter.match(/(\d{4})-[TQ](\d)/);
+          if (!quarterMatch) {
+            throw new Error(`Invalid quarter format: ${filters.quarter}`);
+          }
+          
+          const year = parseInt(quarterMatch[1]);
+          const quarterNum = parseInt(quarterMatch[2]);
+          const quarterStart = new Date(year, (quarterNum - 1) * 3, 1);
+          const quarterEnd = new Date(year, quarterNum * 3, 0);
           
           return (startDate <= quarterEnd && endDate >= quarterStart);
         });
