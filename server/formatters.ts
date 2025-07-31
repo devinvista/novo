@@ -22,21 +22,36 @@ export function parseDecimalBR(value: string | number): number {
 }
 
 // Converte float do banco para string brasileira (vírgula decimal)
+// Mostra inteiros quando possível, decimais apenas quando necessário
 export function formatDecimalBR(value: number | string, decimals: number = 2): string {
-  if (value === null || value === undefined || value === "") return "0,00";
+  if (value === null || value === undefined || value === "") return "0";
   
   const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0,00";
+  if (isNaN(num)) return "0";
+  
+  // Se o número é inteiro, não mostrar decimais
+  if (num % 1 === 0) {
+    return num.toString();
+  }
   
   return num.toFixed(decimals).replace(".", ",");
 }
 
 // Formata número para exibição completa brasileira (vírgula decimal + ponto milhares)
+// Mostra inteiros quando possível, decimais apenas quando necessário
 export function formatNumberBR(value: number | string, decimals: number = 2): string {
-  if (value === null || value === undefined || value === "") return "0,00";
+  if (value === null || value === undefined || value === "") return "0";
   
   const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0,00";
+  if (isNaN(num)) return "0";
+  
+  // Se o número é inteiro, não mostrar decimais
+  if (num % 1 === 0) {
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(num);
+  }
   
   return new Intl.NumberFormat('pt-BR', {
     minimumFractionDigits: decimals,
