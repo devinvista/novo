@@ -10,12 +10,62 @@ export function parseDecimalBR(value: string | number): number {
   }
   if (!value || value === "" || value === null || value === undefined) return 0;
   
-  // Remove espaços, pontos (separadores de milhares) e substitui vírgula por ponto para parseFloat
-  const cleanValue = value.toString()
-    .trim()
-    .replace(/\s/g, "")              // Remove espaços
-    .replace(/\./g, "")              // Remove pontos (separadores de milhares)
-    .replace(",", ".");              // Substitui vírgula por ponto (decimal)
+  const stringValue = value.toString().trim();
+  
+  // Se é um número padrão do banco (apenas dígitos e ponto decimal), usar parseFloat direto
+  if (/^\d+\.?\d*$/.test(stringValue)) {
+    const parsed = parseFloat(stringValue);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  
+  // Para formato brasileiro, determinar se vírgula é decimal ou separador de milhares
+  const hasComma = stringValue.includes(',');
+  const hasDot = stringValue.includes('.');
+  
+  let cleanValue: string;
+  
+  if (hasComma && hasDot) {
+    // Formato: 1.234.567,89 (ponto = milhares, vírgula = decimal)
+    const parts = stringValue.split(',');
+    if (parts.length === 2) {
+      const wholePart = parts[0].replace(/\./g, ''); // Remove pontos dos milhares
+      const decimalPart = parts[1];
+      cleanValue = `${wholePart}.${decimalPart}`;
+    } else {
+      cleanValue = stringValue.replace(/[^\d.,]/g, '').replace(',', '.');
+    }
+  } else if (hasComma && !hasDot) {
+    // Só vírgula - pode ser decimal (2,50) ou milhares (2.500 digitado como 2,500)
+    const commaIndex = stringValue.indexOf(',');
+    const afterComma = stringValue.substring(commaIndex + 1);
+    
+    // Se tem 1-2 dígitos após vírgula, é decimal; se tem 3+ dígitos, é separador de milhares
+    if (afterComma.length <= 2) {
+      cleanValue = stringValue.replace(',', '.');
+    } else {
+      cleanValue = stringValue.replace(',', '');
+    }
+  } else if (hasDot && !hasComma) {
+    // Só ponto - verificar se é decimal ou separador de milhares
+    const dotIndex = stringValue.indexOf('.');
+    const beforeDot = stringValue.substring(0, dotIndex);
+    const afterDot = stringValue.substring(dotIndex + 1);
+    
+    // Lógica brasileira: se tem exatamente 3 dígitos após ponto E não mais que 4 dígitos antes,
+    // é separador de milhares (ex: 2.500, 12.500, 1234.500)
+    // Se tem 1-2 dígitos após ponto, é decimal (ex: 2.50, 123.45)
+    if (afterDot.length === 3 && beforeDot.length <= 4) {
+      cleanValue = stringValue.replace(/\./g, '');
+    } else if (afterDot.length <= 2) {
+      cleanValue = stringValue;
+    } else {
+      // Múltiplos pontos ou padrão complexo - remover pontos (tratando como separador de milhares)
+      cleanValue = stringValue.replace(/\./g, '');
+    }
+  } else {
+    // Só dígitos
+    cleanValue = stringValue.replace(/[^\d]/g, '');
+  }
   
   const parsed = parseFloat(cleanValue);
   return isNaN(parsed) ? 0 : parsed;

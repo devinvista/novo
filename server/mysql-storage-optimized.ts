@@ -1175,6 +1175,15 @@ export class MySQLStorageOptimized implements IStorage {
         // Target is cumulative: each checkpoint builds up to the total
         const targetValue = isLastCheckpoint ? totalTarget : (totalTarget / totalPeriods) * (i + 1);
         
+        // Debug logging para identificar o problema
+        console.log(`🔍 Checkpoint ${i + 1} calculation:`);
+        console.log(`  - Total target: ${totalTarget}`);
+        console.log(`  - Total periods: ${totalPeriods}`);
+        console.log(`  - Is last checkpoint: ${isLastCheckpoint}`);
+        console.log(`  - Calculated target value: ${targetValue}`);
+        console.log(`  - Target value toString: "${targetValue.toString()}"`);
+        console.log(`  - Target value toFixed(2): "${targetValue.toFixed(2)}"`);
+        
         // Format dates in Brazilian style (DD/MM)
         const formatBrazilianDate = (date: Date) => {
           const day = date.getDate().toString().padStart(2, '0');
@@ -1199,11 +1208,17 @@ export class MySQLStorageOptimized implements IStorage {
         const title = `${currentDateFormatted} ${period.number}/${totalPeriods}`;
         const periodText = `(${previousDateFormatted} a ${currentDateFormatted})`;
         
+        // Converter para 2 casas decimais para evitar problemas de precisão 
+        const formattedTargetValue = targetValue.toFixed(2);
+        
+        console.log(`📋 Creating checkpoint with title: "${title}"`);
+        console.log(`📋 Final targetValue: "${formattedTargetValue}"`);
+        
         checkpointsToCreate.push({
           keyResultId,
           title: title,
           period: periodText,
-          targetValue: targetValue.toString(),
+          targetValue: formattedTargetValue,
           actualValue: "0",
           status: "pending" as const,
           dueDate: new Date(period.dueDate),
