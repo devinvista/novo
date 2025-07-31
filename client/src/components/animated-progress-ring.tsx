@@ -56,29 +56,24 @@ export default function AnimatedProgressRing({
   }, [progress, showAnimation, status]);
 
   const getProgressColor = () => {
-    if (status === "completed") return "hsl(137, 62%, 42%)"; // FIERGS Green SESI
-    if (progress >= 90) return "hsl(220, 65%, 36%)"; // FIERGS Blue
-    if (progress >= 70) return "hsl(195, 100%, 50%)"; // FIERGS Cyan
-    if (progress >= 50) return "hsl(165, 100%, 32%)"; // FIERGS Green IEL
-    if (progress >= 25) return "hsl(14, 80%, 58%)"; // FIERGS Orange
-    return "#6b7280"; // gray-500
+    // Novo padrão: <85 vermelho; 85-99 amarelo; ≥100 verde
+    if (progress >= 100) return "hsl(137, 62%, 42%)"; // Verde (FIERGS Green SESI)
+    if (progress >= 85) return "hsl(45, 93%, 47%)"; // Amarelo (warning)
+    return "hsl(0, 84%, 60%)"; // Vermelho (error)
   };
 
   const getMotivationalMessage = () => {
-    if (status === "completed") return "Concluído! 🎉";
-    if (progress >= 90) return "Quase lá!";
-    if (progress >= 70) return "Ótimo progresso!";
+    if (progress >= 100) return "Meta alcançada!";
+    if (progress >= 85) return "Quase lá!";
     if (progress >= 50) return "No caminho certo!";
     if (progress >= 25) return "Continue assim!";
-    return "Vamos começar!";
+    return "Precisa atenção";
   };
 
   const getStatusIcon = () => {
-    if (status === "completed") return <CheckCircle2 className="h-6 w-6" style={{ color: "hsl(137, 62%, 42%)" }} />;
-    if (progress >= 90) return <Award className="h-6 w-6" style={{ color: "hsl(220, 65%, 36%)" }} />;
-    if (progress >= 70) return <TrendingUp className="h-6 w-6" style={{ color: "hsl(195, 100%, 50%)" }} />;
-    if (progress >= 50) return <Target className="h-6 w-6" style={{ color: "hsl(165, 100%, 32%)" }} />;
-    return <Zap className="h-6 w-6" style={{ color: "hsl(14, 80%, 58%)" }} />;
+    if (progress >= 100) return <CheckCircle2 className="h-6 w-6" style={{ color: "hsl(137, 62%, 42%)" }} />;
+    if (progress >= 85) return <Award className="h-6 w-6" style={{ color: "hsl(45, 93%, 47%)" }} />;
+    return <Target className="h-6 w-6" style={{ color: "hsl(0, 84%, 60%)" }} />;
   };
 
   return (

@@ -132,6 +132,25 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
+- July 31, 2025. **SISTEMA DE CORES DOS CHECKPOINTS ATUALIZADO + BADGES MELHORADOS**
+  - **NOVO PADRÃO DE CORES**: Implementado sistema baseado no progresso dos checkpoints
+    - <85% de progresso: Vermelho (indica necessidade de atenção)
+    - 85-99% de progresso: Amarelo (quase alcançando a meta)
+    - ≥100% de progresso: Verde (meta alcançada ou superada)
+  - **COMPONENTES ATUALIZADOS**: Sistema de cores aplicado em todos os elementos visuais
+    - AnimatedProgressRing: cores dos anéis de progresso seguem novo padrão
+    - Badge component: adicionadas variants success, warning, error
+    - CheckpointUpdater: checkpoints concluídos com cores baseadas no progresso
+    - CheckpointUpdaterEnhanced: visualizações em grid e lista atualizadas
+  - **UTILITÁRIOS CRIADOS**: Funções centralizadas para consistência visual
+    - getProgressBadgeVariant(): determina variante do badge baseado no progresso
+    - getProgressBadgeText(): texto apropriado para cada faixa de progresso
+    - getProgressColor(): cor HSL padronizada para cada nível
+    - getProgressClassName(): classes CSS para styling consistente
+  - **EXPERIÊNCIA DO USUÁRIO MELHORADA**: Visual mais intuitivo e informativo
+    - Cores mais significativas que refletem o desempenho real
+    - Badges informativos mostrando status do progresso
+    - Feedback visual claro sobre necessidade de atenção vs. sucesso
 - July 31, 2025. **MIGRAÇÃO REPLIT AGENT → REPLIT COMPLETA + LOGO ATUALIZADO + CHECKPOINT NAMING MELHORADO**
   - **LOGO ATUALIZADO**: Substituído logo antigo pelo novo design OKRs fornecido pelo usuário
     - Atualizado componente sidebar com nova imagem do logo

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { NumberInputBR } from "@/components/ui/number-input-br";
 import { parseDecimalBR, formatDecimalBR } from "@/lib/formatters";
+import { getProgressBadgeVariant, getProgressClassName } from "@/lib/checkpoint-utils";
 import {
   Dialog,
   DialogContent,
@@ -209,35 +210,50 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
                         Checkpoints Concluídos ({completedCheckpoints.length})
                       </h4>
                       <div className="space-y-2">
-                        {completedCheckpoints.map((checkpoint: any) => (
-                          <div
-                            key={checkpoint.id}
-                            className="p-3 rounded-lg border border-green-200 bg-green-50"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                <div>
-                                  <p className="font-medium text-sm">{checkpoint.period}</p>
-                                  <p className="text-xs text-gray-500">
-                                    Concluído em {format(new Date(checkpoint.completedAt), "dd/MM/yyyy")}
-                                  </p>
+                        {completedCheckpoints.map((checkpoint: any) => {
+                          const progress = parseFloat(checkpoint.progress) || 0;
+                          const badgeVariant = getProgressBadgeVariant(progress);
+                          const progressClasses = getProgressClassName(progress);
+                          
+                          return (
+                            <div
+                              key={checkpoint.id}
+                              className={`p-3 rounded-lg border ${progressClasses}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <CheckCircle2 className={`h-4 w-4 ${
+                                    progress >= 100 ? 'text-green-600' : 
+                                    progress >= 85 ? 'text-yellow-600' : 'text-red-600'
+                                  }`} />
+                                  <div>
+                                    <p className="font-medium text-sm">{checkpoint.period}</p>
+                                    <p className="text-xs text-gray-500">
+                                      Concluído em {format(new Date(checkpoint.completedAt), "dd/MM/yyyy")}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right flex items-center gap-2">
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {checkpoint.actualValue} / {checkpoint.targetValue}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {progress.toFixed(1)}% da meta
+                                    </p>
+                                  </div>
+                                  <Badge variant={badgeVariant} className="text-xs">
+                                    {progress >= 100 ? "Superou" : 
+                                     progress >= 85 ? "Quase lá" : "Abaixo"}
+                                  </Badge>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium">
-                                  {checkpoint.actualValue} / {checkpoint.targetValue}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {checkpoint.progress}% da meta
-                                </p>
-                              </div>
+                              {checkpoint.notes && (
+                                <p className="text-xs text-gray-600 mt-2">{checkpoint.notes}</p>
+                              )}
                             </div>
-                            {checkpoint.notes && (
-                              <p className="text-xs text-gray-600 mt-2">{checkpoint.notes}</p>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

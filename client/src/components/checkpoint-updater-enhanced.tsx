@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import CheckpointProgressGrid from "./checkpoint-progress-grid";
 import { NumberInputBR } from "@/components/ui/number-input-br";
 import { parseDecimalBR, formatDecimalBR } from "@/lib/formatters";
+import { getProgressBadgeVariant, getProgressBadgeText } from "@/lib/checkpoint-utils";
 import {
   Dialog,
   DialogContent,
@@ -278,21 +279,38 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
       
       {viewMode === "list" && (
         <div className="space-y-4">
-          {checkpoints.map((checkpoint: any) => (
-            <Card key={checkpoint.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold">{checkpoint.period}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Meta: {checkpoint.targetValue} | Atual: {checkpoint.actualValue}
-                  </p>
+          {checkpoints.map((checkpoint: any) => {
+            const targetValue = parseFloat(checkpoint.targetValue);
+            const actualValue = parseFloat(checkpoint.actualValue);
+            const progress = targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
+            const badgeVariant = getProgressBadgeVariant(progress);
+            const badgeText = getProgressBadgeText(progress);
+            
+            return (
+              <Card key={checkpoint.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold">{checkpoint.period}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Meta: {checkpoint.targetValue} | Atual: {checkpoint.actualValue || '0'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Progresso: {progress.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <Badge variant={badgeVariant}>
+                      {badgeText}
+                    </Badge>
+                    <div className="text-xs text-muted-foreground">
+                      {checkpoint.status === 'completed' ? 'Concluído' : 
+                       checkpoint.status === 'active' ? 'Ativo' : 'Pendente'}
+                    </div>
+                  </div>
                 </div>
-                <Badge variant={checkpoint.status === 'completed' ? 'default' : 'secondary'}>
-                  {checkpoint.status}
-                </Badge>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
 
