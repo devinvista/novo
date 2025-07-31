@@ -26,7 +26,7 @@ async function test2500Scenario() {
       
       try {
         // Teste parseDecimalBR
-        const parsed = parseDecimalBR(scenario.input);
+        const parsed = convertBRToDatabase(scenario.input);
         console.log(`  parseDecimalBR: ${parsed}`);
         
         // Teste formatDecimalBR  

@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema, insertUserSchema } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { z } from "zod";
-import { parseDecimalBR, formatDecimalBR, formatNumberBR, convertBRToDatabase, convertDatabaseToBR } from "./formatters";
+import { formatDecimalBR, formatNumberBR, convertBRToDatabase, convertDatabaseToBR } from "./formatters";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -385,12 +385,12 @@ export function registerRoutes(app: Express): Server {
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do formato brasileiro para banco
       if (requestData.targetValue) {
-        const targetValueDb = parseDecimalBR(requestData.targetValue);
+        const targetValueDb = convertBRToDatabase(requestData.targetValue);
         requestData.targetValue = targetValueDb.toString();
       }
       
       if (requestData.currentValue) {
-        const currentValueDb = parseDecimalBR(requestData.currentValue);
+        const currentValueDb = convertBRToDatabase(requestData.currentValue);
         requestData.currentValue = currentValueDb.toString();
       }
       
@@ -453,12 +453,12 @@ export function registerRoutes(app: Express): Server {
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do formato brasileiro para banco
       if (requestData.targetValue) {
-        const targetValueDb = parseDecimalBR(requestData.targetValue);
+        const targetValueDb = convertBRToDatabase(requestData.targetValue);
         requestData.targetValue = targetValueDb.toString();
       }
       
       if (requestData.currentValue) {
-        const currentValueDb = parseDecimalBR(requestData.currentValue);
+        const currentValueDb = convertBRToDatabase(requestData.currentValue);
         requestData.currentValue = currentValueDb.toString();
       }
       
@@ -697,7 +697,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valor real do formato brasileiro para banco
-      const actualValueDb = actualValue ? parseDecimalBR(actualValue) : 0;
+      const actualValueDb = actualValue ? convertBRToDatabase(actualValue) : 0;
       
       const updated = await storage.updateCheckpoint(id, {
         actualValue: actualValueDb.toString(),

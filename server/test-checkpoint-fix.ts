@@ -22,7 +22,7 @@ async function testCheckpointFix() {
     
     console.log('\n📋 Testando conversões corrigidas:');
     testCases.forEach((testCase, index) => {
-      const parsed = parseDecimalBR(testCase);
+      const parsed = convertBRToDatabase(testCase);
       const formatted = convertDatabaseToBR(parsed);
       
       console.log(`  ${index + 1}. "${testCase}" -> ${parsed} -> "${formatted}"`);
@@ -31,7 +31,7 @@ async function testCheckpointFix() {
     // Teste específico do cenário relatado: 2.500 -> 2.3
     console.log('\n🎯 Teste específico do problema relatado:');
     const problematico = '2.500';
-    const parsed = parseDecimalBR(problematico);
+    const parsed = convertBRToDatabase(problematico);
     const formatted = convertDatabaseToBR(parsed);
     
     console.log(`Entrada: "${problematico}"`);
