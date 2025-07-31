@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Target, TrendingUp, Award, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getProgressBadgeVariant, getProgressBadgeText } from "@/lib/checkpoint-utils";
 
 interface AnimatedProgressRingProps {
   progress: number;
@@ -12,7 +11,6 @@ interface AnimatedProgressRingProps {
   actualValue: number;
   status: string;
   period: string;
-  dueDate?: string;
   showAnimation?: boolean;
   onHover?: () => void;
   onClick?: () => void;
@@ -26,7 +24,6 @@ export default function AnimatedProgressRing({
   actualValue,
   status,
   period,
-  dueDate,
   showAnimation = true,
   onHover,
   onClick
@@ -44,7 +41,7 @@ export default function AnimatedProgressRing({
   useEffect(() => {
     if (showAnimation) {
       const timer = setTimeout(() => {
-        setAnimatedProgress(progress === -1 ? 0 : Math.min(progress, 100));
+        setAnimatedProgress(Math.min(progress, 100));
         
         // Show celebration for completed items
         if (progress >= 100 && status === "completed") {
@@ -161,7 +158,7 @@ export default function AnimatedProgressRing({
             }}
             transition={{ duration: 0.5 }}
           >
-            {progress === -1 ? "---" : `${Math.round(animatedProgress)}%`}
+            {Math.round(animatedProgress)}%
           </motion.div>
         </div>
 
@@ -209,27 +206,27 @@ export default function AnimatedProgressRing({
         
         {/* Progress Values */}
         <div className="text-xs text-gray-500 mt-1">
-          {progress === -1 ? "Aguardando período" : `${actualValue.toFixed(1)} / ${targetValue.toFixed(1)}`}
+          {actualValue.toFixed(1)} / {targetValue.toFixed(1)}
         </div>
       </motion.div>
 
-      {/* Status Badge - Bottom Right Corner */}
+      {/* Motivational Message */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
             transition={{ duration: 0.2 }}
-            className="absolute -top-2 -right-2 z-50 checkpoint-badge"
-            style={{ zIndex: 10000, position: 'absolute' }}
+            className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 z-50 checkpoint-badge"
+            style={{ zIndex: 9999, position: 'absolute' }}
           >
             <Badge 
-              variant={getProgressBadgeVariant(progress, dueDate)} 
-              className="text-xs whitespace-nowrap shadow-xl relative z-50 checkpoint-badge px-2 py-1"
-              style={{ zIndex: 10000, position: 'relative', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)' }}
+              variant="secondary" 
+              className="text-xs whitespace-nowrap bg-white border shadow-xl relative z-50 checkpoint-badge"
+              style={{ zIndex: 9999, position: 'relative', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }}
             >
-              {getProgressBadgeText(progress, dueDate)}
+              {getMotivationalMessage()}
             </Badge>
           </motion.div>
         )}

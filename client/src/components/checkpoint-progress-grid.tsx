@@ -81,16 +81,7 @@ export default function CheckpointProgressGrid({
               {checkpoints.map((checkpoint, index) => {
                 const targetValue = parseFloat(checkpoint.targetValue);
                 const actualValue = parseFloat(checkpoint.actualValue);
-                
-                // Verificar se é checkpoint futuro
-                const today = new Date();
-                const checkpointDate = new Date(checkpoint.dueDate);
-                const isFuture = checkpointDate > today;
-                
-                // Se é futuro e não tem valor registrado, não mostrar 0%
-                const progress = isFuture && actualValue === 0 
-                  ? -1  // Valor especial para indicar "aguardando"
-                  : targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
+                const progress = targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
                 
                 return (
                   <motion.div
@@ -113,7 +104,6 @@ export default function CheckpointProgressGrid({
                       actualValue={actualValue}
                       status={checkpoint.status}
                       period={checkpoint.period}
-                      dueDate={checkpoint.dueDate}
                       size={140}
                       strokeWidth={10}
                       onHover={() => setHoveredCheckpoint(checkpoint.id)}
