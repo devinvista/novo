@@ -235,11 +235,6 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Target className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Checkpoints</h3>
-          <Badge variant="outline">{checkpoints.length} períodos</Badge>
-        </div>
         <div className="flex gap-2">
           <Button
             variant={viewMode === "grid" ? "default" : "outline"}
@@ -255,8 +250,19 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
           >
             <List className="h-4 w-4" />
           </Button>
-          
         </div>
+        
+        {keyResultId && (
+          <Button 
+            onClick={() => setShowConfirmDialog(true)}
+            disabled={isRecreating}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRecreating ? 'animate-spin' : ''}`} />
+            {isRecreating ? "Recriando..." : "Recriar"}
+          </Button>
+        )}
       </div>
       
       {viewMode === "grid" && keyResultId && (
@@ -267,7 +273,6 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
             setSelectedCheckpoint(checkpoint);
             setIsEditDialogOpen(true);
           }}
-          onRegenerateCheckpoints={() => setShowConfirmDialog(true)}
         />
       )}
       

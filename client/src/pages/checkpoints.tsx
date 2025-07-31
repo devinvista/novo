@@ -61,95 +61,60 @@ export default function Checkpoints() {
       <main className="flex-1 flex flex-col overflow-hidden">
         <Header 
           title="Checkpoints" 
-          description="Atualize e acompanhe o progresso dos resultados-chave"
-        />
-        
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Overview of Next Checkpoints - only shown when no specific key result is selected */}
-          {!selectedKeyResultId && (
-            <NextCheckpointsOverview />
-          )}
-
-          {/* Filter Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filtros
-              </CardTitle>
-              <CardDescription>
-                Filtre os checkpoints por resultado-chave
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 items-center">
-                <div className="flex-1">
-                  <Select 
-                    value={selectedKeyResultId?.toString() || "all"} 
-                    onValueChange={(value) => setSelectedKeyResultId(value === "all" ? undefined : parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um resultado-chave" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os resultados-chave</SelectItem>
-                      {keyResults?.map((kr: any) => (
-                        <SelectItem key={kr.id} value={kr.id.toString()}>
-                          {kr.title}{kr.frequency ? ` (${kr.frequency})` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Badge variant="outline">
-                    {totalCheckpoints} checkpoint{totalCheckpoints !== 1 ? 's' : ''}
-                  </Badge>
-                  {completedCheckpoints > 0 && (
-                    <Badge className="bg-green-100 text-green-800">
-                      {completedCheckpoints} concluído{completedCheckpoints !== 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                  {atRiskCheckpoints > 0 && (
-                    <Badge className="bg-red-100 text-red-800">
-                      {atRiskCheckpoints} em risco
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Checkpoints Content */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Checkpoints
-                {selectedKeyResultId && (
-                  <Badge variant="secondary">
-                    {keyResults?.find((kr: any) => kr.id === selectedKeyResultId)?.title}
+          description="Acompanhe e atualize o progresso dos resultados-chave"
+          action={
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2">
+                <Badge variant="outline">
+                  {totalCheckpoints} checkpoint{totalCheckpoints !== 1 ? 's' : ''}
+                </Badge>
+                {completedCheckpoints > 0 && (
+                  <Badge className="bg-green-100 text-green-800">
+                    {completedCheckpoints} concluído{completedCheckpoints !== 1 ? 's' : ''}
                   </Badge>
                 )}
-              </CardTitle>
-              <CardDescription>
-                {selectedKeyResultId 
-                  ? "Acompanhe o progresso dos checkpoints do resultado-chave selecionado"
-                  : "Acompanhe o progresso de todos os checkpoints"
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingKeyResults || isLoadingCheckpoints ? (
-                <div className="flex items-center justify-center p-8">
-                  <div className="text-muted-foreground">Carregando checkpoints...</div>
-                </div>
-              ) : (
-                <CheckpointUpdaterEnhanced keyResultId={selectedKeyResultId} />
-              )}
-            </CardContent>
-          </Card>
+                {atRiskCheckpoints > 0 && (
+                  <Badge className="bg-red-100 text-red-800">
+                    {atRiskCheckpoints} em risco
+                  </Badge>
+                )}
+              </div>
+              <Select 
+                value={selectedKeyResultId?.toString() || "all"} 
+                onValueChange={(value) => setSelectedKeyResultId(value === "all" ? undefined : parseInt(value))}
+              >
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Filtrar por resultado-chave" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os resultados-chave</SelectItem>
+                  {keyResults?.map((kr: any) => (
+                    <SelectItem key={kr.id} value={kr.id.toString()}>
+                      {kr.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          }
+        />
+        
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Overview of Next Checkpoints - only shown when no specific key result is selected */}
+          {!selectedKeyResultId && (
+            <div className="mb-6">
+              <NextCheckpointsOverview />
+            </div>
+          )}
+
+          {/* Checkpoints Content */}
+          {isLoadingKeyResults || isLoadingCheckpoints ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-muted-foreground">Carregando checkpoints...</div>
+            </div>
+          ) : (
+            <CheckpointUpdaterEnhanced keyResultId={selectedKeyResultId} />
+          )}
         </div>
       </main>
     </div>

@@ -70,83 +70,13 @@ export default function CheckpointProgressGrid({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6"
+      className="space-y-4"
     >
-      {/* Header with Overall Progress */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Checkpoints de Progresso
-                {keyResultTitle && (
-                  <Badge variant="secondary" className="ml-2">
-                    {keyResultTitle}
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                Acompanhe o progresso através de marcos visuais interativos
-              </CardDescription>
-            </div>
-            
-            {onRegenerateCheckpoints && (
-              <Button 
-                onClick={onRegenerateCheckpoints}
-                variant="outline"
-                size="sm"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Recriar
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {completedCheckpoints}/{totalCheckpoints}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Concluídos
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {overallProgress.toFixed(1)}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Progresso Geral
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <Badge variant="outline">
-                {totalCheckpoints} checkpoint{totalCheckpoints !== 1 ? 's' : ''}
-              </Badge>
-              {completedCheckpoints > 0 && (
-                <Badge className="bg-green-100 text-green-800">
-                  {completedCheckpoints} concluído{completedCheckpoints !== 1 ? 's' : ''}
-                </Badge>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Progress Rings Grid */}
-      <Card>
-        <CardContent className="p-6">
-          <motion.div 
-            className={`grid gap-6 ${getGridColumns()}`}
-            layout
-          >
+      <motion.div 
+        className={`grid gap-6 ${getGridColumns()}`}
+        layout
+      >
             <AnimatePresence>
               {checkpoints.map((checkpoint, index) => {
                 const targetValue = parseFloat(checkpoint.targetValue);
@@ -182,60 +112,9 @@ export default function CheckpointProgressGrid({
                 );
               })}
             </AnimatePresence>
-          </motion.div>
-        </CardContent>
-      </Card>
-
-      {/* Performance Insights */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Insights de Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: "hsl(220, 65%, 95%)" }}>
-                <CalendarDays className="h-8 w-8 mx-auto mb-2" style={{ color: "hsl(220, 65%, 36%)" }} />
-                <div className="text-sm font-medium" style={{ color: "hsl(220, 65%, 36%)" }}>
-                  Próximo Marco
-                </div>
-                <div className="text-xs" style={{ color: "hsl(220, 65%, 50%)" }}>
-                  {checkpoints.find(cp => cp.status === "pending")?.period || "Todos concluídos"}
-                </div>
-              </div>
-              
-              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: "hsl(137, 62%, 95%)" }}>
-                <Target className="h-8 w-8 mx-auto mb-2" style={{ color: "hsl(137, 62%, 42%)" }} />
-                <div className="text-sm font-medium" style={{ color: "hsl(137, 62%, 42%)" }}>
-                  Taxa de Sucesso
-                </div>
-                <div className="text-xs" style={{ color: "hsl(137, 62%, 50%)" }}>
-                  {totalCheckpoints > 0 ? ((completedCheckpoints / totalCheckpoints) * 100).toFixed(0) : 0}% concluído
-                </div>
-              </div>
-              
-              <div className="text-center p-4 rounded-lg" style={{ backgroundColor: "hsl(195, 100%, 95%)" }}>
-                <TrendingUp className="h-8 w-8 mx-auto mb-2" style={{ color: "hsl(195, 100%, 50%)" }} />
-                <div className="text-sm font-medium" style={{ color: "hsl(195, 100%, 40%)" }}>
-                  Momentum
-                </div>
-                <div className="text-xs" style={{ color: "hsl(195, 100%, 45%)" }}>
-                  {overallProgress >= 70 ? "Excelente!" : 
-                   overallProgress >= 50 ? "Bom ritmo" : 
-                   overallProgress >= 25 ? "Acelerando" : "Iniciando"}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </motion.div>
+
+
     </motion.div>
   );
 }
