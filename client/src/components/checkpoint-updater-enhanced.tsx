@@ -199,16 +199,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
           >
             <List className="h-4 w-4" />
           </Button>
-          {keyResultId && (
-            <Button 
-              onClick={() => recreateMutation.mutate()}
-              disabled={recreateMutation.isPending}
-              size="sm"
-              variant="outline"
-            >
-              <RefreshCw className={`h-4 w-4 ${recreateMutation.isPending ? 'animate-spin' : ''}`} />
-            </Button>
-          )}
+          
         </div>
       </div>
       
