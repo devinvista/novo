@@ -1124,6 +1124,8 @@ export class MySQLStorageOptimized implements IStorage {
 
       // Now create checkpoints with cumulative targets (last checkpoint = total target)
       const totalPeriods = periods.length;
+      let previousDate = new Date(startDate);
+      
       for (let i = 0; i < periods.length; i++) {
         const period = periods[i];
         const isLastCheckpoint = i === periods.length - 1;
@@ -1131,15 +1133,34 @@ export class MySQLStorageOptimized implements IStorage {
         // Target is cumulative: each checkpoint builds up to the total
         const targetValue = isLastCheckpoint ? totalTarget : (totalTarget / totalPeriods) * (i + 1);
         
+        // Format dates in Brazilian style (DD/MM)
+        const formatBrazilianDate = (date: Date) => {
+          const day = date.getDate().toString().padStart(2, '0');
+          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+          return `${day}/${month}`;
+        };
+        
+        const currentDateFormatted = formatBrazilianDate(period.dueDate);
+        const previousDateFormatted = formatBrazilianDate(previousDate);
+        
+        // Create title and period in the requested format: "12/05 1/10 (12/4 a 12/05)"
+        const title = `${currentDateFormatted} ${period.number}/${totalPeriods}`;
+        const periodText = `(${previousDateFormatted} a ${currentDateFormatted})`;
+        
         checkpointsToCreate.push({
           keyResultId,
-          title: `Checkpoint ${period.number}`,
-          period: `Period ${period.number}`,
+          title: title,
+          period: periodText,
           targetValue: targetValue.toString(),
           actualValue: "0",
           status: "pending" as const,
           dueDate: new Date(period.dueDate),
         });
+        
+        // Update previous date for next iteration
+        previousDate = new Date(period.dueDate);
+        // Subtract one day to show the start of next period correctly
+        previousDate.setDate(previousDate.getDate() - 1);
       }
 
       // Insert all checkpoints
