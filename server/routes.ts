@@ -338,6 +338,22 @@ export function registerRoutes(app: Express): Server {
       console.log("Fetching key results for objectiveId:", objectiveId);
       const keyResults = await storage.getKeyResults(objectiveId, req.user.id);
       console.log("Key results found:", keyResults.length);
+      
+      // Debug the specific Key Result Teste
+      const testKR = keyResults.find(kr => kr.title === 'Key Result Teste');
+      if (testKR) {
+        console.log('🔍 API Response - Key Result Teste:', {
+          progress: testKR.progress,
+          progressType: typeof testKR.progress,
+          currentValue: testKR.currentValue,
+          targetValue: testKR.targetValue
+        });
+      }
+      
+      // Disable cache to force fresh data
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       res.json(keyResults);
     } catch (error) {
       console.error("Error in /api/key-results:", error);
