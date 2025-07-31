@@ -12,6 +12,7 @@ interface AnimatedProgressRingProps {
   actualValue: number;
   status: string;
   period: string;
+  dueDate?: string;
   showAnimation?: boolean;
   onHover?: () => void;
   onClick?: () => void;
@@ -25,6 +26,7 @@ export default function AnimatedProgressRing({
   actualValue,
   status,
   period,
+  dueDate,
   showAnimation = true,
   onHover,
   onClick
@@ -219,15 +221,15 @@ export default function AnimatedProgressRing({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-0 right-0 z-50 checkpoint-badge"
+            className="absolute -top-2 -right-2 z-50 checkpoint-badge"
             style={{ zIndex: 10000, position: 'absolute' }}
           >
             <Badge 
-              variant={getProgressBadgeVariant(progress)} 
+              variant={getProgressBadgeVariant(progress, dueDate)} 
               className="text-xs whitespace-nowrap shadow-xl relative z-50 checkpoint-badge px-2 py-1"
               style={{ zIndex: 10000, position: 'relative', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)' }}
             >
-              {getProgressBadgeText(progress)}
+              {getProgressBadgeText(progress, dueDate)}
             </Badge>
           </motion.div>
         )}

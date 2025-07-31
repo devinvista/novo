@@ -283,8 +283,8 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
             const targetValue = parseFloat(checkpoint.targetValue);
             const actualValue = parseFloat(checkpoint.actualValue);
             const progress = targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
-            const badgeVariant = getProgressBadgeVariant(progress);
-            const badgeText = getProgressBadgeText(progress);
+            const badgeVariant = getProgressBadgeVariant(progress, checkpoint.dueDate);
+            const badgeText = getProgressBadgeText(progress, checkpoint.dueDate);
             
             return (
               <Card key={checkpoint.id} className="p-4">

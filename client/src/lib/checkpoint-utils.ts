@@ -1,12 +1,30 @@
 // Utilitários para checkpoints com padrão de cores: <85 vermelho; 85-99 amarelo; ≥100 verde
 
-export function getProgressBadgeVariant(progress: number): "error" | "warning" | "success" {
+export function getProgressBadgeVariant(progress: number, dueDate?: string): "error" | "warning" | "success" | "secondary" {
+  // Se tem data futura e progresso 0, ainda não é tempo de medir
+  if (dueDate) {
+    const today = new Date();
+    const checkpointDate = new Date(dueDate);
+    if (checkpointDate > today && progress === 0) {
+      return "secondary";
+    }
+  }
+  
   if (progress >= 100) return "success";
   if (progress >= 85) return "warning";
   return "error";
 }
 
-export function getProgressBadgeText(progress: number): string {
+export function getProgressBadgeText(progress: number, dueDate?: string): string {
+  // Se tem data futura e progresso 0, ainda não é tempo de medir
+  if (dueDate) {
+    const today = new Date();
+    const checkpointDate = new Date(dueDate);
+    if (checkpointDate > today && progress === 0) {
+      return "Aguardando período";
+    }
+  }
+  
   if (progress >= 100) return "Meta alcançada";
   if (progress >= 85) return "Quase lá";
   return "Precisa atenção";

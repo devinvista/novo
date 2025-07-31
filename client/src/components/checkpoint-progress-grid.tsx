@@ -104,6 +104,7 @@ export default function CheckpointProgressGrid({
                       actualValue={actualValue}
                       status={checkpoint.status}
                       period={checkpoint.period}
+                      dueDate={checkpoint.dueDate}
                       size={140}
                       strokeWidth={10}
                       onHover={() => setHoveredCheckpoint(checkpoint.id)}
