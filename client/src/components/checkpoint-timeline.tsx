@@ -90,86 +90,58 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
   const { startDate, endDate, timeProgress, checkpointPositions, title, progress, currentValue, targetValue, unit } = timelineData;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            {title}
-          </CardTitle>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              <span className="font-medium">{progress.toFixed(1)}%</span>
+    <Card className="bg-gradient-to-r from-slate-50 to-gray-50 border-0 shadow-sm">
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          {/* Header compacto */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-sm text-gray-700">{title}</h3>
+              <Badge variant="secondary" className="text-xs">
+                {progress.toFixed(0)}% • {currentValue}/{targetValue} {unit}
+              </Badge>
             </div>
-            <Badge variant="outline">
-              {currentValue} / {targetValue} {unit}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Timeline Header */}
-          <div className="flex justify-between items-center text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span>{startDate.toLocaleDateString('pt-BR')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
               <span>{endDate.toLocaleDateString('pt-BR')}</span>
             </div>
           </div>
 
-          {/* Timeline Container */}
+          {/* Timeline Container compacto */}
           <div className="relative">
             {/* Background Timeline */}
-            <div className="w-full h-2 bg-gray-200 rounded-full relative overflow-hidden">
+            <div className="w-full h-1.5 bg-gray-200 rounded-full relative overflow-hidden">
               {/* Progress Bar */}
               <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-in-out"
+                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
                 style={{ width: `${timeProgress}%` }}
               />
-              
-              {/* Current Time Indicator */}
-              {timeProgress < 100 && (
-                <div 
-                  className="absolute top-0 h-full w-0.5 bg-blue-700 shadow-sm"
-                  style={{ left: `${timeProgress}%` }}
-                />
-              )}
             </div>
 
             {/* Checkpoint Markers */}
-            <div className="relative mt-2">
-              {checkpointPositions.map((checkpoint, index) => (
+            <div className="relative mt-1">
+              {checkpointPositions.map((checkpoint) => (
                 <div
                   key={checkpoint.id}
-                  className="absolute transform -translate-x-1/2"
+                  className="absolute transform -translate-x-1/2 group"
                   style={{ left: `${checkpoint.position}%` }}
                 >
                   {/* Checkpoint Dot */}
-                  <div className="relative">
-                    <div 
-                      className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
-                        checkpoint.isCompleted 
-                          ? 'bg-green-500 border-green-600 shadow-md' 
-                          : checkpoint.isPast 
-                            ? 'bg-yellow-500 border-yellow-600 shadow-md'
-                            : 'bg-white border-gray-300'
-                      }`}
-                    />
-                    
-                    {/* Checkpoint Info Tooltip */}
-                    <div className="absolute top-6 left-1/2 transform -translate-x-1/2 opacity-0 hover:opacity-100 transition-opacity duration-200 z-10">
-                      <div className="bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
-                        <div className="font-medium">{checkpoint.title}</div>
-                        <div>{new Date(checkpoint.dueDate || checkpoint.period).toLocaleDateString('pt-BR')}</div>
-                        {checkpoint.targetValue && (
-                          <div>Meta: {checkpoint.targetValue}</div>
-                        )}
-                      </div>
+                  <div 
+                    className={`w-2 h-2 rounded-full border transition-all duration-200 cursor-pointer ${
+                      checkpoint.isCompleted 
+                        ? 'bg-green-500 border-green-600' 
+                        : checkpoint.isPast 
+                          ? 'bg-amber-500 border-amber-600'
+                          : 'bg-white border-gray-400'
+                    }`}
+                  />
+                  
+                  {/* Tooltip compacto */}
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 pointer-events-none">
+                    <div className="bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
+                      <div className="font-medium">{checkpoint.title}</div>
+                      <div>{new Date(checkpoint.dueDate || checkpoint.period).toLocaleDateString('pt-BR')}</div>
                     </div>
                   </div>
                 </div>
@@ -177,25 +149,25 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
             </div>
           </div>
 
-          {/* Progress Statistics */}
-          <div className="grid grid-cols-3 gap-4 mt-6 text-center">
-            <div>
-              <div className="text-2xl font-bold text-green-600">
+          {/* Estatísticas compactas */}
+          <div className="flex justify-center gap-6 text-xs">
+            <div className="text-center">
+              <span className="font-semibold text-green-600">
                 {checkpointPositions.filter(cp => cp.isCompleted).length}
-              </div>
-              <div className="text-sm text-muted-foreground">Concluídos</div>
+              </span>
+              <span className="text-muted-foreground ml-1">concluídos</span>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="text-center">
+              <span className="font-semibold text-blue-600">
                 {timeProgress.toFixed(0)}%
-              </div>
-              <div className="text-sm text-muted-foreground">Tempo Decorrido</div>
+              </span>
+              <span className="text-muted-foreground ml-1">decorrido</span>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">
+            <div className="text-center">
+              <span className="font-semibold text-gray-600">
                 {checkpointPositions.length}
-              </div>
-              <div className="text-sm text-muted-foreground">Total Checkpoints</div>
+              </span>
+              <span className="text-muted-foreground ml-1">total</span>
             </div>
           </div>
         </div>

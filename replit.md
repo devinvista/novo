@@ -16,6 +16,11 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
   - Checkpoints button shows badge with "completed/total" format (e.g., "3/12")
   - Real-time data fetching with optimized API calls for counts
   - Navigation buttons automatically apply key result filter when directing to Actions or Checkpoints pages
+✓ **Checkpoint Timeline**: Added compact visual timeline to checkpoints page when key result is selected
+  - Shows project timeline with start/end dates and progress bar based on time elapsed
+  - Visual checkpoint markers (green=completed, amber=overdue, white=pending)
+  - Compact statistics display (completed count, time progress, total checkpoints)
+  - Clean, professional design with hover tooltips for checkpoint details
 ✓ **Development Environment**: Verified all packages installed, workflows running, and database connectivity working properly
 
 ## System Architecture
