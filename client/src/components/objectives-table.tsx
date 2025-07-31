@@ -245,7 +245,7 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="z-50">
+                                <DropdownMenuContent align="end" className="z-[9999]">
                                   <DropdownMenuItem>
                                     <Eye className="mr-2 h-4 w-4" />
                                     Visualizar

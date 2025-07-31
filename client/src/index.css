@@ -114,6 +114,11 @@
 }
 
 @layer components {
+  /* Force dropdown menus to appear above all content */
+  .dropdown-menu-overlay {
+    z-index: 9999 !important;
+  }
+  
   .progress-bar {
     @apply w-full bg-gray-200 rounded-full h-2;
   }
