@@ -27,11 +27,23 @@
   isolation: auto !important;
 }
 
-/* Badge positioning dentro da área verde */
+/* Badge positioning e styling melhorado */
 .checkpoint-container .checkpoint-badge {
-  transform: translate(-10%, -10%) !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(4px) !important;
+  transform: translate(-15%, -15%) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.checkpoint-container:hover .checkpoint-badge {
+  transform: translate(-15%, -15%) scale(1.08) !important;
+}
+
+/* Melhorias visuais gerais */
+.checkpoint-container {
+  transition: all 0.3s ease !important;
+}
+
+.checkpoint-container:hover {
+  filter: brightness(1.05) !important;
 }
 
 :root {
