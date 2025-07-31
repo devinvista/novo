@@ -4,33 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom z-index utilities for checkpoint badges */
-.checkpoint-badge {
-  position: relative !important;
-  z-index: 9999 !important;
-  isolation: auto !important;
-}
 
-.checkpoint-ring {
-  position: relative;
-  z-index: 10;
-}
-
-.checkpoint-container {
-  position: relative;
-  isolation: isolate;
-}
-
-/* Garantir que badges de hover fiquem sempre no topo */
-.checkpoint-badge[style*="position: absolute"] {
-  z-index: 10000 !important;
-  isolation: auto !important;
-}
-
-/* Badge positioning no canto inferior direito */
-.checkpoint-container .checkpoint-badge {
-  transform: translate(25%, 25%) !important;
-}
 
 :root {
   /* FIERGS Color Palette */
