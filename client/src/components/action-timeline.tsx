@@ -96,27 +96,25 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityVariant = (priority: string): "error" | "warning" | "secondary" => {
     switch (priority) {
       case "high":
-        return "bg-red-100 text-red-800";
+        return "error";
       case "medium":
-        return "bg-yellow-100 text-yellow-800";
+        return "warning";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "secondary";
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string): "success" | "info" | "secondary" => {
     switch (status) {
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "success";
       case "in_progress":
-        return "bg-blue-100 text-blue-800";
-      case "cancelled":
-        return "bg-gray-100 text-gray-800";
+        return "info";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "secondary";
     }
   };
 
@@ -213,7 +211,7 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <div className="flex items-center gap-2">
-                        <Badge className={getPriorityColor(action.priority)}>
+                        <Badge variant={getPriorityVariant(action.priority)}>
                           {action.priority === "high" ? "Alta" : 
                            action.priority === "medium" ? "Média" : "Baixa"}
                         </Badge>
@@ -243,7 +241,7 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      <Badge className={getStatusColor(action.status)}>
+                      <Badge variant={getStatusVariant(action.status)}>
                         {action.status === "completed" ? "Concluída" :
                          action.status === "in_progress" ? "Em Progresso" :
                          action.status === "cancelled" ? "Cancelada" : "Pendente"}

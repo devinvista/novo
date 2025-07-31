@@ -139,22 +139,6 @@
     @apply bg-destructive;
   }
   
-  .status-badge {
-    @apply inline-flex px-2 py-1 text-xs font-medium rounded-full;
-  }
-  
-  .status-badge.success {
-    @apply bg-green-100 text-green-800;
-  }
-  
-  .status-badge.warning {
-    @apply bg-yellow-100 text-yellow-800;
-  }
-  
-  .status-badge.danger {
-    @apply bg-red-100 text-red-800;
-  }
-  
   /* FIERGS branded utility classes */
   .fiergs-gradient {
     background: linear-gradient(135deg, hsl(var(--fiergs-blue)) 0%, hsl(var(--fiergs-cyan)) 100%);
@@ -173,25 +157,5 @@
   .fiergs-accent-green-sesi {
     background-color: hsl(var(--fiergs-green-sesi));
     color: hsl(var(--fiergs-white));
-  }
-
-  /* Status badge variants using FIERGS colors */
-  .badge-success {
-    background-color: hsl(var(--fiergs-green-sesi));
-    color: hsl(var(--fiergs-white));
-  }
-
-  .badge-warning {
-    background-color: hsl(var(--fiergs-orange));
-    color: hsl(var(--fiergs-white));
-  }
-
-  .badge-info {
-    background-color: hsl(var(--fiergs-cyan));
-    color: hsl(var(--fiergs-white));
-  }
-  
-  .status-badge.info {
-    @apply bg-blue-100 text-blue-800;
   }
 }

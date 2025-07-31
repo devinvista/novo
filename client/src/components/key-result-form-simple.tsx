@@ -435,7 +435,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 </div>
                 {formData.strategicIndicatorIds.length > 0 && (
                   <div className="flex items-center space-x-2 mt-3">
-                    <Badge variant="default" className="border" style={{ backgroundColor: 'hsl(165, 100%, 95%)', color: 'hsl(165, 100%, 32%)', borderColor: 'hsl(165, 100%, 32%)' }}>
+                    <Badge variant="info">
                       {formData.strategicIndicatorIds.length} selecionado{formData.strategicIndicatorIds.length > 1 ? 's' : ''}
                     </Badge>
                   </div>

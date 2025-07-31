@@ -9,7 +9,13 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
 
 ## Recent Changes (July 31, 2025)
 ✓ **Project Migration Completed**: Successfully migrated OKR system from Replit Agent to standard Replit environment
-✓ **CSS Optimization**: Removed z-index rules for badges that were causing visual layering issues
+✓ **Badge Visual Standardization**: Completely redesigned badge system with consistent visual rules throughout the frontend
+  - Removed problematic z-index overrides that were causing layering issues
+  - Standardized all badge usage to use proper variant system (success, warning, error, info, secondary)
+  - Replaced hardcoded color classes with semantic badge variants for better consistency
+  - Updated priority badges to use error/warning/secondary variants instead of custom color classes
+  - Updated status badges to use success/info/secondary variants for consistent theming
+  - Cleaned up CSS removing duplicate and conflicting badge rules
 ✓ **UI Bug Fix**: Fixed dropdown menu positioning in objectives table by adding proper relative positioning and container structure
 ✓ **Enhanced Key Results Interface**: Added dynamic badges showing action counts and checkpoint counts for each key result
   - Actions button shows "Criar Ações" when no actions exist, "Ações" with count badge when actions present

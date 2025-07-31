@@ -563,12 +563,7 @@ export default function ModernDashboard() {
                     </div>
                   </div>
                   <Badge 
-                    variant={kr.status === 'completed' ? 'default' : kr.status === 'active' ? 'secondary' : 'outline'}
-                    className={
-                      kr.status === 'completed' ? 'bg-green-500' : 
-                      kr.status === 'active' ? 'bg-blue-500' : 
-                      'border-yellow-500 text-yellow-600'
-                    }
+                    variant={kr.status === 'completed' ? 'success' : kr.status === 'active' ? 'info' : 'warning'}
                   >
                     {formatDecimalBR(kr.percentage, 1)}%
                   </Badge>
