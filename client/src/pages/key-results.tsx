@@ -111,27 +111,32 @@ export default function KeyResults() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch checkpoints counts for each key result
+  // Fetch checkpoints counts and status for each key result
   const { data: checkpointsCounts } = useQuery({
     queryKey: ["/api/checkpoints-counts", keyResults?.map((kr: any) => kr.id)],
     queryFn: async () => {
       if (!keyResults || keyResults.length === 0) return {};
       
-      const counts: Record<number, number> = {};
+      const counts: Record<number, { completed: number; total: number }> = {};
       
-      // Fetch checkpoints count for each key result
+      // Fetch checkpoints data for each key result
       await Promise.all(
         keyResults.map(async (kr: any) => {
           try {
             const response = await fetch(`/api/checkpoints?keyResultId=${kr.id}`, { credentials: "include" });
             if (response.ok) {
               const checkpoints = await response.json();
-              counts[kr.id] = Array.isArray(checkpoints) ? checkpoints.length : 0;
+              if (Array.isArray(checkpoints)) {
+                const completed = checkpoints.filter((cp: any) => cp.status === "completed").length;
+                counts[kr.id] = { completed, total: checkpoints.length };
+              } else {
+                counts[kr.id] = { completed: 0, total: 0 };
+              }
             } else {
-              counts[kr.id] = 0;
+              counts[kr.id] = { completed: 0, total: 0 };
             }
           } catch {
-            counts[kr.id] = 0;
+            counts[kr.id] = { completed: 0, total: 0 };
           }
         })
       );
@@ -350,7 +355,10 @@ export default function KeyResults() {
                               variant="secondary" 
                               className="ml-2 h-5 min-w-5 text-xs px-1.5 bg-green-100 text-green-800 hover:bg-green-100"
                             >
-                              {checkpointsCounts?.[kr.id] || 0}
+                              {checkpointsCounts?.[kr.id] 
+                                ? `${checkpointsCounts[kr.id].completed}/${checkpointsCounts[kr.id].total}`
+                                : "0/0"
+                              }
                             </Badge>
                           </Button>
                         </div>
