@@ -125,7 +125,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
             <div className="w-full h-1.5 bg-gray-200 rounded-full relative overflow-hidden">
               {/* Progress Bar */}
               <div 
-                className={`h-full ${progressColors.bg} rounded-full transition-all duration-300`}
+                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
                 style={{ width: `${timeProgress}%` }}
               />
             </div>

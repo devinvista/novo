@@ -17,9 +17,10 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
   - Real-time data fetching with optimized API calls for counts
   - Navigation buttons automatically apply key result filter when directing to Actions or Checkpoints pages
 ✓ **Checkpoint Timeline**: Added compact visual timeline to checkpoints page when key result is selected
-  - Shows project timeline with start/end dates and progress bar based on time elapsed
-  - Visual checkpoint markers (green=completed, amber=overdue, white=pending)
-  - Compact statistics display (completed count, time progress, total checkpoints)
+  - Shows project timeline with standard blue progress bar based on time elapsed
+  - Progress badge uses KR status colors (red <40%, orange 40-70%, green >70%)
+  - Visual checkpoint markers (green=completed, red=overdue, white=pending)
+  - Compact statistics display with color-coded progress percentage
   - Clean, professional design with hover tooltips for checkpoint details
 ✓ **Development Environment**: Verified all packages installed, workflows running, and database connectivity working properly
 
