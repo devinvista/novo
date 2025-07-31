@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,16 @@ import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 export default function Checkpoints() {
   const [selectedKeyResultId, setSelectedKeyResultId] = useState<number | undefined>(undefined);
   const { selectedQuarter } = useQuarterlyFilter();
+  const [location] = useLocation();
+
+  // Read kr parameter from URL and set filter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const krParam = urlParams.get('kr');
+    if (krParam) {
+      setSelectedKeyResultId(parseInt(krParam));
+    }
+  }, [location]);
 
   const { data: keyResults, isLoading: isLoadingKeyResults } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter],

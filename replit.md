@@ -13,8 +13,9 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
 ✓ **UI Bug Fix**: Fixed dropdown menu positioning in objectives table by adding proper relative positioning and container structure
 ✓ **Enhanced Key Results Interface**: Added dynamic badges showing action counts and checkpoint counts for each key result
   - Actions button shows "Criar Ações" when no actions exist, "Ações" with count badge when actions present
-  - Checkpoints button always shows count badge with number of existing checkpoints
+  - Checkpoints button shows badge with "completed/total" format (e.g., "3/12")
   - Real-time data fetching with optimized API calls for counts
+  - Navigation buttons automatically apply key result filter when directing to Actions or Checkpoints pages
 ✓ **Development Environment**: Verified all packages installed, workflows running, and database connectivity working properly
 
 ## System Architecture

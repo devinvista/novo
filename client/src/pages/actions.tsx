@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
+import { useLocation } from "wouter";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,16 @@ export default function Actions() {
   const [showForm, setShowForm] = useState(false);
   const [keyResultFilter, setKeyResultFilter] = useState<string>("");
   const { selectedQuarter } = useQuarterlyFilter();
+  const [location] = useLocation();
+
+  // Read kr parameter from URL and set filter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const krParam = urlParams.get('kr');
+    if (krParam) {
+      setKeyResultFilter(krParam);
+    }
+  }, [location]);
 
   const { data: keyResults } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter],
