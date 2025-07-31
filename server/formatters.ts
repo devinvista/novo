@@ -55,15 +55,21 @@ export function parseDecimalBR(value: string | number): number {
     // - Se tem exatamente 3 dígitos após ponto, é SEMPRE separador de milhares (ex: 2.300=2300, 12.500=12500)
     // - Se tem 1-2 dígitos após ponto, é decimal (ex: 2.50, 123.45)
     // - Se tem mais de 3 dígitos, tratar como separador de milhares
+    // Debug para identificar problema
+    console.log(`🔍 parseDecimalBR Debug: "${stringValue}" → afterDot="${afterDot}", length=${afterDot.length}`);
+    
     if (afterDot.length === 3) {
       // Exatamente 3 dígitos = separador de milhares brasileiro (ex: 2.300 → 2300)
       cleanValue = stringValue.replace(/\./g, '');
+      console.log(`🔧 Separador de milhares: "${stringValue}" → "${cleanValue}"`);
     } else if (afterDot.length === 1 || afterDot.length === 2) {
       // 1-2 dígitos após ponto = decimal (ex: 2.5 → 2.5, 2.50 → 2.50)
       cleanValue = stringValue;
+      console.log(`✅ Decimal: "${stringValue}" → "${cleanValue}"`);
     } else {
       // Mais de 3 dígitos ou outros casos = separador de milhares
       cleanValue = stringValue.replace(/\./g, '');
+      console.log(`🔧 Milhares longo: "${stringValue}" → "${cleanValue}"`);
     }
   } else {
     // Só dígitos
@@ -74,54 +80,53 @@ export function parseDecimalBR(value: string | number): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
-// Converte float do banco para string brasileira (vírgula decimal)
-// Mostra inteiros quando possível, decimais apenas quando necessário
-export function formatDecimalBR(value: number | string, decimals: number = 2): string {
+// FUNÇÃO CENTRAL: Formata números para padrão brasileiro
+// Unifica toda a formatação em uma só função para evitar duplicidade
+export function formatBrazilianNumber(value: number | string, decimals?: number): string {
   if (value === null || value === undefined || value === "") return "0";
   
   const num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "0";
   
-  // Se o número é inteiro, não mostrar decimais
-  if (num % 1 === 0) {
-    return num.toString();
-  }
-  
-  return num.toFixed(decimals).replace(".", ",");
-}
-
-// Formata número para exibição completa brasileira (vírgula decimal + ponto milhares)
-// Mostra inteiros quando possível, decimais apenas quando necessário
-export function formatNumberBR(value: number | string, decimals: number = 2): string {
-  if (value === null || value === undefined || value === "") return "0";
-  
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0";
-  
-  // Se o número é inteiro, não mostrar decimais
-  if (num % 1 === 0) {
+  // Se decimais não especificadas, usar formatação inteligente
+  if (decimals === undefined) {
+    // Se o número é inteiro, não mostrar decimais
+    if (num % 1 === 0) {
+      return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(num);
+    }
+    // Se tem decimais, usar 2 casas
     return new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(num);
   }
   
+  // Se decimais especificadas, usar o valor fornecido
   return new Intl.NumberFormat('pt-BR', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(num);
 }
 
+// ALIASES para manter compatibilidade (todas delegam para a função central)
+export function formatDecimalBR(value: number | string, decimals: number = 2): string {
+  return formatBrazilianNumber(value, decimals);
+}
+
+export function formatNumberBR(value: number | string, decimals: number = 2): string {
+  return formatBrazilianNumber(value, decimals);
+}
+
+export function convertDatabaseToBR(value: number | string, decimals?: number): string {
+  return formatBrazilianNumber(value, decimals);
+}
+
 // Converte valor brasileiro (vírgula, pontos) para valor de banco (apenas ponto decimal)
 export function convertBRToDatabase(value: string): number {
   return parseDecimalBR(value);
-}
-
-// Converte valor de banco para exibição brasileira
-// Usa formatação inteligente como padrão (sem decimais desnecessários)
-export function convertDatabaseToBR(value: number | string, decimals?: number): string {
-  // Simplesmente delegar para formatNumberBR que já faz a formatação correta
-  return formatNumberBR(value, decimals);
 }
 
 // Valida entrada brasileira (aceita vírgula, ponto, e separadores de milhares)
