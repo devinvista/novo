@@ -113,9 +113,27 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
                 {progress.toFixed(0)}% • {currentValue}/{targetValue} {unit}
               </Badge>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{startDate.toLocaleDateString('pt-BR')}</span>
-              <span>{endDate.toLocaleDateString('pt-BR')}</span>
+          </div>
+
+          {/* Estatísticas compactas */}
+          <div className="flex justify-center gap-6 text-xs">
+            <div className="text-center">
+              <span className="font-semibold text-gray-600">
+                {checkpointPositions.filter(cp => cp.isCompleted).length}
+              </span>
+              <span className="text-muted-foreground ml-1">concluídos</span>
+            </div>
+            <div className="text-center">
+              <span className="font-semibold text-gray-600">
+                {timeProgress.toFixed(0)}%
+              </span>
+              <span className="text-muted-foreground ml-1">decorrido</span>
+            </div>
+            <div className="text-center">
+              <span className="font-semibold text-gray-600">
+                {checkpointPositions.length}
+              </span>
+              <span className="text-muted-foreground ml-1">total</span>
             </div>
           </div>
 
@@ -161,26 +179,10 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
             </div>
           </div>
 
-          {/* Estatísticas compactas */}
-          <div className="flex justify-center gap-6 text-xs">
-            <div className="text-center">
-              <span className="font-semibold text-green-600">
-                {checkpointPositions.filter(cp => cp.isCompleted).length}
-              </span>
-              <span className="text-muted-foreground ml-1">concluídos</span>
-            </div>
-            <div className="text-center">
-              <span className="font-semibold text-gray-600">
-                {timeProgress.toFixed(0)}%
-              </span>
-              <span className="text-muted-foreground ml-1">decorrido</span>
-            </div>
-            <div className="text-center">
-              <span className="font-semibold text-gray-600">
-                {checkpointPositions.length}
-              </span>
-              <span className="text-muted-foreground ml-1">total</span>
-            </div>
+          {/* Período de datas */}
+          <div className="flex justify-between items-center text-xs text-muted-foreground">
+            <span>{startDate.toLocaleDateString('pt-BR')}</span>
+            <span>{endDate.toLocaleDateString('pt-BR')}</span>
           </div>
         </div>
       </CardContent>
