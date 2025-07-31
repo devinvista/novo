@@ -20,6 +20,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CheckpointUpdaterProps {
   keyResultId?: number;
@@ -105,6 +115,9 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [recreateProgress, setRecreateProgress] = useState(0);
+  const [isRecreating, setIsRecreating] = useState(false);
 
   const { data: checkpoints, isLoading } = useQuery({
     queryKey: ["/api/checkpoints", keyResultId],
@@ -116,6 +129,49 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
     },
     enabled: !!keyResultId,
   });
+
+  const handleRecreateWithAnimation = async () => {
+    if (!keyResultId) return;
+    
+    setIsRecreating(true);
+    setRecreateProgress(0);
+    
+    // Simular progresso da animação
+    const progressInterval = setInterval(() => {
+      setRecreateProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 200);
+    
+    try {
+      await apiRequest("POST", `/api/key-results/${keyResultId}/recreate-checkpoints`, {});
+      
+      // Completar progresso
+      setRecreateProgress(100);
+      
+      setTimeout(() => {
+        toast({
+          title: "Checkpoints recriados",
+          description: "Os checkpoints foram recriados com sucesso usando o formato de datas brasileiras.",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
+        setIsRecreating(false);
+        setRecreateProgress(0);
+      }, 800);
+      
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao recriar checkpoints.",
+        variant: "destructive",
+      });
+      setIsRecreating(false);
+      setRecreateProgress(0);
+    } finally {
+      clearInterval(progressInterval);
+    }
+  };
 
   const recreateMutation = useMutation({
     mutationFn: async () => {
@@ -163,12 +219,12 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
         {keyResultId && (
           <CardContent>
             <Button 
-              onClick={() => recreateMutation.mutate()}
-              disabled={recreateMutation.isPending}
+              onClick={() => setShowConfirmDialog(true)}
+              disabled={isRecreating}
               className="w-full"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${recreateMutation.isPending ? 'animate-spin' : ''}`} />
-              {recreateMutation.isPending ? "Criando..." : "Gerar Checkpoints"}
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRecreating ? 'animate-spin' : ''}`} />
+              {isRecreating ? "Criando..." : "Gerar Checkpoints"}
             </Button>
           </CardContent>
         )}
@@ -211,7 +267,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
             setSelectedCheckpoint(checkpoint);
             setIsEditDialogOpen(true);
           }}
-          onRegenerateCheckpoints={() => recreateMutation.mutate()}
+          onRegenerateCheckpoints={() => setShowConfirmDialog(true)}
         />
       )}
       
@@ -255,6 +311,65 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
               }}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-500" />
+              Confirmar Recriação de Checkpoints
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Esta ação irá:</p>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>Excluir todos os checkpoints existentes</li>
+                <li>Recriar novos checkpoints com base na frequência do resultado-chave</li>
+                <li>Aplicar o novo formato de datas brasileiras (31/01, 28/02, etc.)</li>
+                <li>Resetar todo o progresso atual</li>
+              </ul>
+              <p className="font-semibold text-orange-600">
+                ⚠️ Esta ação não pode ser desfeita!
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowConfirmDialog(false);
+                handleRecreateWithAnimation();
+              }}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Sim, Recriar Checkpoints
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Progress Dialog */}
+      <Dialog open={isRecreating} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 animate-spin" />
+              Recriando Checkpoints
+            </DialogTitle>
+            <DialogDescription>
+              Aguarde enquanto os checkpoints são recriados com o formato brasileiro...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Progress value={recreateProgress} className="w-full" />
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                {recreateProgress < 100 ? `${Math.round(recreateProgress)}% concluído` : 'Finalizando...'}
+              </p>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
