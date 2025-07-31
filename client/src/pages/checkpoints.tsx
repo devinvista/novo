@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import CheckpointUpdaterEnhanced from "@/components/checkpoint-updater-enhanced";
 import { NextCheckpointsOverview } from "@/components/next-checkpoints-overview";
+import CheckpointTimeline from "@/components/checkpoint-timeline";
 import { Target, Filter } from "lucide-react";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 
@@ -115,6 +116,13 @@ export default function Checkpoints() {
           {!selectedKeyResultId && (
             <div className="mb-6">
               <NextCheckpointsOverview />
+            </div>
+          )}
+
+          {/* Timeline - only shown when a specific key result is selected */}
+          {selectedKeyResultId && (
+            <div className="mb-6">
+              <CheckpointTimeline keyResultId={selectedKeyResultId} />
             </div>
           )}
 
