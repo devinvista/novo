@@ -122,7 +122,7 @@ export default function ProgressChart({ objectives }: ProgressChartProps) {
           <p className="text-sm font-medium">{data.fullName || label}</p>
           {chartType === "progress" && (
             <p className="text-sm text-muted-foreground">
-              Progresso: {(payload[0]?.value || 0).toFixed(1)}%
+              Progresso: {(payload[0]?.value || 0).toFixed(1).replace('.', ',')}%
             </p>
           )}
           {chartType === "region" && (

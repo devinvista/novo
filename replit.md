@@ -9,6 +9,12 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
 
 ## Recent Changes (July 31, 2025)
 ✓ **Project Migration Completed**: Successfully migrated OKR system from Replit Agent to standard Replit environment
+✓ **Brazilian Number Formatting Implemented**: Complete implementation of Brazilian number formatting throughout the system
+  - Backend: Added conversion functions in server/formatters.ts for parsing Brazilian format (vírgula decimal) to database format (ponto decimal)
+  - API Routes: All numeric endpoints now convert input from Brazilian format to database format and output from database to Brazilian format
+  - Frontend: Updated all components to display numbers with Brazilian formatting (vírgula decimal, ponto milhares)
+  - Key Results, Checkpoints, Charts: All numeric displays now use Brazilian standard formatting
+  - Input Components: NumberInputBR component handles Brazilian number input with proper masking and validation
 ✓ **Badge Visual Standardization**: Completely redesigned badge system with consistent visual rules throughout the frontend
   - Removed problematic z-index overrides that were causing layering issues
   - Standardized all badge usage to use proper variant system (success, warning, error, info, secondary)

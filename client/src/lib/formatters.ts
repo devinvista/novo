@@ -125,9 +125,17 @@ export function formatDecimalBR(value: number | string, decimals: number = 2): s
 
 // Formata número para exibição com separador de milhares brasileiro
 export function formatNumberBR(value: number | string, decimals: number = 2): string {
-  if (value === null || value === undefined || value === "") return "0,00";
+  if (value === null || value === undefined || value === "" || value === "0") return "0,00";
   
-  const num = typeof value === "string" ? parseFloat(value) : value;
+  let num: number;
+  if (typeof value === "string") {
+    // Se valor já está em formato brasileiro, converter primeiro
+    const cleanValue = value.replace(/\./g, "").replace(",", ".");
+    num = parseFloat(cleanValue);
+  } else {
+    num = value;
+  }
+  
   if (isNaN(num)) return "0,00";
   
   return new Intl.NumberFormat('pt-BR', {

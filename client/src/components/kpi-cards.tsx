@@ -67,7 +67,7 @@ export default function KPICards({ data, isLoading }: KPICardsProps) {
     },
     {
       title: "Taxa de Progresso",
-      value: `${data.averageProgress.toFixed(1)}%`,
+      value: `${data.averageProgress.toFixed(1).replace('.', ',')}%`,
       icon: TrendingUp,
       color: "bg-orange-100",
       iconColor: "text-accent",

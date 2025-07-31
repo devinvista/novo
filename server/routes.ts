@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema, insertUserSchema } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { z } from "zod";
-// Removed parseDecimalBR - using parseFloat directly
+import { parseDecimalBR, formatDecimalBR, formatNumberBR, convertBRToDatabase, convertDatabaseToBR } from "./formatters";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -336,13 +336,21 @@ export function registerRoutes(app: Express): Server {
     try {
       const objectiveId = req.query.objectiveId ? parseInt(req.query.objectiveId as string) : undefined;
       console.log("Fetching key results for objectiveId:", objectiveId);
-      const keyResults = await storage.getKeyResults(objectiveId, req.user.id);
+      const keyResults = await storage.getKeyResults(objectiveId);
       console.log("Key results found:", keyResults.length);
       
+      // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do banco para formato brasileiro
+      const keyResultsBR = keyResults.map(kr => ({
+        ...kr,
+        currentValue: convertDatabaseToBR(kr.currentValue || "0", 2),
+        targetValue: convertDatabaseToBR(kr.targetValue || "0", 2),
+        progress: kr.progress ? convertDatabaseToBR(kr.progress, 2) : "0,00"
+      }));
+      
       // Debug the specific Key Result Teste
-      const testKR = keyResults.find(kr => kr.title === 'Key Result Teste');
+      const testKR = keyResultsBR.find(kr => kr.title === 'Key Result Teste');
       if (testKR) {
-        console.log('🔍 API Response - Key Result Teste:', {
+        console.log('🔍 API Response - Key Result Teste (Formato BR):', {
           progress: testKR.progress,
           progressType: typeof testKR.progress,
           currentValue: testKR.currentValue,
@@ -354,7 +362,7 @@ export function registerRoutes(app: Express): Server {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
-      res.json(keyResults);
+      res.json(keyResultsBR);
     } catch (error) {
       console.error("Error in /api/key-results:", error);
       res.status(500).json({ message: "Erro ao buscar resultados-chave", error: (error as Error).message });
@@ -374,11 +382,16 @@ export function registerRoutes(app: Express): Server {
         requestData.unit = "";
       }
       
-      // Keep values as strings for Zod schema validation
-      if (requestData.targetValue && typeof requestData.targetValue === 'number') {
-        requestData.targetValue = requestData.targetValue.toString();
+      // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do formato brasileiro para banco
+      if (requestData.targetValue) {
+        const targetValueDb = parseDecimalBR(requestData.targetValue);
+        requestData.targetValue = targetValueDb.toString();
       }
-      // Remove initialValue handling - not in MySQL schema
+      
+      if (requestData.currentValue) {
+        const currentValueDb = parseDecimalBR(requestData.currentValue);
+        requestData.currentValue = currentValueDb.toString();
+      }
       
       const validation = insertKeyResultSchema.parse(requestData);
       
@@ -468,7 +481,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
       // Include currentUserId for hierarchical access control
-      const actions = await storage.getActions(keyResultId, req.user.id);
+      const actions = await storage.getActions(keyResultId);
       res.json(actions);
     } catch (error) {
       console.error("Error fetching actions:", error);
@@ -621,7 +634,16 @@ export function registerRoutes(app: Express): Server {
       // Use currentUserId for hierarchical access control
       const checkpoints = await storage.getCheckpoints(keyResultId, req.user.id);
       console.log(`Found ${checkpoints.length} checkpoints`);
-      res.json(checkpoints);
+      
+      // CONVERSÃO PADRÃO BRASILEIRO: Converter valores para formato brasileiro
+      const checkpointsBR = checkpoints.map(checkpoint => ({
+        ...checkpoint,
+        actualValue: checkpoint.actualValue ? convertDatabaseToBR(checkpoint.actualValue, 2) : null,
+        targetValue: convertDatabaseToBR(checkpoint.targetValue || "0", 2),
+        progress: checkpoint.progress ? convertDatabaseToBR(checkpoint.progress, 2) : "0,00"
+      }));
+      
+      res.json(checkpointsBR);
     } catch (error) {
       console.error("Error fetching checkpoints:", error);
       res.status(500).json({ message: "Erro ao buscar checkpoints" });
@@ -639,12 +661,23 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Checkpoint não encontrado ou sem acesso" });
       }
       
+      // CONVERSÃO PADRÃO BRASILEIRO: Converter valor real do formato brasileiro para banco
+      const actualValueDb = actualValue ? parseDecimalBR(actualValue) : 0;
+      
       const updated = await storage.updateCheckpoint(id, {
-        actualValue: actualValue.toString(),
+        actualValue: actualValueDb.toString(),
         status: status || "pending",
       });
       
-      res.json(updated);
+      // CONVERSÃO PADRÃO BRASILEIRO: Converter resposta para formato brasileiro
+      const updatedBR = {
+        ...updated,
+        actualValue: convertDatabaseToBR(updated.actualValue || "0", 2),
+        targetValue: convertDatabaseToBR(updated.targetValue || "0", 2),
+        progress: updated.progress ? convertDatabaseToBR(updated.progress, 2) : "0,00"
+      };
+      
+      res.json(updatedBR);
     } catch (error) {
       console.error("Error updating checkpoint:", error);
       res.status(500).json({ message: "Erro ao atualizar checkpoint" });
@@ -720,7 +753,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/users", requireAuth, async (req: any, res) => {
     try {
       const currentUserId = req.user?.id;
-      const users = await storage.getUsers(currentUserId);
+      const users = await storage.getUsers();
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -741,7 +774,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/pending-users", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const currentUserId = req.user?.id;
-      const pendingUsers = await storage.getPendingUsers(currentUserId);
+      const pendingUsers = await storage.getPendingUsers();
       res.json(pendingUsers);
     } catch (error) {
       console.error("Error fetching pending users:", error);

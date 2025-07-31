@@ -99,9 +99,9 @@ export default function ProgressVisualization({ filters }: ProgressVisualization
     return keyResults.map((kr: any, index: number) => ({
       name: kr.title.length > 15 ? kr.title.substring(0, 15) + "..." : kr.title,
       fullName: kr.title,
-      current: parseFloat(kr.currentValue || "0"),
-      target: parseFloat(kr.targetValue || "0"),
-      progress: parseFloat(kr.progress || "0"),
+      current: parseFloat((kr.currentValue || "0").toString().replace(',', '.')),
+      target: parseFloat((kr.targetValue || "0").toString().replace(',', '.')),
+      progress: parseFloat((kr.progress || "0").toString().replace(',', '.')),
       status: kr.status,
       color: COLORS[index % COLORS.length],
     }));

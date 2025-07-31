@@ -91,7 +91,7 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
   };
 
   const groupedCheckpoints = checkpoints?.reduce((acc: any, checkpoint: any) => {
-    const kr = keyResults?.find((k: any) => k.id === checkpoint.keyResultId);
+    const kr = keyResults?.find ? keyResults.find((k: any) => k.id === checkpoint.keyResultId) : null;
     if (!kr) return acc;
 
     if (!acc[checkpoint.keyResultId]) {
