@@ -95,7 +95,7 @@ export default function Checkpoints() {
                       <SelectItem value="all">Todos os resultados-chave</SelectItem>
                       {keyResults?.map((kr: any) => (
                         <SelectItem key={kr.id} value={kr.id.toString()}>
-                          {kr.title} ({kr.frequency})
+                          {kr.title}{kr.frequency ? ` (${kr.frequency})` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>

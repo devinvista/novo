@@ -142,9 +142,10 @@ Changelog:
     - Migração sem downtime com sistema OKR completamente operacional
   - **CHECKPOINT NAMING APRIMORADO**: Sistema de nomenclatura de checkpoints em formato brasileiro
     - Alterado formato de "Period 1, Period 2..." para formato de datas brasileiras
-    - Novo formato: "12/05 1/10 (12/04 a 12/05)" mostrando data final, posição/total e período
+    - Novo formato: "31/01 1/12 (01/01 a 31/01)" mostrando data final, posição/total e período
     - Formatação DD/MM para seguir padrão brasileiro
     - Períodos mostram intervalo de datas com "a" conectando início e fim
+    - Corrigido dropdown de resultados-chave removendo parênteses vazios
     - Melhora significativa na usabilidade e compreensão dos checkpoints
   - **SISTEMA TOTALMENTE OPERACIONAL**: Status completo do sistema OKR funcional
     - ✅ Sistema de autenticação operacional com conexão MySQL nativa e gerenciamento de sessão
