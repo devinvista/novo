@@ -809,6 +809,7 @@ export class MySQLStorageOptimized implements IStorage {
         description: keyResults.description,
         targetValue: keyResults.targetValue,
         currentValue: keyResults.currentValue,
+        progress: keyResults.progress,
         unit: keyResults.unit,
         startDate: keyResults.startDate,
         endDate: keyResults.endDate,
@@ -855,7 +856,44 @@ export class MySQLStorageOptimized implements IStorage {
       console.log(`Fetching key results for objectiveId: ${filters?.objectiveId}`);
       console.log(`Key results found: ${result.length}`);
       
-      return result;
+      // Calculate and sync progress for each key result
+      const keyResultsWithProgress = result.map(kr => {
+        // Calculate progress based on current and target values
+        let calculatedProgress = 0;
+        if (kr.currentValue && kr.targetValue) {
+          const current = parseFloat(kr.currentValue.toString());
+          const target = parseFloat(kr.targetValue.toString());
+          if (target > 0) {
+            calculatedProgress = Math.round((current / target) * 100 * 100) / 100; // Round to 2 decimal places
+          }
+        }
+        
+        // Use calculated progress if database progress is null/undefined, otherwise use database value
+        const finalProgress = (kr.progress !== null && kr.progress !== undefined) 
+          ? parseFloat(kr.progress.toString()) 
+          : calculatedProgress;
+          
+        // Debug logging for Key Result Teste
+        if (kr.title === 'Key Result Teste') {
+          console.log('🔍 Progress sync for Key Result Teste:', {
+            dbProgress: kr.progress,
+            dbProgressType: typeof kr.progress,
+            currentValue: kr.currentValue,
+            targetValue: kr.targetValue,
+            calculatedProgress,
+            finalProgress,
+            currentParsed: parseFloat(kr.currentValue?.toString() || '0'),
+            targetParsed: parseFloat(kr.targetValue?.toString() || '0')
+          });
+        }
+        
+        return {
+          ...kr,
+          progress: finalProgress
+        };
+      });
+      
+      return keyResultsWithProgress;
     } catch (error) {
       console.error('Error fetching key results:', error);
       throw error;
