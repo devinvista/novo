@@ -16,13 +16,18 @@ import MemoryStore from "memorystore";
 import { getQuarterlyPeriods, getQuarterlyPeriod, getCurrentQuarter, formatQuarter } from "./quarterly-periods";
 import { MySQLPerformanceCache, MySQLPerformanceMonitor, MySQLConnectionOptimizer } from './mysql-performance-cache';
 
-// Session store configuration for MySQL
-const sessionStore = MemoryStore(session);
+// Session store configuration for development
+const sessionStore = new (MemoryStore(session))({
+  checkPeriod: 86400000 // prune expired entries every 24h
+});
 
 // Initialize performance cache
 const performanceCache = MySQLPerformanceCache.getInstance();
 
 export interface IStorage {
+  // Session store property
+  sessionStore: any;
+
   // User management
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -76,7 +81,9 @@ export interface IStorage {
   deleteAction(id: number): Promise<void>;
 
   getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<any[]>;
+  getCheckpoint(id: number, currentUserId?: number): Promise<any | undefined>;
   updateCheckpoint(id: number, data: any): Promise<Checkpoint>;
+  deleteCheckpoint(id: number): Promise<void>;
   generateCheckpoints(keyResultId: number): Promise<Checkpoint[]>;
 
   // Action comments
@@ -85,6 +92,8 @@ export interface IStorage {
 }
 
 export class MySQLStorageOptimized implements IStorage {
+  // Session store property
+  sessionStore: any = sessionStore;
   
   // Helper method to parse JSON fields safely
   private parseUserJsonFields(user: any): User {
@@ -1159,6 +1168,42 @@ export class MySQLStorageOptimized implements IStorage {
     } catch (error) {
       console.error('Error in generateCheckpoints for keyResultId', keyResultId, ':', error);
       throw new Error(`Failed to generate checkpoints: ${(error as Error).message}`);
+    }
+  }
+
+  async getCheckpoint(id: number, currentUserId?: number): Promise<any | undefined> {
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getCheckpoint');
+      
+      const checkpointRows = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.select().from(checkpoints).where(eq(checkpoints.id, id)).limit(1);
+      });
+      
+      MySQLPerformanceMonitor.endQuery('getCheckpoint', startTime);
+      
+      if (checkpointRows.length === 0) {
+        return undefined;
+      }
+      
+      return checkpointRows[0];
+    } catch (error) {
+      console.error(`Error fetching checkpoint ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteCheckpoint(id: number): Promise<void> {
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('deleteCheckpoint');
+      
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(checkpoints).where(eq(checkpoints.id, id));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('deleteCheckpoint', startTime);
+    } catch (error) {
+      console.error(`Error deleting checkpoint ${id}:`, error);
+      throw error;
     }
   }
 
