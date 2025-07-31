@@ -20,7 +20,7 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
   - Shows project timeline with standard blue progress bar based on time elapsed
   - Progress badge uses KR status colors (red <40%, orange 40-70%, green >70%)
   - Visual checkpoint markers (green=completed, red=overdue, white=pending)
-  - Compact statistics display with color-coded progress percentage
+  - Compact statistics display with neutral progress percentage
   - Clean, professional design with hover tooltips for checkpoint details
 ✓ **Development Environment**: Verified all packages installed, workflows running, and database connectivity working properly
 

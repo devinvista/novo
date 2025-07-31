@@ -170,7 +170,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
               <span className="text-muted-foreground ml-1">concluídos</span>
             </div>
             <div className="text-center">
-              <span className={`font-semibold ${progressColors.text}`}>
+              <span className="font-semibold text-gray-600">
                 {timeProgress.toFixed(0)}%
               </span>
               <span className="text-muted-foreground ml-1">decorrido</span>
