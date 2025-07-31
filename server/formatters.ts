@@ -51,12 +51,15 @@ export function parseDecimalBR(value: string | number): number {
     const beforeDot = stringValue.substring(0, dotIndex);
     const afterDot = stringValue.substring(dotIndex + 1);
     
-    // Lógica brasileira: se tem exatamente 3 dígitos após ponto E não mais que 4 dígitos antes,
-    // é separador de milhares (ex: 2.500, 12.500, 1234.500)
-    // Se tem 1-2 dígitos após ponto, é decimal (ex: 2.50, 123.45)
-    if (afterDot.length === 3 && beforeDot.length <= 4) {
+    // Lógica brasileira melhorada: 
+    // - Se tem exatamente 3 dígitos após ponto, é separador de milhares (ex: 2.300, 12.500, 1234.000)
+    // - Se tem 1-2 dígitos após ponto E antes do ponto tem mais de 4 dígitos, é decimal (ex: 12345.67)
+    // - Se tem 1-2 dígitos após ponto E antes do ponto tem até 4 dígitos, é decimal (ex: 2.50, 123.45)
+    if (afterDot.length === 3) {
+      // Sempre considerar separador de milhares quando tem 3 dígitos após ponto
       cleanValue = stringValue.replace(/\./g, '');
     } else if (afterDot.length <= 2) {
+      // 1-2 dígitos após ponto = decimal
       cleanValue = stringValue;
     } else {
       // Múltiplos pontos ou padrão complexo - remover pontos (tratando como separador de milhares)
