@@ -109,7 +109,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h3 className="font-medium text-sm text-gray-700">{title}</h3>
-              <Badge variant="secondary" className={`text-xs ${progressColors.text} bg-opacity-10`}>
+              <Badge variant="secondary" className="text-xs">
                 {progress.toFixed(0)}% • {currentValue}/{targetValue} {unit}
               </Badge>
             </div>

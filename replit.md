@@ -18,7 +18,7 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
   - Navigation buttons automatically apply key result filter when directing to Actions or Checkpoints pages
 ✓ **Checkpoint Timeline**: Added compact visual timeline to checkpoints page when key result is selected
   - Shows project timeline with standard blue progress bar based on time elapsed
-  - Progress badge uses KR status colors (red <40%, orange 40-70%, green >70%)
+  - Progress badge uses neutral colors for consistent visual hierarchy
   - Visual checkpoint markers (green=completed, red=overdue, white=pending)
   - Compact statistics display with neutral progress percentage
   - Clean, professional design with hover tooltips for checkpoint details
