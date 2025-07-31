@@ -51,18 +51,18 @@ export function parseDecimalBR(value: string | number): number {
     const beforeDot = stringValue.substring(0, dotIndex);
     const afterDot = stringValue.substring(dotIndex + 1);
     
-    // Lógica brasileira melhorada: 
-    // - Se tem exatamente 3 dígitos após ponto, é separador de milhares (ex: 2.300, 12.500, 1234.000)
-    // - Se tem 1-2 dígitos após ponto E antes do ponto tem mais de 4 dígitos, é decimal (ex: 12345.67)
-    // - Se tem 1-2 dígitos após ponto E antes do ponto tem até 4 dígitos, é decimal (ex: 2.50, 123.45)
+    // Lógica brasileira corrigida: 
+    // - Se tem exatamente 3 dígitos após ponto, é SEMPRE separador de milhares (ex: 2.300=2300, 12.500=12500)
+    // - Se tem 1-2 dígitos após ponto, é decimal (ex: 2.50, 123.45)
+    // - Se tem mais de 3 dígitos, tratar como separador de milhares
     if (afterDot.length === 3) {
-      // Sempre considerar separador de milhares quando tem 3 dígitos após ponto
+      // Exatamente 3 dígitos = separador de milhares brasileiro (ex: 2.300 → 2300)
       cleanValue = stringValue.replace(/\./g, '');
-    } else if (afterDot.length <= 2) {
-      // 1-2 dígitos após ponto = decimal
+    } else if (afterDot.length === 1 || afterDot.length === 2) {
+      // 1-2 dígitos após ponto = decimal (ex: 2.5 → 2.5, 2.50 → 2.50)
       cleanValue = stringValue;
     } else {
-      // Múltiplos pontos ou padrão complexo - remover pontos (tratando como separador de milhares)
+      // Mais de 3 dígitos ou outros casos = separador de milhares
       cleanValue = stringValue.replace(/\./g, '');
     }
   } else {
@@ -120,28 +120,7 @@ export function convertBRToDatabase(value: string): number {
 // Converte valor de banco para exibição brasileira
 // Usa formatação inteligente como padrão (sem decimais desnecessários)
 export function convertDatabaseToBR(value: number | string, decimals?: number): string {
-  if (value === null || value === undefined || value === "") return "0";
-  
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0";
-  
-  // Se decimais não especificadas, usar formatação inteligente
-  if (decimals === undefined) {
-    // Se o número é inteiro, não mostrar decimais
-    if (num % 1 === 0) {
-      return new Intl.NumberFormat('pt-BR', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(num);
-    }
-    // Se tem decimais, usar 2 casas
-    return new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  }
-  
-  // Se decimais especificadas, usar formatNumberBR
+  // Simplesmente delegar para formatNumberBR que já faz a formatação correta
   return formatNumberBR(value, decimals);
 }
 
