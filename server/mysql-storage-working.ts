@@ -640,39 +640,59 @@ export class MySQLStorage implements IStorage {
     }
     
     return results.map(row => {
+      const kr = row.key_results;
+      
+      // Calculate progress based on current and target values
+      let calculatedProgress = 0;
+      if (kr.currentValue && kr.targetValue) {
+        const current = parseFloat(kr.currentValue.toString());
+        const target = parseFloat(kr.targetValue.toString());
+        if (target > 0) {
+          calculatedProgress = Math.round((current / target) * 100 * 100) / 100; // Round to 2 decimal places
+        }
+      }
+      
+      // Use calculated progress if database progress is null/undefined, otherwise use database value
+      const finalProgress = (kr.progress !== null && kr.progress !== undefined) 
+        ? parseFloat(kr.progress.toString()) 
+        : calculatedProgress;
+      
       const mappedRow = {
-        id: row.key_results.id,
-        objectiveId: row.key_results.objectiveId,
-        title: row.key_results.title,
-        description: row.key_results.description,
-        strategicIndicatorIds: row.key_results.strategicIndicatorIds,
-        serviceLineIds: row.key_results.serviceLineIds,
-        serviceId: row.key_results.serviceId,
-        initialValue: row.key_results.initialValue,
-        targetValue: row.key_results.targetValue,
-        currentValue: row.key_results.currentValue,
-        unit: row.key_results.unit,
-        frequency: row.key_results.frequency,
-        startDate: row.key_results.startDate,
-        endDate: row.key_results.endDate,
-        status: row.key_results.status,
-        progress: row.key_results.progress,
-        number: row.key_results.number,
-        createdAt: row.key_results.createdAt,
-        updatedAt: row.key_results.updatedAt,
+        id: kr.id,
+        objectiveId: kr.objectiveId,
+        title: kr.title,
+        description: kr.description,
+        strategicIndicatorIds: kr.strategicIndicatorIds,
+        serviceLineIds: kr.serviceLineIds,
+        serviceId: kr.serviceId,
+        initialValue: kr.initialValue,
+        targetValue: kr.targetValue,
+        currentValue: kr.currentValue,
+        unit: kr.unit,
+        frequency: kr.frequency,
+        startDate: kr.startDate,
+        endDate: kr.endDate,
+        status: kr.status,
+        progress: finalProgress, // Use calculated or database progress
+        number: kr.number,
+        createdAt: kr.createdAt,
+        updatedAt: kr.updatedAt,
         objective: row.objectives!,
         strategicIndicator: undefined, // We'll handle strategic indicators separately
       };
       
       // Debug logging for Key Result Teste
-      if (row.key_results.title === 'Key Result Teste') {
-        console.log('🔍 Raw DB row for Key Result Teste:', {
-          allFields: Object.keys(row.key_results),
-          progress: row.key_results.progress,
-          progressType: typeof row.key_results.progress,
-          currentValue: row.key_results.currentValue,
-          targetValue: row.key_results.targetValue,
-          rawRow: row.key_results
+      if (kr.title === 'Key Result Teste') {
+        console.log('🔍 Progress calculation for Key Result Teste:', {
+          allFields: Object.keys(kr),
+          dbProgress: kr.progress,
+          dbProgressType: typeof kr.progress,
+          currentValue: kr.currentValue,
+          targetValue: kr.targetValue,
+          calculatedProgress,
+          finalProgress,
+          currentParsed: parseFloat(kr.currentValue?.toString() || '0'),
+          targetParsed: parseFloat(kr.targetValue?.toString() || '0')
         });
       }
       
