@@ -58,8 +58,12 @@ export function convertBRToDatabase(value: string | number): number {
   
   const stringValue = value.toString().trim();
   
-  // Se é um número padrão do banco (apenas dígitos e ponto decimal), usar parseFloat direto
-  if (/^\d+\.?\d*$/.test(stringValue)) {
+  // Se é um número padrão do banco (apenas dígitos e ponto decimal), mas NÃO separador de milhares brasileiro
+  // Rejeita padrões como "2.300" (exatamente 3 dígitos após ponto) que são separadores de milhares no Brasil
+  if (/^\d+\.\d{3}$/.test(stringValue)) {
+    // É separador de milhares brasileiro - não usar parseFloat, ir para lógica brasileira
+  } else if (/^\d+\.?\d{0,2}$/.test(stringValue)) {
+    // É número padrão do banco (0-2 dígitos após ponto) - usar parseFloat direto  
     const parsed = parseFloat(stringValue);
     return isNaN(parsed) ? 0 : parsed;
   }
@@ -96,21 +100,16 @@ export function convertBRToDatabase(value: string | number): number {
     const dotIndex = stringValue.indexOf('.');
     const afterDot = stringValue.substring(dotIndex + 1);
     
-    // CORREÇÃO COMPLETA: Se tem exatamente 3 dígitos após ponto, é SEMPRE separador de milhares brasileiro
-    console.log(`🔍 convertBRToDatabase Debug: "${stringValue}" → afterDot="${afterDot}", length=${afterDot.length}`);
-    
+    // CORREÇÃO: Se tem exatamente 3 dígitos após ponto, é SEMPRE separador de milhares brasileiro
     if (afterDot.length === 3) {
       // Exatamente 3 dígitos = separador de milhares brasileiro (ex: 2.300 → 2300, 12.500 → 12500)
       cleanValue = stringValue.replace(/\./g, '');
-      console.log(`🔧 Separador de milhares: "${stringValue}" → "${cleanValue}"`);
     } else if (afterDot.length === 1 || afterDot.length === 2) {
       // 1-2 dígitos após ponto = decimal (ex: 2.5 → 2.5, 2.50 → 2.50)
       cleanValue = stringValue;
-      console.log(`✅ Decimal: "${stringValue}" → "${cleanValue}"`);
     } else {
       // Mais de 3 dígitos ou outros casos = separador de milhares
       cleanValue = stringValue.replace(/\./g, '');
-      console.log(`🔧 Milhares longo: "${stringValue}" → "${cleanValue}"`);
     }
   } else {
     // Só dígitos
