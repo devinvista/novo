@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Target, TrendingUp, Award, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getProgressBadgeVariant, getProgressBadgeText } from "@/lib/checkpoint-utils";
 
 interface AnimatedProgressRingProps {
   progress: number;
@@ -210,23 +211,23 @@ export default function AnimatedProgressRing({
         </div>
       </motion.div>
 
-      {/* Motivational Message */}
+      {/* Status Badge - Bottom Right Corner */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 z-50 checkpoint-badge"
-            style={{ zIndex: 9999, position: 'absolute' }}
+            className="absolute bottom-0 right-0 z-50 checkpoint-badge"
+            style={{ zIndex: 10000, position: 'absolute' }}
           >
             <Badge 
-              variant="secondary" 
-              className="text-xs whitespace-nowrap bg-white border shadow-xl relative z-50 checkpoint-badge"
-              style={{ zIndex: 9999, position: 'relative', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }}
+              variant={getProgressBadgeVariant(progress)} 
+              className="text-xs whitespace-nowrap shadow-xl relative z-50 checkpoint-badge px-2 py-1"
+              style={{ zIndex: 10000, position: 'relative', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)' }}
             >
-              {getMotivationalMessage()}
+              {getProgressBadgeText(progress)}
             </Badge>
           </motion.div>
         )}
