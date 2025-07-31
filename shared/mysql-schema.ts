@@ -99,7 +99,7 @@ export const keyResults = mysqlTable("key_results", {
   serviceId: int("service_id").references(() => services.id),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
-  frequency: varchar("frequency", { length: 50 }).notNull(), // monthly, quarterly, weekly
+  frequency: varchar("frequency", { length: 50 }).notNull(), // weekly, biweekly, monthly, quarterly
   status: varchar("status", { length: 50 }).notNull().default("active"), // active, completed, cancelled, delayed
   progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),

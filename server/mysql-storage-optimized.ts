@@ -1096,6 +1096,10 @@ export class MySQLStorageOptimized implements IStorage {
             nextDate = new Date(currentDate);
             nextDate.setDate(currentDate.getDate() + 7);
             break;
+          case 'biweekly':
+            nextDate = new Date(currentDate);
+            nextDate.setDate(currentDate.getDate() + 14);
+            break;
           case 'monthly':
             nextDate = new Date(currentDate);
             nextDate.setMonth(currentDate.getMonth() + 1);

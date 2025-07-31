@@ -703,6 +703,9 @@ export class FabricOnlyStorage implements IStorage {
       case 'weekly':
         periods = this.getWeeksBetween(startDate, endDate);
         break;
+      case 'biweekly':
+        periods = this.getBiweeksBetween(startDate, endDate);
+        break;
     }
 
     periods.forEach((period, index) => {
@@ -769,6 +772,21 @@ export class FabricOnlyStorage implements IStorage {
     }
     
     return weeks;
+  }
+
+  private getBiweeksBetween(start: Date, end: Date): string[] {
+    const biweeks: string[] = [];
+    const current = new Date(start);
+    let counter = 1;
+    
+    while (current <= end) {
+      const year = current.getFullYear();
+      biweeks.push(`${year}-B${String(counter).padStart(2, '0')}`);
+      current.setDate(current.getDate() + 14);
+      counter++;
+    }
+    
+    return biweeks;
   }
 
   private getWeekNumber(date: Date): number {

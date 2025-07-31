@@ -857,6 +857,25 @@ export class HybridStorage implements IStorage {
           updatedAt: new Date().toISOString()
         });
       });
+    } else if (keyResult.frequency === 'biweekly') {
+      const biweeksBetween = this.getBiweeksBetween(startDate, endDate);
+      const valuePerPeriod = totalValue / biweeksBetween.length;
+
+      biweeksBetween.forEach((biweek, index) => {
+        const cumulativeValue = keyResult.initialValue + (valuePerPeriod * (index + 1));
+        checkpoints.push({
+          keyResultId: keyResult.id!,
+          period: biweek,
+          targetValue: cumulativeValue,
+          actualValue: null,
+          progress: 0,
+          status: 'pendente',
+          notes: null,
+          completedAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      });
     } else if (keyResult.frequency === 'monthly') {
       const monthsBetween = this.getMonthsBetween(startDate, endDate);
       const valuePerPeriod = totalValue / monthsBetween.length;
@@ -945,6 +964,21 @@ export class HybridStorage implements IStorage {
     }
     
     return weeks;
+  }
+
+  private getBiweeksBetween(start: Date, end: Date): string[] {
+    const biweeks: string[] = [];
+    const current = new Date(start);
+    let counter = 1;
+    
+    while (current <= end) {
+      const year = current.getFullYear();
+      biweeks.push(`${year}-B${String(counter).padStart(2, '0')}`);
+      current.setDate(current.getDate() + 14);
+      counter++;
+    }
+    
+    return biweeks;
   }
 
   private getWeekNumber(date: Date): number {

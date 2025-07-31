@@ -359,6 +359,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="weekly">Semanal</SelectItem>
+                        <SelectItem value="biweekly">Quinzenal</SelectItem>
                         <SelectItem value="monthly">Mensal</SelectItem>
                         <SelectItem value="quarterly">Trimestral</SelectItem>
                       </SelectContent>
