@@ -438,21 +438,54 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/key-results/:id", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const validation = insertKeyResultSchema.partial().parse(req.body);
+      
+      // Transform and validate data like in creation route
+      const requestData = { ...req.body };
+      if (requestData.strategicIndicatorId && !requestData.strategicIndicatorIds) {
+        requestData.strategicIndicatorIds = [requestData.strategicIndicatorId];
+      }
+      
+      // Handle unit field - convert null to empty string
+      if (requestData.unit === null) {
+        requestData.unit = "";
+      }
+      
+      // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do formato brasileiro para banco
+      if (requestData.targetValue) {
+        const targetValueDb = parseDecimalBR(requestData.targetValue);
+        requestData.targetValue = targetValueDb.toString();
+      }
+      
+      if (requestData.currentValue) {
+        const currentValueDb = parseDecimalBR(requestData.currentValue);
+        requestData.currentValue = currentValueDb.toString();
+      }
+      
+      const validation = insertKeyResultSchema.partial().parse(requestData);
       
       const existingKeyResult = await storage.getKeyResult(id, req.user.id);
       if (!existingKeyResult) {
         return res.status(404).json({ message: "Resultado-chave não encontrado ou sem acesso" });
       }
       
+      // Se objectiveId está sendo alterado, verificar permissão no novo objetivo
+      if (validation.objectiveId && validation.objectiveId !== existingKeyResult.objectiveId) {
+        const newObjective = await storage.getObjective(validation.objectiveId, req.user.id);
+        if (!newObjective) {
+          return res.status(403).json({ message: "Sem permissão para mover resultado-chave para este objetivo" });
+        }
+      }
+      
       const updateData = { ...validation };
       if (updateData.targetValue !== undefined) {
         updateData.targetValue = updateData.targetValue.toString();
       }
+      
       const keyResult = await storage.updateKeyResult(id, updateData);
       
       res.json(keyResult);
     } catch (error) {
+      console.error('Error updating key result:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }

@@ -691,19 +691,40 @@ export class MySQLStorage implements IStorage {
     const fields = [];
     const values = [];
     
+    // Mapeamento correto dos campos para os nomes da tabela MySQL
+    const fieldMappings: Record<string, string> = {
+      'objectiveId': 'objective_id',
+      'targetValue': 'target_value',
+      'currentValue': 'current_value',
+      'strategicIndicatorIds': 'strategicIndicatorIds', // Este já está correto na tabela
+      'serviceLineIds': 'serviceLineIds', // Este já está correto na tabela
+      'serviceId': 'service_id',
+      'startDate': 'start_date',
+      'endDate': 'end_date'
+    };
+    
     for (const [key, value] of Object.entries(keyResult)) {
       if (value !== undefined) {
-        if (key === 'strategicIndicatorIds') {
-          fields.push(`strategic_indicator_ids = ?`);
+        const dbField = fieldMappings[key] || key; // Usa mapeamento ou o nome original
+        
+        if (key === 'strategicIndicatorIds' || key === 'serviceLineIds') {
+          fields.push(`${dbField} = ?`);
           values.push(JSON.stringify(value));
         } else {
-          fields.push(`${key} = ?`);
+          fields.push(`${dbField} = ?`);
           values.push(value);
         }
       }
     }
     
+    if (fields.length === 0) {
+      throw new Error('No fields to update');
+    }
+    
     values.push(id);
+    console.log(`Updating key result ${id} with fields:`, fields);
+    console.log('Update values:', values);
+    
     await pool.execute(`UPDATE key_results SET ${fields.join(', ')} WHERE id = ?`, values);
     
     const updated = await this.getKeyResult(id);
