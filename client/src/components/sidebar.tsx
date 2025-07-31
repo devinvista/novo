@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import QuarterlyFilter from "@/components/quarterly-filter";
+import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 
 export default function Sidebar() {
   const [location] = useLocation();
@@ -65,13 +66,11 @@ export default function Sidebar() {
       {/* Logo/Header */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Target className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">OKR Saúde</h1>
-            <p className="text-xs text-sidebar-foreground/60">Gestão de Objetivos</p>
-          </div>
+          <img 
+            src={logoImage} 
+            alt="OKRs Logo" 
+            className="w-32 h-auto"
+          />
         </div>
       </div>
 

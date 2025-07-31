@@ -132,6 +132,12 @@ This is a full-stack OKR (Objectives and Key Results) management system built wi
 
 ```
 Changelog:
+- July 31, 2025. **MIGRAÇÃO REPLIT AGENT → REPLIT COMPLETA + LOGO ATUALIZADO + CHECKPOINT NAMING MELHORADO**
+  - **LOGO ATUALIZADO**: Substituído logo antigo pelo novo design OKRs fornecido pelo usuário
+    - Atualizado componente sidebar com nova imagem do logo
+    - Atualizado página de autenticação com novo logo
+    - Removido texto redundante "OKR Saúde" e mantido apenas "Sistema de Gestão de Objetivos"
+    - Logo agora usa imagem moderna com gráfico de barras e seta de crescimento em azul e verde
 - July 31, 2025. **MIGRAÇÃO REPLIT AGENT → REPLIT COMPLETA + CHECKPOINT NAMING MELHORADO**
   - **MIGRAÇÃO FINALIZADA COM SUCESSO**: Migração completa do Replit Agent para ambiente Replit padrão
     - Todas as dependências instaladas e funcionando corretamente (nodejs-20, tsx, mysql2, express, drizzle-orm)

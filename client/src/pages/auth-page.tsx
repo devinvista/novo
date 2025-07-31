@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Target, TrendingUp, Users, Activity } from "lucide-react";
+import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -60,11 +61,12 @@ export default function AuthPage() {
         <div className="w-full max-w-md space-y-6 sm:space-y-8">
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-lg flex items-center justify-center">
-                <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-              </div>
+              <img 
+                src={logoImage} 
+                alt="OKRs Logo" 
+                className="w-48 h-auto"
+              />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">OKR Saúde</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">Sistema de Gestão de Objetivos</p>
           </div>
 
