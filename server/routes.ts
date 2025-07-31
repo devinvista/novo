@@ -340,11 +340,12 @@ export function registerRoutes(app: Express): Server {
       console.log("Key results found:", keyResults.length);
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do banco para formato brasileiro
+      // Usar formatação inteligente (sem decimais desnecessários)
       const keyResultsBR = keyResults.map(kr => ({
         ...kr,
-        currentValue: convertDatabaseToBR(kr.currentValue || "0", 2),
-        targetValue: convertDatabaseToBR(kr.targetValue || "0", 2),
-        progress: kr.progress ? convertDatabaseToBR(kr.progress, 2) : "0,00"
+        currentValue: convertDatabaseToBR(kr.currentValue || "0"),
+        targetValue: convertDatabaseToBR(kr.targetValue || "0"),
+        progress: kr.progress ? convertDatabaseToBR(kr.progress) : "0"
       }));
       
       // Debug the specific Key Result Teste
@@ -669,11 +670,12 @@ export function registerRoutes(app: Express): Server {
       console.log(`Found ${checkpoints.length} checkpoints`);
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores para formato brasileiro
+      // Usar formatação inteligente (sem decimais desnecessários)
       const checkpointsBR = checkpoints.map(checkpoint => ({
         ...checkpoint,
-        actualValue: checkpoint.actualValue ? convertDatabaseToBR(checkpoint.actualValue, 2) : null,
-        targetValue: convertDatabaseToBR(checkpoint.targetValue || "0", 2),
-        progress: checkpoint.progress ? convertDatabaseToBR(checkpoint.progress, 2) : "0,00"
+        actualValue: checkpoint.actualValue ? convertDatabaseToBR(checkpoint.actualValue) : null,
+        targetValue: convertDatabaseToBR(checkpoint.targetValue || "0"),
+        progress: checkpoint.progress ? convertDatabaseToBR(checkpoint.progress) : "0"
       }));
       
       res.json(checkpointsBR);

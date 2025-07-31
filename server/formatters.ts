@@ -65,7 +65,30 @@ export function convertBRToDatabase(value: string): number {
 }
 
 // Converte valor de banco para exibição brasileira
-export function convertDatabaseToBR(value: number | string, decimals: number = 2): string {
+// Usa formatação inteligente como padrão (sem decimais desnecessários)
+export function convertDatabaseToBR(value: number | string, decimals?: number): string {
+  if (value === null || value === undefined || value === "") return "0";
+  
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "0";
+  
+  // Se decimais não especificadas, usar formatação inteligente
+  if (decimals === undefined) {
+    // Se o número é inteiro, não mostrar decimais
+    if (num % 1 === 0) {
+      return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(num);
+    }
+    // Se tem decimais, usar 2 casas
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  }
+  
+  // Se decimais especificadas, usar formatNumberBR
   return formatNumberBR(value, decimals);
 }
 
