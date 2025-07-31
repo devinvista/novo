@@ -27,6 +27,11 @@
   isolation: auto !important;
 }
 
+/* Badge positioning no canto inferior direito */
+.checkpoint-container .checkpoint-badge {
+  transform: translate(25%, 25%) !important;
+}
+
 :root {
   /* FIERGS Color Palette */
   --fiergs-blue: hsl(220, 65%, 36%); /* #1a4b9f */
