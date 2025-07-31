@@ -163,6 +163,21 @@ export default function AnimatedProgressRing({
           >
             {progress === -1 ? "---" : `${Math.round(animatedProgress)}%`}
           </motion.div>
+          
+          {/* Badge dentro do círculo, abaixo do percentual */}
+          <motion.div
+            className="mt-1"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.3 }}
+          >
+            <Badge 
+              variant={getProgressBadgeVariant(progress, dueDate)} 
+              className="text-xs px-2 py-1 font-medium"
+            >
+              {getProgressBadgeText(progress, dueDate)}
+            </Badge>
+          </motion.div>
         </div>
 
         {/* Celebration Particles */}
@@ -213,27 +228,7 @@ export default function AnimatedProgressRing({
         </div>
       </motion.div>
 
-      {/* Status Badge - Bottom Right Corner */}
-      <AnimatePresence>
-        {isHovered && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            className="absolute -top-2 -right-2 z-50 checkpoint-badge"
-            style={{ zIndex: 10000, position: 'absolute' }}
-          >
-            <Badge 
-              variant={getProgressBadgeVariant(progress, dueDate)} 
-              className="text-xs whitespace-nowrap shadow-xl relative z-50 checkpoint-badge px-2 py-1"
-              style={{ zIndex: 10000, position: 'relative', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)' }}
-            >
-              {getProgressBadgeText(progress, dueDate)}
-            </Badge>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       {/* Pulse Effect for Active Items */}
       {status === "on_track" && progress > 0 && progress < 100 && (
