@@ -153,7 +153,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
       setTimeout(() => {
         toast({
           title: "Checkpoints recriados",
-          description: "Os checkpoints foram recriados com sucesso usando o formato de datas brasileiras.",
+          description: "Os checkpoints foram recriados com sucesso.",
         });
         queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
         setIsRecreating(false);
@@ -323,16 +323,17 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
               Confirmar Recriação de Checkpoints
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>Esta ação irá:</p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Excluir todos os checkpoints existentes</li>
-                <li>Recriar novos checkpoints com base na frequência do resultado-chave</li>
-                <li>Aplicar o novo formato de datas brasileiras (31/01, 28/02, etc.)</li>
-                <li>Resetar todo o progresso atual</li>
-              </ul>
-              <p className="font-semibold text-orange-600">
-                ⚠️ Esta ação não pode ser desfeita!
-              </p>
+              <div>
+                <div className="mb-2">Esta ação irá:</div>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li>Excluir todos os checkpoints existentes</li>
+                  <li>Recriar novos checkpoints com base na frequência do resultado-chave</li>
+                  <li>Resetar todo o progresso atual</li>
+                </ul>
+                <div className="font-semibold text-orange-600 mt-3">
+                  ⚠️ Esta ação não pode ser desfeita!
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -359,7 +360,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
               Recriando Checkpoints
             </DialogTitle>
             <DialogDescription>
-              Aguarde enquanto os checkpoints são recriados com o formato brasileiro...
+              Aguarde enquanto os checkpoints são recriados...
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
