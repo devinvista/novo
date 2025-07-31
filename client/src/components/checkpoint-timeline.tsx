@@ -61,16 +61,28 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
       };
     });
 
+    const progress = parseFloat(keyResult.progress) || 0;
+    
+    // Define colors based on progress (same as KR status)
+    const getProgressColor = (progress: number) => {
+      if (progress >= 70) return { bg: 'bg-green-500', border: 'border-green-600', text: 'text-green-600' };
+      if (progress >= 40) return { bg: 'bg-orange-500', border: 'border-orange-600', text: 'text-orange-600' };
+      return { bg: 'bg-red-500', border: 'border-red-600', text: 'text-red-600' };
+    };
+
+    const progressColors = getProgressColor(progress);
+
     return {
       startDate,
       endDate,
       timeProgress,
       checkpointPositions,
       title: keyResult.title,
-      progress: parseFloat(keyResult.progress) || 0,
+      progress,
       currentValue: keyResult.currentValue,
       targetValue: keyResult.targetValue,
       unit: keyResult.unit,
+      progressColors,
     };
   }, [keyResult, checkpoints]);
 
@@ -87,7 +99,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
     );
   }
 
-  const { startDate, endDate, timeProgress, checkpointPositions, title, progress, currentValue, targetValue, unit } = timelineData;
+  const { startDate, endDate, timeProgress, checkpointPositions, title, progress, currentValue, targetValue, unit, progressColors } = timelineData;
 
   return (
     <Card className="bg-gradient-to-r from-slate-50 to-gray-50 border-0 shadow-sm">
@@ -97,7 +109,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h3 className="font-medium text-sm text-gray-700">{title}</h3>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className={`text-xs ${progressColors.text} bg-opacity-10`}>
                 {progress.toFixed(0)}% • {currentValue}/{targetValue} {unit}
               </Badge>
             </div>
@@ -113,7 +125,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
             <div className="w-full h-1.5 bg-gray-200 rounded-full relative overflow-hidden">
               {/* Progress Bar */}
               <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
+                className={`h-full ${progressColors.bg} rounded-full transition-all duration-300`}
                 style={{ width: `${timeProgress}%` }}
               />
             </div>
@@ -132,7 +144,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
                       checkpoint.isCompleted 
                         ? 'bg-green-500 border-green-600' 
                         : checkpoint.isPast 
-                          ? 'bg-amber-500 border-amber-600'
+                          ? 'bg-red-500 border-red-600'
                           : 'bg-white border-gray-400'
                     }`}
                   />
@@ -158,7 +170,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
               <span className="text-muted-foreground ml-1">concluídos</span>
             </div>
             <div className="text-center">
-              <span className="font-semibold text-blue-600">
+              <span className={`font-semibold ${progressColors.text}`}>
                 {timeProgress.toFixed(0)}%
               </span>
               <span className="text-muted-foreground ml-1">decorrido</span>
