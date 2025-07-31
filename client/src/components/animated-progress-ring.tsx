@@ -78,7 +78,7 @@ export default function AnimatedProgressRing({
 
   return (
     <motion.div
-      className="relative inline-flex flex-col items-center cursor-pointer select-none"
+      className="relative inline-flex flex-col items-center cursor-pointer select-none z-10 checkpoint-container"
       onHoverStart={() => {
         setIsHovered(true);
         onHover?.();
@@ -92,7 +92,7 @@ export default function AnimatedProgressRing({
       }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', position: 'relative', zIndex: 10 }}
     >
       {/* Progress Ring Container */}
       <motion.div
@@ -218,11 +218,13 @@ export default function AnimatedProgressRing({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
             transition={{ duration: 0.2 }}
-            className="absolute -bottom-12 left-1/2 transform -translate-x-1/2"
+            className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 z-50 checkpoint-badge"
+            style={{ zIndex: 9999, position: 'absolute' }}
           >
             <Badge 
               variant="secondary" 
-              className="text-xs whitespace-nowrap bg-white border shadow-lg"
+              className="text-xs whitespace-nowrap bg-white border shadow-xl relative z-50 checkpoint-badge"
+              style={{ zIndex: 9999, position: 'relative', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }}
             >
               {getMotivationalMessage()}
             </Badge>

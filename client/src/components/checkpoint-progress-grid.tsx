@@ -95,7 +95,8 @@ export default function CheckpointProgressGrid({
                       delay: index * 0.1,
                       layout: { duration: 0.3 }
                     }}
-                    className="flex justify-center"
+                    className="flex justify-center relative z-10 checkpoint-ring"
+                    style={{ position: 'relative', zIndex: 10, isolation: 'isolate' }}
                   >
                     <AnimatedProgressRing
                       progress={progress}
