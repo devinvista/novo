@@ -11,6 +11,10 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
 ✓ **Project Migration Completed**: Successfully migrated OKR system from Replit Agent to standard Replit environment
 ✓ **CSS Optimization**: Removed z-index rules for badges that were causing visual layering issues
 ✓ **UI Bug Fix**: Fixed dropdown menu positioning in objectives table by adding proper relative positioning and container structure
+✓ **Enhanced Key Results Interface**: Added dynamic badges showing action counts and checkpoint counts for each key result
+  - Actions button shows "Criar Ações" when no actions exist, "Ações" with count badge when actions present
+  - Checkpoints button always shows count badge with number of existing checkpoints
+  - Real-time data fetching with optimized API calls for counts
 ✓ **Development Environment**: Verified all packages installed, workflows running, and database connectivity working properly
 
 ## System Architecture

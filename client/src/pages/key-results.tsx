@@ -79,6 +79,70 @@ export default function KeyResults() {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch actions and checkpoints counts for each key result
+  const { data: actionsCounts } = useQuery({
+    queryKey: ["/api/actions-counts", keyResults?.map((kr: any) => kr.id)],
+    queryFn: async () => {
+      if (!keyResults || keyResults.length === 0) return {};
+      
+      const counts: Record<number, number> = {};
+      
+      // Fetch actions count for each key result
+      await Promise.all(
+        keyResults.map(async (kr: any) => {
+          try {
+            const response = await fetch(`/api/actions?keyResultId=${kr.id}`, { credentials: "include" });
+            if (response.ok) {
+              const actions = await response.json();
+              counts[kr.id] = Array.isArray(actions) ? actions.length : 0;
+            } else {
+              counts[kr.id] = 0;
+            }
+          } catch {
+            counts[kr.id] = 0;
+          }
+        })
+      );
+      
+      return counts;
+    },
+    enabled: !!keyResults && keyResults.length > 0,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch checkpoints counts for each key result
+  const { data: checkpointsCounts } = useQuery({
+    queryKey: ["/api/checkpoints-counts", keyResults?.map((kr: any) => kr.id)],
+    queryFn: async () => {
+      if (!keyResults || keyResults.length === 0) return {};
+      
+      const counts: Record<number, number> = {};
+      
+      // Fetch checkpoints count for each key result
+      await Promise.all(
+        keyResults.map(async (kr: any) => {
+          try {
+            const response = await fetch(`/api/checkpoints?keyResultId=${kr.id}`, { credentials: "include" });
+            if (response.ok) {
+              const checkpoints = await response.json();
+              counts[kr.id] = Array.isArray(checkpoints) ? checkpoints.length : 0;
+            } else {
+              counts[kr.id] = 0;
+            }
+          } catch {
+            counts[kr.id] = 0;
+          }
+        })
+      );
+      
+      return counts;
+    },
+    enabled: !!keyResults && keyResults.length > 0,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
   const handleCreateKeyResult = () => {
     setSelectedKeyResult(null);
     setIsFormOpen(true);
@@ -260,20 +324,34 @@ export default function KeyResults() {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="flex-1"
+                            className="flex-1 relative"
                             onClick={() => setLocation(`/actions?kr=${kr.id}`)}
                           >
                             <Activity className="h-4 w-4 mr-1" />
-                            Ações
+                            {(actionsCounts?.[kr.id] || 0) === 0 ? "Criar Ações" : "Ações"}
+                            {(actionsCounts?.[kr.id] || 0) > 0 && (
+                              <Badge 
+                                variant="secondary" 
+                                className="ml-2 h-5 min-w-5 text-xs px-1.5 bg-blue-100 text-blue-800 hover:bg-blue-100"
+                              >
+                                {actionsCounts?.[kr.id] || 0}
+                              </Badge>
+                            )}
                           </Button>
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="flex-1"
+                            className="flex-1 relative"
                             onClick={() => setLocation(`/checkpoints?kr=${kr.id}`)}
                           >
                             <Calendar className="h-4 w-4 mr-1" />
                             Checkpoints
+                            <Badge 
+                              variant="secondary" 
+                              className="ml-2 h-5 min-w-5 text-xs px-1.5 bg-green-100 text-green-800 hover:bg-green-100"
+                            >
+                              {checkpointsCounts?.[kr.id] || 0}
+                            </Badge>
                           </Button>
                         </div>
                         
