@@ -632,6 +632,13 @@ export class MySQLStorage implements IStorage {
 
     const results = await query.orderBy(desc(keyResults.createdAt));
     
+    // Debug: Check if progress field is in the raw query results
+    const testResult = results.find(r => r.key_results?.title === 'Key Result Teste');
+    if (testResult) {
+      console.log('🔍 Raw SQL result fields:', Object.keys(testResult.key_results || {}));
+      console.log('🔍 Progress in SQL result:', testResult.key_results?.progress);
+    }
+    
     return results.map(row => {
       const mappedRow = {
         id: row.key_results.id,
@@ -659,11 +666,13 @@ export class MySQLStorage implements IStorage {
       
       // Debug logging for Key Result Teste
       if (row.key_results.title === 'Key Result Teste') {
-        console.log('🔍 Mapping Key Result Teste:', {
+        console.log('🔍 Raw DB row for Key Result Teste:', {
+          allFields: Object.keys(row.key_results),
           progress: row.key_results.progress,
           progressType: typeof row.key_results.progress,
           currentValue: row.key_results.currentValue,
-          targetValue: row.key_results.targetValue
+          targetValue: row.key_results.targetValue,
+          rawRow: row.key_results
         });
       }
       
