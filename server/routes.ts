@@ -345,7 +345,7 @@ export function registerRoutes(app: Express): Server {
         ...kr,
         currentValue: convertDatabaseToBR(kr.currentValue || "0"),
         targetValue: convertDatabaseToBR(kr.targetValue || "0"),
-        progress: kr.progress ? convertDatabaseToBR(kr.progress) : "0"
+        progress: kr.progress !== null && kr.progress !== undefined ? parseFloat(kr.progress.toString()) : 0
       }));
       
       // Debug the specific Key Result Teste

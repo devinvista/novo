@@ -811,6 +811,7 @@ export class MySQLStorageOptimized implements IStorage {
         currentValue: keyResults.currentValue,
         progress: keyResults.progress,
         unit: keyResults.unit,
+        frequency: keyResults.frequency,
         startDate: keyResults.startDate,
         endDate: keyResults.endDate,
         status: keyResults.status,

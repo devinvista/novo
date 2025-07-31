@@ -228,8 +228,8 @@ export default function KeyResults() {
           ) : (
             <div className="grid gap-6">
               {keyResults && keyResults.length > 0 ? keyResults.map((kr: any, index: number) => {
-                const progress = parseFloat((kr.progress || '0').toString().replace(',', '.')) || 0;
-                console.log(`🔍 KR "${kr.title}" - progress field:`, kr.progress, 'parsed:', progress);
+                const progress = typeof kr.progress === 'number' ? kr.progress : (parseFloat((kr.progress || '0').toString().replace(',', '.')) || 0);
+                console.log(`🔍 KR "${kr.title}" - progress field:`, kr.progress, 'type:', typeof kr.progress, 'parsed:', progress);
                 const statusBadge = getStatusBadge(kr.status || 'active');
                 
                 return (
