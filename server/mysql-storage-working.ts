@@ -996,7 +996,7 @@ export class MySQLStorage implements IStorage {
     await db.delete(checkpoints).where(eq(checkpoints.id, id));
   }
 
-  private async updateKeyResultProgressFromCheckpoints(keyResultId: number): Promise<void> {
+  async updateKeyResultProgressFromCheckpoints(keyResultId: number): Promise<void> {
     try {
       // Get the key result to get target value
       const keyResult = await this.getKeyResult(keyResultId);
@@ -1010,18 +1010,20 @@ export class MySQLStorage implements IStorage {
 
       if (checkpointsList.length === 0) return;
 
-      // Calculate the current value based on the latest completed checkpoint
-      // or the highest actual value achieved so far
-      let currentValue = 0;
-      let latestProgressDate = null;
+      // Find the most recently updated checkpoint and use its actual value
+      let latestCheckpoint = null;
+      let latestUpdateDate = null;
 
       for (const checkpoint of checkpointsList) {
-        const actualValue = Number(checkpoint.actualValue) || 0;
-        if (actualValue > currentValue) {
-          currentValue = actualValue;
-          latestProgressDate = checkpoint.updatedAt;
+        const updateDate = new Date(checkpoint.updatedAt);
+        if (!latestUpdateDate || updateDate > latestUpdateDate) {
+          latestUpdateDate = updateDate;
+          latestCheckpoint = checkpoint;
         }
       }
+
+      // Use the actual value from the most recently updated checkpoint
+      const currentValue = latestCheckpoint ? (Number(latestCheckpoint.actualValue) || 0) : 0;
 
       // Calculate progress percentage
       const targetValue = Number(keyResult.targetValue) || 1;
@@ -1034,7 +1036,7 @@ export class MySQLStorage implements IStorage {
         updatedAt: new Date(),
       }).where(eq(keyResults.id, keyResultId));
 
-      console.log(`Updated key result ${keyResultId} currentValue to ${currentValue} and progress to ${progress.toFixed(2)}% based on checkpoint progress`);
+      console.log(`Updated key result ${keyResultId} currentValue to ${currentValue} and progress to ${progress.toFixed(2)}% based on latest checkpoint (updated: ${latestUpdateDate?.toISOString()})`);
     } catch (error) {
       console.error('Error updating key result progress from checkpoints:', error);
       // Don't throw error to avoid breaking checkpoint update

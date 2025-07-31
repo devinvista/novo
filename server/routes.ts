@@ -924,6 +924,29 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // TEST ENDPOINT - for debugging KR progress calculation
+  app.post("/api/test-kr-progress/:keyResultId", requireAuth, async (req, res) => {
+    try {
+      const keyResultId = parseInt(req.params.keyResultId);
+      console.log(`Testing KR progress calculation for KR ${keyResultId}`);
+      
+      // Force update progress calculation
+      await (storage as any).updateKeyResultProgressFromCheckpoints(keyResultId);
+      
+      // Get updated KR
+      const keyResult = await storage.getKeyResult(keyResultId);
+      
+      res.json({
+        success: true,
+        keyResult,
+        message: `Progress recalculated for KR ${keyResultId}`
+      });
+    } catch (error) {
+      console.error("Test error:", error);
+      res.status(500).json({ message: "Erro no teste", error: error instanceof Error ? error.message : 'Erro desconhecido' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
