@@ -9,6 +9,7 @@ import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { translateFrequency } from "@/lib/frequency-translations";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -320,7 +321,7 @@ export default function KeyResults() {
                         </div>
                         
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>Frequência: {kr.frequency}</span>
+                          <span>Frequência: {translateFrequency(kr.frequency || '')}</span>
                           {kr.strategicIndicator?.name && (
                             <span>Indicador: {kr.strategicIndicator.name}</span>
                           )}
