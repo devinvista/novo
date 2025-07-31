@@ -1124,7 +1124,6 @@ export class MySQLStorageOptimized implements IStorage {
 
       // Now create checkpoints with cumulative targets (last checkpoint = total target)
       const totalPeriods = periods.length;
-      let previousDate = new Date(startDate);
       
       for (let i = 0; i < periods.length; i++) {
         const period = periods[i];
@@ -1140,10 +1139,20 @@ export class MySQLStorageOptimized implements IStorage {
           return `${day}/${month}`;
         };
         
-        const currentDateFormatted = formatBrazilianDate(period.dueDate);
-        const previousDateFormatted = formatBrazilianDate(previousDate);
+        // Calculate period start date (previous checkpoint end date + 1 day, or start date for first checkpoint)
+        let periodStart: Date;
+        if (i === 0) {
+          periodStart = new Date(startDate);
+        } else {
+          const previousPeriod = periods[i - 1];
+          periodStart = new Date(previousPeriod.dueDate);
+          periodStart.setDate(periodStart.getDate() + 1);
+        }
         
-        // Create title and period in the requested format: "12/05 1/10 (12/4 a 12/05)"
+        const currentDateFormatted = formatBrazilianDate(period.dueDate);
+        const previousDateFormatted = formatBrazilianDate(periodStart);
+        
+        // Create title and period in the requested format: "12/05 1/10 (12/04 a 12/05)"
         const title = `${currentDateFormatted} ${period.number}/${totalPeriods}`;
         const periodText = `(${previousDateFormatted} a ${currentDateFormatted})`;
         
@@ -1156,11 +1165,6 @@ export class MySQLStorageOptimized implements IStorage {
           status: "pending" as const,
           dueDate: new Date(period.dueDate),
         });
-        
-        // Update previous date for next iteration
-        previousDate = new Date(period.dueDate);
-        // Subtract one day to show the start of next period correctly
-        previousDate.setDate(previousDate.getDate() - 1);
       }
 
       // Insert all checkpoints
