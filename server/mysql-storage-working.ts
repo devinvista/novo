@@ -960,6 +960,10 @@ export class MySQLStorage implements IStorage {
     
     const newCheckpoint = await this.getCheckpoint(Number(insertId));
     if (!newCheckpoint) throw new Error('Failed to create checkpoint');
+    
+    // Update key result progress based on checkpoint progress
+    await this.updateKeyResultProgressFromCheckpoints(newCheckpoint.keyResultId);
+    
     return newCheckpoint;
   }
 
@@ -994,6 +998,10 @@ export class MySQLStorage implements IStorage {
 
   private async updateKeyResultProgressFromCheckpoints(keyResultId: number): Promise<void> {
     try {
+      // Get the key result to get target value
+      const keyResult = await this.getKeyResult(keyResultId);
+      if (!keyResult) return;
+
       // Get all checkpoints for this key result
       const checkpointsList = await db.select()
         .from(checkpoints)
@@ -1015,13 +1023,18 @@ export class MySQLStorage implements IStorage {
         }
       }
 
-      // Update the key result's current value
+      // Calculate progress percentage
+      const targetValue = Number(keyResult.targetValue) || 1;
+      const progress = targetValue > 0 ? Math.min((currentValue / targetValue) * 100, 100) : 0;
+
+      // Update the key result's current value and progress
       await db.update(keyResults).set({
         currentValue: currentValue.toString(),
+        progress: progress.toFixed(2),
         updatedAt: new Date(),
       }).where(eq(keyResults.id, keyResultId));
 
-      console.log(`Updated key result ${keyResultId} currentValue to ${currentValue} based on checkpoint progress`);
+      console.log(`Updated key result ${keyResultId} currentValue to ${currentValue} and progress to ${progress.toFixed(2)}% based on checkpoint progress`);
     } catch (error) {
       console.error('Error updating key result progress from checkpoints:', error);
       // Don't throw error to avoid breaking checkpoint update
