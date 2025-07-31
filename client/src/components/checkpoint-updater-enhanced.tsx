@@ -282,7 +282,16 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
           {checkpoints.map((checkpoint: any) => {
             const targetValue = parseFloat(checkpoint.targetValue);
             const actualValue = parseFloat(checkpoint.actualValue);
-            const progress = targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
+            
+            // Verificar se é checkpoint futuro
+            const today = new Date();
+            const checkpointDate = new Date(checkpoint.dueDate);
+            const isFuture = checkpointDate > today;
+            
+            // Se é futuro e não tem valor registrado, não mostrar 0%
+            const progress = isFuture && actualValue === 0 
+              ? -1  // Valor especial para indicar "aguardando"
+              : targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
             const badgeVariant = getProgressBadgeVariant(progress, checkpoint.dueDate);
             const badgeText = getProgressBadgeText(progress, checkpoint.dueDate);
             
@@ -295,7 +304,7 @@ export default function CheckpointUpdaterEnhanced({ keyResultId }: CheckpointUpd
                       Meta: {checkpoint.targetValue} | Atual: {checkpoint.actualValue || '0'}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Progresso: {progress.toFixed(1)}%
+                      Progresso: {progress === -1 ? "Aguardando período" : `${progress.toFixed(1)}%`}
                     </p>
                   </div>
                   <div className="text-right space-y-1">

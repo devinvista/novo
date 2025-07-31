@@ -44,7 +44,7 @@ export default function AnimatedProgressRing({
   useEffect(() => {
     if (showAnimation) {
       const timer = setTimeout(() => {
-        setAnimatedProgress(Math.min(progress, 100));
+        setAnimatedProgress(progress === -1 ? 0 : Math.min(progress, 100));
         
         // Show celebration for completed items
         if (progress >= 100 && status === "completed") {
@@ -161,7 +161,7 @@ export default function AnimatedProgressRing({
             }}
             transition={{ duration: 0.5 }}
           >
-            {Math.round(animatedProgress)}%
+            {progress === -1 ? "---" : `${Math.round(animatedProgress)}%`}
           </motion.div>
         </div>
 
@@ -209,7 +209,7 @@ export default function AnimatedProgressRing({
         
         {/* Progress Values */}
         <div className="text-xs text-gray-500 mt-1">
-          {actualValue.toFixed(1)} / {targetValue.toFixed(1)}
+          {progress === -1 ? "Aguardando período" : `${actualValue.toFixed(1)} / ${targetValue.toFixed(1)}`}
         </div>
       </motion.div>
 

@@ -1,6 +1,11 @@
 // Utilitários para checkpoints com padrão de cores: <85 vermelho; 85-99 amarelo; ≥100 verde
 
 export function getProgressBadgeVariant(progress: number, dueDate?: string): "error" | "warning" | "success" | "secondary" {
+  // Valor especial -1 indica aguardando período
+  if (progress === -1) {
+    return "secondary";
+  }
+  
   // Se tem data futura e progresso 0, ainda não é tempo de medir
   if (dueDate) {
     const today = new Date();
@@ -16,6 +21,11 @@ export function getProgressBadgeVariant(progress: number, dueDate?: string): "er
 }
 
 export function getProgressBadgeText(progress: number, dueDate?: string): string {
+  // Valor especial -1 indica aguardando período
+  if (progress === -1) {
+    return "Aguardando período";
+  }
+  
   // Se tem data futura e progresso 0, ainda não é tempo de medir
   if (dueDate) {
     const today = new Date();
