@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ForceRefresh } from "@/components/force-refresh";
 import { AuthProvider } from "@/hooks/use-auth";
 import { QuarterlyFilterProvider } from "@/hooks/use-quarterly-filter";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -38,6 +39,7 @@ function App() {
       <AuthProvider>
         <QuarterlyFilterProvider>
           <TooltipProvider>
+            <ForceRefresh />
             <Toaster />
             <Router />
           </TooltipProvider>
