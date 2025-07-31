@@ -632,29 +632,43 @@ export class MySQLStorage implements IStorage {
 
     const results = await query.orderBy(desc(keyResults.createdAt));
     
-    return results.map(row => ({
-      id: row.key_results.id,
-      objectiveId: row.key_results.objectiveId,
-      title: row.key_results.title,
-      description: row.key_results.description,
-      strategicIndicatorIds: row.key_results.strategicIndicatorIds,
-      serviceLineIds: row.key_results.serviceLineIds,
-      serviceId: row.key_results.serviceId,
-      initialValue: row.key_results.initialValue,
-      targetValue: row.key_results.targetValue,
-      currentValue: row.key_results.currentValue,
-      unit: row.key_results.unit,
-      frequency: row.key_results.frequency,
-      startDate: row.key_results.startDate,
-      endDate: row.key_results.endDate,
-      status: row.key_results.status,
-      progress: row.key_results.progress,
-      number: row.key_results.number,
-      createdAt: row.key_results.createdAt,
-      updatedAt: row.key_results.updatedAt,
-      objective: row.objectives!,
-      strategicIndicator: undefined, // We'll handle strategic indicators separately
-    }));
+    return results.map(row => {
+      const mappedRow = {
+        id: row.key_results.id,
+        objectiveId: row.key_results.objectiveId,
+        title: row.key_results.title,
+        description: row.key_results.description,
+        strategicIndicatorIds: row.key_results.strategicIndicatorIds,
+        serviceLineIds: row.key_results.serviceLineIds,
+        serviceId: row.key_results.serviceId,
+        initialValue: row.key_results.initialValue,
+        targetValue: row.key_results.targetValue,
+        currentValue: row.key_results.currentValue,
+        unit: row.key_results.unit,
+        frequency: row.key_results.frequency,
+        startDate: row.key_results.startDate,
+        endDate: row.key_results.endDate,
+        status: row.key_results.status,
+        progress: row.key_results.progress,
+        number: row.key_results.number,
+        createdAt: row.key_results.createdAt,
+        updatedAt: row.key_results.updatedAt,
+        objective: row.objectives!,
+        strategicIndicator: undefined, // We'll handle strategic indicators separately
+      };
+      
+      // Debug logging for Key Result Teste
+      if (row.key_results.title === 'Key Result Teste') {
+        console.log('🔍 Mapping Key Result Teste:', {
+          progress: row.key_results.progress,
+          progressType: typeof row.key_results.progress,
+          currentValue: row.key_results.currentValue,
+          targetValue: row.key_results.targetValue
+        });
+      }
+      
+      return mappedRow;
+    });
   }
 
   async getKeyResult(id: number, currentUserId?: number): Promise<KeyResult | undefined> {
