@@ -27,23 +27,9 @@
   isolation: auto !important;
 }
 
-/* Badge positioning e styling melhorado */
+/* Badge positioning no canto inferior direito */
 .checkpoint-container .checkpoint-badge {
-  transform: translate(-15%, -15%) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.checkpoint-container:hover .checkpoint-badge {
-  transform: translate(-15%, -15%) scale(1.08) !important;
-}
-
-/* Melhorias visuais gerais */
-.checkpoint-container {
-  transition: all 0.3s ease !important;
-}
-
-.checkpoint-container:hover {
-  filter: brightness(1.05) !important;
+  transform: translate(25%, 25%) !important;
 }
 
 :root {

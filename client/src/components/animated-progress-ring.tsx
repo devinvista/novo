@@ -198,17 +198,17 @@ export default function AnimatedProgressRing({
 
       {/* Period Label */}
       <motion.div 
-        className="mt-4 text-center"
+        className="mt-3 text-center"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <div className="text-sm font-semibold text-gray-900 mb-2">
+        <div className="text-sm font-medium text-gray-900">
           {period}
         </div>
         
         {/* Progress Values */}
-        <div className="text-xs text-gray-600 bg-white/80 border border-gray-200/60 px-3 py-1.5 rounded-full inline-block shadow-sm backdrop-blur-sm">
+        <div className="text-xs text-gray-500 mt-1">
           {progress === -1 ? "Aguardando período" : `${actualValue.toFixed(1)} / ${targetValue.toFixed(1)}`}
         </div>
       </motion.div>
@@ -221,19 +221,13 @@ export default function AnimatedProgressRing({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-4 right-4 z-50 checkpoint-badge"
+            className="absolute -top-2 -right-2 z-50 checkpoint-badge"
             style={{ zIndex: 10000, position: 'absolute' }}
           >
             <Badge 
               variant={getProgressBadgeVariant(progress, dueDate)} 
-              className="text-xs font-bold whitespace-nowrap shadow-lg px-3 py-1.5 rounded-full border-2 border-white/40"
-              style={{ 
-                zIndex: 10000, 
-                position: 'relative', 
-                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1)',
-                backdropFilter: 'blur(12px)',
-                transform: 'translateZ(0)' // Force hardware acceleration
-              }}
+              className="text-xs whitespace-nowrap shadow-xl relative z-50 checkpoint-badge px-2 py-1"
+              style={{ zIndex: 10000, position: 'relative', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)' }}
             >
               {getProgressBadgeText(progress, dueDate)}
             </Badge>
