@@ -107,23 +107,26 @@ export default function ActionPlan() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">Planos de Ação por Objetivo</h2>
-        <p className="text-muted-foreground">
-          Planos de trabalho detalhados organizados por objetivo estratégico
+      <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-6 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold mb-2 flex items-center space-x-3">
+          <CheckSquare className="h-6 w-6" />
+          <span>Planos de Ação por Objetivo</span>
+        </h2>
+        <p className="text-orange-100">
+          Planos de trabalho detalhados organizados por objetivo estratégico do Sistema FIERGS
         </p>
       </div>
 
       {/* Action Plans for each Objective */}
       {groupedData.map((objective: any) => (
-        <Card key={objective.id} className="border-l-4 border-l-blue-600">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+        <Card key={objective.id} className="border-l-4 border-l-orange-600 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle className="text-xl text-blue-900 dark:text-blue-100 mb-2">
+                <CardTitle className="text-xl text-orange-900 dark:text-orange-100 mb-2">
                   Objetivo: {objective.title}
                 </CardTitle>
-                <CardDescription className="text-blue-700 dark:text-blue-200 text-base">
+                <CardDescription className="text-orange-700 dark:text-orange-200 text-base">
                   {objective.description}
                 </CardDescription>
                 <div className="flex items-center space-x-4 mt-3 text-sm">

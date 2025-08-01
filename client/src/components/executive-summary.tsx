@@ -16,7 +16,8 @@ import {
   BarChart3,
   Flag,
   CheckSquare,
-  Goal
+  Goal,
+  FileText
 } from "lucide-react";
 
 export default function ExecutiveSummary() {
@@ -54,10 +55,13 @@ export default function ExecutiveSummary() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">Resumo Executivo - Sistema OKRs</h2>
-        <p className="text-muted-foreground">
-          Análise dos resultados e performance atual da implementação de OKRs na organização
+      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold mb-2 flex items-center space-x-3">
+          <FileText className="h-6 w-6" />
+          <span>Resumo Executivo - Sistema OKRs</span>
+        </h2>
+        <p className="text-green-100">
+          Análise dos resultados e performance atual da implementação de OKRs no Sistema FIERGS
         </p>
       </div>
 
