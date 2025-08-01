@@ -36,6 +36,12 @@ export default function ActionPlan() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Get strategic indicators data
+  const { data: strategicIndicators } = useQuery({
+    queryKey: ["/api/strategic-indicators"],
+    staleTime: 10 * 60 * 1000,
+  });
+
   const isLoading = objectivesLoading || keyResultsLoading || actionsLoading;
 
   if (isLoading) {
@@ -61,12 +67,16 @@ export default function ActionPlan() {
   // Group key results and actions by objective
   const groupedData = objectives.map((objective: any) => {
     const objectiveKeyResults = Array.isArray(keyResults) ? keyResults.filter((kr: any) => kr.objectiveId === objective.id) : [];
-    const objectiveActions = Array.isArray(actions) ? actions.filter((action: any) => action.objectiveId === objective.id) : [];
+    
+    // Actions are linked to key results, not directly to objectives
+    const relatedActions = Array.isArray(actions) ? actions.filter((action: any) => 
+      objectiveKeyResults.some((kr: any) => kr.id === action.keyResultId)
+    ) : [];
     
     return {
       ...objective,
       keyResults: objectiveKeyResults,
-      actions: objectiveActions
+      actions: relatedActions
     };
   });
 
@@ -150,7 +160,7 @@ export default function ActionPlan() {
                           Resultado-chave (O quê?)
                         </TableHead>
                         <TableHead className="font-semibold text-blue-900 dark:text-blue-100">
-                          Indicador
+                          Indicadores Estratégicos
                         </TableHead>
                         <TableHead className="font-semibold text-blue-900 dark:text-blue-100">
                           Meta
@@ -178,7 +188,20 @@ export default function ActionPlan() {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              {kr.unit || "Valor numérico"}
+                              {kr.strategicIndicatorIds && Array.isArray(strategicIndicators) ? (
+                                <div className="space-y-1">
+                                  {kr.strategicIndicatorIds.map((indicatorId: number) => {
+                                    const indicator = strategicIndicators.find((si: any) => si.id === indicatorId);
+                                    return indicator ? (
+                                      <div key={indicator.id} className="text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                                        {indicator.name}
+                                      </div>
+                                    ) : null;
+                                  })}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">Nenhum indicador associado</span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
