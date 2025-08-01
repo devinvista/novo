@@ -188,20 +188,36 @@ export default function ActionPlan() {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              {kr.strategicIndicatorIds && Array.isArray(strategicIndicators) ? (
-                                <div className="space-y-1">
-                                  {kr.strategicIndicatorIds.map((indicatorId: number) => {
-                                    const indicator = strategicIndicators.find((si: any) => si.id === indicatorId);
-                                    return indicator ? (
-                                      <div key={indicator.id} className="text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
-                                        {indicator.name}
-                                      </div>
-                                    ) : null;
-                                  })}
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground">Nenhum indicador associado</span>
-                              )}
+                              {(() => {
+                                let indicatorIds = [];
+                                try {
+                                  if (kr.strategicIndicatorIds) {
+                                    if (Array.isArray(kr.strategicIndicatorIds)) {
+                                      indicatorIds = kr.strategicIndicatorIds;
+                                    } else if (typeof kr.strategicIndicatorIds === 'string') {
+                                      indicatorIds = JSON.parse(kr.strategicIndicatorIds);
+                                    }
+                                  }
+                                } catch (e) {
+                                  console.log('Error parsing strategic indicators:', e);
+                                  indicatorIds = [];
+                                }
+
+                                return indicatorIds.length > 0 && Array.isArray(strategicIndicators) ? (
+                                  <div className="space-y-1">
+                                    {indicatorIds.map((indicatorId: number) => {
+                                      const indicator = strategicIndicators.find((si: any) => si.id === indicatorId);
+                                      return indicator ? (
+                                        <div key={indicator.id} className="text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                                          {indicator.name}
+                                        </div>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">Nenhum indicador associado</span>
+                                );
+                              })()}
                             </div>
                           </TableCell>
                           <TableCell>

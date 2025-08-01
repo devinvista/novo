@@ -7,7 +7,16 @@ This is a full-stack OKR (Objectives and Key Results) management system designed
 Preferred communication style: Simple, everyday language.
 Project language: Portuguese Brazil (Português brasileiro) - All interface, documentation, and text converted to Brazilian Portuguese.
 
-## Recent Changes (July 31, 2025)
+## Recent Changes (August 1, 2025)
+✓ **Action Plan Tab Created**: New "Plano de Ação" tab added to Reports page following user's specific model
+  - **Problem Solved**: Actions were not loading correctly due to incorrect relationship mapping
+  - **Solution Implemented**: Fixed action filtering to work through key results (actions → key results → objectives)
+  - **Strategic Indicators Display**: Enhanced to show actual strategic indicators associated with key results
+  - **Error Handling**: Added robust parsing for strategicIndicatorIds field (handles both array and JSON string formats)
+  - **Table Structure**: Organized by objectives with separate sections for key results and actions as per user model
+  - **Real Data Integration**: All data comes from actual OKR system with proper Brazilian formatting
+
+## Previous Changes (July 31, 2025)
 ✓ **Project Migration Completed**: Successfully migrated OKR system from Replit Agent to standard Replit environment
 ✓ **Number Conversion Logic Issue Fixed**: Resolved Brazilian number formatting issue where "2.300" was incorrectly parsed as 2.3 instead of 2300 in checkpoint creation
   - **Problem Identified**: `parseDecimalBR` function was not correctly identifying 3-digit patterns after decimal point as Brazilian thousands separator
