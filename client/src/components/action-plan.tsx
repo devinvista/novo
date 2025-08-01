@@ -203,7 +203,7 @@ export default function ActionPlan() {
                                   indicatorIds = [];
                                 }
 
-                                return indicatorIds.length > 0 && Array.isArray(strategicIndicators) ? (
+                                return Array.isArray(indicatorIds) && indicatorIds.length > 0 && Array.isArray(strategicIndicators) ? (
                                   <div className="space-y-1">
                                     {indicatorIds.map((indicatorId: number) => {
                                       const indicator = strategicIndicators.find((si: any) => si.id === indicatorId);
