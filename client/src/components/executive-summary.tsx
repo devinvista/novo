@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useQuery } from "@tanstack/react-query";
 import { 
   TrendingUp, 
   Users, 
@@ -11,18 +12,104 @@ import {
   Activity,
   Clock,
   Award,
-  BookOpen
+  BookOpen,
+  BarChart3,
+  Flag,
+  CheckSquare,
+  Goal
 } from "lucide-react";
 
 export default function ExecutiveSummary() {
+  const { data: summaryData, isLoading } = useQuery({
+    queryKey: ["/api/executive-summary"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-4 bg-muted rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-3/4"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!summaryData) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Erro ao carregar dados do resumo executivo</p>
+      </div>
+    );
+  }
+  const { overview, mainObjectives, topKeyResults, performance, distribution, trends } = summaryData;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">Resumo Executivo - Implementação OKRs</h2>
+        <h2 className="text-2xl font-bold text-foreground">Resumo Executivo - Sistema OKRs</h2>
         <p className="text-muted-foreground">
-          Resultados da implementação da metodologia OKRs em empresa de médio porte do setor de tecnologia
+          Análise dos resultados e performance atual da implementação de OKRs na organização
         </p>
+      </div>
+
+      {/* Overview Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Goal className="h-8 w-8 text-blue-600" />
+              <div>
+                <div className="text-2xl font-bold text-blue-600">{overview.totalObjectives}</div>
+                <div className="text-sm text-muted-foreground">Objetivos Totais</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Target className="h-8 w-8 text-green-600" />
+              <div>
+                <div className="text-2xl font-bold text-green-600">{overview.totalKeyResults}</div>
+                <div className="text-sm text-muted-foreground">Resultados-Chave</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <CheckSquare className="h-8 w-8 text-purple-600" />
+              <div>
+                <div className="text-2xl font-bold text-purple-600">{overview.totalActions}</div>
+                <div className="text-sm text-muted-foreground">Ações</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Flag className="h-8 w-8 text-orange-600" />
+              <div>
+                <div className="text-2xl font-bold text-orange-600">{overview.totalCheckpoints}</div>
+                <div className="text-sm text-muted-foreground">Checkpoints</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Objetivos Principais */}
@@ -30,297 +117,308 @@ export default function ExecutiveSummary() {
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Target className="h-5 w-5 text-blue-600" />
-            <CardTitle>Objetivos Principais Definidos</CardTitle>
+            <CardTitle>Objetivos Estratégicos Ativos</CardTitle>
           </div>
           <CardDescription>
-            Objetivos estratégicos estabelecidos pela liderança
+            Principais objetivos definidos pela organização
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/30">
-              <div className="flex items-center space-x-2 mb-2">
-                <DollarSign className="h-4 w-4 text-blue-600" />
-                <h4 className="font-semibold text-blue-900 dark:text-blue-100">Crescimento Financeiro</h4>
-              </div>
-              <p className="text-sm text-blue-700 dark:text-blue-200">
-                Aumentar receita anual em 35% e melhorar margem de lucro
-              </p>
+          {mainObjectives && mainObjectives.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-1">
+              {mainObjectives.map((objective: any, index: number) => (
+                <div key={index} className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/30 dark:to-green-950/30">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">{objective.title}</h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-200 mb-2">
+                        {objective.description}
+                      </p>
+                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                        <span>{objective.keyResultsCount} Resultados-Chave</span>
+                        <span>{objective.actionsCount} Ações</span>
+                        <Badge variant={objective.status === 'active' ? 'success' : 'secondary'}>
+                          {objective.status === 'active' ? 'Ativo' : 'Concluído'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-blue-600">{Math.round(objective.progress)}%</div>
+                      <div className="text-xs text-muted-foreground">Progresso</div>
+                    </div>
+                  </div>
+                  <Progress value={objective.progress} className="h-2" />
+                </div>
+              ))}
             </div>
-            
-            <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-950/30">
-              <div className="flex items-center space-x-2 mb-2">
-                <Users className="h-4 w-4 text-green-600" />
-                <h4 className="font-semibold text-green-900 dark:text-green-100">Satisfação do Cliente</h4>
-              </div>
-              <p className="text-sm text-green-700 dark:text-green-200">
-                Elevar NPS para 70+ e reduzir churn em 25%
-              </p>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              Nenhum objetivo encontrado
             </div>
-            
-            <div className="p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/30">
-              <div className="flex items-center space-x-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-purple-600" />
-                <h4 className="font-semibold text-purple-900 dark:text-purple-100">Expansão de Mercado</h4>
-              </div>
-              <p className="text-sm text-purple-700 dark:text-purple-200">
-                Capturar 15% de participação em novo segmento
-              </p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Resultados Chave Mensuráveis */}
+      {/* Performance Geral */}
       <Card>
         <CardHeader>
           <div className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 text-green-600" />
-            <CardTitle>Resultados Chave Alcançados</CardTitle>
+            <BarChart3 className="h-5 w-5 text-emerald-600" />
+            <CardTitle>Performance Geral do Sistema</CardTitle>
           </div>
           <CardDescription>
-            Métricas específicas e mensuráveis associadas aos objetivos
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Crescimento da Receita</span>
-                <Badge variant="success">42% alcançado</Badge>
-              </div>
-              <Progress value={95} className="h-2" />
-              <p className="text-xs text-muted-foreground">Meta: 35% | Resultado: 42%</p>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Net Promoter Score (NPS)</span>
-                <Badge variant="success">73 pontos</Badge>
-              </div>
-              <Progress value={86} className="h-2" />
-              <p className="text-xs text-muted-foreground">Meta: 70+ | Resultado: 73</p>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Redução do Churn</span>
-                <Badge variant="success">28% redução</Badge>
-              </div>
-              <Progress value={90} className="h-2" />
-              <p className="text-xs text-muted-foreground">Meta: 25% | Resultado: 28%</p>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Participação Novo Segmento</span>
-                <Badge variant="warning">12% alcançado</Badge>
-              </div>
-              <Progress value={80} className="h-2" />
-              <p className="text-xs text-muted-foreground">Meta: 15% | Resultado: 12%</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Impactos Diretos */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="h-5 w-5 text-emerald-600" />
-            <CardTitle>Impactos Diretos nos Resultados</CardTitle>
-          </div>
-          <CardDescription>
-            Métricas de impacto organizacional mensuráveis
+            Métricas de progresso e desempenho organizacional
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
-            <div className="text-center p-4 border rounded-lg">
-              <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-green-600">R$ 8,4M</div>
-              <div className="text-sm text-muted-foreground">Aumento de Receita</div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Taxa de Conclusão de Objetivos</span>
+                <Badge variant={overview.objectiveCompletionRate >= 75 ? "success" : overview.objectiveCompletionRate >= 50 ? "warning" : "error"}>
+                  {overview.objectiveCompletionRate}%
+                </Badge>
+              </div>
+              <Progress value={overview.objectiveCompletionRate} className="h-2" />
             </div>
             
-            <div className="text-center p-4 border rounded-lg">
-              <Activity className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-blue-600">32%</div>
-              <div className="text-sm text-muted-foreground">Melhoria Eficiência</div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Progresso Médio de Resultados-Chave</span>
+                <Badge variant={overview.avgKeyResultProgress >= 75 ? "success" : overview.avgKeyResultProgress >= 50 ? "warning" : "error"}>
+                  {overview.avgKeyResultProgress}%
+                </Badge>
+              </div>
+              <Progress value={overview.avgKeyResultProgress} className="h-2" />
             </div>
             
-            <div className="text-center p-4 border rounded-lg">
-              <Users className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-purple-600">87%</div>
-              <div className="text-sm text-muted-foreground">Engajamento Funcionários</div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Conclusão de Ações</span>
+                <Badge variant={overview.actionCompletionRate >= 75 ? "success" : overview.actionCompletionRate >= 50 ? "warning" : "error"}>
+                  {overview.actionCompletionRate}%
+                </Badge>
+              </div>
+              <Progress value={overview.actionCompletionRate} className="h-2" />
             </div>
             
-            <div className="text-center p-4 border rounded-lg">
-              <Clock className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-orange-600">45%</div>
-              <div className="text-sm text-muted-foreground">Redução Time-to-Market</div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Checkpoints Completados</span>
+                <Badge variant={overview.checkpointCompletionRate >= 75 ? "success" : overview.checkpointCompletionRate >= 50 ? "warning" : "error"}>
+                  {overview.checkpointCompletionRate}%
+                </Badge>
+              </div>
+              <Progress value={overview.checkpointCompletionRate} className="h-2" />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Desafios e Soluções */}
+      {/* Top Resultados-Chave */}
       <Card>
         <CardHeader>
           <div className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <CardTitle>Desafios Enfrentados e Soluções</CardTitle>
+            <Award className="h-5 w-5 text-green-600" />
+            <CardTitle>Resultados-Chave com Melhor Performance</CardTitle>
           </div>
           <CardDescription>
-            Principais obstáculos durante a implementação e como foram superados
+            Principais resultados-chave ordenados por progresso
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950/30">
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
-                    Resistência Inicial da Equipe
-                  </h4>
-                  <p className="text-sm text-amber-700 dark:text-amber-200 mb-2">
-                    30% dos funcionários demonstraram resistência à metodologia OKR nos primeiros meses.
-                  </p>
-                  <div className="flex items-center space-x-2 text-xs">
-                    <CheckCircle className="h-3 w-3 text-green-600" />
-                    <span className="text-green-700 dark:text-green-300">
-                      Solucionado com treinamentos intensivos e workshops práticos
-                    </span>
+        <CardContent>
+          {topKeyResults && topKeyResults.length > 0 ? (
+            <div className="space-y-3">
+              {topKeyResults.map((kr: any, index: number) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium mb-1">{kr.title}</h4>
+                    <div className="text-sm text-muted-foreground">
+                      {kr.currentValue} / {kr.targetValue}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-24">
+                      <Progress value={kr.progress} className="h-2" />
+                    </div>
+                    <Badge variant={kr.progress >= 75 ? "success" : kr.progress >= 50 ? "warning" : "error"}>
+                      {Math.round(kr.progress)}%
+                    </Badge>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-            
-            <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/30">
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                    Dificuldade de Mensuração
-                  </h4>
-                  <p className="text-sm text-blue-700 dark:text-blue-200 mb-2">
-                    Equipes tinham dificuldade para definir métricas quantificáveis.
-                  </p>
-                  <div className="flex items-center space-x-2 text-xs">
-                    <CheckCircle className="h-3 w-3 text-green-600" />
-                    <span className="text-green-700 dark:text-green-300">
-                      Criação de framework padrão de métricas e acompanhamento semanal
-                    </span>
-                  </div>
-                </div>
-              </div>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              Nenhum resultado-chave encontrado
             </div>
-            
-            <div className="p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/30">
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="h-5 w-5 text-purple-600 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-1">
-                    Sobrecarga de Reuniões
-                  </h4>
-                  <p className="text-sm text-purple-700 dark:text-purple-200 mb-2">
-                    Aumento de 40% no tempo gasto em reuniões nos primeiros trimestres.
-                  </p>
-                  <div className="flex items-center space-x-2 text-xs">
-                    <CheckCircle className="h-3 w-3 text-green-600" />
-                    <span className="text-green-700 dark:text-green-300">
-                      Otimização do processo com check-ins assíncronos e reuniões focadas
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Lições Aprendidas */}
+      {/* Análise de Performance */}
       <Card>
         <CardHeader>
           <div className="flex items-center space-x-2">
-            <BookOpen className="h-5 w-5 text-indigo-600" />
-            <CardTitle>Lições Aprendidas e Melhores Práticas</CardTitle>
+            <Activity className="h-5 w-5 text-orange-600" />
+            <CardTitle>Análise de Performance e Riscos</CardTitle>
           </div>
           <CardDescription>
-            Insights importantes para ciclos futuros e replicação do sucesso
+            Indicadores de saúde organizacional e pontos de atenção
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-3">
+            <div className="space-y-4">
               <h4 className="font-semibold text-green-700 dark:text-green-300 flex items-center space-x-2">
-                <Award className="h-4 w-4" />
-                <span>Fatores de Sucesso</span>
+                <CheckCircle className="h-4 w-4" />
+                <span>Pontos Positivos</span>
               </h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Engajamento direto da liderança executiva desde o início</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Comunicação transparente dos resultados em tempo real</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Ciclos de feedback contínuo e ajustes trimestrais</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Ferramentas digitais integradas para acompanhamento</span>
-                </li>
-              </ul>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/30 rounded">
+                  <span className="text-sm">Objetivos Ativos</span>
+                  <Badge variant="success">{performance.objectivesOnTrack}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950/30 rounded">
+                  <span className="text-sm">Resultados de Alto Progresso</span>
+                  <Badge variant="info">{trends.keyResultsWithHighProgress}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-purple-50 dark:bg-purple-950/30 rounded">
+                  <span className="text-sm">Ações Completadas (Trimestre)</span>
+                  <Badge variant="secondary">{trends.completedActionsThisQuarter}</Badge>
+                </div>
+              </div>
             </div>
             
-            <div className="space-y-3">
-              <h4 className="font-semibold text-blue-700 dark:text-blue-300 flex items-center space-x-2">
-                <Target className="h-4 w-4" />
-                <span>Próximos Passos</span>
+            <div className="space-y-4">
+              <h4 className="font-semibold text-amber-700 dark:text-amber-300 flex items-center space-x-2">
+                <AlertTriangle className="h-4 w-4" />
+                <span>Pontos de Atenção</span>
               </h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start space-x-2">
-                  <div className="h-4 w-4 bg-blue-200 rounded-full mt-0.5 flex-shrink-0" />
-                  <span>Expansão da metodologia para equipes de suporte</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <div className="h-4 w-4 bg-blue-200 rounded-full mt-0.5 flex-shrink-0" />
-                  <span>Implementação de OKRs individuais para desenvolvimento pessoal</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <div className="h-4 w-4 bg-blue-200 rounded-full mt-0.5 flex-shrink-0" />
-                  <span>Integração com sistema de avaliação de desempenho</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <div className="h-4 w-4 bg-blue-200 rounded-full mt-0.5 flex-shrink-0" />
-                  <span>Automação de relatórios e dashboards executivos</span>
-                </li>
-              </ul>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-950/30 rounded">
+                  <span className="text-sm">Objetivos em Risco</span>
+                  <Badge variant={performance.objectivesAtRisk > 0 ? "warning" : "success"}>
+                    {performance.objectivesAtRisk}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-950/30 rounded">
+                  <span className="text-sm">Ações Atrasadas</span>
+                  <Badge variant={performance.actionsOverdue > 0 ? "error" : "success"}>
+                    {performance.actionsOverdue}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-950/30 rounded">
+                  <span className="text-sm">Indicadores Estratégicos</span>
+                  <Badge variant="secondary">{performance.strategicIndicatorsCount}</Badge>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Conclusão */}
+      {/* Tendências e Insights */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="h-5 w-5 text-indigo-600" />
+            <CardTitle>Tendências e Insights do Trimestre</CardTitle>
+          </div>
+          <CardDescription>
+            Análise temporal e insights estratégicos baseados em dados reais
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="text-center p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/30">
+              <Goal className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-blue-600">{trends.objectivesCreatedThisQuarter}</div>
+              <div className="text-sm text-muted-foreground">Novos Objetivos</div>
+              <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">Este Trimestre</div>
+            </div>
+            
+            <div className="text-center p-4 border rounded-lg bg-green-50 dark:bg-green-950/30">
+              <Target className="h-8 w-8 text-green-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-green-600">{trends.keyResultsWithHighProgress}</div>
+              <div className="text-sm text-muted-foreground">KRs com Alto Progresso</div>
+              <div className="text-xs text-green-700 dark:text-green-300 mt-1">≥ 75% de progresso</div>
+            </div>
+            
+            <div className="text-center p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/30">
+              <CheckSquare className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-purple-600">{trends.completedActionsThisQuarter}</div>
+              <div className="text-sm text-muted-foreground">Ações Finalizadas</div>
+              <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">Este Trimestre</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Conclusão e Recomendações */}
       <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/30 dark:to-blue-950/30">
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Award className="h-5 w-5 text-emerald-600" />
-            <CardTitle className="text-emerald-800 dark:text-emerald-200">Conclusão</CardTitle>
+            <CardTitle className="text-emerald-800 dark:text-emerald-200">Análise Executiva</CardTitle>
           </div>
+          <CardDescription className="text-emerald-700 dark:text-emerald-300">
+            Conclusões baseadas nos dados atuais do sistema OKR
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-emerald-700 dark:text-emerald-300">
-            A implementação dos OKRs resultou em uma transformação significativa na cultura organizacional, 
-            com resultados financeiros superando as expectativas em 20%. O engajamento dos funcionários 
-            aumentou para 87%, e a empresa estabeleceu uma base sólida para crescimento sustentável. 
-            Os desafios enfrentados foram oportunidades valiosas de aprendizado, fortalecendo nossa 
-            capacidade de execução estratégica e alinhamento organizacional.
-          </p>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
+              <h4 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-2 flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4" />
+                <span>Status Atual</span>
+              </h4>
+              <ul className="space-y-1 text-sm text-emerald-700 dark:text-emerald-300">
+                <li>• {overview.totalObjectives} objetivos estratégicos em acompanhamento</li>
+                <li>• {overview.totalKeyResults} resultados-chave definidos</li>
+                <li>• {overview.totalActions} ações em execução</li>
+                <li>• {overview.totalCheckpoints} checkpoints de monitoramento</li>
+                <li>• {overview.avgKeyResultProgress}% de progresso médio nos KRs</li>
+              </ul>
+            </div>
+            
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
+              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center space-x-2">
+                <TrendingUp className="h-4 w-4" />
+                <span>Principais Insights</span>
+              </h4>
+              <ul className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
+                <li>• {performance.objectivesOnTrack} objetivos atualmente ativos</li>
+                <li>• {trends.keyResultsWithHighProgress} resultados-chave com alto progresso (≥75%)</li>
+                <li>• {trends.objectivesCreatedThisQuarter} novos objetivos criados este trimestre</li>
+                <li>• {performance.objectivesAtRisk > 0 ? `${performance.objectivesAtRisk} objetivos requerem atenção` : 'Todos os objetivos dentro do prazo'}</li>
+                <li>• {performance.actionsOverdue > 0 ? `${performance.actionsOverdue} ações com atraso` : 'Nenhuma ação em atraso'}</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-gradient-to-r from-emerald-100 to-blue-100 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-lg">
+            <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Recomendações Estratégicas</h4>
+            <div className="grid gap-3 md:grid-cols-2 text-sm">
+              <div>
+                <strong className="text-green-700 dark:text-green-300">Pontos Fortes a Manter:</strong>
+                <ul className="mt-1 space-y-1 text-gray-700 dark:text-gray-300">
+                  {overview.avgKeyResultProgress >= 50 && <li>• Alto engajamento na execução de KRs</li>}
+                  {performance.objectivesAtRisk === 0 && <li>• Excelente gestão de prazos</li>}
+                  {trends.objectivesCreatedThisQuarter > 0 && <li>• Crescimento ativo da estratégia</li>}
+                </ul>
+              </div>
+              <div>
+                <strong className="text-amber-700 dark:text-amber-300">Áreas para Melhoria:</strong>
+                <ul className="mt-1 space-y-1 text-gray-700 dark:text-gray-300">
+                  {overview.avgKeyResultProgress < 50 && <li>• Acelerar progresso dos resultados-chave</li>}
+                  {performance.objectivesAtRisk > 0 && <li>• Revisar objetivos em risco</li>}
+                  {performance.actionsOverdue > 0 && <li>• Reorganizar cronograma de ações</li>}
+                  {overview.actionCompletionRate < 75 && <li>• Aumentar taxa de conclusão de ações</li>}
+                </ul>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

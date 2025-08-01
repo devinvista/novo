@@ -782,6 +782,132 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Executive Summary API
+  app.get("/api/executive-summary", requireAuth, async (req: any, res) => {
+    try {
+      const currentUserId = req.user?.id;
+      const currentUserRole = req.user?.role;
+      
+      // Get all objectives, key results, actions, and checkpoints with real data
+      const objectives = await storage.getObjectives(currentUserId ? { currentUserId } : {});
+      const keyResults = await storage.getKeyResults(currentUserId ? { currentUserId } : {});
+      const actions = await storage.getActions(currentUserId ? { currentUserId } : {});
+      const checkpoints = await storage.getCheckpoints(currentUserId ? { currentUserId } : {});
+      
+      // Calculate overall metrics
+      const totalObjectives = objectives.length;
+      const totalKeyResults = keyResults.length;
+      const totalActions = actions.length;
+      const totalCheckpoints = checkpoints.length;
+      
+      // Calculate progress metrics
+      const completedObjectives = objectives.filter(obj => obj.status === 'completed').length;
+      const completedKeyResults = keyResults.filter(kr => kr.progress >= 100).length;
+      const completedActions = actions.filter(action => action.status === 'completed').length;
+      const completedCheckpoints = checkpoints.filter(cp => cp.status === 'completed').length;
+      
+      // Calculate completion rates
+      const objectiveCompletionRate = totalObjectives > 0 ? (completedObjectives / totalObjectives) * 100 : 0;
+      const keyResultCompletionRate = totalKeyResults > 0 ? (completedKeyResults / totalKeyResults) * 100 : 0;
+      const actionCompletionRate = totalActions > 0 ? (completedActions / totalActions) * 100 : 0;
+      const checkpointCompletionRate = totalCheckpoints > 0 ? (completedCheckpoints / totalCheckpoints) * 100 : 0;
+      
+      // Calculate average progress for key results
+      const avgKeyResultProgress = keyResults.length > 0 
+        ? keyResults.reduce((sum, kr) => sum + (kr.progress || 0), 0) / keyResults.length 
+        : 0;
+      
+      // Group objectives by region
+      const objectivesByRegion = objectives.reduce((acc, obj) => {
+        acc[obj.regionId] = (acc[obj.regionId] || 0) + 1;
+        return acc;
+      }, {} as Record<number, number>);
+      
+      // Get top performing key results
+      const topKeyResults = keyResults
+        .sort((a, b) => (b.progress || 0) - (a.progress || 0))
+        .slice(0, 5)
+        .map(kr => ({
+          title: kr.title,
+          progress: kr.progress || 0,
+          currentValue: kr.currentValue ? convertDatabaseToBR(kr.currentValue) : '0',
+          targetValue: kr.targetValue ? convertDatabaseToBR(kr.targetValue) : '0'
+        }));
+      
+      // Calculate strategic indicators performance
+      const strategicIndicators = await storage.getStrategicIndicators();
+      
+      // Get overdue items
+      const currentDate = new Date();
+      const overdueObjectives = objectives.filter(obj => 
+        new Date(obj.endDate) < currentDate && obj.status !== 'completed'
+      ).length;
+      
+      const overdueActions = actions.filter(action => 
+        action.dueDate && new Date(action.dueDate) < currentDate && action.status !== 'completed'
+      ).length;
+      
+      // Main strategic objectives (top 3 by importance/scope)
+      const mainObjectives = objectives
+        .sort((a, b) => (b.keyResults?.length || 0) - (a.keyResults?.length || 0))
+        .slice(0, 3)
+        .map(obj => ({
+          title: obj.title,
+          description: obj.description,
+          status: obj.status,
+          progress: obj.keyResults ? 
+            obj.keyResults.reduce((sum: number, kr: any) => sum + (kr.progress || 0), 0) / obj.keyResults.length : 0,
+          keyResultsCount: obj.keyResults?.length || 0,
+          actionsCount: obj.actions?.length || 0
+        }));
+      
+      const executiveSummary = {
+        overview: {
+          totalObjectives,
+          totalKeyResults,
+          totalActions,
+          totalCheckpoints,
+          objectiveCompletionRate: Math.round(objectiveCompletionRate),
+          keyResultCompletionRate: Math.round(keyResultCompletionRate),
+          actionCompletionRate: Math.round(actionCompletionRate),
+          checkpointCompletionRate: Math.round(checkpointCompletionRate),
+          avgKeyResultProgress: Math.round(avgKeyResultProgress)
+        },
+        mainObjectives,
+        topKeyResults,
+        performance: {
+          objectivesOnTrack: objectives.filter(obj => obj.status === 'active').length,
+          objectivesAtRisk: overdueObjectives,
+          actionsOverdue: overdueActions,
+          strategicIndicatorsCount: strategicIndicators.length
+        },
+        distribution: {
+          objectivesByRegion,
+          activeQuarter: "2025-T3"
+        },
+        trends: {
+          objectivesCreatedThisQuarter: objectives.filter(obj => {
+            const createdDate = new Date(obj.createdAt);
+            const quarterStart = new Date(new Date().getFullYear(), Math.floor(new Date().getMonth() / 3) * 3, 1);
+            return createdDate >= quarterStart;
+          }).length,
+          keyResultsWithHighProgress: keyResults.filter(kr => (kr.progress || 0) >= 75).length,
+          completedActionsThisQuarter: actions.filter(action => {
+            if (action.status !== 'completed' || !action.updatedAt) return false;
+            const updatedDate = new Date(action.updatedAt);
+            const quarterStart = new Date(new Date().getFullYear(), Math.floor(new Date().getMonth() / 3) * 3, 1);
+            return updatedDate >= quarterStart;
+          }).length
+        }
+      };
+      
+      res.json(executiveSummary);
+    } catch (error) {
+      console.error("Error generating executive summary:", error);
+      res.status(500).json({ message: "Erro ao gerar resumo executivo" });
+    }
+  });
+
   // TODO: Implement activities feature if needed
 
   // User management routes with hierarchical access control
