@@ -28,7 +28,7 @@ export default function Sidebar() {
     { href: "/key-results", icon: Key, label: "Resultados-Chave" },
     { href: "/actions", icon: CheckSquare, label: "Ações" },
     { href: "/checkpoints", icon: Flag, label: "Checkpoints" },
-    { href: "/indicators", icon: Activity, label: "Indicadores" },
+    { href: "/reports", icon: Activity, label: "Relatórios" },
   ];
 
   const adminItems = [

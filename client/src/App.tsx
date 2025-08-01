@@ -14,7 +14,7 @@ import Objectives from "@/pages/objectives";
 import KeyResults from "@/pages/key-results";
 import Actions from "@/pages/actions";
 import Checkpoints from "@/pages/checkpoints";
-import Indicators from "@/pages/indicators";
+import Reports from "@/pages/reports";
 import Users from "@/pages/users";
 
 function Router() {
@@ -25,7 +25,8 @@ function Router() {
       <ProtectedRoute path="/key-results" component={KeyResults} />
       <ProtectedRoute path="/actions" component={Actions} />
       <ProtectedRoute path="/checkpoints" component={Checkpoints} />
-      <ProtectedRoute path="/indicators" component={Indicators} />
+      <ProtectedRoute path="/reports" component={Reports} />
+      <ProtectedRoute path="/indicators" component={Reports} />
       <ProtectedRoute path="/users" component={Users} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
