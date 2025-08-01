@@ -116,19 +116,19 @@ export default function ActionPlan() {
 
       {/* Action Plans for each Objective */}
       {groupedData.map((objective: any) => (
-        <Card key={objective.id} className="border-l-4 border-l-blue-600">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+        <Card key={objective.id} className="border-l-4 border-l-[#003366]">
+          <CardHeader className="bg-gradient-to-r from-[#003366]/10 to-[#0066cc]/10 dark:from-[#003366]/30 dark:to-[#0066cc]/30">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle className="text-xl text-blue-900 dark:text-blue-100 mb-2">
+                <CardTitle className="text-xl text-[#003366] dark:text-[#0066cc] mb-2">
                   Objetivo: {objective.title}
                 </CardTitle>
-                <CardDescription className="text-blue-700 dark:text-blue-200 text-base">
+                <CardDescription className="text-[#003366]/80 dark:text-[#0066cc]/80 text-base">
                   {objective.description}
                 </CardDescription>
                 <div className="flex items-center space-x-4 mt-3 text-sm">
                   <div className="flex items-center space-x-1">
-                    <Calendar className="h-4 w-4 text-blue-600" />
+                    <Calendar className="h-4 w-4 text-[#003366]" />
                     <span>Período: {formatDate(objective.startDate)} - {formatDate(objective.endDate)}</span>
                   </div>
                   <Badge variant={getStatusVariant(objective.status)} className="capitalize">
@@ -145,8 +145,8 @@ export default function ActionPlan() {
             {/* Key Results Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 border-b pb-2">
-                <Target className="h-5 w-5 text-green-600" />
-                <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                <Target className="h-5 w-5 text-[#009639]" />
+                <h3 className="text-lg font-semibold text-[#009639] dark:text-[#009639]/80">
                   Resultados-chave (KR) - Como vamos mensurar o alcance do objetivo
                 </h3>
               </div>
@@ -155,20 +155,20 @@ export default function ActionPlan() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-blue-50 dark:bg-blue-950/30">
-                        <TableHead className="font-semibold text-blue-900 dark:text-blue-100">
+                      <TableRow className="bg-[#009639]/10 dark:bg-[#009639]/20">
+                        <TableHead className="font-semibold text-[#009639] dark:text-[#009639]/80">
                           Resultado-chave (O quê?)
                         </TableHead>
-                        <TableHead className="font-semibold text-blue-900 dark:text-blue-100">
+                        <TableHead className="font-semibold text-[#009639] dark:text-[#009639]/80">
                           Indicadores Estratégicos
                         </TableHead>
-                        <TableHead className="font-semibold text-blue-900 dark:text-blue-100">
+                        <TableHead className="font-semibold text-[#009639] dark:text-[#009639]/80">
                           Meta
                         </TableHead>
-                        <TableHead className="font-semibold text-blue-900 dark:text-blue-100">
+                        <TableHead className="font-semibold text-[#009639] dark:text-[#009639]/80">
                           Resultado no período
                         </TableHead>
-                        <TableHead className="font-semibold text-blue-900 dark:text-blue-100">
+                        <TableHead className="font-semibold text-[#009639] dark:text-[#009639]/80">
                           Progresso
                         </TableHead>
                       </TableRow>
@@ -208,7 +208,7 @@ export default function ActionPlan() {
                                     {indicatorIds.map((indicatorId: number) => {
                                       const indicator = strategicIndicators.find((si: any) => si.id === indicatorId);
                                       return indicator ? (
-                                        <div key={indicator.id} className="text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                                        <div key={indicator.id} className="text-xs bg-[#009639]/20 dark:bg-[#009639]/30 px-2 py-1 rounded">
                                           {indicator.name}
                                         </div>
                                       ) : null;
@@ -221,7 +221,7 @@ export default function ActionPlan() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-semibold text-blue-600">
+                            <div className="font-semibold text-[#009639]">
                               {kr.targetValue || "0"}
                             </div>
                           </TableCell>
@@ -256,8 +256,8 @@ export default function ActionPlan() {
             {/* Action Plan Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 border-b pb-2">
-                <CheckSquare className="h-5 w-5 text-purple-600" />
-                <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-200">
+                <CheckSquare className="h-5 w-5 text-[#ff6600]" />
+                <h3 className="text-lg font-semibold text-[#ff6600] dark:text-[#ff6600]/80">
                   Plano de ação - Como vamos alcançar os KRs?
                 </h3>
               </div>
@@ -266,20 +266,20 @@ export default function ActionPlan() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-purple-50 dark:bg-purple-950/30">
-                        <TableHead className="font-semibold text-purple-900 dark:text-purple-100">
+                      <TableRow className="bg-[#ff6600]/10 dark:bg-[#ff6600]/20">
+                        <TableHead className="font-semibold text-[#ff6600] dark:text-[#ff6600]/80">
                           Detalhamento (Como?)
                         </TableHead>
-                        <TableHead className="font-semibold text-purple-900 dark:text-purple-100">
+                        <TableHead className="font-semibold text-[#ff6600] dark:text-[#ff6600]/80">
                           Responsável (Quem?)
                         </TableHead>
-                        <TableHead className="font-semibold text-purple-900 dark:text-purple-100">
+                        <TableHead className="font-semibold text-[#ff6600] dark:text-[#ff6600]/80">
                           Prazo (Quando?)
                         </TableHead>
-                        <TableHead className="font-semibold text-purple-900 dark:text-purple-100">
+                        <TableHead className="font-semibold text-[#ff6600] dark:text-[#ff6600]/80">
                           Prioridade
                         </TableHead>
-                        <TableHead className="font-semibold text-purple-900 dark:text-purple-100">
+                        <TableHead className="font-semibold text-[#ff6600] dark:text-[#ff6600]/80">
                           Status
                         </TableHead>
                       </TableRow>
@@ -343,33 +343,33 @@ export default function ActionPlan() {
 
             {/* Summary Stats */}
             <div className="grid gap-4 md:grid-cols-4 pt-4 border-t">
-              <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-blue-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-blue-600">
+              <div className="text-center p-3 bg-[#009639]/10 dark:bg-[#009639]/20 rounded-lg">
+                <BarChart3 className="h-6 w-6 text-[#009639] mx-auto mb-1" />
+                <div className="text-lg font-bold text-[#009639]">
                   {objective.keyResults?.length || 0}
                 </div>
                 <div className="text-xs text-muted-foreground">Resultados-Chave</div>
               </div>
               
-              <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
-                <CheckSquare className="h-6 w-6 text-purple-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-purple-600">
+              <div className="text-center p-3 bg-[#ff6600]/10 dark:bg-[#ff6600]/20 rounded-lg">
+                <CheckSquare className="h-6 w-6 text-[#ff6600] mx-auto mb-1" />
+                <div className="text-lg font-bold text-[#ff6600]">
                   {objective.actions?.length || 0}
                 </div>
                 <div className="text-xs text-muted-foreground">Ações</div>
               </div>
               
-              <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
-                <Target className="h-6 w-6 text-green-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-green-600">
+              <div className="text-center p-3 bg-[#4CAF50]/10 dark:bg-[#4CAF50]/20 rounded-lg">
+                <Target className="h-6 w-6 text-[#4CAF50] mx-auto mb-1" />
+                <div className="text-lg font-bold text-[#4CAF50]">
                   {objective.actions?.filter((a: any) => a.status === 'completed').length || 0}
                 </div>
                 <div className="text-xs text-muted-foreground">Ações Concluídas</div>
               </div>
               
-              <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
-                <AlertCircle className="h-6 w-6 text-amber-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-amber-600">
+              <div className="text-center p-3 bg-[#FFC107]/10 dark:bg-[#FFC107]/20 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-[#FFC107] mx-auto mb-1" />
+                <div className="text-lg font-bold text-[#FFC107]">
                   {objective.actions?.filter((a: any) => 
                     a.dueDate && new Date(a.dueDate) < new Date() && a.status !== 'completed'
                   ).length || 0}
