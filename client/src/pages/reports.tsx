@@ -4,7 +4,8 @@ import IndicatorsDashboard from "@/components/indicators-dashboard";
 import ExecutiveSummary from "@/components/executive-summary";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, FileText } from "lucide-react";
+import { Activity, FileText, CheckSquare } from "lucide-react";
+import ActionPlan from "@/components/action-plan";
 
 export default function Reports() {
   const { selectedQuarter } = useQuarterlyFilter();
@@ -21,7 +22,7 @@ export default function Reports() {
         
         <div className="flex-1 overflow-y-auto p-6">
           <Tabs defaultValue="indicators" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-3 max-w-lg">
               <TabsTrigger value="indicators" className="flex items-center space-x-2">
                 <Activity className="h-4 w-4" />
                 <span>Indicadores</span>
@@ -29,6 +30,10 @@ export default function Reports() {
               <TabsTrigger value="executive" className="flex items-center space-x-2">
                 <FileText className="h-4 w-4" />
                 <span>Resumo Executivo</span>
+              </TabsTrigger>
+              <TabsTrigger value="action-plan" className="flex items-center space-x-2">
+                <CheckSquare className="h-4 w-4" />
+                <span>Plano de Ação</span>
               </TabsTrigger>
             </TabsList>
             
@@ -44,6 +49,10 @@ export default function Reports() {
             
             <TabsContent value="executive" className="space-y-6">
               <ExecutiveSummary />
+            </TabsContent>
+            
+            <TabsContent value="action-plan" className="space-y-6">
+              <ActionPlan />
             </TabsContent>
           </Tabs>
         </div>
