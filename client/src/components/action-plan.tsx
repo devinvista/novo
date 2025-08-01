@@ -107,26 +107,28 @@ export default function ActionPlan() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-2 flex items-center space-x-3">
-          <CheckSquare className="h-6 w-6" />
+      <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-8 rounded-2xl shadow-2xl border border-orange-500/20">
+        <h2 className="text-3xl font-bold mb-3 flex items-center space-x-4">
+          <div className="bg-white/20 p-2 rounded-xl">
+            <CheckSquare className="h-8 w-8" />
+          </div>
           <span>Planos de Ação por Objetivo</span>
         </h2>
-        <p className="text-orange-100">
-          Planos de trabalho detalhados organizados por objetivo estratégico do Sistema FIERGS
+        <p className="text-orange-100 text-lg">
+          Planos de trabalho estratégicos detalhados organizados por objetivo - Sistema FIERGS
         </p>
       </div>
 
       {/* Action Plans for each Objective */}
       {groupedData.map((objective: any) => (
-        <Card key={objective.id} className="border-l-4 border-l-orange-600 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
+        <Card key={objective.id} className="border-l-4 border-l-orange-600 shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-white to-orange-50/30 dark:from-slate-800 dark:to-slate-700">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 rounded-t-lg">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle className="text-xl text-orange-900 dark:text-orange-100 mb-2">
+                <CardTitle className="text-2xl text-orange-900 dark:text-orange-100 mb-3 font-bold tracking-tight">
                   Objetivo: {objective.title}
                 </CardTitle>
-                <CardDescription className="text-orange-700 dark:text-orange-200 text-base">
+                <CardDescription className="text-orange-700 dark:text-orange-200 text-lg leading-relaxed">
                   {objective.description}
                 </CardDescription>
                 <div className="flex items-center space-x-4 mt-3 text-sm">
