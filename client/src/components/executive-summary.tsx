@@ -16,8 +16,7 @@ import {
   BarChart3,
   Flag,
   CheckSquare,
-  Goal,
-  FileText
+  Goal
 } from "lucide-react";
 
 export default function ExecutiveSummary() {
@@ -55,71 +54,58 @@ export default function ExecutiveSummary() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-8 rounded-2xl shadow-2xl border border-green-500/20">
-        <h2 className="text-3xl font-bold mb-3 flex items-center space-x-4">
-          <div className="bg-white/20 p-2 rounded-xl">
-            <FileText className="h-8 w-8" />
-          </div>
-          <span>Resumo Executivo - Sistema OKRs</span>
-        </h2>
-        <p className="text-green-100 text-lg">
-          Análise estratégica dos resultados e performance da implementação de OKRs no Sistema FIERGS
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">Resumo Executivo - Sistema OKRs</h2>
+        <p className="text-muted-foreground">
+          Análise dos resultados e performance atual da implementação de OKRs na organização
         </p>
       </div>
 
       {/* Overview Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="bg-blue-600 p-3 rounded-xl shadow-md">
-                <Goal className="h-8 w-8 text-white" />
-              </div>
+            <div className="flex items-center space-x-2">
+              <Goal className="h-8 w-8 text-blue-600" />
               <div>
-                <div className="text-3xl font-bold text-blue-700">{overview.totalObjectives}</div>
-                <div className="text-sm font-medium text-blue-600">Objetivos Totais</div>
+                <div className="text-2xl font-bold text-blue-600">{overview.totalObjectives}</div>
+                <div className="text-sm text-muted-foreground">Objetivos Totais</div>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card>
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="bg-green-600 p-3 rounded-xl shadow-md">
-                <Target className="h-8 w-8 text-white" />
-              </div>
+            <div className="flex items-center space-x-2">
+              <Target className="h-8 w-8 text-green-600" />
               <div>
-                <div className="text-3xl font-bold text-green-700">{overview.totalKeyResults}</div>
-                <div className="text-sm font-medium text-green-600">Resultados-Chave</div>
+                <div className="text-2xl font-bold text-green-600">{overview.totalKeyResults}</div>
+                <div className="text-sm text-muted-foreground">Resultados-Chave</div>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card>
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="bg-purple-600 p-3 rounded-xl shadow-md">
-                <CheckSquare className="h-8 w-8 text-white" />
-              </div>
+            <div className="flex items-center space-x-2">
+              <CheckSquare className="h-8 w-8 text-purple-600" />
               <div>
-                <div className="text-3xl font-bold text-purple-700">{overview.totalActions}</div>
-                <div className="text-sm font-medium text-purple-600">Ações</div>
+                <div className="text-2xl font-bold text-purple-600">{overview.totalActions}</div>
+                <div className="text-sm text-muted-foreground">Ações</div>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card>
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="bg-orange-600 p-3 rounded-xl shadow-md">
-                <Flag className="h-8 w-8 text-white" />
-              </div>
+            <div className="flex items-center space-x-2">
+              <Flag className="h-8 w-8 text-orange-600" />
               <div>
-                <div className="text-3xl font-bold text-orange-700">{overview.totalCheckpoints}</div>
-                <div className="text-sm font-medium text-orange-600">Checkpoints</div>
+                <div className="text-2xl font-bold text-orange-600">{overview.totalCheckpoints}</div>
+                <div className="text-sm text-muted-foreground">Checkpoints</div>
               </div>
             </div>
           </CardContent>
@@ -127,54 +113,47 @@ export default function ExecutiveSummary() {
       </div>
 
       {/* Objetivos Principais */}
-      <Card className="bg-gradient-to-br from-slate-50 to-white border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-300">
-        <CardHeader className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-t-lg border-b border-blue-200">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <Target className="h-6 w-6 text-white" />
-            </div>
-            <CardTitle className="text-xl font-bold text-blue-900">Objetivos Estratégicos Ativos</CardTitle>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Target className="h-5 w-5 text-blue-600" />
+            <CardTitle>Objetivos Estratégicos Ativos</CardTitle>
           </div>
-          <CardDescription className="text-blue-700 mt-2">
+          <CardDescription>
             Principais objetivos definidos pela organização
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 p-6">
+        <CardContent className="space-y-4">
           {mainObjectives && mainObjectives.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-1">
               {mainObjectives.map((objective: any, index: number) => (
-                <div key={index} className="p-5 border border-blue-200 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 hover:shadow-lg transition-all duration-300 dark:from-blue-950/30 dark:to-indigo-950/30">
-                  <div className="flex items-start justify-between mb-3">
+                <div key={index} className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/30 dark:to-green-950/30">
+                  <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <h4 className="font-bold text-blue-900 dark:text-blue-100 mb-2 text-lg">{objective.title}</h4>
-                      <p className="text-blue-700 dark:text-blue-200 mb-3 leading-relaxed">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">{objective.title}</h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-200 mb-2">
                         {objective.description}
                       </p>
-                      <div className="flex items-center space-x-4 text-sm">
-                        <span className="bg-blue-200 text-blue-800 px-3 py-1 rounded-full font-medium">
-                          {objective.keyResultsCount} Resultados-Chave
-                        </span>
-                        <span className="bg-indigo-200 text-indigo-800 px-3 py-1 rounded-full font-medium">
-                          {objective.actionsCount} Ações
-                        </span>
-                        <Badge variant={objective.status === 'active' ? 'success' : 'secondary'} className="shadow-sm">
+                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                        <span>{objective.keyResultsCount} Resultados-Chave</span>
+                        <span>{objective.actionsCount} Ações</span>
+                        <Badge variant={objective.status === 'active' ? 'success' : 'secondary'}>
                           {objective.status === 'active' ? 'Ativo' : 'Concluído'}
                         </Badge>
                       </div>
                     </div>
-                    <div className="text-right ml-4">
-                      <div className="text-2xl font-bold text-blue-600">{Math.round(objective.progress)}%</div>
-                      <div className="text-sm text-blue-500 font-medium">Progresso</div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-blue-600">{Math.round(objective.progress)}%</div>
+                      <div className="text-xs text-muted-foreground">Progresso</div>
                     </div>
                   </div>
-                  <Progress value={objective.progress} className="h-3 bg-blue-100" />
+                  <Progress value={objective.progress} className="h-2" />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-500">
-              <Target className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-              <p className="text-lg font-medium">Nenhum objetivo encontrado</p>
+            <div className="text-center py-4 text-muted-foreground">
+              Nenhum objetivo encontrado
             </div>
           )}
         </CardContent>
