@@ -111,6 +111,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
   });
 
   const onSubmit = (data: ObjectiveFormData) => {
+    console.log("🔍 Frontend: Dados do formulário para envio:", JSON.stringify(data, null, 2));
     mutation.mutate(data);
   };
 

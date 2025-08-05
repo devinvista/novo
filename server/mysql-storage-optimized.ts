@@ -372,11 +372,11 @@ export class MySQLStorageOptimized implements IStorage {
     const cached = performanceCache.getCachedReference(cacheKey);
     if (cached) return cached;
 
-    const query = db.select().from(subRegions);
+    const query = db.select().from(subRegionsTable);
     if (regionId) {
-      query.where(eq(subRegions.regionId, regionId));
+      query.where(eq(subRegionsTable.regionId, regionId));
     }
-    const result = await query.orderBy(asc(subRegions.id));
+    const result = await query.orderBy(asc(subRegionsTable.id));
     performanceCache.setCachedReference(cacheKey, result);
     return result;
   }
