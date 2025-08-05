@@ -1532,56 +1532,40 @@ export function registerRoutes(app: Express): Server {
       // Create a new workbook
       const workbook = XLSX.utils.book_new();
       
-      // Create worksheets for each entity type
-      const indicatorsData = [
-        ['nome', 'codigo', 'descricao', 'unidade'],
-        ['Exemplo Indicador', 'IND01', 'Descrição do indicador exemplo', 'unidade']
+      // Get reference data for examples
+      const regions = await storage.getRegions();
+      const users = await storage.getUsers();
+      const indicators = await storage.getStrategicIndicators();
+      
+      // Create worksheets for operational data
+      const objectivesData = [
+        ['titulo', 'descricao', 'data_inicio', 'data_fim', 'status', 'regiao_id', 'responsavel_id'],
+        ['Exemplo Objetivo', 'Descrição do objetivo exemplo', '2025-01-01', '2025-12-31', 'active', regions[0]?.id || 1, users[0]?.id || 1]
       ];
       
-      const regionsData = [
-        ['nome', 'codigo'],
-        ['Exemplo Região', 'REG01']
+      const keyResultsData = [
+        ['titulo', 'descricao', 'valor_atual', 'valor_meta', 'unidade', 'data_inicio', 'data_fim', 'objetivo_id', 'indicadores_estrategicos'],
+        ['Exemplo Resultado-Chave', 'Descrição do resultado-chave exemplo', '0', '100', '%', '2025-01-01', '2025-12-31', 1, indicators[0]?.id ? `[${indicators[0].id}]` : '[]']
       ];
       
-      const subRegionsData = [
-        ['nome', 'codigo', 'codigo_regiao'],
-        ['Exemplo Sub-região', 'SUB01', 'REG01']
-      ];
-      
-      const solutionsData = [
-        ['nome', 'codigo', 'descricao'],
-        ['Exemplo Solução', 'SOL01', 'Descrição da solução exemplo']
-      ];
-      
-      const serviceLinesData = [
-        ['nome', 'codigo', 'descricao', 'codigo_solucao'],
-        ['Exemplo Linha', 'LIN01', 'Descrição da linha exemplo', 'SOL01']
-      ];
-      
-      const servicesData = [
-        ['nome', 'codigo', 'descricao', 'codigo_linha_servico'],
-        ['Exemplo Serviço', 'SER01', 'Descrição do serviço exemplo', 'LIN01']
+      const actionsData = [
+        ['titulo', 'descricao', 'data_vencimento', 'prioridade', 'status', 'resultado_chave_id', 'responsavel_id'],
+        ['Exemplo Ação', 'Descrição da ação exemplo', '2025-06-30', 'high', 'pending', 1, users[0]?.id || 1]
       ];
       
       // Add worksheets to workbook
-      const indicatorsWS = XLSX.utils.aoa_to_sheet(indicatorsData);
-      const regionsWS = XLSX.utils.aoa_to_sheet(regionsData);
-      const subRegionsWS = XLSX.utils.aoa_to_sheet(subRegionsData);
-      const solutionsWS = XLSX.utils.aoa_to_sheet(solutionsData);
-      const serviceLinesWS = XLSX.utils.aoa_to_sheet(serviceLinesData);
-      const servicesWS = XLSX.utils.aoa_to_sheet(servicesData);
+      const objectivesWS = XLSX.utils.aoa_to_sheet(objectivesData);
+      const keyResultsWS = XLSX.utils.aoa_to_sheet(keyResultsData);
+      const actionsWS = XLSX.utils.aoa_to_sheet(actionsData);
       
-      XLSX.utils.book_append_sheet(workbook, indicatorsWS, "Indicadores");
-      XLSX.utils.book_append_sheet(workbook, regionsWS, "Regiões");
-      XLSX.utils.book_append_sheet(workbook, subRegionsWS, "Sub-regiões");
-      XLSX.utils.book_append_sheet(workbook, solutionsWS, "Soluções");
-      XLSX.utils.book_append_sheet(workbook, serviceLinesWS, "Linhas de Serviço");
-      XLSX.utils.book_append_sheet(workbook, servicesWS, "Serviços");
+      XLSX.utils.book_append_sheet(workbook, objectivesWS, "Objetivos");
+      XLSX.utils.book_append_sheet(workbook, keyResultsWS, "Resultados-Chave");
+      XLSX.utils.book_append_sheet(workbook, actionsWS, "Ações");
       
       // Generate buffer
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
       
-      res.setHeader('Content-Disposition', 'attachment; filename=modelo_okr_import.xlsx');
+      res.setHeader('Content-Disposition', 'attachment; filename=modelo_okr_dados.xlsx');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.send(buffer);
     } catch (error) {
@@ -1599,148 +1583,92 @@ export function registerRoutes(app: Express): Server {
       // Parse Excel file
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       let imported = 0;
+      const errors: string[] = [];
       
-      // Import Strategic Indicators
-      if (workbook.SheetNames.includes('Indicadores')) {
-        const sheet = workbook.Sheets['Indicadores'];
+      // Import Objectives first
+      if (workbook.SheetNames.includes('Objetivos')) {
+        const sheet = workbook.Sheets['Objetivos'];
         const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         
         for (let i = 1; i < data.length; i++) { // Skip header row
           const row = data[i] as any[];
-          if (row && row[0] && row[1]) { // Must have name and code
+          if (row && row[0]) { // Must have title
             try {
-              await storage.createStrategicIndicator({
-                name: row[0],
-                code: row[1],
-                description: row[2] || "",
-                unit: row[3] || ""
-              });
+              const objectiveData = {
+                title: row[0],
+                description: row[1] || "",
+                startDate: row[2],
+                endDate: row[3],
+                status: row[4] || "active",
+                regionId: parseInt(row[5]) || null,
+                ownerId: parseInt(row[6]) || req.user.id
+              };
+              
+              await storage.createObjective(objectiveData);
               imported++;
             } catch (error) {
-              console.log(`Error importing indicator ${row[0]}:`, error);
+              errors.push(`Erro ao importar objetivo ${row[0]}: ${error}`);
+              console.log(`Error importing objective ${row[0]}:`, error);
             }
           }
         }
       }
       
-      // Import Regions
-      if (workbook.SheetNames.includes('Regiões')) {
-        const sheet = workbook.Sheets['Regiões'];
+      // Import Key Results (after objectives)
+      if (workbook.SheetNames.includes('Resultados-Chave')) {
+        const sheet = workbook.Sheets['Resultados-Chave'];
         const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         
         for (let i = 1; i < data.length; i++) {
           const row = data[i] as any[];
-          if (row && row[0] && row[1]) {
+          if (row && row[0] && row[7]) { // Must have title and objective_id
             try {
-              await storage.createRegion({
-                name: row[0],
-                code: row[1]
-              });
+              const keyResultData = {
+                title: row[0],
+                description: row[1] || "",
+                currentValue: convertBRToDatabase(row[2]?.toString() || "0"),
+                targetValue: convertBRToDatabase(row[3]?.toString() || "100"),
+                unit: row[4] || "",
+                startDate: row[5],
+                endDate: row[6],
+                objectiveId: parseInt(row[7]),
+                strategicIndicatorIds: row[8] || "[]"
+              };
+              
+              await storage.createKeyResult(keyResultData);
               imported++;
             } catch (error) {
-              console.log(`Error importing region ${row[0]}:`, error);
+              errors.push(`Erro ao importar resultado-chave ${row[0]}: ${error}`);
+              console.log(`Error importing key result ${row[0]}:`, error);
             }
           }
         }
       }
       
-      // Import Solutions
-      if (workbook.SheetNames.includes('Soluções')) {
-        const sheet = workbook.Sheets['Soluções'];
+      // Import Actions (after key results)
+      if (workbook.SheetNames.includes('Ações')) {
+        const sheet = workbook.Sheets['Ações'];
         const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         
         for (let i = 1; i < data.length; i++) {
           const row = data[i] as any[];
-          if (row && row[0] && row[1]) {
+          if (row && row[0] && row[5]) { // Must have title and key result id
             try {
-              await storage.createSolution({
-                name: row[0],
-                code: row[1],
-                description: row[2] || ""
-              });
+              const actionData = {
+                title: row[0],
+                description: row[1] || "",
+                dueDate: row[2],
+                priority: row[3] || "medium",
+                status: row[4] || "pending",
+                keyResultId: parseInt(row[5]),
+                ownerId: parseInt(row[6]) || req.user.id
+              };
+              
+              await storage.createAction(actionData);
               imported++;
             } catch (error) {
-              console.log(`Error importing solution ${row[0]}:`, error);
-            }
-          }
-        }
-      }
-      
-      // Import Sub-regions (after regions)
-      if (workbook.SheetNames.includes('Sub-regiões')) {
-        const sheet = workbook.Sheets['Sub-regiões'];
-        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        const regions = await storage.getRegions();
-        
-        for (let i = 1; i < data.length; i++) {
-          const row = data[i] as any[];
-          if (row && row[0] && row[1] && row[2]) {
-            try {
-              const region = regions.find(r => r.code === row[2]);
-              if (region) {
-                await storage.createSubRegion({
-                  name: row[0],
-                  code: row[1],
-                  regionId: region.id
-                });
-                imported++;
-              }
-            } catch (error) {
-              console.log(`Error importing sub-region ${row[0]}:`, error);
-            }
-          }
-        }
-      }
-      
-      // Import Service Lines (after solutions)
-      if (workbook.SheetNames.includes('Linhas de Serviço')) {
-        const sheet = workbook.Sheets['Linhas de Serviço'];
-        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        const solutions = await storage.getSolutions();
-        
-        for (let i = 1; i < data.length; i++) {
-          const row = data[i] as any[];
-          if (row && row[0] && row[1] && row[3]) {
-            try {
-              const solution = solutions.find(s => s.code === row[3]);
-              if (solution) {
-                await storage.createServiceLine({
-                  name: row[0],
-                  code: row[1],
-                  description: row[2] || "",
-                  solutionId: solution.id
-                });
-                imported++;
-              }
-            } catch (error) {
-              console.log(`Error importing service line ${row[0]}:`, error);
-            }
-          }
-        }
-      }
-      
-      // Import Services (after service lines)
-      if (workbook.SheetNames.includes('Serviços')) {
-        const sheet = workbook.Sheets['Serviços'];
-        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        const serviceLines = await storage.getServiceLines();
-        
-        for (let i = 1; i < data.length; i++) {
-          const row = data[i] as any[];
-          if (row && row[0] && row[1] && row[3]) {
-            try {
-              const serviceLine = serviceLines.find(sl => sl.code === row[3]);
-              if (serviceLine) {
-                await storage.createService({
-                  name: row[0],
-                  code: row[1],
-                  description: row[2] || "",
-                  serviceLineId: serviceLine.id
-                });
-                imported++;
-              }
-            } catch (error) {
-              console.log(`Error importing service ${row[0]}:`, error);
+              errors.push(`Erro ao importar ação ${row[0]}: ${error}`);
+              console.log(`Error importing action ${row[0]}:`, error);
             }
           }
         }
@@ -1748,7 +1676,8 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ 
         message: "Dados importados com sucesso", 
-        imported 
+        imported,
+        errors: errors.length > 0 ? errors : undefined
       });
     } catch (error) {
       console.error("Error importing data:", error);

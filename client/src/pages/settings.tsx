@@ -2073,11 +2073,9 @@ function ImportDataTab() {
             <div className="text-sm text-muted-foreground">
               <p>O modelo contém as seguintes planilhas:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li><strong>Indicadores:</strong> Indicadores estratégicos com nome, código, descrição e unidade</li>
-                <li><strong>Regiões:</strong> Regiões e sub-regiões com códigos</li>
-                <li><strong>Soluções:</strong> Soluções organizacionais com códigos</li>
-                <li><strong>Linhas de Serviço:</strong> Linhas de serviço vinculadas às soluções</li>
-                <li><strong>Serviços:</strong> Serviços específicos vinculados às linhas de serviço</li>
+                <li><strong>Objetivos:</strong> Objetivos com título, descrição, datas, região e responsável</li>
+                <li><strong>Resultados-Chave:</strong> Resultados-chave vinculados aos objetivos com metas e valores</li>
+                <li><strong>Ações:</strong> Ações vinculadas aos resultados-chave com prazos e prioridades</li>
               </ul>
             </div>
             <Button 
@@ -2128,8 +2126,9 @@ function ImportDataTab() {
               <ul className="text-sm text-amber-700 space-y-1">
                 <li>• Use apenas o modelo Excel baixado acima</li>
                 <li>• Não altere os cabeçalhos das colunas</li>
-                <li>• Códigos devem ser únicos em cada categoria</li>
-                <li>• Mantenha as relações entre as entidades (ex: linha de serviço deve estar vinculada a uma solução existente)</li>
+                <li>• Use os códigos/IDs corretos para regiões, usuários e indicadores existentes</li>
+                <li>• Mantenha as relações entre objetivos, resultados-chave e ações</li>
+                <li>• Datas devem estar no formato AAAA-MM-DD</li>
                 <li>• A importação irá adicionar novos registros, não substituir os existentes</li>
               </ul>
             </div>
