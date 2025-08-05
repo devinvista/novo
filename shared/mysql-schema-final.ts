@@ -247,3 +247,9 @@ export const actionCommentFormSchema = insertActionCommentSchema.omit({
   id: true, 
   createdAt: true 
 });
+
+// Additional schemas for configuration management
+export const solutionSchema = createInsertSchema(solutions).omit({ id: true });
+export const serviceLineSchema = createInsertSchema(serviceLines).omit({ id: true });
+export const serviceSchema = createInsertSchema(services).omit({ id: true });
+export const strategicIndicatorSchema = createInsertSchema(strategicIndicators).omit({ id: true });
