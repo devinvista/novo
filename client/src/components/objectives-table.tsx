@@ -200,7 +200,7 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
                         </TableCell>
                         
                         <TableCell className="text-foreground">
-                          {objective.regionName || objective.region?.name || objective.subRegion?.name || "Não informado"}
+                          {objective.subRegionName || objective.regionName || objective.region?.name || objective.subRegion?.name || "Não informado"}
                         </TableCell>
                         
                         <TableCell>

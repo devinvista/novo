@@ -317,7 +317,10 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/objectives/:id", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`🔍 Atualizando objetivo ${id} - Dados recebidos:`, JSON.stringify(req.body, null, 2));
+      
       const validation = insertObjectiveSchema.partial().parse(req.body);
+      console.log(`✅ Dados validados:`, JSON.stringify(validation, null, 2));
       
       const existingObjective = await storage.getObjective(id, req.user.id);
       if (!existingObjective) {
@@ -325,8 +328,10 @@ export function registerRoutes(app: Express): Server {
       }
       
       const objective = await storage.updateObjective(id, validation);
+      console.log(`💾 Objetivo atualizado:`, JSON.stringify(objective, null, 2));
       res.json(objective);
     } catch (error) {
+      console.error(`❌ Erro ao atualizar objetivo ${id}:`, error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
