@@ -720,6 +720,8 @@ export class MySQLStorageOptimized implements IStorage {
         endDate: objectives.endDate,
         status: objectives.status,
         regionId: objectives.regionId,
+        regionName: regionsTable.name,
+        regionCode: regionsTable.code,
         ownerId: objectives.ownerId,
         createdAt: objectives.createdAt,
         updatedAt: objectives.updatedAt,
@@ -727,7 +729,8 @@ export class MySQLStorageOptimized implements IStorage {
         ownerUsername: users.username
       })
       .from(objectives)
-      .leftJoin(users, eq(objectives.ownerId, users.id));
+      .leftJoin(users, eq(objectives.ownerId, users.id))
+      .leftJoin(regionsTable, eq(objectives.regionId, regionsTable.id));
 
       let whereConditions: any[] = [];
 
@@ -786,6 +789,8 @@ export class MySQLStorageOptimized implements IStorage {
           endDate: objectives.endDate,
           status: objectives.status,
           regionId: objectives.regionId,
+          regionName: regionsTable.name,
+          regionCode: regionsTable.code,
           ownerId: objectives.ownerId,
           createdAt: objectives.createdAt,
           updatedAt: objectives.updatedAt,
@@ -794,6 +799,7 @@ export class MySQLStorageOptimized implements IStorage {
         })
         .from(objectives)
         .leftJoin(users, eq(objectives.ownerId, users.id))
+        .leftJoin(regionsTable, eq(objectives.regionId, regionsTable.id))
         .where(eq(objectives.id, id))
         .limit(1);
       });
