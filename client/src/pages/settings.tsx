@@ -22,6 +22,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 // Schemas para validação
 const strategicIndicatorSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
+  code: z.string().min(1, "Código é obrigatório"),
   description: z.string().optional(),
   unit: z.string().optional(),
 });
@@ -39,17 +40,20 @@ const subRegionSchema = z.object({
 
 const solutionSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
+  code: z.string().min(1, "Código é obrigatório"),
   description: z.string().optional(),
 });
 
 const serviceLineSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
+  code: z.string().min(1, "Código é obrigatório"),
   description: z.string().optional(),
   solutionId: z.number().min(1, "Solução é obrigatória"),
 });
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
+  code: z.string().min(1, "Código é obrigatório"),
   description: z.string().optional(),
   serviceLineId: z.number().min(1, "Linha de serviço é obrigatória"),
 });
@@ -152,6 +156,7 @@ function StrategicIndicatorsTab() {
     resolver: zodResolver(strategicIndicatorSchema),
     defaultValues: {
       name: "",
+      code: "",
       description: "",
       unit: "",
     },
@@ -251,6 +256,7 @@ function StrategicIndicatorsTab() {
     setEditingItem(indicator);
     form.reset({
       name: indicator.name,
+      code: indicator.code || "",
       description: indicator.description || "",
       unit: indicator.unit || "",
     });
@@ -315,6 +321,19 @@ function StrategicIndicatorsTab() {
                   />
                   <FormField
                     control={form.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Código *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: TSF001" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                     name="description"
                     render={({ field }) => (
                       <FormItem>
@@ -361,6 +380,7 @@ function StrategicIndicatorsTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>Código</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Unidade</TableHead>
               <TableHead className="w-32">Ações</TableHead>
@@ -370,6 +390,9 @@ function StrategicIndicatorsTab() {
             {indicators.map((indicator: StrategicIndicator) => (
               <TableRow key={indicator.id}>
                 <TableCell className="font-medium">{indicator.name}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{indicator.code || "-"}</Badge>
+                </TableCell>
                 <TableCell>{indicator.description || "-"}</TableCell>
                 <TableCell>
                   {indicator.unit ? <Badge variant="secondary">{indicator.unit}</Badge> : "-"}
@@ -960,6 +983,7 @@ function SolutionsTab() {
     resolver: zodResolver(solutionSchema),
     defaultValues: {
       name: "",
+      code: "",
       description: "",
     },
   });
@@ -1069,6 +1093,7 @@ function SolutionsTab() {
     setEditingItem(solution);
     form.reset({
       name: solution.name,
+      code: solution.code || "",
       description: solution.description || "",
     });
     setIsDialogOpen(true);
@@ -1106,6 +1131,7 @@ function SolutionsTab() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
+                <TableHead>Código</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead className="w-[100px]">Ações</TableHead>
               </TableRow>
@@ -1114,6 +1140,9 @@ function SolutionsTab() {
               {solutions.map((solution: Solution) => (
                 <TableRow key={solution.id}>
                   <TableCell className="font-medium">{solution.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{solution.code || "-"}</Badge>
+                  </TableCell>
                   <TableCell>{solution.description || "-"}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -1162,6 +1191,23 @@ function SolutionsTab() {
                         placeholder="Nome da solução" 
                         {...field} 
                         data-testid="input-solution-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Código da solução" 
+                        {...field} 
+                        data-testid="input-solution-code"
                       />
                     </FormControl>
                     <FormMessage />
@@ -1223,6 +1269,7 @@ function ServiceLinesTab() {
     resolver: zodResolver(serviceLineSchema),
     defaultValues: {
       name: "",
+      code: "",
       description: "",
       solutionId: undefined,
     },
@@ -1342,6 +1389,7 @@ function ServiceLinesTab() {
     setEditingItem(serviceLine);
     form.reset({
       name: serviceLine.name,
+      code: serviceLine.code || "",
       description: serviceLine.description || "",
       solutionId: serviceLine.solutionId,
     });
@@ -1380,6 +1428,7 @@ function ServiceLinesTab() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
+                <TableHead>Código</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Solução</TableHead>
                 <TableHead className="w-[100px]">Ações</TableHead>
@@ -1391,6 +1440,9 @@ function ServiceLinesTab() {
                 return (
                   <TableRow key={serviceLine.id}>
                     <TableCell className="font-medium">{serviceLine.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{serviceLine.code || "-"}</Badge>
+                    </TableCell>
                     <TableCell>{serviceLine.description || "-"}</TableCell>
                     <TableCell>{solution?.name || "-"}</TableCell>
                     <TableCell>
@@ -1441,6 +1493,23 @@ function ServiceLinesTab() {
                         placeholder="Nome da linha de serviço" 
                         {...field} 
                         data-testid="input-service-line-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Código da linha de serviço" 
+                        {...field} 
+                        data-testid="input-service-line-code"
                       />
                     </FormControl>
                     <FormMessage />
@@ -1526,6 +1595,7 @@ function ServicesTab() {
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       name: "",
+      code: "",
       description: "",
       serviceLineId: undefined,
     },
@@ -1654,6 +1724,7 @@ function ServicesTab() {
     setEditingItem(service);
     form.reset({
       name: service.name,
+      code: service.code || "",
       description: service.description || "",
       serviceLineId: service.serviceLineId,
     });
@@ -1692,6 +1763,7 @@ function ServicesTab() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
+                <TableHead>Código</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Linha de Serviço</TableHead>
                 <TableHead>Solução</TableHead>
@@ -1705,6 +1777,9 @@ function ServicesTab() {
                 return (
                   <TableRow key={service.id}>
                     <TableCell className="font-medium">{service.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{service.code || "-"}</Badge>
+                    </TableCell>
                     <TableCell>{service.description || "-"}</TableCell>
                     <TableCell>{serviceLine?.name || "-"}</TableCell>
                     <TableCell>{solution?.name || "-"}</TableCell>
@@ -1756,6 +1831,23 @@ function ServicesTab() {
                         placeholder="Nome do serviço" 
                         {...field} 
                         data-testid="input-service-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Código do serviço" 
+                        {...field} 
+                        data-testid="input-service-code"
                       />
                     </FormControl>
                     <FormMessage />
