@@ -1,36 +1,42 @@
-import { sqliteTable as mysqlTable, integer as int, text as varchar, text, real as decimal, integer as timestamp, text as json, integer as boolean } from "drizzle-orm/sqlite-core";
+import { mysqlTable, varchar, text, int, timestamp, decimal, json, boolean } from "drizzle-orm/mysql-core";
 import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table with role-based access
+// Users table (mixed naming: camelCase JSON fields + snake_case date fields)
 export const users = mysqlTable("users", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-  role: varchar("role", { length: 50 }).notNull().default("operacional"), // admin, gestor, operacional
-  regionId: int("region_id"),
-  subRegionId: int("sub_region_id"),
-  gestorId: int("gestor_id").references(() => users.id), // Reference to manager
-  approved: boolean("approved").notNull().default(false), // Approval status
-  approvedAt: timestamp("approved_at"), // When was approved
-  approvedBy: int("approved_by").references(() => users.id), // Who approved
+  role: varchar("role", { length: 50 }).notNull().default("operacional"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  regionIds: json("regionIds").default("[]"),
+  subRegionIds: json("subRegionIds").default("[]"),
+  solutionIds: json("solutionIds").default("[]"),
+  serviceLineIds: json("serviceLineIds").default("[]"),
+  serviceIds: json("serviceIds").default("[]"),
+  gestorId: int("gestorId"),
+  approved: boolean("approved").notNull().default(false),
+  approvedAt: timestamp("approved_at"),
+  approvedBy: int("approved_by"),
+  // Duplicate fields for compatibility
+  approvedAttimestamp: timestamp("approvedAt"),
+  approvedByInt: int("approvedBy"),
 });
 
 // Regions table (10 specific regions)
 export const regions = mysqlTable("regions", {
-  id: int("id").primaryKey({ autoIncrement: true }),
-  name: varchar("name", { length: 255 }).notNull().unique(),
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }).notNull().unique(),
 });
 
 // Sub-regions table (21 specific sub-regions)
 export const subRegions = mysqlTable("sub_regions", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }).notNull().unique(),
   regionId: int("region_id").notNull().references(() => regions.id),
@@ -38,14 +44,14 @@ export const subRegions = mysqlTable("sub_regions", {
 
 // Solutions (Educação, Saúde)
 export const solutions = mysqlTable("solutions", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull().unique(),
   description: text("description"),
 });
 
 // Service Lines under solutions
 export const serviceLines = mysqlTable("service_lines", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   solutionId: int("solution_id").notNull().references(() => solutions.id),
@@ -53,7 +59,7 @@ export const serviceLines = mysqlTable("service_lines", {
 
 // Services under service lines
 export const services = mysqlTable("services", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   serviceLineId: int("service_line_id").notNull().references(() => serviceLines.id),
@@ -61,80 +67,93 @@ export const services = mysqlTable("services", {
 
 // Strategic Indicators (7 indicators)
 export const strategicIndicators = mysqlTable("strategic_indicators", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull().unique(),
   description: text("description"),
   unit: varchar("unit", { length: 50 }),
 });
 
-// Objectives
+// Objectives table (snake_case fields)
 export const objectives = mysqlTable("objectives", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   ownerId: int("owner_id").notNull().references(() => users.id),
   regionId: int("region_id").references(() => regions.id),
   subRegionId: int("sub_region_id").references(() => subRegions.id),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("active"), // active, completed, cancelled, delayed
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
+  startDate: varchar("start_date", { length: 10 }).notNull(),
+  endDate: varchar("end_date", { length: 10 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
+  progress: decimal("progress", { precision: 5, scale: 2 }).default("0.00"),
   period: varchar("period", { length: 50 }),
-  serviceLineId: int("service_line_id"),
+  serviceLineId: int("service_line_id").references(() => serviceLines.id),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
-// Key Results
+// Key Results table (snake_case fields + JSON fields)
 export const keyResults = mysqlTable("key_results", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   objectiveId: int("objective_id").notNull().references(() => objectives.id),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
-  currentValue: decimal("current_value", { precision: 15, scale: 2 }).default("0"),
+  currentValue: decimal("current_value", { precision: 15, scale: 2 }).default("0.00"),
   unit: varchar("unit", { length: 50 }),
-  strategicIndicatorIds: json("strategic_indicator_ids").notNull(),
+  strategicIndicatorIds: json("strategicIndicatorIds").default("[]"),
+  serviceLineIds: json("serviceLineIds").default("[]"),
   serviceLineId: int("service_line_id").references(() => serviceLines.id),
   serviceId: int("service_id").references(() => services.id),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  frequency: varchar("frequency", { length: 50 }).notNull(), // weekly, biweekly, monthly, quarterly
-  status: varchar("status", { length: 50 }).notNull().default("active"), // active, completed, cancelled, delayed
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
+  startDate: varchar("start_date", { length: 10 }).notNull(),
+  endDate: varchar("end_date", { length: 10 }).notNull(),
+  frequency: varchar("frequency", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
+  progress: decimal("progress", { precision: 5, scale: 2 }).default("0.00"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
-// Actions
+// Actions table (snake_case fields based on MySQL structure)
 export const actions = mysqlTable("actions", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   keyResultId: int("key_result_id").notNull().references(() => keyResults.id),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
-  number: int("number").notNull(), // Auto-generated sequential number
+  number: int("number").notNull().default(1),
   strategicIndicatorId: int("strategic_indicator_id").references(() => strategicIndicators.id),
   responsibleId: int("responsible_id").references(() => users.id),
-  dueDate: timestamp("due_date"),
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, in_progress, completed, cancelled
-  priority: varchar("priority", { length: 50 }).notNull().default("medium"), // low, medium, high
+  dueDate: varchar("due_date", { length: 10 }),
+  status: varchar("status", { length: 50 }).notNull().default("pending"),
+  priority: varchar("priority", { length: 50 }).notNull().default("medium"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
-// Checkpoints (automatically generated based on KR frequency)
+// Checkpoints table (snake_case fields based on MySQL structure)
 export const checkpoints = mysqlTable("checkpoints", {
-  id: int("id").primaryKey({ autoIncrement: true }),
+  id: int("id").primaryKey().autoincrement(),
   keyResultId: int("key_result_id").notNull().references(() => keyResults.id),
-  period: varchar("period", { length: 50 }).notNull(), // 2024-01, 2024-Q1, 2024-W01
+  title: varchar("title", { length: 255 }).notNull().default("Checkpoint"),
+  period: varchar("period", { length: 50 }).notNull(),
   targetValue: decimal("target_value", { precision: 15, scale: 2 }).notNull(),
   actualValue: decimal("actual_value", { precision: 15, scale: 2 }),
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, completed
+  progress: decimal("progress", { precision: 5, scale: 2 }).default("0.00"),
+  status: varchar("status", { length: 50 }).notNull().default("pending"),
+  dueDate: timestamp("due_date"),
+  completedDate: timestamp("completed_date"),
   notes: text("notes"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+});
+
+// Action Comments table (camelCase matching MySQL structure)
+export const actionComments = mysqlTable("action_comments", {
+  id: int("id").primaryKey().autoincrement(),
+  actionId: int("actionId").notNull().references(() => actions.id),
+  userId: int("userId").notNull().references(() => users.id),
+  comment: text("comment").notNull(),
+  createdAt: timestamp("createdAt").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Activity log for audit trail
@@ -205,10 +224,11 @@ export const keyResultsRelations = relations(keyResults, ({ one, many }) => ({
   checkpoints: many(checkpoints),
 }));
 
-export const actionsRelations = relations(actions, ({ one }) => ({
+export const actionsRelations = relations(actions, ({ one, many }) => ({
   keyResult: one(keyResults, { fields: [actions.keyResultId], references: [keyResults.id] }),
   strategicIndicator: one(strategicIndicators, { fields: [actions.strategicIndicatorId], references: [strategicIndicators.id] }),
   responsible: one(users, { fields: [actions.responsibleId], references: [users.id] }),
+  actionComments: many(actionComments),
 }));
 
 export const checkpointsRelations = relations(checkpoints, ({ one }) => ({
@@ -217,6 +237,11 @@ export const checkpointsRelations = relations(checkpoints, ({ one }) => ({
 
 export const activitiesRelations = relations(activities, ({ one }) => ({
   user: one(users, { fields: [activities.userId], references: [users.id] }),
+}));
+
+export const actionCommentsRelations = relations(actionComments, ({ one }) => ({
+  action: one(actions, { fields: [actionComments.actionId], references: [actions.id] }),
+  user: one(users, { fields: [actionComments.userId], references: [users.id] }),
 }));
 
 // Type definitions
@@ -237,6 +262,8 @@ export type InsertAction = typeof actions.$inferInsert;
 export type Checkpoint = typeof checkpoints.$inferSelect;
 export type InsertCheckpoint = typeof checkpoints.$inferInsert;
 export type Activity = typeof activities.$inferSelect;
+export type ActionComment = typeof actionComments.$inferSelect;
+export type InsertActionComment = typeof actionComments.$inferInsert;
 
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users);
@@ -244,6 +271,7 @@ export const insertObjectiveSchema = createInsertSchema(objectives);
 export const insertKeyResultSchema = createInsertSchema(keyResults);
 export const insertActionSchema = createInsertSchema(actions);
 export const insertCheckpointSchema = createInsertSchema(checkpoints);
+export const insertActionCommentSchema = createInsertSchema(actionComments);
 
 // Export types for use in other modules
 export type InsertUserType = z.infer<typeof insertUserSchema>;
@@ -251,3 +279,4 @@ export type InsertObjectiveType = z.infer<typeof insertObjectiveSchema>;
 export type InsertKeyResultType = z.infer<typeof insertKeyResultSchema>;
 export type InsertActionType = z.infer<typeof insertActionSchema>;
 export type InsertCheckpointType = z.infer<typeof insertCheckpointSchema>;
+export type InsertActionCommentType = z.infer<typeof insertActionCommentSchema>;
