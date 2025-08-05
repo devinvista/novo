@@ -1,5 +1,5 @@
 import { 
-  users, regions as regionsTable, subRegions, serviceLines, strategicIndicators, 
+  users, regions as regionsTable, subRegions as subRegionsTable, serviceLines, strategicIndicators, 
   objectives, keyResults, actions, checkpoints, actionComments,
   solutions as solutionsTable, services,
   type User, type InsertUser, type Objective, type InsertObjective,
