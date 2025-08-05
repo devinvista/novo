@@ -1157,6 +1157,356 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin Configuration Management Routes
+  // Strategic Indicators Management
+  app.post("/api/admin/strategic-indicators", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { name, description, unit } = req.body;
+      
+      if (!name || name.trim() === "") {
+        return res.status(400).json({ message: "Nome é obrigatório" });
+      }
+      
+      const indicator = await storage.createStrategicIndicator({ name, description, unit });
+      res.json(indicator);
+    } catch (error) {
+      console.error("Error creating strategic indicator:", error);
+      res.status(500).json({ message: "Erro ao criar indicador estratégico" });
+    }
+  });
+
+  app.put("/api/admin/strategic-indicators/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, description, unit } = req.body;
+      
+      if (!name || name.trim() === "") {
+        return res.status(400).json({ message: "Nome é obrigatório" });
+      }
+      
+      const indicator = await storage.updateStrategicIndicator(id, { name, description, unit });
+      res.json(indicator);
+    } catch (error) {
+      console.error("Error updating strategic indicator:", error);
+      res.status(500).json({ message: "Erro ao atualizar indicador estratégico" });
+    }
+  });
+
+  app.delete("/api/admin/strategic-indicators/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if indicator is being used
+      const keyResults = await storage.getKeyResults({});
+      const isUsed = keyResults.some(kr => {
+        const indicators = Array.isArray(kr.strategicIndicatorIds) 
+          ? kr.strategicIndicatorIds 
+          : JSON.parse(kr.strategicIndicatorIds || "[]");
+        return indicators.includes(id);
+      });
+      
+      if (isUsed) {
+        return res.status(400).json({ 
+          message: "Não é possível excluir indicador que está sendo usado em resultados-chave" 
+        });
+      }
+      
+      await storage.deleteStrategicIndicator(id);
+      res.json({ message: "Indicador estratégico excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting strategic indicator:", error);
+      res.status(500).json({ message: "Erro ao excluir indicador estratégico" });
+    }
+  });
+
+  // Regions Management
+  app.post("/api/admin/regions", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { name, code } = req.body;
+      
+      if (!name || name.trim() === "" || !code || code.trim() === "") {
+        return res.status(400).json({ message: "Nome e código são obrigatórios" });
+      }
+      
+      const region = await storage.createRegion({ name, code });
+      res.json(region);
+    } catch (error) {
+      console.error("Error creating region:", error);
+      res.status(500).json({ message: "Erro ao criar região" });
+    }
+  });
+
+  app.put("/api/admin/regions/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, code } = req.body;
+      
+      if (!name || name.trim() === "" || !code || code.trim() === "") {
+        return res.status(400).json({ message: "Nome e código são obrigatórios" });
+      }
+      
+      const region = await storage.updateRegion(id, { name, code });
+      res.json(region);
+    } catch (error) {
+      console.error("Error updating region:", error);
+      res.status(500).json({ message: "Erro ao atualizar região" });
+    }
+  });
+
+  app.delete("/api/admin/regions/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if region is being used
+      const objectives = await storage.getObjectives({});
+      const subRegions = await storage.getSubRegions();
+      
+      const isUsedInObjectives = objectives.some(obj => obj.regionId === id);
+      const hasSubRegions = subRegions.some(sr => sr.regionId === id);
+      
+      if (isUsedInObjectives || hasSubRegions) {
+        return res.status(400).json({ 
+          message: "Não é possível excluir região que possui objetivos ou sub-regiões associadas" 
+        });
+      }
+      
+      await storage.deleteRegion(id);
+      res.json({ message: "Região excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting region:", error);
+      res.status(500).json({ message: "Erro ao excluir região" });
+    }
+  });
+
+  // Sub-regions Management
+  app.post("/api/admin/sub-regions", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { name, code, regionId } = req.body;
+      
+      if (!name || name.trim() === "" || !code || code.trim() === "" || !regionId) {
+        return res.status(400).json({ message: "Nome, código e região são obrigatórios" });
+      }
+      
+      const subRegion = await storage.createSubRegion({ name, code, regionId });
+      res.json(subRegion);
+    } catch (error) {
+      console.error("Error creating sub-region:", error);
+      res.status(500).json({ message: "Erro ao criar sub-região" });
+    }
+  });
+
+  app.put("/api/admin/sub-regions/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, code, regionId } = req.body;
+      
+      if (!name || name.trim() === "" || !code || code.trim() === "" || !regionId) {
+        return res.status(400).json({ message: "Nome, código e região são obrigatórios" });
+      }
+      
+      const subRegion = await storage.updateSubRegion(id, { name, code, regionId });
+      res.json(subRegion);
+    } catch (error) {
+      console.error("Error updating sub-region:", error);
+      res.status(500).json({ message: "Erro ao atualizar sub-região" });
+    }
+  });
+
+  app.delete("/api/admin/sub-regions/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if sub-region is being used
+      const objectives = await storage.getObjectives({});
+      const isUsed = objectives.some(obj => obj.subRegionId === id);
+      
+      if (isUsed) {
+        return res.status(400).json({ 
+          message: "Não é possível excluir sub-região que possui objetivos associados" 
+        });
+      }
+      
+      await storage.deleteSubRegion(id);
+      res.json({ message: "Sub-região excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting sub-region:", error);
+      res.status(500).json({ message: "Erro ao excluir sub-região" });
+    }
+  });
+
+  // Solutions Management
+  app.post("/api/admin/solutions", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { name, description } = req.body;
+      
+      if (!name || name.trim() === "") {
+        return res.status(400).json({ message: "Nome é obrigatório" });
+      }
+      
+      const solution = await storage.createSolution({ name, description });
+      res.json(solution);
+    } catch (error) {
+      console.error("Error creating solution:", error);
+      res.status(500).json({ message: "Erro ao criar solução" });
+    }
+  });
+
+  app.put("/api/admin/solutions/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, description } = req.body;
+      
+      if (!name || name.trim() === "") {
+        return res.status(400).json({ message: "Nome é obrigatório" });
+      }
+      
+      const solution = await storage.updateSolution(id, { name, description });
+      res.json(solution);
+    } catch (error) {
+      console.error("Error updating solution:", error);
+      res.status(500).json({ message: "Erro ao atualizar solução" });
+    }
+  });
+
+  app.delete("/api/admin/solutions/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if solution is being used
+      const serviceLines = await storage.getServiceLines();
+      const hasServiceLines = serviceLines.some(sl => sl.solutionId === id);
+      
+      if (hasServiceLines) {
+        return res.status(400).json({ 
+          message: "Não é possível excluir solução que possui linhas de serviço associadas" 
+        });
+      }
+      
+      await storage.deleteSolution(id);
+      res.json({ message: "Solução excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting solution:", error);
+      res.status(500).json({ message: "Erro ao excluir solução" });
+    }
+  });
+
+  // Service Lines Management
+  app.post("/api/admin/service-lines", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { name, description, solutionId } = req.body;
+      
+      if (!name || name.trim() === "" || !solutionId) {
+        return res.status(400).json({ message: "Nome e solução são obrigatórios" });
+      }
+      
+      const serviceLine = await storage.createServiceLine({ name, description, solutionId });
+      res.json(serviceLine);
+    } catch (error) {
+      console.error("Error creating service line:", error);
+      res.status(500).json({ message: "Erro ao criar linha de serviço" });
+    }
+  });
+
+  app.put("/api/admin/service-lines/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, description, solutionId } = req.body;
+      
+      if (!name || name.trim() === "" || !solutionId) {
+        return res.status(400).json({ message: "Nome e solução são obrigatórios" });
+      }
+      
+      const serviceLine = await storage.updateServiceLine(id, { name, description, solutionId });
+      res.json(serviceLine);
+    } catch (error) {
+      console.error("Error updating service line:", error);
+      res.status(500).json({ message: "Erro ao atualizar linha de serviço" });
+    }
+  });
+
+  app.delete("/api/admin/service-lines/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if service line is being used
+      const services = await storage.getServices();
+      const objectives = await storage.getObjectives({});
+      const keyResults = await storage.getKeyResults({});
+      
+      const hasServices = services.some(s => s.serviceLineId === id);
+      const isUsedInObjectives = objectives.some(obj => obj.serviceLineId === id);
+      const isUsedInKeyResults = keyResults.some(kr => kr.serviceLineId === id);
+      
+      if (hasServices || isUsedInObjectives || isUsedInKeyResults) {
+        return res.status(400).json({ 
+          message: "Não é possível excluir linha de serviço que está sendo utilizada" 
+        });
+      }
+      
+      await storage.deleteServiceLine(id);
+      res.json({ message: "Linha de serviço excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting service line:", error);
+      res.status(500).json({ message: "Erro ao excluir linha de serviço" });
+    }
+  });
+
+  // Services Management
+  app.post("/api/admin/services", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { name, description, serviceLineId } = req.body;
+      
+      if (!name || name.trim() === "" || !serviceLineId) {
+        return res.status(400).json({ message: "Nome e linha de serviço são obrigatórios" });
+      }
+      
+      const service = await storage.createService({ name, description, serviceLineId });
+      res.json(service);
+    } catch (error) {
+      console.error("Error creating service:", error);
+      res.status(500).json({ message: "Erro ao criar serviço" });
+    }
+  });
+
+  app.put("/api/admin/services/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, description, serviceLineId } = req.body;
+      
+      if (!name || name.trim() === "" || !serviceLineId) {
+        return res.status(400).json({ message: "Nome e linha de serviço são obrigatórios" });
+      }
+      
+      const service = await storage.updateService(id, { name, description, serviceLineId });
+      res.json(service);
+    } catch (error) {
+      console.error("Error updating service:", error);
+      res.status(500).json({ message: "Erro ao atualizar serviço" });
+    }
+  });
+
+  app.delete("/api/admin/services/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if service is being used
+      const keyResults = await storage.getKeyResults({});
+      const isUsed = keyResults.some(kr => kr.serviceId === id);
+      
+      if (isUsed) {
+        return res.status(400).json({ 
+          message: "Não é possível excluir serviço que está sendo utilizado em resultados-chave" 
+        });
+      }
+      
+      await storage.deleteService(id);
+      res.json({ message: "Serviço excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ message: "Erro ao excluir serviço" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

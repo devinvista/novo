@@ -16,6 +16,7 @@ import Actions from "@/pages/actions";
 import Checkpoints from "@/pages/checkpoints";
 import Reports from "@/pages/reports";
 import Users from "@/pages/users";
+import Settings from "@/pages/settings";
 
 function Router() {
   return (
@@ -28,6 +29,7 @@ function Router() {
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/indicators" component={Reports} />
       <ProtectedRoute path="/users" component={Users} />
+      <ProtectedRoute path="/settings" component={Settings} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

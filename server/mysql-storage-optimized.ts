@@ -89,6 +89,31 @@ export interface IStorage {
   // Action comments
   getActionComments(actionId: number): Promise<any[]>;
   createActionComment(comment: InsertActionComment): Promise<ActionComment>;
+
+  // Admin CRUD methods for configuration management
+  createStrategicIndicator(data: { name: string; description?: string; unit?: string }): Promise<StrategicIndicator>;
+  updateStrategicIndicator(id: number, data: { name: string; description?: string; unit?: string }): Promise<StrategicIndicator>;
+  deleteStrategicIndicator(id: number): Promise<void>;
+  
+  createRegion(data: { name: string; code: string }): Promise<Region>;
+  updateRegion(id: number, data: { name: string; code: string }): Promise<Region>;
+  deleteRegion(id: number): Promise<void>;
+  
+  createSubRegion(data: { name: string; code: string; regionId: number }): Promise<SubRegion>;
+  updateSubRegion(id: number, data: { name: string; code: string; regionId: number }): Promise<SubRegion>;
+  deleteSubRegion(id: number): Promise<void>;
+  
+  createSolution(data: { name: string; description?: string }): Promise<Solution>;
+  updateSolution(id: number, data: { name: string; description?: string }): Promise<Solution>;
+  deleteSolution(id: number): Promise<void>;
+  
+  createServiceLine(data: { name: string; description?: string; solutionId: number }): Promise<ServiceLine>;
+  updateServiceLine(id: number, data: { name: string; description?: string; solutionId: number }): Promise<ServiceLine>;
+  deleteServiceLine(id: number): Promise<void>;
+  
+  createService(data: { name: string; description?: string; serviceLineId: number }): Promise<Service>;
+  updateService(id: number, data: { name: string; description?: string; serviceLineId: number }): Promise<Service>;
+  deleteService(id: number): Promise<void>;
 }
 
 export class MySQLStorageOptimized implements IStorage {
@@ -1299,6 +1324,331 @@ export class MySQLStorageOptimized implements IStorage {
     const insertId = result[0]?.insertId;
     const newComment = await db.select().from(actionComments).where(eq(actionComments.id, Number(insertId))).limit(1);
     return newComment[0];
+  }
+
+  // Admin CRUD methods implementations
+  async createStrategicIndicator(data: { name: string; description?: string; unit?: string }): Promise<StrategicIndicator> {
+    const startTime = MySQLPerformanceMonitor.startQuery('createStrategicIndicator');
+    try {
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.insert(strategicIndicators).values(data);
+      });
+      
+      const insertId = result[0]?.insertId;
+      const newIndicator = await db.select().from(strategicIndicators)
+        .where(eq(strategicIndicators.id, Number(insertId))).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('createStrategicIndicator', startTime);
+      return newIndicator[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('createStrategicIndicator', startTime);
+      console.error('Error creating strategic indicator:', error);
+      throw error;
+    }
+  }
+
+  async updateStrategicIndicator(id: number, data: { name: string; description?: string; unit?: string }): Promise<StrategicIndicator> {
+    const startTime = MySQLPerformanceMonitor.startQuery('updateStrategicIndicator');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.update(strategicIndicators).set(data).where(eq(strategicIndicators.id, id));
+      });
+      
+      const updatedIndicator = await db.select().from(strategicIndicators)
+        .where(eq(strategicIndicators.id, id)).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('updateStrategicIndicator', startTime);
+      return updatedIndicator[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('updateStrategicIndicator', startTime);
+      console.error('Error updating strategic indicator:', error);
+      throw error;
+    }
+  }
+
+  async deleteStrategicIndicator(id: number): Promise<void> {
+    const startTime = MySQLPerformanceMonitor.startQuery('deleteStrategicIndicator');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(strategicIndicators).where(eq(strategicIndicators.id, id));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('deleteStrategicIndicator', startTime);
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('deleteStrategicIndicator', startTime);
+      console.error('Error deleting strategic indicator:', error);
+      throw error;
+    }
+  }
+
+  async createRegion(data: { name: string; code: string }): Promise<Region> {
+    const startTime = MySQLPerformanceMonitor.startQuery('createRegion');
+    try {
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.insert(regionsTable).values(data);
+      });
+      
+      const insertId = result[0]?.insertId;
+      const newRegion = await db.select().from(regionsTable)
+        .where(eq(regionsTable.id, Number(insertId))).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('createRegion', startTime);
+      return newRegion[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('createRegion', startTime);
+      console.error('Error creating region:', error);
+      throw error;
+    }
+  }
+
+  async updateRegion(id: number, data: { name: string; code: string }): Promise<Region> {
+    const startTime = MySQLPerformanceMonitor.startQuery('updateRegion');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.update(regionsTable).set(data).where(eq(regionsTable.id, id));
+      });
+      
+      const updatedRegion = await db.select().from(regionsTable)
+        .where(eq(regionsTable.id, id)).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('updateRegion', startTime);
+      return updatedRegion[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('updateRegion', startTime);
+      console.error('Error updating region:', error);
+      throw error;
+    }
+  }
+
+  async deleteRegion(id: number): Promise<void> {
+    const startTime = MySQLPerformanceMonitor.startQuery('deleteRegion');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(regionsTable).where(eq(regionsTable.id, id));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('deleteRegion', startTime);
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('deleteRegion', startTime);
+      console.error('Error deleting region:', error);
+      throw error;
+    }
+  }
+
+  async createSubRegion(data: { name: string; code: string; regionId: number }): Promise<SubRegion> {
+    const startTime = MySQLPerformanceMonitor.startQuery('createSubRegion');
+    try {
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.insert(subRegions).values(data);
+      });
+      
+      const insertId = result[0]?.insertId;
+      const newSubRegion = await db.select().from(subRegions)
+        .where(eq(subRegions.id, Number(insertId))).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('createSubRegion', startTime);
+      return newSubRegion[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('createSubRegion', startTime);
+      console.error('Error creating sub-region:', error);
+      throw error;
+    }
+  }
+
+  async updateSubRegion(id: number, data: { name: string; code: string; regionId: number }): Promise<SubRegion> {
+    const startTime = MySQLPerformanceMonitor.startQuery('updateSubRegion');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.update(subRegions).set(data).where(eq(subRegions.id, id));
+      });
+      
+      const updatedSubRegion = await db.select().from(subRegions)
+        .where(eq(subRegions.id, id)).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('updateSubRegion', startTime);
+      return updatedSubRegion[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('updateSubRegion', startTime);
+      console.error('Error updating sub-region:', error);
+      throw error;
+    }
+  }
+
+  async deleteSubRegion(id: number): Promise<void> {
+    const startTime = MySQLPerformanceMonitor.startQuery('deleteSubRegion');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(subRegions).where(eq(subRegions.id, id));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('deleteSubRegion', startTime);
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('deleteSubRegion', startTime);
+      console.error('Error deleting sub-region:', error);
+      throw error;
+    }
+  }
+
+  async createSolution(data: { name: string; description?: string }): Promise<Solution> {
+    const startTime = MySQLPerformanceMonitor.startQuery('createSolution');
+    try {
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.insert(solutionsTable).values(data);
+      });
+      
+      const insertId = result[0]?.insertId;
+      const newSolution = await db.select().from(solutionsTable)
+        .where(eq(solutionsTable.id, Number(insertId))).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('createSolution', startTime);
+      return newSolution[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('createSolution', startTime);
+      console.error('Error creating solution:', error);
+      throw error;
+    }
+  }
+
+  async updateSolution(id: number, data: { name: string; description?: string }): Promise<Solution> {
+    const startTime = MySQLPerformanceMonitor.startQuery('updateSolution');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.update(solutionsTable).set(data).where(eq(solutionsTable.id, id));
+      });
+      
+      const updatedSolution = await db.select().from(solutionsTable)
+        .where(eq(solutionsTable.id, id)).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('updateSolution', startTime);
+      return updatedSolution[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('updateSolution', startTime);
+      console.error('Error updating solution:', error);
+      throw error;
+    }
+  }
+
+  async deleteSolution(id: number): Promise<void> {
+    const startTime = MySQLPerformanceMonitor.startQuery('deleteSolution');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(solutionsTable).where(eq(solutionsTable.id, id));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('deleteSolution', startTime);
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('deleteSolution', startTime);
+      console.error('Error deleting solution:', error);
+      throw error;
+    }
+  }
+
+  async createServiceLine(data: { name: string; description?: string; solutionId: number }): Promise<ServiceLine> {
+    const startTime = MySQLPerformanceMonitor.startQuery('createServiceLine');
+    try {
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.insert(serviceLines).values(data);
+      });
+      
+      const insertId = result[0]?.insertId;
+      const newServiceLine = await db.select().from(serviceLines)
+        .where(eq(serviceLines.id, Number(insertId))).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('createServiceLine', startTime);
+      return newServiceLine[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('createServiceLine', startTime);
+      console.error('Error creating service line:', error);
+      throw error;
+    }
+  }
+
+  async updateServiceLine(id: number, data: { name: string; description?: string; solutionId: number }): Promise<ServiceLine> {
+    const startTime = MySQLPerformanceMonitor.startQuery('updateServiceLine');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.update(serviceLines).set(data).where(eq(serviceLines.id, id));
+      });
+      
+      const updatedServiceLine = await db.select().from(serviceLines)
+        .where(eq(serviceLines.id, id)).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('updateServiceLine', startTime);
+      return updatedServiceLine[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('updateServiceLine', startTime);
+      console.error('Error updating service line:', error);
+      throw error;
+    }
+  }
+
+  async deleteServiceLine(id: number): Promise<void> {
+    const startTime = MySQLPerformanceMonitor.startQuery('deleteServiceLine');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(serviceLines).where(eq(serviceLines.id, id));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('deleteServiceLine', startTime);
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('deleteServiceLine', startTime);
+      console.error('Error deleting service line:', error);
+      throw error;
+    }
+  }
+
+  async createService(data: { name: string; description?: string; serviceLineId: number }): Promise<Service> {
+    const startTime = MySQLPerformanceMonitor.startQuery('createService');
+    try {
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.insert(services).values(data);
+      });
+      
+      const insertId = result[0]?.insertId;
+      const newService = await db.select().from(services)
+        .where(eq(services.id, Number(insertId))).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('createService', startTime);
+      return newService[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('createService', startTime);
+      console.error('Error creating service:', error);
+      throw error;
+    }
+  }
+
+  async updateService(id: number, data: { name: string; description?: string; serviceLineId: number }): Promise<Service> {
+    const startTime = MySQLPerformanceMonitor.startQuery('updateService');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.update(services).set(data).where(eq(services.id, id));
+      });
+      
+      const updatedService = await db.select().from(services)
+        .where(eq(services.id, id)).limit(1);
+      
+      MySQLPerformanceMonitor.endQuery('updateService', startTime);
+      return updatedService[0];
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('updateService', startTime);
+      console.error('Error updating service:', error);
+      throw error;
+    }
+  }
+
+  async deleteService(id: number): Promise<void> {
+    const startTime = MySQLPerformanceMonitor.startQuery('deleteService');
+    try {
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(services).where(eq(services.id, id));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('deleteService', startTime);
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery('deleteService', startTime);
+      console.error('Error deleting service:', error);
+      throw error;
+    }
   }
 }
 

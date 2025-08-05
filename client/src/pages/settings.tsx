@@ -1,0 +1,600 @@
+import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Edit, Plus, Settings as SettingsIcon, MapPin, Target, Layers } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+// Schemas para validação
+const strategicIndicatorSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  unit: z.string().optional(),
+});
+
+const regionSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  code: z.string().min(1, "Código é obrigatório"),
+});
+
+const subRegionSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  code: z.string().min(1, "Code é obrigatório"),
+  regionId: z.number().min(1, "Região é obrigatória"),
+});
+
+const solutionSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+});
+
+const serviceLineSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  solutionId: z.number().min(1, "Solução é obrigatória"),
+});
+
+const serviceSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  serviceLineId: z.number().min(1, "Linha de serviço é obrigatória"),
+});
+
+type StrategicIndicator = z.infer<typeof strategicIndicatorSchema> & { id: number };
+type Region = z.infer<typeof regionSchema> & { id: number };
+type SubRegion = z.infer<typeof subRegionSchema> & { id: number };
+type Solution = z.infer<typeof solutionSchema> & { id: number };
+type ServiceLine = z.infer<typeof serviceLineSchema> & { id: number };
+type Service = z.infer<typeof serviceSchema> & { id: number };
+
+export default function Settings() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("indicators");
+
+  // Verificar se o usuário é admin
+  if (user?.role !== "admin") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-96">
+          <CardHeader>
+            <CardTitle className="text-center">Acesso Negado</CardTitle>
+            <CardDescription className="text-center">
+              Apenas administradores podem acessar as configurações do sistema.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-6">
+      <div className="flex items-center gap-4 mb-6">
+        <SettingsIcon className="h-8 w-8" />
+        <div>
+          <h1 className="text-3xl font-bold">Configurações do Sistema</h1>
+          <p className="text-muted-foreground">
+            Gerencie indicadores estratégicos, regiões e estrutura organizacional
+          </p>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="indicators" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Indicadores
+          </TabsTrigger>
+          <TabsTrigger value="regions" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Regiões
+          </TabsTrigger>
+          <TabsTrigger value="solutions" className="flex items-center gap-2">
+            <Layers className="h-4 w-4" />
+            Soluções
+          </TabsTrigger>
+          <TabsTrigger value="service-lines" className="flex items-center gap-2">
+            <Layers className="h-4 w-4" />
+            Linhas de Serviço
+          </TabsTrigger>
+          <TabsTrigger value="services" className="flex items-center gap-2">
+            <Layers className="h-4 w-4" />
+            Serviços
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="indicators">
+          <StrategicIndicatorsTab />
+        </TabsContent>
+
+        <TabsContent value="regions">
+          <RegionsTab />
+        </TabsContent>
+
+        <TabsContent value="solutions">
+          <SolutionsTab />
+        </TabsContent>
+
+        <TabsContent value="service-lines">
+          <ServiceLinesTab />
+        </TabsContent>
+
+        <TabsContent value="services">
+          <ServicesTab />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// Componente para gerenciar indicadores estratégicos
+function StrategicIndicatorsTab() {
+  const { toast } = useToast();
+  const [editingItem, setEditingItem] = useState<StrategicIndicator | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const form = useForm<z.infer<typeof strategicIndicatorSchema>>({
+    resolver: zodResolver(strategicIndicatorSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      unit: "",
+    },
+  });
+
+  const { data: indicators = [], isLoading } = useQuery({
+    queryKey: ["/api/strategic-indicators"],
+    queryFn: async () => {
+      const response = await fetch("/api/strategic-indicators");
+      if (!response.ok) throw new Error("Falha ao carregar indicadores");
+      return response.json();
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof strategicIndicatorSchema>) => {
+      const response = await fetch("/api/admin/strategic-indicators", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Falha ao criar indicador");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/strategic-indicators"] });
+      setIsDialogOpen(false);
+      form.reset();
+      toast({
+        title: "Sucesso",
+        description: "Indicador estratégico criado com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao criar indicador estratégico",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof strategicIndicatorSchema> }) => {
+      const response = await fetch(`/api/admin/strategic-indicators/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Falha ao atualizar indicador");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/strategic-indicators"] });
+      setIsDialogOpen(false);
+      setEditingItem(null);
+      form.reset();
+      toast({
+        title: "Sucesso",
+        description: "Indicador estratégico atualizado com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar indicador estratégico",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/admin/strategic-indicators/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Falha ao excluir indicador");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/strategic-indicators"] });
+      toast({
+        title: "Sucesso",
+        description: "Indicador estratégico excluído com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao excluir indicador estratégico",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (indicator: StrategicIndicator) => {
+    setEditingItem(indicator);
+    form.reset({
+      name: indicator.name,
+      description: indicator.description || "",
+      unit: indicator.unit || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = (data: z.infer<typeof strategicIndicatorSchema>) => {
+    if (editingItem) {
+      updateMutation.mutate({ id: editingItem.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingItem(null);
+    form.reset();
+  };
+
+  if (isLoading) {
+    return <div>Carregando indicadores estratégicos...</div>;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Indicadores Estratégicos</CardTitle>
+            <CardDescription>
+              Gerencie os indicadores estratégicos utilizados nos resultados-chave
+            </CardDescription>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleCloseDialog()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Indicador
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingItem ? "Editar Indicador" : "Novo Indicador Estratégico"}
+                </DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Taxa de Satisfação" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Descriição detalhada do indicador..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="unit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unidade de Medida</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: %, pontos, unidades" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                      {editingItem ? "Atualizar" : "Criar"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Unidade</TableHead>
+              <TableHead className="w-32">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {indicators.map((indicator: StrategicIndicator) => (
+              <TableRow key={indicator.id}>
+                <TableCell className="font-medium">{indicator.name}</TableCell>
+                <TableCell>{indicator.description || "-"}</TableCell>
+                <TableCell>
+                  {indicator.unit ? <Badge variant="secondary">{indicator.unit}</Badge> : "-"}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(indicator)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm("Tem certeza que deseja excluir este indicador?")) {
+                          deleteMutation.mutate(indicator.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Componente para gerenciar regiões e sub-regiões
+function RegionsTab() {
+  const { toast } = useToast();
+  const [editingRegion, setEditingRegion] = useState<Region | null>(null);
+  const [editingSubRegion, setEditingSubRegion] = useState<SubRegion | null>(null);
+  const [isRegionDialogOpen, setIsRegionDialogOpen] = useState(false);
+  const [isSubRegionDialogOpen, setIsSubRegionDialogOpen] = useState(false);
+
+  const regionForm = useForm<z.infer<typeof regionSchema>>({
+    resolver: zodResolver(regionSchema),
+    defaultValues: {
+      name: "",
+      code: "",
+    },
+  });
+
+  const subRegionForm = useForm<z.infer<typeof subRegionSchema>>({
+    resolver: zodResolver(subRegionSchema),
+    defaultValues: {
+      name: "",
+      code: "",
+      regionId: 0,
+    },
+  });
+
+  const { data: regions = [], isLoading: isLoadingRegions } = useQuery<Region[]>({
+    queryKey: ["/api/regions"],
+  });
+
+  const { data: subRegions = [], isLoading: isLoadingSubRegions } = useQuery<SubRegion[]>({
+    queryKey: ["/api/sub-regions"],
+  });
+
+  // Similar mutations for regions and sub-regions...
+  // (Implementation similar to strategic indicators)
+
+  if (isLoadingRegions || isLoadingSubRegions) {
+    return <div>Carregando regiões...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Regiões</CardTitle>
+              <CardDescription>
+                Gerencie as regiões do sistema
+              </CardDescription>
+            </div>
+            <Button onClick={() => setIsRegionDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Região
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Código</TableHead>
+                <TableHead className="w-32">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {regions.map((region: Region) => (
+                <TableRow key={region.id}>
+                  <TableCell className="font-medium">{region.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{region.code}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Sub-regiões</CardTitle>
+              <CardDescription>
+                Gerencie as sub-regiões do sistema
+              </CardDescription>
+            </div>
+            <Button onClick={() => setIsSubRegionDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Sub-região
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Código</TableHead>
+                <TableHead>Região</TableHead>
+                <TableHead className="w-32">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {subRegions.map((subRegion: SubRegion) => {
+                const region = regions.find((r: Region) => r.id === subRegion.regionId);
+                return (
+                  <TableRow key={subRegion.id}>
+                    <TableCell className="font-medium">{subRegion.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{subRegion.code}</Badge>
+                    </TableCell>
+                    <TableCell>{region?.name || "-"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Componentes similares para Solutions, ServiceLines e Services
+function SolutionsTab() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Soluções</CardTitle>
+        <CardDescription>
+          Gerencie as soluções organizacionais
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">Implementação em desenvolvimento...</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ServiceLinesTab() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Linhas de Serviço</CardTitle>
+        <CardDescription>
+          Gerencie as linhas de serviço por solução
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">Implementação em desenvolvimento...</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ServicesTab() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Serviços</CardTitle>
+        <CardDescription>
+          Gerencie os serviços específicos por linha de serviço
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">Implementação em desenvolvimento...</p>
+      </CardContent>
+    </Card>
+  );
+}

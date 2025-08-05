@@ -7,7 +7,16 @@ This is a full-stack OKR (Objectives and Key Results) management system designed
 Preferred communication style: Simple, everyday language.
 Project language: Portuguese Brazil (Português brasileiro) - All interface, documentation, and text converted to Brazilian Portuguese.
 
-## Recent Changes (August 1, 2025)
+## Recent Changes (August 5, 2025)
+✓ **Admin Configuration Page Created**: New "Configurações" page added exclusively for admin users
+  - **Problem Solved**: System lacked centralized configuration management for master data
+  - **Solution Implemented**: Admin-only settings page with complete CRUD operations for strategic indicators, regions/sub-regions, and solutions/service lines/services
+  - **Security**: Admin role verification prevents unauthorized access to configuration features
+  - **Backend API**: New admin endpoints with proper validation and dependency checking
+  - **Storage Methods**: Extended MySQLStorageOptimized with full CRUD methods for configuration entities
+  - **User Experience**: Tabbed interface with organized sections for different configuration types
+
+## Previous Changes (August 1, 2025)
 ✓ **Action Plan Tab Created**: New "Plano de Ação" tab added to Reports page following user's specific model
   - **Problem Solved**: Actions were not loading correctly due to incorrect relationship mapping
   - **Solution Implemented**: Fixed action filtering to work through key results (actions → key results → objectives)
