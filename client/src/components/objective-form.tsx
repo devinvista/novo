@@ -39,7 +39,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
       description: objective?.description || "",
       ownerId: objective?.ownerId || user?.id,
       regionId: objective?.regionId || undefined,
-      subRegionId: objective?.subRegionId || undefined,
+      subRegionIds: objective?.subRegionIds || (objective?.subRegionId ? [objective.subRegionId] : []),
       startDate: objective?.startDate ? new Date(objective.startDate).toISOString().split('T')[0] : "",
       endDate: objective?.endDate ? new Date(objective.endDate).toISOString().split('T')[0] : "",
     },
@@ -180,8 +180,8 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                   onValueChange={(value) => {
                     const regionId = value === "none" ? undefined : parseInt(value);
                     field.onChange(regionId);
-                    // Clear sub-region when region changes
-                    form.setValue("subRegionId", undefined);
+                    // Clear sub-regions when region changes
+                    form.setValue("subRegionIds", []);
                   }}
                   value={field.value?.toString() || ""}
                 >
@@ -207,28 +207,33 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
           {selectedRegionId && filteredSubRegions && filteredSubRegions.length > 0 && (
             <FormField
               control={form.control}
-              name="subRegionId"
+              name="subRegionIds"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sub-Região (Opcional)</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
-                    value={field.value?.toString() || ""}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma sub-região" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhuma sub-região</SelectItem>
-                      {filteredSubRegions.map((subRegion: any) => (
-                        <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
+                  <FormLabel>Sub-Regiões (Opcional - Múltipla Escolha)</FormLabel>
+                  <div className="grid grid-cols-2 gap-2 p-4 border rounded-lg">
+                    {filteredSubRegions.map((subRegion: any) => (
+                      <div key={subRegion.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`subregion-${subRegion.id}`}
+                          checked={field.value.includes(subRegion.id)}
+                          onChange={(e) => {
+                            const currentValues = field.value || [];
+                            if (e.target.checked) {
+                              field.onChange([...currentValues, subRegion.id]);
+                            } else {
+                              field.onChange(currentValues.filter((id: number) => id !== subRegion.id));
+                            }
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                        <label htmlFor={`subregion-${subRegion.id}`} className="text-sm font-medium">
                           {subRegion.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

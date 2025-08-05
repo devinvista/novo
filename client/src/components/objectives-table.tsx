@@ -200,7 +200,19 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
                         </TableCell>
                         
                         <TableCell className="text-foreground">
-                          {objective.subRegionName || objective.regionName || objective.region?.name || objective.subRegion?.name || "Não informado"}
+                          {(() => {
+                            // Priorizar sub-regiões múltiplas, depois sub-região única, depois região
+                            if (objective.subRegionIds && Array.isArray(objective.subRegionIds) && objective.subRegionIds.length > 0) {
+                              // Buscar nomes das sub-regiões múltiplas (implementar quando tiver dados)
+                              return `${objective.regionName} (${objective.subRegionIds.length} sub-regiões)`;
+                            } else if (objective.subRegionName) {
+                              return objective.subRegionName;
+                            } else if (objective.regionName) {
+                              return objective.regionName;
+                            } else {
+                              return "Não informado";
+                            }
+                          })()}
                         </TableCell>
                         
                         <TableCell>

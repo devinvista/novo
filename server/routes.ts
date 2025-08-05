@@ -322,6 +322,12 @@ export function registerRoutes(app: Express): Server {
       const validation = insertObjectiveSchema.partial().parse(req.body);
       console.log(`✅ Dados validados:`, JSON.stringify(validation, null, 2));
       
+      // Verificar se subRegionIds foi enviado e migrar para sub_region_ids
+      if (validation.subRegionIds && Array.isArray(validation.subRegionIds) && validation.subRegionIds.length > 0) {
+        console.log(`🔄 Migrando subRegionIds para sub_region_ids:`, validation.subRegionIds);
+        validation.subRegionIds = validation.subRegionIds;
+      }
+      
       const existingObjective = await storage.getObjective(id, req.user.id);
       if (!existingObjective) {
         return res.status(404).json({ message: "Objetivo não encontrado ou sem acesso" });

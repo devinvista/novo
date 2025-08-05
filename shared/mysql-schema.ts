@@ -34,7 +34,7 @@ export const objectives = mysqlTable("objectives", {
   description: text("description"),
   ownerId: int("owner_id").notNull().references(() => users.id),
   regionId: int("region_id").references(() => regions.id),
-  subRegionId: int("sub_region_id").references(() => subRegions.id),
+  subRegionIds: json("sub_region_ids").default("[]"),
   startDate: varchar("start_date", { length: 10 }).notNull(),
   endDate: varchar("end_date", { length: 10 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("active"),
