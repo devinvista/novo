@@ -1,2 +1,2 @@
-// MySQL schema for production - using final optimized MySQL schema
-export * from './mysql-schema-final';
+// MySQL schema for production - using unified MySQL schema
+export * from './mysql-schema';

@@ -1,5 +1,5 @@
 import { mysqlTable, varchar, text, int, timestamp, decimal, json, boolean } from "drizzle-orm/mysql-core";
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -25,52 +25,6 @@ export const users = mysqlTable("users", {
   // Duplicate fields for compatibility
   approvedAttimestamp: timestamp("approvedAt"),
   approvedByInt: int("approvedBy"),
-});
-
-// Regions table (10 specific regions)
-export const regions = mysqlTable("regions", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull(),
-  code: varchar("code", { length: 50 }).notNull().unique(),
-});
-
-// Sub-regions table (21 specific sub-regions)
-export const subRegions = mysqlTable("sub_regions", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull(),
-  code: varchar("code", { length: 50 }).notNull().unique(),
-  regionId: int("region_id").notNull().references(() => regions.id),
-});
-
-// Solutions (Educação, Saúde)
-export const solutions = mysqlTable("solutions", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull().unique(),
-  description: text("description"),
-});
-
-// Service Lines under solutions
-export const serviceLines = mysqlTable("service_lines", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  solutionId: int("solution_id").notNull().references(() => solutions.id),
-});
-
-// Services under service lines
-export const services = mysqlTable("services", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  serviceLineId: int("service_line_id").notNull().references(() => serviceLines.id),
-});
-
-// Strategic Indicators (7 indicators)
-export const strategicIndicators = mysqlTable("strategic_indicators", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull().unique(),
-  description: text("description"),
-  unit: varchar("unit", { length: 50 }),
 });
 
 // Objectives table (snake_case fields)
@@ -156,103 +110,75 @@ export const actionComments = mysqlTable("action_comments", {
   createdAt: timestamp("createdAt").default(sql`CURRENT_TIMESTAMP`),
 });
 
-// Activity log for audit trail
-export const activities = mysqlTable("activities", {
-  id: int("id").primaryKey({ autoIncrement: true }),
-  userId: int("user_id").notNull().references(() => users.id),
-  entityType: varchar("entity_type", { length: 50 }).notNull(), // objective, key_result, action, checkpoint
-  entityId: int("entity_id").notNull(),
-  action: varchar("action", { length: 50 }).notNull(), // created, updated, deleted, completed
-  description: text("description").notNull(),
-  oldValues: json("old_values"), // JSON string
-  newValues: json("new_values"), // JSON string
-  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+// Reference Data Tables
+export const regions = mysqlTable("regions", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
 });
 
-// Relations
-export const usersRelations = relations(users, ({ one, many }) => ({
-  region: one(regions, { fields: [users.regionId], references: [regions.id] }),
-  subRegion: one(subRegions, { fields: [users.subRegionId], references: [subRegions.id] }),
-  objectives: many(objectives),
-  activities: many(activities),
-  actions: many(actions),
-}));
+export const subRegions = mysqlTable("sub_regions", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  regionId: int("region_id").notNull().references(() => regions.id),
+});
 
-export const regionsRelations = relations(regions, ({ many }) => ({
-  subRegions: many(subRegions),
-  users: many(users),
-  objectives: many(objectives),
-}));
+export const solutions = mysqlTable("solutions", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+});
 
-export const subRegionsRelations = relations(subRegions, ({ one, many }) => ({
-  region: one(regions, { fields: [subRegions.regionId], references: [regions.id] }),
-  users: many(users),
-  objectives: many(objectives),
-}));
+export const serviceLines = mysqlTable("service_lines", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  solutionId: int("solution_id").notNull().references(() => solutions.id),
+});
 
-export const solutionsRelations = relations(solutions, ({ many }) => ({
-  serviceLines: many(serviceLines),
-}));
+export const services = mysqlTable("services", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  serviceLineId: int("service_line_id").notNull().references(() => serviceLines.id),
+});
 
-export const serviceLinesRelations = relations(serviceLines, ({ one, many }) => ({
-  solution: one(solutions, { fields: [serviceLines.solutionId], references: [solutions.id] }),
-  services: many(services),
-  keyResults: many(keyResults),
-}));
+export const strategicIndicators = mysqlTable("strategic_indicators", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+});
 
-export const servicesRelations = relations(services, ({ one, many }) => ({
-  serviceLine: one(serviceLines, { fields: [services.serviceLineId], references: [serviceLines.id] }),
-  keyResults: many(keyResults),
-}));
+export const activities = mysqlTable("activities", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("userId").references(() => users.id),
+  action: varchar("action", { length: 255 }).notNull(),
+  entityType: varchar("entityType", { length: 50 }).notNull(),
+  entityId: int("entityId").notNull(),
+  details: text("details"),
+  createdAt: timestamp("createdAt").default(sql`CURRENT_TIMESTAMP`),
+});
 
-export const strategicIndicatorsRelations = relations(strategicIndicators, ({ many }) => ({
-  actions: many(actions),
-}));
+export const sessions = mysqlTable("sessions", {
+  sessionId: varchar("session_id", { length: 128 }).primaryKey(),
+  userId: int("user_id").references(() => users.id),
+  expires: timestamp("expires").notNull(),
+  data: text("data"),
+});
 
-export const objectivesRelations = relations(objectives, ({ one, many }) => ({
-  owner: one(users, { fields: [objectives.ownerId], references: [users.id] }),
-  region: one(regions, { fields: [objectives.regionId], references: [regions.id] }),
-  subRegion: one(subRegions, { fields: [objectives.subRegionId], references: [subRegions.id] }),
-  keyResults: many(keyResults),
-}));
+export const quarterlyPeriods = mysqlTable("quarterly_periods", {
+  id: int("id").primaryKey().autoincrement(),
+  period: varchar("period", { length: 10 }).notNull().unique(),
+  year: int("year").notNull(),
+  quarter: int("quarter").notNull(),
+  startDate: varchar("startDate", { length: 10 }).notNull(),
+  endDate: varchar("endDate", { length: 10 }).notNull(),
+});
 
-export const keyResultsRelations = relations(keyResults, ({ one, many }) => ({
-  objective: one(objectives, { fields: [keyResults.objectiveId], references: [objectives.id] }),
-  serviceLine: one(serviceLines, { fields: [keyResults.serviceLineId], references: [serviceLines.id] }),
-  service: one(services, { fields: [keyResults.serviceId], references: [services.id] }),
-  actions: many(actions),
-  checkpoints: many(checkpoints),
-}));
-
-export const actionsRelations = relations(actions, ({ one, many }) => ({
-  keyResult: one(keyResults, { fields: [actions.keyResultId], references: [keyResults.id] }),
-  strategicIndicator: one(strategicIndicators, { fields: [actions.strategicIndicatorId], references: [strategicIndicators.id] }),
-  responsible: one(users, { fields: [actions.responsibleId], references: [users.id] }),
-  actionComments: many(actionComments),
-}));
-
-export const checkpointsRelations = relations(checkpoints, ({ one }) => ({
-  keyResult: one(keyResults, { fields: [checkpoints.keyResultId], references: [keyResults.id] }),
-}));
-
-export const activitiesRelations = relations(activities, ({ one }) => ({
-  user: one(users, { fields: [activities.userId], references: [users.id] }),
-}));
-
-export const actionCommentsRelations = relations(actionComments, ({ one }) => ({
-  action: one(actions, { fields: [actionComments.actionId], references: [actions.id] }),
-  user: one(users, { fields: [actionComments.userId], references: [users.id] }),
-}));
-
-// Type definitions
+// Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
-export type Region = typeof regions.$inferSelect;
-export type SubRegion = typeof subRegions.$inferSelect;
-export type Solution = typeof solutions.$inferSelect;
-export type ServiceLine = typeof serviceLines.$inferSelect;
-export type Service = typeof services.$inferSelect;
-export type StrategicIndicator = typeof strategicIndicators.$inferSelect;
 export type Objective = typeof objectives.$inferSelect;
 export type InsertObjective = typeof objectives.$inferInsert;
 export type KeyResult = typeof keyResults.$inferSelect;
@@ -261,9 +187,15 @@ export type Action = typeof actions.$inferSelect;
 export type InsertAction = typeof actions.$inferInsert;
 export type Checkpoint = typeof checkpoints.$inferSelect;
 export type InsertCheckpoint = typeof checkpoints.$inferInsert;
-export type Activity = typeof activities.$inferSelect;
 export type ActionComment = typeof actionComments.$inferSelect;
 export type InsertActionComment = typeof actionComments.$inferInsert;
+export type Region = typeof regions.$inferSelect;
+export type SubRegion = typeof subRegions.$inferSelect;
+export type Solution = typeof solutions.$inferSelect;
+export type ServiceLine = typeof serviceLines.$inferSelect;
+export type Service = typeof services.$inferSelect;
+export type StrategicIndicator = typeof strategicIndicators.$inferSelect;
+export type Activity = typeof activities.$inferSelect;
 
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users);
@@ -272,6 +204,55 @@ export const insertKeyResultSchema = createInsertSchema(keyResults);
 export const insertActionSchema = createInsertSchema(actions);
 export const insertCheckpointSchema = createInsertSchema(checkpoints);
 export const insertActionCommentSchema = createInsertSchema(actionComments);
+
+// Form schemas
+export const userFormSchema = insertUserSchema.omit({ 
+  id: true, 
+  createdAt: true, 
+  approvedAt: true, 
+  approvedBy: true,
+  approvedAttimestamp: true,
+  approvedByInt: true
+});
+
+export const objectiveFormSchema = insertObjectiveSchema.omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  progress: true 
+});
+
+export const keyResultFormSchema = insertKeyResultSchema.omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  currentValue: true,
+  progress: true 
+});
+
+export const actionFormSchema = insertActionSchema.omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  number: true 
+});
+
+export const checkpointFormSchema = insertCheckpointSchema.omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export const actionCommentFormSchema = insertActionCommentSchema.omit({ 
+  id: true, 
+  createdAt: true 
+});
+
+// Additional schemas for configuration management
+export const solutionSchema = createInsertSchema(solutions).omit({ id: true });
+export const serviceLineSchema = createInsertSchema(serviceLines).omit({ id: true });
+export const serviceSchema = createInsertSchema(services).omit({ id: true });
+export const strategicIndicatorSchema = createInsertSchema(strategicIndicators).omit({ id: true });
 
 // Export types for use in other modules
 export type InsertUserType = z.infer<typeof insertUserSchema>;
