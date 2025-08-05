@@ -438,8 +438,223 @@ function RegionsTab() {
     queryKey: ["/api/sub-regions"],
   });
 
-  // Similar mutations for regions and sub-regions...
-  // (Implementation similar to strategic indicators)
+  // Mutations para regiões
+  const createRegionMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof regionSchema>) => {
+      const response = await fetch("/api/admin/regions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Falha ao criar região");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/regions"] });
+      setIsRegionDialogOpen(false);
+      regionForm.reset();
+      toast({
+        title: "Sucesso",
+        description: "Região criada com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao criar região",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateRegionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof regionSchema> }) => {
+      const response = await fetch(`/api/admin/regions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Falha ao atualizar região");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/regions"] });
+      setIsRegionDialogOpen(false);
+      setEditingRegion(null);
+      regionForm.reset();
+      toast({
+        title: "Sucesso",
+        description: "Região atualizada com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar região",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteRegionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/admin/regions/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Falha ao excluir região");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/regions"] });
+      toast({
+        title: "Sucesso",
+        description: "Região excluída com sucesso",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao excluir região",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutations para sub-regiões
+  const createSubRegionMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof subRegionSchema>) => {
+      const response = await fetch("/api/admin/sub-regions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Falha ao criar sub-região");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-regions"] });
+      setIsSubRegionDialogOpen(false);
+      subRegionForm.reset();
+      toast({
+        title: "Sucesso",
+        description: "Sub-região criada com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao criar sub-região",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateSubRegionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: z.infer<typeof subRegionSchema> }) => {
+      const response = await fetch(`/api/admin/sub-regions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Falha ao atualizar sub-região");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-regions"] });
+      setIsSubRegionDialogOpen(false);
+      setEditingSubRegion(null);
+      subRegionForm.reset();
+      toast({
+        title: "Sucesso",
+        description: "Sub-região atualizada com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar sub-região",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteSubRegionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/admin/sub-regions/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Falha ao excluir sub-região");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-regions"] });
+      toast({
+        title: "Sucesso",
+        description: "Sub-região excluída com sucesso",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao excluir sub-região",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handlers
+  const handleRegionSubmit = (data: z.infer<typeof regionSchema>) => {
+    if (editingRegion) {
+      updateRegionMutation.mutate({ id: editingRegion.id, data });
+    } else {
+      createRegionMutation.mutate(data);
+    }
+  };
+
+  const handleSubRegionSubmit = (data: z.infer<typeof subRegionSchema>) => {
+    if (editingSubRegion) {
+      updateSubRegionMutation.mutate({ id: editingSubRegion.id, data });
+    } else {
+      createSubRegionMutation.mutate(data);
+    }
+  };
+
+  const handleEditRegion = (region: Region) => {
+    setEditingRegion(region);
+    regionForm.reset({
+      name: region.name,
+      code: region.code,
+    });
+    setIsRegionDialogOpen(true);
+  };
+
+  const handleEditSubRegion = (subRegion: SubRegion) => {
+    setEditingSubRegion(subRegion);
+    subRegionForm.reset({
+      name: subRegion.name,
+      code: subRegion.code,
+      regionId: subRegion.regionId,
+    });
+    setIsSubRegionDialogOpen(true);
+  };
+
+  const handleDeleteRegion = (id: number) => {
+    if (window.confirm("Tem certeza que deseja excluir esta região?")) {
+      deleteRegionMutation.mutate(id);
+    }
+  };
+
+  const handleDeleteSubRegion = (id: number) => {
+    if (window.confirm("Tem certeza que deseja excluir esta sub-região?")) {
+      deleteSubRegionMutation.mutate(id);
+    }
+  };
 
   if (isLoadingRegions || isLoadingSubRegions) {
     return <div>Carregando regiões...</div>;
@@ -480,10 +695,20 @@ function RegionsTab() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEditRegion(region)}
+                        data-testid={`button-edit-region-${region.id}`}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDeleteRegion(region.id)}
+                        data-testid={`button-delete-region-${region.id}`}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -532,10 +757,20 @@ function RegionsTab() {
                     <TableCell>{region?.name || "-"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEditSubRegion(subRegion)}
+                          data-testid={`button-edit-subregion-${subRegion.id}`}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleDeleteSubRegion(subRegion.id)}
+                          data-testid={`button-delete-subregion-${subRegion.id}`}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -547,6 +782,170 @@ function RegionsTab() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Dialog para Região */}
+      <Dialog open={isRegionDialogOpen} onOpenChange={setIsRegionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingRegion ? "Editar Região" : "Nova Região"}
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...regionForm}>
+            <form onSubmit={regionForm.handleSubmit(handleRegionSubmit)} className="space-y-4">
+              <FormField
+                control={regionForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Nome da região" 
+                        {...field} 
+                        data-testid="input-region-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={regionForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Código da região" 
+                        {...field} 
+                        data-testid="input-region-code"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsRegionDialogOpen(false);
+                    setEditingRegion(null);
+                    regionForm.reset();
+                  }}
+                  data-testid="button-cancel-region"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createRegionMutation.isPending || updateRegionMutation.isPending}
+                  data-testid="button-save-region"
+                >
+                  {createRegionMutation.isPending || updateRegionMutation.isPending ? "Salvando..." : "Salvar"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Sub-região */}
+      <Dialog open={isSubRegionDialogOpen} onOpenChange={setIsSubRegionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingSubRegion ? "Editar Sub-região" : "Nova Sub-região"}
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...subRegionForm}>
+            <form onSubmit={subRegionForm.handleSubmit(handleSubRegionSubmit)} className="space-y-4">
+              <FormField
+                control={subRegionForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Nome da sub-região" 
+                        {...field} 
+                        data-testid="input-subregion-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={subRegionForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Código da sub-região" 
+                        {...field} 
+                        data-testid="input-subregion-code"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={subRegionForm.control}
+                name="regionId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Região</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-subregion-region">
+                          <SelectValue placeholder="Selecione uma região" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {regions.map((region: Region) => (
+                          <SelectItem key={region.id} value={region.id.toString()}>
+                            {region.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsSubRegionDialogOpen(false);
+                    setEditingSubRegion(null);
+                    subRegionForm.reset();
+                  }}
+                  data-testid="button-cancel-subregion"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createSubRegionMutation.isPending || updateSubRegionMutation.isPending}
+                  data-testid="button-save-subregion"
+                >
+                  {createSubRegionMutation.isPending || updateSubRegionMutation.isPending ? "Salvando..." : "Salvar"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
