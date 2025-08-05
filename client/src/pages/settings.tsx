@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit, Plus, Settings as SettingsIcon, MapPin, Target, Layers } from "lucide-react";
+import { Trash2, Edit, Plus, Settings as SettingsIcon, MapPin, Target, Layers, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -99,7 +99,7 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="indicators" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
             Indicadores
@@ -119,6 +119,10 @@ export default function Settings() {
           <TabsTrigger value="services" className="flex items-center gap-2">
             <Layers className="h-4 w-4" />
             Serviços
+          </TabsTrigger>
+          <TabsTrigger value="import" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Importar Dados
           </TabsTrigger>
         </TabsList>
 
@@ -140,6 +144,10 @@ export default function Settings() {
 
         <TabsContent value="services">
           <ServicesTab />
+        </TabsContent>
+
+        <TabsContent value="import">
+          <ImportDataTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -1923,6 +1931,233 @@ function ServicesTab() {
           </Form>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+// Componente para importação de dados
+function ImportDataTab() {
+  const { toast } = useToast();
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const downloadTemplateMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/admin/export-template", {
+        method: "GET",
+      });
+      if (!response.ok) {
+        throw new Error("Falha ao gerar modelo");
+      }
+      return response.blob();
+    },
+    onSuccess: (blob) => {
+      // Criar download do arquivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "modelo_okr_import.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Sucesso",
+        description: "Modelo Excel baixado com sucesso",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao baixar modelo Excel",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const importDataMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await fetch("/api/admin/import-data", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Falha ao importar dados");
+      }
+      
+      return response.json();
+    },
+    onSuccess: (result) => {
+      // Invalidar todas as queries para atualizar os dados
+      queryClient.invalidateQueries({ queryKey: ["/api/strategic-indicators"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/regions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-regions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/solutions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-lines"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      
+      setImportFile(null);
+      setIsImporting(false);
+      
+      toast({
+        title: "Sucesso",
+        description: `Dados importados com sucesso. ${result.imported || 0} registros processados.`,
+      });
+    },
+    onError: (error: any) => {
+      setIsImporting(false);
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao importar dados",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Verificar se é um arquivo Excel
+      const validTypes = [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel"
+      ];
+      
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Erro",
+          description: "Por favor, selecione um arquivo Excel (.xlsx ou .xls)",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setImportFile(file);
+    }
+  };
+
+  const handleImport = () => {
+    if (!importFile) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione um arquivo para importar",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsImporting(true);
+    importDataMutation.mutate(importFile);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Download do Modelo */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5" />
+            <CardTitle>Baixar Modelo Excel</CardTitle>
+          </div>
+          <CardDescription>
+            Faça o download do modelo Excel com todas as planilhas e estruturas necessárias
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="text-sm text-muted-foreground">
+              <p>O modelo contém as seguintes planilhas:</p>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li><strong>Indicadores:</strong> Indicadores estratégicos com nome, código, descrição e unidade</li>
+                <li><strong>Regiões:</strong> Regiões e sub-regiões com códigos</li>
+                <li><strong>Soluções:</strong> Soluções organizacionais com códigos</li>
+                <li><strong>Linhas de Serviço:</strong> Linhas de serviço vinculadas às soluções</li>
+                <li><strong>Serviços:</strong> Serviços específicos vinculados às linhas de serviço</li>
+              </ul>
+            </div>
+            <Button 
+              onClick={() => downloadTemplateMutation.mutate()}
+              disabled={downloadTemplateMutation.isPending}
+              className="w-fit"
+              data-testid="button-download-template"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {downloadTemplateMutation.isPending ? "Gerando..." : "Baixar Modelo Excel"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Importação de Dados */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            <CardTitle>Importar Dados</CardTitle>
+          </div>
+          <CardDescription>
+            Selecione o arquivo Excel preenchido para importar os dados para o sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="import-file">Arquivo Excel</Label>
+              <Input
+                id="import-file"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                disabled={isImporting}
+                data-testid="input-import-file"
+              />
+              {importFile && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Arquivo selecionado: {importFile.name}
+                </p>
+              )}
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <h4 className="font-semibold text-amber-800 mb-2">Instruções importantes:</h4>
+              <ul className="text-sm text-amber-700 space-y-1">
+                <li>• Use apenas o modelo Excel baixado acima</li>
+                <li>• Não altere os cabeçalhos das colunas</li>
+                <li>• Códigos devem ser únicos em cada categoria</li>
+                <li>• Mantenha as relações entre as entidades (ex: linha de serviço deve estar vinculada a uma solução existente)</li>
+                <li>• A importação irá adicionar novos registros, não substituir os existentes</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleImport}
+                disabled={!importFile || isImporting || importDataMutation.isPending}
+                data-testid="button-import-data"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {isImporting || importDataMutation.isPending ? "Importando..." : "Importar Dados"}
+              </Button>
+              
+              {importFile && (
+                <Button 
+                  variant="outline"
+                  onClick={() => setImportFile(null)}
+                  disabled={isImporting}
+                  data-testid="button-clear-file"
+                >
+                  Limpar Arquivo
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
