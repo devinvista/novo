@@ -16,6 +16,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Edit, Trash2, Shield, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import Sidebar from "@/components/sidebar";
+import CompactHeader from "@/components/compact-header";
 
 interface User {
   id: number;
@@ -438,15 +440,22 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            Gerencie usuários e seus níveis de acesso no sistema
-          </p>
+    <div className="flex h-screen overflow-hidden bg-background">
+      <Sidebar />
+      
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <CompactHeader showFilters={false} />
+        
+        <div className="p-6 border-b bg-white" style={{ marginTop: '60px' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Gerenciamento de Usuários</h2>
+              <p className="text-gray-600">Gerencie usuários e seus níveis de acesso no sistema</p>
+            </div>
+          </div>
         </div>
-      </div>
+        
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6">
 
       {/* Pending Users Section */}
       {pendingUsers.length > 0 && (
@@ -1475,6 +1484,122 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* User Create/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingUser ? "Editar Usuário" : "Criar Novo Usuário"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingUser ? "Atualize as informações do usuário" : "Preencha as informações do novo usuário"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(editingUser ? handleUpdateUser : handleCreateUser)} className="space-y-4">
+              {/* Basic User Information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Usuário</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled={!!editingUser} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Completo</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{editingUser ? "Nova Senha (opcional)" : "Senha"}</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Função</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma função" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {canCreateRole("admin") && <SelectItem value="admin">Administrador</SelectItem>}
+                          {canCreateRole("gestor") && <SelectItem value="gestor">Gestor</SelectItem>}
+                          {canCreateRole("operacional") && <SelectItem value="operacional">Operacional</SelectItem>}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={createUserMutation.isPending || updateUserMutation.isPending}>
+                  {(createUserMutation.isPending || updateUserMutation.isPending) ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                  ) : (
+                    <UserPlus className="mr-2 h-4 w-4" />
+                  )}
+                  {editingUser ? "Atualizar" : "Criar"} Usuário
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+        </div>
+      </main>
     </div>
   );
 }

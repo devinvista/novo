@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Sidebar from "@/components/sidebar";
-import Header from "@/components/header";
+import CompactHeader from "@/components/compact-header";
 import IndicatorsDashboard from "@/components/indicators-dashboard";
 import Filters from "@/components/filters";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
@@ -18,10 +18,16 @@ export default function Indicators() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          title="Indicadores Estratégicos" 
-          description="Acompanhe os indicadores estratégicos da organização"
-        />
+        <CompactHeader showFilters={false} />
+        
+        <div className="p-6 border-b bg-white" style={{ marginTop: '60px' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Indicadores Estratégicos</h2>
+              <p className="text-gray-600">Acompanhe os indicadores estratégicos da organização</p>
+            </div>
+          </div>
+        </div>
         
         <Filters filters={filters} onFiltersChange={setFilters} />
         

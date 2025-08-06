@@ -14,6 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Plus, Settings as SettingsIcon, MapPin, Target, Layers, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Sidebar from "@/components/sidebar";
+import CompactHeader from "@/components/compact-header";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,30 +75,47 @@ export default function Settings() {
   // Verificar se o usuário é admin
   if (user?.role !== "admin") {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-96">
-          <CardHeader>
-            <CardTitle className="text-center">Acesso Negado</CardTitle>
-            <CardDescription className="text-center">
-              Apenas administradores podem acessar as configurações do sistema.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="flex h-screen overflow-hidden bg-background">
+        <Sidebar />
+        
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <CompactHeader showFilters={false} />
+          
+          <div className="flex-1 flex items-center justify-center" style={{ marginTop: '60px' }}>
+            <Card className="w-96">
+              <CardHeader>
+                <CardTitle className="text-center">Acesso Negado</CardTitle>
+                <CardDescription className="text-center">
+                  Apenas administradores podem acessar as configurações do sistema.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center gap-4 mb-6">
-        <SettingsIcon className="h-8 w-8" />
-        <div>
-          <h1 className="text-3xl font-bold">Configurações do Sistema</h1>
-          <p className="text-muted-foreground">
-            Gerencie indicadores estratégicos, regiões e estrutura organizacional
-          </p>
+    <div className="flex h-screen overflow-hidden bg-background">
+      <Sidebar />
+      
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <CompactHeader showFilters={false} />
+        
+        <div className="p-6 border-b bg-white" style={{ marginTop: '60px' }}>
+          <div className="flex items-center gap-4">
+            <SettingsIcon className="h-8 w-8" />
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Configurações do Sistema</h2>
+              <p className="text-gray-600">
+                Gerencie indicadores estratégicos, regiões e estrutura organizacional
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+        
+        <div className="flex-1 overflow-y-auto p-6">
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">
@@ -150,6 +169,8 @@ export default function Settings() {
           <ImportDataTab />
         </TabsContent>
       </Tabs>
+        </div>
+      </main>
     </div>
   );
 }
