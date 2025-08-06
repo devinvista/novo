@@ -1,13 +1,23 @@
 # replit.md
 
-## Overview
-This is a full-stack OKR (Objectives and Key Results) management system designed to track organizational objectives, key results, actions, and checkpoints across various regions and service lines. Built with React, Express.js, and MySQL, it offers role-based access control, real-time progress tracking, and extensive reporting. The system's vision is to provide a comprehensive and intuitive platform for strategic management, enhancing organizational alignment and performance.
+## Visão Geral
+Este é um sistema completo de gerenciamento de OKRs (Objetivos e Resultados-Chave) projetado para acompanhar objetivos organizacionais, resultados-chave, ações e marcos através de várias regiões e linhas de serviço. Construído com React, Express.js e MySQL, oferece controle de acesso baseado em funções, rastreamento de progresso em tempo real e relatórios extensivos. A visão do sistema é fornecer uma plataforma abrangente e intuitiva para gestão estratégica, melhorando o alinhamento e desempenho organizacional.
 
-## User Preferences
-Preferred communication style: Simple, everyday language.
-Project language: Portuguese Brazil (Português brasileiro) - All interface, documentation, and text converted to Brazilian Portuguese.
+## Preferências do Usuário
+Estilo de comunicação preferido: Linguagem simples e cotidiana.
+Idioma do projeto: Português brasileiro - Toda interface, documentação e textos convertidos para português brasileiro.
 
-## Recent Changes (August 5, 2025)
+## Mudanças Recentes (6 de agosto de 2025)
+✓ **Migração Completa para Replit**: Migração bem-sucedida do sistema OKR do Replit Agent para o ambiente padrão do Replit
+  - **Problema Resolvido**: Dependência `tsx` estava faltando, causando falha na inicialização do servidor
+  - **Solução Implementada**: Instalação das dependências necessárias (`tsx`, `@types/multer`)
+  - **Servidor Funcionando**: Aplicação rodando corretamente na porta 5000
+  - **Monitoramento MySQL**: Sistema de monitoramento de desempenho MySQL ativo e funcional
+  - **Configuração de Workflow**: Workflow "Start application" funcionando corretamente
+  - **Revisão de Dependências**: Análise completa das dependências utilizadas e necessárias
+  - **Documentação Atualizada**: Toda documentação convertida para português brasileiro
+
+## Mudanças Anteriores (5 de agosto de 2025)
 ✓ **Schema Consolidation Completed**: Successfully consolidated database schema files into single source of truth
   - **Problem Solved**: Had duplicate schema files (mysql-schema.ts and mysql-schema-final.ts) causing confusion and potential inconsistencies
   - **Solution Implemented**: Merged all definitions from mysql-schema-final.ts into mysql-schema.ts as primary schema
@@ -84,64 +94,123 @@ Project language: Portuguese Brazil (Português brasileiro) - All interface, doc
   - Clean, professional design with hover tooltips for checkpoint details
 ✓ **Development Environment**: Verified all packages installed, workflows running, and database connectivity working properly
 
-## System Architecture
+## Arquitetura do Sistema
 
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Build Tool**: Vite
-- **UI Framework**: Shadcn/ui (built on Radix UI)
-- **Styling**: Tailwind CSS with custom design tokens
-- **State Management**: TanStack Query (React Query) for server state
-- **Routing**: Wouter
-- **Form Handling**: React Hook Form with Zod validation
-- **UI/UX Decisions**:
-    - **Color Scheme**: Utilizes a palette based on FIERGS institutional colors (Azul FIERGS, Verde SESI, Verde IEL, Laranja SENAI, Azul CIERGS) for thematic organization and visual identity.
-    - **Component Design**: Responsive sidebar navigation, dashboard with KPI cards, data tables with sorting/filtering/search, modal forms for CRUD operations, progress charts, and activity feeds.
-    - **Language**: All UI elements are in Portuguese Brazil, including messages, placeholders, and labels.
-    - **Numeric Formatting**: Uses Brazilian decimal formatting (comma as decimal separator) with client-side and server-side converters.
+### Arquitetura Frontend
+- **Framework**: React 18 com TypeScript
+- **Ferramenta de Build**: Vite
+- **Framework de UI**: Shadcn/ui (baseado em Radix UI)
+- **Estilização**: Tailwind CSS com tokens de design customizados
+- **Gerenciamento de Estado**: TanStack Query (React Query) para estado do servidor
+- **Roteamento**: Wouter
+- **Manipulação de Formulários**: React Hook Form com validação Zod
+- **Decisões de UI/UX**:
+    - **Esquema de Cores**: Utiliza uma paleta baseada nas cores institucionais da FIERGS (Azul FIERGS, Verde SESI, Verde IEL, Laranja SENAI, Azul CIERGS) para organização temática e identidade visual.
+    - **Design de Componentes**: Navegação lateral responsiva, dashboard com cartões KPI, tabelas de dados com ordenação/filtro/busca, formulários modais para operações CRUD, gráficos de progresso e feeds de atividade.
+    - **Idioma**: Todos os elementos da UI estão em português brasileiro, incluindo mensagens, placeholders e rótulos.
+    - **Formatação Numérica**: Usa formatação decimal brasileira (vírgula como separador decimal) com conversores do lado cliente e servidor.
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js
-- **Language**: TypeScript with ES modules
-- **Authentication**: Passport.js with local strategy and session-based authentication (session stored in MySQL). Node.js crypto module for password hashing (scrypt).
-- **Core Functionality**:
-    - **Authentication System**: Session-based with secure password hashing, role-based access control (admin, gestor, operacional), protected routes.
-    - **OKR Management**: Objectives, Key Results (with strategic indicators), Actions (with priority and status), and Checkpoints (progress updates).
-    - **Organizational Structure**: Supports Solutions, Service Lines, Services, Regions (10 predefined), and Sub-regions (21 specific).
-    - **Data Flow**: Authenticated API requests, Express middleware for handling, Drizzle ORM for type-safe database queries, and React Query for caching.
-    - **Role-Based Access Control**: Granular permissions based on user roles (admin, gestor, operacional) and regional/hierarchical assignments.
-    - **Quarterly Period Management**: Automatic date-based filtering and reporting across quarters.
-    - **Date Validation**: Comprehensive validation ensuring Key Results dates are within Objective ranges and Action due dates are before Key Result end dates.
-    - **User Management**: Hierarchical user approval, automatic inheritance of permissions from gestor to operacional users, and secure user deletion with cascade functionality.
+### Arquitetura Backend
+- **Runtime**: Node.js com Express.js
+- **Linguagem**: TypeScript com módulos ES
+- **Autenticação**: Passport.js com estratégia local e autenticação baseada em sessão (sessão armazenada no MySQL). Módulo crypto do Node.js para hash de senha (scrypt).
+- **Funcionalidades Principais**:
+    - **Sistema de Autenticação**: Baseado em sessão com hash seguro de senha, controle de acesso baseado em funções (admin, gestor, operacional), rotas protegidas.
+    - **Gerenciamento OKR**: Objetivos, Resultados-Chave (com indicadores estratégicos), Ações (com prioridade e status) e Marcos (atualizações de progresso).
+    - **Estrutura Organizacional**: Suporta Soluções, Linhas de Serviço, Serviços, Regiões (10 predefinidas) e Sub-regiões (21 específicas).
+    - **Fluxo de Dados**: Requisições API autenticadas, middleware Express para manipulação, Drizzle ORM para consultas de banco de dados type-safe e React Query para cache.
+    - **Controle de Acesso Baseado em Funções**: Permissões granulares baseadas em funções de usuário (admin, gestor, operacional) e atribuições regionais/hierárquicas.
+    - **Gerenciamento de Períodos Trimestrais**: Filtragem automática baseada em data e relatórios através dos trimestres.
+    - **Validação de Data**: Validação abrangente garantindo que datas de Resultados-Chave estejam dentro dos intervalos de Objetivos e datas de vencimento de Ações sejam antes das datas de fim dos Resultados-Chave.
+    - **Gerenciamento de Usuários**: Aprovação hierárquica de usuários, herança automática de permissões de usuários gestor para operacional e exclusão segura de usuários com funcionalidade em cascata.
 
-### Database Architecture
-- **Database**: MySQL (srv1661.hstgr.io:3306)
-- **ORM**: Drizzle ORM with type-safe queries
-- **Schema Management**: MySQL schema with proper relationships and constraints, using snake_case for most fields and camelCase for JSON fields as per database structure.
-- **Connection**: MySQL2 connection pool with secure authentication.
-- **Optimization**: Implemented LRU cache for frequent queries, connection pooling optimizer, and query monitoring.
+### Arquitetura de Banco de Dados
+- **Banco de Dados**: MySQL (srv1661.hstgr.io:3306)
+- **ORM**: Drizzle ORM com consultas type-safe
+- **Gerenciamento de Schema**: Schema MySQL com relacionamentos e restrições adequados, usando snake_case para a maioria dos campos e camelCase para campos JSON conforme estrutura do banco de dados.
+- **Conexão**: Pool de conexão MySQL2 com autenticação segura.
+- **Otimização**: Cache LRU implementado para consultas frequentes, otimizador de pool de conexões e monitoramento de consultas.
 
-## External Dependencies
+## Dependências Externas
 
-### Core Dependencies
-- **drizzle-orm**: Type-safe database ORM
-- **passport**: Authentication middleware
-- **express-session**: Session management
-- **@tanstack/react-query**: Server state management
-- **react-hook-form**: Form handling and validation
-- **zod**: Runtime type validation
-- **mysql2**: MySQL client for Node.js
-- **@neondatabase/serverless**: (Note: While mentioned in `original_replit_md`, the final architecture strictly uses MySQL. This dependency might be vestigial or for previous iterations)
+### Dependências Principais (Produção)
+**Backend/Servidor:**
+- **express**: Framework web para Node.js - servidor HTTP principal
+- **drizzle-orm**: ORM type-safe para banco de dados MySQL
+- **drizzle-zod**: Integração Drizzle com Zod para validação
+- **mysql2**: Cliente MySQL para Node.js - conexão com banco de dados
+- **passport**: Middleware de autenticação com estratégia local
+- **passport-local**: Estratégia de autenticação local para Passport
+- **express-session**: Gerenciamento de sessões HTTP
+- **express-mysql-session**: Armazenamento de sessões no MySQL
+- **memorystore**: Store de memória para sessões (fallback)
+- **zod**: Validação de schema e runtime type checking
+- **zod-validation-error**: Formatação de erros de validação Zod
+- **multer**: Middleware para upload de arquivos
+- **xlsx**: Leitura e escrita de arquivos Excel
+- **lru-cache**: Cache LRU para otimização de performance
+- **ws**: WebSocket para comunicação em tempo real
 
-### UI Dependencies
-- **@radix-ui/***: Accessible UI primitives
-- **tailwindcss**: Utility-first CSS framework
-- **lucide-react**: Icon library
-- **recharts**: Data visualization charts
-- **class-variance-authority**: Component variant management
+**Frontend/Cliente:**
+- **react**: Biblioteca JavaScript para interfaces de usuário
+- **react-dom**: Renderização DOM para React
+- **@tanstack/react-query**: Gerenciamento de estado do servidor
+- **react-hook-form**: Manipulação e validação de formulários
+- **@hookform/resolvers**: Resolvers para React Hook Form (Zod)
+- **wouter**: Roteador minimalista para React
+- **date-fns**: Biblioteca de utilitários para datas
+- **clsx**: Utilitário para classes CSS condicionais
+- **tailwind-merge**: Merge de classes Tailwind CSS
+- **class-variance-authority**: Gerenciamento de variantes de componentes
 
-### Development Dependencies
-- **vite**: Build tool and dev server
-- **typescript**: Type checking
-- **esbuild**: Production bundling
-- **tsx**: TypeScript execution for development
+**UI/Componentes:**
+- **@radix-ui/*****: Conjunto completo de primitivos UI acessíveis (20+ componentes)
+- **lucide-react**: Biblioteca de ícones SVG
+- **react-icons**: Ícones adicionais (logos de empresas)
+- **recharts**: Biblioteca de gráficos e visualização de dados
+- **framer-motion**: Animações e transições
+- **embla-carousel-react**: Componente de carrossel
+- **react-day-picker**: Seletor de datas
+- **input-otp**: Componente de entrada OTP
+- **vaul**: Drawer/modal responsivo
+- **react-resizable-panels**: Painéis redimensionáveis
+- **next-themes**: Gerenciamento de temas claro/escuro
+
+### Dependências de Desenvolvimento
+- **typescript**: Superset JavaScript com tipagem estática
+- **tsx**: Executor TypeScript para desenvolvimento
+- **vite**: Build tool moderno e dev server
+- **esbuild**: Bundler rápido para produção
+- **@vitejs/plugin-react**: Plugin React para Vite
+- **drizzle-kit**: CLI para migrações Drizzle ORM
+- **tailwindcss**: Framework CSS utility-first
+- **autoprefixer**: PostCSS plugin para prefixos CSS
+- **postcss**: Processador CSS
+- **tailwindcss-animate**: Animações pré-construídas para Tailwind
+- **@tailwindcss/typography**: Plugin de tipografia para Tailwind
+- **@tailwindcss/vite**: Plugin Vite para Tailwind CSS
+
+**Tipos TypeScript:**
+- **@types/express**: Tipos para Express.js
+- **@types/express-session**: Tipos para express-session
+- **@types/passport**: Tipos para Passport
+- **@types/passport-local**: Tipos para passport-local
+- **@types/node**: Tipos para Node.js
+- **@types/react**: Tipos para React
+- **@types/react-dom**: Tipos para React DOM
+- **@types/multer**: Tipos para Multer
+- **@types/ws**: Tipos para WebSocket
+
+**Plugins Replit:**
+- **@replit/vite-plugin-cartographer**: Plugin de mapeamento para Replit
+- **@replit/vite-plugin-runtime-error-modal**: Modal de erros em runtime
+
+### Dependências Opcionais
+- **bufferutil**: Otimização de performance para WebSocket
+
+### Dependências Não Utilizadas (Para Remoção)
+Baseado na análise do código, as seguintes dependências podem ser removidas:
+- **better-sqlite3**: Usado apenas em arquivos de migração legacy
+- **postgres**: Não utilizado na implementação atual (MySQL apenas)
+- **tw-animate-css**: Funcionalidade sobreposta com tailwindcss-animate
+- **@jridgewell/trace-mapping**: Dependência transitiva desnecessária
