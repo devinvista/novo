@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
+import darkLogoImage from "@assets/e03da512-3870-4e22-a75b-b15313a7ad9b_1754514316144.png";
 
 interface CompactHeaderProps {
   showFilters?: boolean;
@@ -125,7 +126,7 @@ export default function CompactHeader({ showFilters = true, onFilterChange }: Co
                 </svg>
               </Button>
               <img 
-                src={logoImage} 
+                src={darkLogoImage} 
                 alt="OKRs Logo" 
                 className="h-8 w-auto"
               />

@@ -68,14 +68,12 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">
       {/* Logo/Header */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center space-x-3">
-          <img 
-            src={logoImage} 
-            alt="OKRs Logo" 
-            className="w-32 h-auto"
-          />
-        </div>
+      <div className="p-6 border-b border-sidebar-border flex justify-center">
+        <img 
+          src={logoImage} 
+          alt="OKRs Logo" 
+          className="w-32 h-auto"
+        />
       </div>
 
       {/* Quarterly Filter */}
