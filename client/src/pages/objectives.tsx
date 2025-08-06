@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import ObjectivesTable from "@/components/objectives-table";
-import { FiergsHeader } from "@/components/fiergs-header";
+import CompactHeader from "@/components/compact-header";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ObjectiveForm from "@/components/objective-form";
@@ -57,8 +57,7 @@ export default function Objectives() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <FiergsHeader 
-          user={user} 
+        <CompactHeader 
           onFilterChange={setFilters}
           showFilters={true}
         />

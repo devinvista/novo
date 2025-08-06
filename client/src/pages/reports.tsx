@@ -2,7 +2,7 @@ import { useState } from "react";
 import Sidebar from "@/components/sidebar";
 import IndicatorsDashboard from "@/components/indicators-dashboard";
 import ExecutiveSummary from "@/components/executive-summary";
-import { FiergsHeader } from "@/components/fiergs-header";
+import CompactHeader from "@/components/compact-header";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,8 +23,7 @@ export default function Reports() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <FiergsHeader 
-          user={user} 
+        <CompactHeader 
           onFilterChange={setFilters}
           showFilters={true}
         />
