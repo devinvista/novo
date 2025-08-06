@@ -852,9 +852,16 @@ export class MySQLStorageOptimized implements IStorage {
         strategicIndicatorIds: keyResults.strategicIndicatorIds,
         serviceLineIds: keyResults.serviceLineIds,
         createdAt: keyResults.createdAt,
-        updatedAt: keyResults.updatedAt
+        updatedAt: keyResults.updatedAt,
+        // Join with objectives to get objective data
+        objectiveTitle: objectives.title,
+        objectiveDescription: objectives.description,
+        objectiveStartDate: objectives.startDate,
+        objectiveEndDate: objectives.endDate,
+        objectiveStatus: objectives.status,
       })
-      .from(keyResults);
+      .from(keyResults)
+      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
 
       let whereConditions: any[] = [];
 
@@ -923,6 +930,15 @@ export class MySQLStorageOptimized implements IStorage {
         
         return {
           ...kr,
+          // Add objective information to each key result
+          objective: {
+            id: kr.objectiveId,
+            title: kr.objectiveTitle,
+            description: kr.objectiveDescription,
+            startDate: kr.objectiveStartDate,
+            endDate: kr.objectiveEndDate,
+            status: kr.objectiveStatus
+          },
           progress: finalProgress
         };
       });
