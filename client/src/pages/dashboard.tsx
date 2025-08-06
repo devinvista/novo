@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Sidebar from "@/components/sidebar";
-import ModernDashboard from "@/components/modern-dashboard";
+import SimpleDashboard from "@/components/simple-dashboard";
 import CompactHeader from "@/components/compact-header";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -23,7 +23,7 @@ export default function Dashboard() {
         />
         
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50 pt-16">
-          <ModernDashboard filters={filters} />
+          <SimpleDashboard filters={filters} />
         </div>
       </main>
     </div>

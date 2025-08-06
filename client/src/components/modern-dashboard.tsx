@@ -74,7 +74,7 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
   const { selectedQuarter } = useQuarterlyFilter();
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ["/api/dashboard/kpis", selectedQuarter, filters, Date.now()],
+    queryKey: ["/api/dashboard/kpis", selectedQuarter, filters],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedQuarter && selectedQuarter !== 'all') params.append('quarter', selectedQuarter);
@@ -85,12 +85,12 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
       const url = `/api/dashboard/kpis${params.toString() ? `?${params}` : ''}`;
       return fetch(url, { credentials: "include" }).then(r => r.json());
     },
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: objectives = [] } = useQuery({
-    queryKey: ["/api/objectives", selectedQuarter, filters, Date.now()],
+    queryKey: ["/api/objectives", selectedQuarter, filters],
     queryFn: () => {
       if (selectedQuarter && selectedQuarter !== 'all') {
         const params = new URLSearchParams();
@@ -99,9 +99,7 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
-        console.log(`Frontend objectives: fetching from ${url} for quarter ${selectedQuarter}`);
         return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-          console.log(`Frontend objectives: received data`, data);
           return Array.isArray(data.objectives) ? data.objectives : [];
         }).catch(() => []);
       } else {
@@ -111,19 +109,17 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/objectives${params.toString() ? `?${params}` : ''}`;
-        console.log(`Frontend objectives: fetching from ${url}`);
         return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-          console.log(`Frontend objectives: received data`, data);
           return Array.isArray(data) ? data : [];
         }).catch(() => []);
       }
     },
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter, filters, Date.now()],
+    queryKey: ["/api/key-results", selectedQuarter, filters],
     queryFn: () => {
       if (selectedQuarter && selectedQuarter !== 'all') {
         const params = new URLSearchParams();
@@ -147,12 +143,12 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
         }).catch(() => []);
       }
     },
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: actions = [] } = useQuery({
-    queryKey: ["/api/actions", selectedQuarter, filters, Date.now()],
+    queryKey: ["/api/actions", selectedQuarter, filters],
     queryFn: () => {
       if (selectedQuarter && selectedQuarter !== 'all') {
         const params = new URLSearchParams();
@@ -176,8 +172,8 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
         }).catch(() => []);
       }
     },
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: checkpoints = [] } = useQuery({
@@ -186,7 +182,9 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
       return fetch("/api/checkpoints", { credentials: "include" }).then(r => r.json()).then(data => 
         Array.isArray(data) ? data : []
       ).catch(() => []);
-    }
+    },
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: subRegions = [] } = useQuery({
