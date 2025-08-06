@@ -52,8 +52,16 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           objectiveId: keyResult.objectiveId?.toString() || "",
           title: keyResult.title || "",
           description: keyResult.description || "",
-          strategicIndicatorIds: keyResult.strategicIndicatorIds || [],
-          serviceLineIds: keyResult.serviceLineIds || [],
+          strategicIndicatorIds: Array.isArray(keyResult.strategicIndicatorIds) 
+            ? keyResult.strategicIndicatorIds 
+            : (typeof keyResult.strategicIndicatorIds === 'string' 
+              ? JSON.parse(keyResult.strategicIndicatorIds || '[]') 
+              : []),
+          serviceLineIds: Array.isArray(keyResult.serviceLineIds) 
+            ? keyResult.serviceLineIds 
+            : (typeof keyResult.serviceLineIds === 'string' 
+              ? JSON.parse(keyResult.serviceLineIds || '[]') 
+              : []),
           serviceId: keyResult.serviceId || undefined,
           targetValue: keyResult.targetValue?.toString() || "0",
           initialValue: keyResult.initialValue?.toString() || "0",
