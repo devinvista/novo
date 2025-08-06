@@ -123,36 +123,58 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
   });
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter, Date.now()],
+    queryKey: ["/api/key-results", selectedQuarter, filters, Date.now()],
     queryFn: () => {
-      const url = selectedQuarter && selectedQuarter !== 'all'
-        ? `/api/quarters/${selectedQuarter}/data` 
-        : "/api/key-results";
-      return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        if (selectedQuarter && selectedQuarter !== 'all') {
+      if (selectedQuarter && selectedQuarter !== 'all') {
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
           return Array.isArray(data.keyResults) ? data.keyResults : [];
-        } else {
+        }).catch(() => []);
+      } else {
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
+        return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
           return Array.isArray(data) ? data : [];
-        }
-      }).catch(() => []);
+        }).catch(() => []);
+      }
     },
     staleTime: 0,
     gcTime: 0,
   });
 
   const { data: actions = [] } = useQuery({
-    queryKey: ["/api/actions", selectedQuarter, Date.now()],
+    queryKey: ["/api/actions", selectedQuarter, filters, Date.now()],
     queryFn: () => {
-      const url = selectedQuarter && selectedQuarter !== 'all'
-        ? `/api/quarters/${selectedQuarter}/data` 
-        : "/api/actions";
-      return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        if (selectedQuarter && selectedQuarter !== 'all') {
+      if (selectedQuarter && selectedQuarter !== 'all') {
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
           return Array.isArray(data.actions) ? data.actions : [];
-        } else {
+        }).catch(() => []);
+      } else {
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/actions${params.toString() ? `?${params}` : ''}`;
+        return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
           return Array.isArray(data) ? data : [];
-        }
-      }).catch(() => []);
+        }).catch(() => []);
+      }
     },
     staleTime: 0,
     gcTime: 0,

@@ -31,9 +31,14 @@ interface ActionTimelineProps {
   keyResultId?: number;
   showAll?: boolean;
   selectedQuarter?: string;
+  filters?: {
+    regionId?: number;
+    subRegionId?: number;
+    serviceLineId?: number;
+  };
 }
 
-export default function ActionTimeline({ keyResultId, showAll = false, selectedQuarter }: ActionTimelineProps) {
+export default function ActionTimeline({ keyResultId, showAll = false, selectedQuarter, filters }: ActionTimelineProps) {
   const [editingAction, setEditingAction] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const [deleteActionId, setDeleteActionId] = useState<number | null>(null);
@@ -59,10 +64,16 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
   });
 
   const { data: actions, isLoading } = useQuery({
-    queryKey: ["/api/actions", keyResultId, selectedQuarter],
+    queryKey: ["/api/actions", keyResultId, selectedQuarter, filters],
     queryFn: async () => {
       if (selectedQuarter && selectedQuarter !== "all") {
-        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar ações trimestrais");
         const data = await response.json();
         let actions = Array.isArray(data.actions) ? data.actions : [];
@@ -74,8 +85,14 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
         
         return actions;
       } else {
-        const params = keyResultId ? `?keyResultId=${keyResultId}` : "";
-        const response = await fetch(`/api/actions${params}`, { credentials: "include" });
+        const params = new URLSearchParams();
+        if (keyResultId) params.append('keyResultId', keyResultId.toString());
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/actions${params.toString() ? `?${params}` : ''}`;
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar ações");
         const result = await response.json();
         return Array.isArray(result) ? result : [];

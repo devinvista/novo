@@ -25,17 +25,27 @@ export default function Objectives() {
   const canManageObjectives = user?.role === "admin" || user?.role === "gestor";
 
   const { data: objectives, isLoading } = useQuery({
-    queryKey: ["/api/objectives", selectedQuarter],
+    queryKey: ["/api/objectives", selectedQuarter, filters],
     queryFn: async () => {
       if (selectedQuarter && selectedQuarter !== "all") {
-        // Use quarterly data endpoint
-        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar objetivos trimestrais");
         const data = await response.json();
         return Array.isArray(data.objectives) ? data.objectives : [];
       } else {
-        // Use regular objectives endpoint
-        const response = await fetch(`/api/objectives`);
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/objectives${params.toString() ? `?${params}` : ''}`;
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar objetivos");
         return response.json();
       }

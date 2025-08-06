@@ -40,15 +40,27 @@ export default function Actions() {
   }, [location]);
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter],
+    queryKey: ["/api/key-results", selectedQuarter, filters],
     queryFn: async () => {
       if (selectedQuarter && selectedQuarter !== "all") {
-        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar key results trimestrais");
         const data = await response.json();
         return data.keyResults || [];
       } else {
-        const response = await fetch("/api/key-results", { credentials: "include" });
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar key results");
         return response.json();
       }
@@ -100,6 +112,7 @@ export default function Actions() {
               keyResultId={keyResultFilter ? parseInt(keyResultFilter) : undefined} 
               showAll={true}
               selectedQuarter={selectedQuarter}
+              filters={filters}
             />
           </Card>
         </div>
