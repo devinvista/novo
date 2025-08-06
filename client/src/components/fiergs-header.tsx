@@ -100,7 +100,7 @@ export function FiergsHeader({ user, onFilterChange, showFilters = true }: Fierg
 
   return (
     <header className="bg-gradient-to-r from-[#1a4b9f] to-[#0091d6] text-white shadow-lg border-b-4 border-[#4db74f]">
-      <div className="px-6 py-4">
+      <div className="px-6 py-3">
         <div className="flex items-center justify-between">
           {/* Logo e Título */}
           <div className="flex items-center space-x-4">
