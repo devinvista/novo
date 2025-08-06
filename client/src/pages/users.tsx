@@ -424,7 +424,7 @@ export default function UsersPage() {
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <CompactHeader />
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 pt-16">
           {/* Pending Users Section */}
           {currentUser?.role === "admin" && pendingUsers.length > 0 && (
             <Card className="mb-6">

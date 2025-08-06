@@ -28,7 +28,7 @@ export default function Reports() {
           showFilters={true}
         />
         
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 pt-16">
           <Tabs defaultValue="indicators" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 max-w-lg">
               <TabsTrigger value="indicators" className="flex items-center space-x-2">
