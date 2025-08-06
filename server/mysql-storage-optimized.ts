@@ -667,7 +667,22 @@ export class MySQLStorageOptimized implements IStorage {
       const onTrackObjectives = objectivesResult.filter(obj => obj.status === 'active').length;
       const delayedObjectives = objectivesResult.filter(obj => obj.status === 'delayed').length;
       
-      const completionRate = objectivesCount > 0 ? Math.round((completedObjectives / objectivesCount) * 100) : 0;
+      // Calculate progress based on key results achievement
+      let totalProgress = 0;
+      let validKRCount = 0;
+      
+      for (const kr of keyResultsResult) {
+        const currentValue = parseFloat(kr.currentValue || '0');
+        const targetValue = parseFloat(kr.targetValue || '1');
+        
+        if (!isNaN(currentValue) && !isNaN(targetValue) && targetValue > 0) {
+          const krProgress = Math.min((currentValue / targetValue) * 100, 100);
+          totalProgress += krProgress;
+          validKRCount++;
+        }
+      }
+      
+      const completionRate = validKRCount > 0 ? Math.round(totalProgress / validKRCount) : 0;
       
       const kpis = {
         objectives: objectivesCount,

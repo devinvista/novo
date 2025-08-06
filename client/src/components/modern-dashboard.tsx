@@ -66,13 +66,15 @@ export default function ModernDashboard() {
   const { selectedQuarter } = useQuarterlyFilter();
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ["/api/dashboard/kpis", selectedQuarter],
+    queryKey: ["/api/dashboard/kpis", selectedQuarter, Date.now()],
     queryFn: () => {
       const url = selectedQuarter && selectedQuarter !== 'all' 
         ? `/api/dashboard/kpis?quarter=${selectedQuarter}` 
         : "/api/dashboard/kpis";
       return fetch(url, { credentials: "include" }).then(r => r.json());
-    }
+    },
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const { data: objectives = [] } = useQuery({
@@ -94,11 +96,11 @@ export default function ModernDashboard() {
       }).catch(() => []);
     },
     staleTime: 0,
-    cacheTime: 0,
+    gcTime: 0,
   });
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter],
+    queryKey: ["/api/key-results", selectedQuarter, Date.now()],
     queryFn: () => {
       const url = selectedQuarter && selectedQuarter !== 'all'
         ? `/api/quarters/${selectedQuarter}/data` 
@@ -110,11 +112,13 @@ export default function ModernDashboard() {
           return Array.isArray(data) ? data : [];
         }
       }).catch(() => []);
-    }
+    },
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const { data: actions = [] } = useQuery({
-    queryKey: ["/api/actions", selectedQuarter],
+    queryKey: ["/api/actions", selectedQuarter, Date.now()],
     queryFn: () => {
       const url = selectedQuarter && selectedQuarter !== 'all'
         ? `/api/quarters/${selectedQuarter}/data` 
@@ -126,7 +130,9 @@ export default function ModernDashboard() {
           return Array.isArray(data) ? data : [];
         }
       }).catch(() => []);
-    }
+    },
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const { data: checkpoints = [] } = useQuery({
@@ -199,7 +205,7 @@ export default function ModernDashboard() {
   }).filter((kr: any) => kr !== null) || [];
 
   // Ações por sub-região
-  const actionsBySubRegion = subRegions?.map((subRegion: any) => {
+  const actionsBySubRegion = (subRegions || [])?.map((subRegion: any) => {
     const subRegionActions = actions?.filter((action: any) => {
       if (!action?.keyResultId) return false;
       // Buscar objective da ação via keyResult
@@ -230,7 +236,7 @@ export default function ModernDashboard() {
   ];
 
   // Indicadores estratégicos com KRs associados
-  const indicatorStats = strategicIndicators?.map((indicator: any) => {
+  const indicatorStats = (strategicIndicators || [])?.map((indicator: any) => {
     if (!indicator?.id || !indicator?.name) return null;
     
     const relatedKRs = keyResults?.filter((kr: any) => 
@@ -545,7 +551,7 @@ export default function ModernDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {krAchievement.slice(0, 8).map((kr, index) => (
+            {krAchievement.slice(0, 8).map((kr: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex-1">
                   <div className="font-medium text-sm truncate max-w-md">{kr.title}</div>
