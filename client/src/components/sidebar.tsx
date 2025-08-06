@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { 
   Target, 
   BarChart3, 
@@ -21,6 +22,7 @@ import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_175398
 export default function Sidebar() {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
+  const { isOpen } = useSidebarToggle();
 
   const navigationItems = [
     { href: "/", icon: BarChart3, label: "Dashboard" },
@@ -60,6 +62,8 @@ export default function Sidebar() {
       default: return role;
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ForceRefresh } from "@/components/force-refresh";
 import { AuthProvider } from "@/hooks/use-auth";
 import { QuarterlyFilterProvider } from "@/hooks/use-quarterly-filter";
+import { SidebarProvider } from "@/hooks/use-sidebar-toggle";
 import { ProtectedRoute } from "./lib/protected-route";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
@@ -41,11 +42,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <QuarterlyFilterProvider>
-          <TooltipProvider>
-            <ForceRefresh />
-            <Toaster />
-            <Router />
-          </TooltipProvider>
+          <SidebarProvider>
+            <TooltipProvider>
+              <ForceRefresh />
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </SidebarProvider>
         </QuarterlyFilterProvider>
       </AuthProvider>
     </QueryClientProvider>

@@ -24,6 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
+import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
+import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 
 interface CompactHeaderProps {
   showFilters?: boolean;
@@ -32,6 +34,7 @@ interface CompactHeaderProps {
 
 export default function CompactHeader({ showFilters = true, onFilterChange }: CompactHeaderProps) {
   const { selectedQuarter, setSelectedQuarter } = useQuarterlyFilter();
+  const { isOpen, toggle } = useSidebarToggle();
   
   const [filters, setFilters] = useState({
     regionId: undefined as number | undefined,
@@ -45,19 +48,19 @@ export default function CompactHeader({ showFilters = true, onFilterChange }: Co
     gcTime: 0,
   });
 
-  const { data: availableQuarters = [] }: { data: any[] } = useQuery({
+  const { data: availableQuarters = [] } = useQuery({
     queryKey: ["/api/quarters"],
   });
 
-  const { data: regions = [] }: { data: any[] } = useQuery({
+  const { data: regions = [] } = useQuery({
     queryKey: ["/api/regions"],
   });
 
-  const { data: subRegions = [] }: { data: any[] } = useQuery({
+  const { data: subRegions = [] } = useQuery({
     queryKey: ["/api/sub-regions"],
   });
 
-  const { data: serviceLines = [] }: { data: any[] } = useQuery({
+  const { data: serviceLines = [] } = useQuery({
     queryKey: ["/api/service-lines"],
   });
 
@@ -103,9 +106,46 @@ export default function CompactHeader({ showFilters = true, onFilterChange }: Co
   );
 
   return (
-    <header className="bg-gradient-to-r from-[#1a4b9f] to-[#0091d6] text-white shadow-md border-b-2 border-[#4db74f] fixed top-0 left-0 right-0 z-50">
+    <header className={`bg-gradient-to-r from-[#1a4b9f] to-[#0091d6] text-white shadow-md border-b-2 border-[#4db74f] fixed top-0 z-50 transition-all duration-300 ${
+      isOpen ? 'left-64 right-0' : 'left-0 right-0'
+    }`}>
       <div className="px-4 py-1.5">
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          {/* Logo e Toggle quando sidebar está oculta */}
+          {!isOpen && (
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggle}
+                className="text-white hover:bg-white/10 p-2"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </Button>
+              <img 
+                src={logoImage} 
+                alt="OKRs Logo" 
+                className="h-8 w-auto"
+              />
+            </div>
+          )}
+
+          {/* Toggle quando sidebar está visível */}
+          {isOpen && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggle}
+              className="text-white hover:bg-white/10 p-2"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          )}
+
           {/* Filtros e Usuário */}
           <div className="flex items-center space-x-3">
             {showFilters && (
