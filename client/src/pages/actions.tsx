@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useLocation } from "wouter";
 import Sidebar from "@/components/sidebar";
-import Header from "@/components/header";
+import { FiergsHeader } from "@/components/fiergs-header";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ActionForm from "@/components/action-form";
@@ -18,10 +19,16 @@ import {
 } from "@/components/ui/select";
 
 export default function Actions() {
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [keyResultFilter, setKeyResultFilter] = useState<string>("");
   const { selectedQuarter } = useQuarterlyFilter();
   const [location] = useLocation();
+  const [filters, setFilters] = useState<{
+    regionId?: number;
+    subRegionId?: number;
+    serviceLineId?: number;
+  }>({});
 
   // Read kr parameter from URL and set filter
   useEffect(() => {
@@ -53,10 +60,18 @@ export default function Actions() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          title="Ações" 
-          description="Acompanhe e gerencie as ações dos resultados-chave"
-          action={
+        <FiergsHeader 
+          user={user} 
+          onFilterChange={setFilters}
+          showFilters={true}
+        />
+        
+        <div className="p-6 border-b bg-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Ações</h2>
+              <p className="text-gray-600">Acompanhe e gerencie as ações dos resultados-chave</p>
+            </div>
             <div className="flex gap-4 items-center">
               <Select value={keyResultFilter} onValueChange={setKeyResultFilter}>
                 <SelectTrigger className="w-[300px]">
@@ -76,8 +91,8 @@ export default function Actions() {
                 Nova Ação
               </Button>
             </div>
-          }
-        />
+          </div>
+        </div>
         
         <div className="flex-1 overflow-y-auto p-6">
           <Card className="p-6">

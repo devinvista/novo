@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Sidebar from "@/components/sidebar";
-import Header from "@/components/header";
 import ObjectivesTable from "@/components/objectives-table";
+import { FiergsHeader } from "@/components/fiergs-header";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ObjectiveForm from "@/components/objective-form";
@@ -15,6 +15,11 @@ export default function Objectives() {
   const { user } = useAuth();
   const { selectedQuarter } = useQuarterlyFilter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [filters, setFilters] = useState<{
+    regionId?: number;
+    subRegionId?: number;
+    serviceLineId?: number;
+  }>({});
 
   // Check if user can create/edit objectives
   const canManageObjectives = user?.role === "admin" || user?.role === "gestor";
@@ -42,11 +47,21 @@ export default function Objectives() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          title="Objetivos" 
-          description={canManageObjectives ? "Gerencie todos os objetivos organizacionais" : "Visualize os objetivos organizacionais"}
-          action={
-            canManageObjectives ? (
+        <FiergsHeader 
+          user={user} 
+          onFilterChange={setFilters}
+          showFilters={true}
+        />
+        
+        <div className="p-6 border-b bg-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Objetivos</h2>
+              <p className="text-gray-600">
+                {canManageObjectives ? "Gerencie todos os objetivos organizacionais" : "Visualize os objetivos organizacionais"}
+              </p>
+            </div>
+            {canManageObjectives && (
               <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -54,20 +69,16 @@ export default function Objectives() {
                     Novo Objetivo
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-4xl">
                   <ObjectiveForm onSuccess={() => setIsCreateModalOpen(false)} />
                 </DialogContent>
               </Dialog>
-            ) : undefined
-          }
-        />
+            )}
+          </div>
+        </div>
         
         <div className="flex-1 overflow-y-auto p-6">
-          <ObjectivesTable 
-            objectives={objectives} 
-            isLoading={isLoading}
-            showActions={canManageObjectives}
-          />
+          <ObjectivesTable objectives={objectives || []} isLoading={isLoading} />
         </div>
       </main>
     </div>

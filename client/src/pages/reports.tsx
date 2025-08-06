@@ -1,15 +1,16 @@
 import { useState } from "react";
 import Sidebar from "@/components/sidebar";
-import Header from "@/components/header";
 import IndicatorsDashboard from "@/components/indicators-dashboard";
 import ExecutiveSummary from "@/components/executive-summary";
-import Filters from "@/components/filters";
+import { FiergsHeader } from "@/components/fiergs-header";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, FileText, CheckSquare } from "lucide-react";
 import ActionPlan from "@/components/action-plan";
 
 export default function Reports() {
+  const { user } = useAuth();
   const { selectedQuarter } = useQuarterlyFilter();
   const [filters, setFilters] = useState<{
     regionId?: number;
@@ -22,12 +23,11 @@ export default function Reports() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          title="Relatórios" 
-          description="Indicadores estratégicos e resumo executivo da implementação OKRs"
+        <FiergsHeader 
+          user={user} 
+          onFilterChange={setFilters}
+          showFilters={true}
         />
-        
-        <Filters filters={filters} onFiltersChange={setFilters} />
         
         <div className="flex-1 overflow-y-auto p-6">
           <Tabs defaultValue="indicators" className="space-y-6">

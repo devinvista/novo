@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Eye, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
 import Sidebar from "@/components/sidebar";
-import Header from "@/components/header";
+import { FiergsHeader } from "@/components/fiergs-header";
 import KeyResultForm from "@/components/key-result-form-simple";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,6 +26,11 @@ export default function KeyResults() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [filters, setFilters] = useState<{
+    regionId?: number;
+    subRegionId?: number;
+    serviceLineId?: number;
+  }>({});
   
   // Check if user can manage key results
   const canManageKeyResults = user?.role === "admin" || user?.role === "gestor";
@@ -192,18 +197,28 @@ export default function KeyResults() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          title="Resultados-Chave" 
-          description={canManageKeyResults ? "Gerencie os KRs vinculados aos objetivos" : "Visualize os KRs vinculados aos objetivos"}
-          action={
-            canManageKeyResults ? (
+        <FiergsHeader 
+          user={user} 
+          onFilterChange={setFilters}
+          showFilters={true}
+        />
+        
+        <div className="p-6 border-b bg-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Resultados-Chave</h2>
+              <p className="text-gray-600">
+                {canManageKeyResults ? "Gerencie os KRs vinculados aos objetivos" : "Visualize os KRs vinculados aos objetivos"}
+              </p>
+            </div>
+            {canManageKeyResults && (
               <Button onClick={handleCreateKeyResult}>
                 <Plus className="mr-2 h-4 w-4" />
                 Novo KR
               </Button>
-            ) : undefined
-          }
-        />
+            )}
+          </div>
+        </div>
         
         <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
