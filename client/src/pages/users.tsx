@@ -81,6 +81,7 @@ export default function UsersPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showPasswords, setShowPasswords] = useState<{[key: number]: boolean}>({});
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [userToApprove, setUserToApprove] = useState<User | null>(null);
@@ -450,8 +451,136 @@ export default function UsersPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Gerenciamento de Usuários</h2>
-              <p className="text-gray-600">Gerencie usuários e seus níveis de acesso no sistema</p>
+              <p className="text-gray-600">
+                {currentUser?.role === 'admin' 
+                  ? "Gerencie todos os usuários e seus níveis de acesso no sistema"
+                  : currentUser?.role === 'gestor'
+                  ? "Gerencie os usuários operacionais de seu time"
+                  : "Visualize suas informações de usuário"
+                }
+              </p>
             </div>
+            {(currentUser?.role === "admin" || currentUser?.role === "gestor") && (
+              <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Novo Usuário
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Criar Novo Usuário</DialogTitle>
+                    <DialogDescription>
+                      {currentUser?.role === "admin" 
+                        ? "Crie um novo usuário com qualquer nível de acesso"
+                        : "Crie um novo usuário operacional para seu time"
+                      }
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="username"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Usuário</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Digite o nome de usuário" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome Completo</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Digite o nome completo" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>E-mail</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="Digite o e-mail" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {!editingUser && (
+                          <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Senha</FormLabel>
+                                <FormControl>
+                                  <Input type="password" placeholder="Digite a senha" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Função</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma função" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {canCreateRole("admin") && <SelectItem value="admin">Administrador</SelectItem>}
+                                {canCreateRole("gestor") && <SelectItem value="gestor">Gestor</SelectItem>}
+                                {canCreateRole("operacional") && <SelectItem value="operacional">Operacional</SelectItem>}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <DialogFooter>
+                        <Button variant="outline" type="button" onClick={() => setIsCreateModalOpen(false)}>
+                          Cancelar
+                        </Button>
+                        <Button type="submit" disabled={createUserMutation.isPending}>
+                          {createUserMutation.isPending ? (
+                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                          ) : (
+                            <UserPlus className="mr-2 h-4 w-4" />
+                          )}
+                          Criar Usuário
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
         
@@ -514,60 +643,137 @@ export default function UsersPage() {
         </Card>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div />
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) {
-            // Reset form when dialog closes
-            setEditingUser(null);
-            form.reset({
-              username: "",
-              name: "",
-              email: "",
-              password: "",
-              role: "operacional",
-              regionIds: [],
-              subRegionIds: [],
-              solutionIds: [],
-              serviceLineIds: [],
-              serviceIds: [],
-            });
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={() => {
-                setEditingUser(null);
-                form.reset({
-                  username: "",
-                  name: "",
-                  email: "",
-                  password: "",
-                  role: "operacional",
-                  regionIds: [],
-                  subRegionIds: [],
-                  solutionIds: [],
-                  serviceLineIds: [],
-                  serviceIds: [],
-                });
-              }}
-              className="w-full sm:w-auto h-10 sm:h-11 text-sm sm:text-base"
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Novo Usuário
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="w-[95vw] max-w-[425px] sm:max-w-[500px] md:max-w-[600px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="pb-4">
-              <DialogTitle className="text-lg sm:text-xl">
-                {editingUser ? "Editar Usuário" : "Criar Novo Usuário"}
-              </DialogTitle>
-              <DialogDescription className="text-sm sm:text-base">
-                {editingUser 
-                  ? "Atualize as informações do usuário" 
-                  : "Preencha os dados para criar um novo usuário"
-                }
+      {/* Main Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            {currentUser?.role === 'admin' 
+              ? "Todos os Usuários" 
+              : currentUser?.role === 'gestor'
+              ? "Meu Time"
+              : "Meus Dados"
+            } ({users.length})
+          </CardTitle>
+          <CardDescription>
+            {currentUser?.role === 'admin' 
+              ? "Visualize e gerencie todos os usuários do sistema"
+              : currentUser?.role === 'gestor'
+              ? "Visualize e gerencie os usuários operacionais de seu time"
+              : "Visualize suas informações pessoais"
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuário</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Papel</TableHead>
+                  <TableHead>Status</TableHead>
+                  {(currentUser?.role === "admin" || currentUser?.role === "gestor") && (
+                    <TableHead className="text-right">Ações</TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user: User) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{user.name}</div>
+                        <div className="text-sm text-muted-foreground">@{user.username}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={getRoleBadgeVariant(user.role)}>
+                        {user.role === 'admin' ? 'Administrador' : 
+                         user.role === 'gestor' ? 'Gestor' : 'Operacional'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {user.active ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            Ativo
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            Inativo
+                          </Badge>
+                        )}
+                        {user.approved && (
+                          <Badge variant="outline" className="text-blue-600">
+                            Aprovado
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    {(currentUser?.role === "admin" || currentUser?.role === "gestor") && (
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {canManageUser(user) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingUser(user);
+                                form.reset({
+                                  username: user.username,
+                                  name: user.name,
+                                  email: user.email,
+                                  role: user.role,
+                                  regionIds: user.regionIds || [],
+                                  subRegionIds: user.subRegionIds || [],
+                                  solutionIds: user.solutionIds || [],
+                                  serviceLineIds: user.serviceLineIds || [],
+                                  serviceIds: user.serviceIds || []
+                                });
+                                setIsDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {currentUser?.role === "admin" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={deleteUserMutation.isPending}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+                {users.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      {currentUser?.role === 'gestor' 
+                        ? "Nenhum usuário operacional encontrado em seu time."
+                        : "Nenhum usuário encontrado."
+                      }
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      </div>
+      </main>
+    </div>
+  );
+}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -1598,7 +1804,7 @@ export default function UsersPage() {
           </Form>
         </DialogContent>
       </Dialog>
-        </div>
+      </div>
       </main>
     </div>
   );

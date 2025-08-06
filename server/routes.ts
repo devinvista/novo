@@ -944,7 +944,25 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/users", requireAuth, async (req: any, res) => {
     try {
       const currentUserId = req.user?.id;
-      const users = await storage.getUsers();
+      const currentUserRole = req.user?.role;
+      
+      // Implementar controle de acesso por time
+      let users = await storage.getUsers();
+      
+      if (currentUserRole === 'admin') {
+        // Admin pode ver todos os usuários
+        // Não aplica filtro
+      } else if (currentUserRole === 'gestor') {
+        // Gestor pode ver apenas a si próprio e usuários operacionais de seu time
+        users = users.filter(user => 
+          user.id === currentUserId || 
+          (user.role === 'operacional' && user.gestorId === currentUserId)
+        );
+      } else {
+        // Operacional pode ver apenas a si próprio
+        users = users.filter(user => user.id === currentUserId);
+      }
+      
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
