@@ -703,7 +703,7 @@ export class MySQLStorageOptimized implements IStorage {
     if (!regionId) return true;
 
     // Check if user has access to the region
-    const userRegionIds = user.regionIds || [];
+    const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
     return userRegionIds.includes(regionId);
   }
 
@@ -722,10 +722,7 @@ export class MySQLStorageOptimized implements IStorage {
         regionId: objectives.regionId,
         regionName: regionsTable.name,
         regionCode: regionsTable.code,
-        subRegionId: objectives.subRegionId,
         subRegionIds: objectives.subRegionIds,
-        subRegionName: subRegionsTable.name,
-        subRegionCode: subRegionsTable.code,
         ownerId: objectives.ownerId,
         createdAt: objectives.createdAt,
         updatedAt: objectives.updatedAt,
@@ -734,8 +731,7 @@ export class MySQLStorageOptimized implements IStorage {
       })
       .from(objectives)
       .leftJoin(users, eq(objectives.ownerId, users.id))
-      .leftJoin(regionsTable, eq(objectives.regionId, regionsTable.id))
-      .leftJoin(subRegionsTable, eq(objectives.subRegionId, subRegionsTable.id));
+      .leftJoin(regionsTable, eq(objectives.regionId, regionsTable.id));
 
       let whereConditions: any[] = [];
 
@@ -744,7 +740,7 @@ export class MySQLStorageOptimized implements IStorage {
         const user = await this.getUser(filters.currentUserId);
         if (user && user.role !== 'admin') {
           // Non-admin users only see objectives from their accessible regions
-          const userRegionIds = user.regionIds || [];
+          const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
           if (userRegionIds.length > 0) {
             whereConditions.push(inArray(objectives.regionId, userRegionIds));
           } else {
@@ -796,10 +792,7 @@ export class MySQLStorageOptimized implements IStorage {
           regionId: objectives.regionId,
           regionName: regionsTable.name,
           regionCode: regionsTable.code,
-          subRegionId: objectives.subRegionId,
           subRegionIds: objectives.subRegionIds,
-          subRegionName: subRegionsTable.name,
-          subRegionCode: subRegionsTable.code,
           ownerId: objectives.ownerId,
           createdAt: objectives.createdAt,
           updatedAt: objectives.updatedAt,
@@ -809,7 +802,6 @@ export class MySQLStorageOptimized implements IStorage {
         .from(objectives)
         .leftJoin(users, eq(objectives.ownerId, users.id))
         .leftJoin(regionsTable, eq(objectives.regionId, regionsTable.id))
-        .leftJoin(subRegionsTable, eq(objectives.subRegionId, subRegionsTable.id))
         .where(eq(objectives.id, id))
         .limit(1);
       });

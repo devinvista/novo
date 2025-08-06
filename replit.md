@@ -203,6 +203,27 @@ Idioma do projeto: Português brasileiro - Toda interface, documentação e text
 
 **Plugins Replit:**
 - **@replit/vite-plugin-cartographer**: Plugin de mapeamento para Replit
+- **@replit/vite-plugin-runtime-error-modal**: Modal de erro em runtime
+
+### Dependências Removidas/Desnecessárias
+- **postgres**: Removida (projeto usa MySQL exclusivamente)
+- **better-sqlite3**: Removida (migração para MySQL concluída)
+- **@neondatabase/serverless**: Removida (não utilizada)
+- **mssql**: Removida (tentativa de Microsoft Fabric descontinuada)
+
+### Resumo de Dependências por Categoria
+- **Produção total**: 42 dependências essenciais
+- **Desenvolvimento**: 19 dependências de build/tipos
+- **UI/UX**: 23 componentes Radix UI + 8 bibliotecas de interface
+- **Backend**: 13 dependências de servidor e banco de dados
+- **Frontend**: 11 dependências React e estado
+
+### Scripts Disponíveis
+- `npm run dev`: Inicia servidor de desenvolvimento com tsx
+- `npm run build`: Build de produção com Vite + esbuild
+- `npm run start`: Inicia servidor de produção
+- `npm run check`: Verificação de tipos TypeScript
+- `npm run db:push`: Aplicar mudanças do schema ao banco
 - **@replit/vite-plugin-runtime-error-modal**: Modal de erros em runtime
 
 ### Dependências Opcionais
