@@ -101,18 +101,7 @@ export function FiergsHeader({ user, onFilterChange, showFilters = true }: Fierg
   return (
     <header className="bg-gradient-to-r from-[#1a4b9f] to-[#0091d6] text-white shadow-lg border-b-4 border-[#4db74f]">
       <div className="px-6 py-3">
-        <div className="flex items-center justify-between">
-          {/* Logo e Título */}
-          <div className="flex items-center space-x-4">
-            <div className="bg-white rounded-lg p-2">
-              <div className="text-[#1a4b9f] font-bold text-xl">FIERGS</div>
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">Sistema de Gestão OKR</h1>
-              <p className="text-blue-100 text-sm">Federação das Indústrias do Estado do Rio Grande do Sul</p>
-            </div>
-          </div>
-
+        <div className="flex items-center justify-end">
           {/* Filtros e Usuário */}
           <div className="flex items-center space-x-4">
             {showFilters && (
