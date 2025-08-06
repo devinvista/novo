@@ -62,15 +62,27 @@ const CHART_COLORS = [
   FIERGS_COLORS.danger
 ];
 
-export default function ModernDashboard() {
+interface ModernDashboardProps {
+  filters?: {
+    regionId?: number;
+    subRegionId?: number;
+    serviceLineId?: number;
+  };
+}
+
+export default function ModernDashboard({ filters }: ModernDashboardProps) {
   const { selectedQuarter } = useQuarterlyFilter();
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ["/api/dashboard/kpis", selectedQuarter, Date.now()],
+    queryKey: ["/api/dashboard/kpis", selectedQuarter, filters, Date.now()],
     queryFn: () => {
-      const url = selectedQuarter && selectedQuarter !== 'all' 
-        ? `/api/dashboard/kpis?quarter=${selectedQuarter}` 
-        : "/api/dashboard/kpis";
+      const params = new URLSearchParams();
+      if (selectedQuarter && selectedQuarter !== 'all') params.append('quarter', selectedQuarter);
+      if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+      if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+      if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+      
+      const url = `/api/dashboard/kpis${params.toString() ? `?${params}` : ''}`;
       return fetch(url, { credentials: "include" }).then(r => r.json());
     },
     staleTime: 0,
@@ -78,22 +90,33 @@ export default function ModernDashboard() {
   });
 
   const { data: objectives = [] } = useQuery({
-    queryKey: ["/api/objectives", selectedQuarter, Date.now()],
+    queryKey: ["/api/objectives", selectedQuarter, filters, Date.now()],
     queryFn: () => {
-      const url = selectedQuarter && selectedQuarter !== 'all'
-        ? `/api/quarters/${selectedQuarter}/data` 
-        : "/api/objectives";
-      console.log(`Frontend objectives: fetching from ${url} for quarter ${selectedQuarter}`);
-      return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
-        console.log(`Frontend objectives: received data`, data);
-        if (selectedQuarter && selectedQuarter !== 'all') {
-          // Para trimestres específicos, retorna dados do quarterly endpoint (arrays)
+      if (selectedQuarter && selectedQuarter !== 'all') {
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        console.log(`Frontend objectives: fetching from ${url} for quarter ${selectedQuarter}`);
+        return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
+          console.log(`Frontend objectives: received data`, data);
           return Array.isArray(data.objectives) ? data.objectives : [];
-        } else {
-          // Para 'all' ou sem filtro, usa dados diretos (arrays)
+        }).catch(() => []);
+      } else {
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/objectives${params.toString() ? `?${params}` : ''}`;
+        console.log(`Frontend objectives: fetching from ${url}`);
+        return fetch(url, { credentials: "include" }).then(r => r.json()).then(data => {
+          console.log(`Frontend objectives: received data`, data);
           return Array.isArray(data) ? data : [];
-        }
-      }).catch(() => []);
+        }).catch(() => []);
+      }
     },
     staleTime: 0,
     gcTime: 0,
@@ -144,12 +167,22 @@ export default function ModernDashboard() {
     }
   });
 
-  const { data: subRegions } = useQuery({
+  const { data: subRegions = [] } = useQuery({
     queryKey: ["/api/sub-regions"],
+    queryFn: () => {
+      return fetch("/api/sub-regions", { credentials: "include" }).then(r => r.json()).then(data => 
+        Array.isArray(data) ? data : []
+      ).catch(() => []);
+    }
   });
 
-  const { data: strategicIndicators } = useQuery({
+  const { data: strategicIndicators = [] } = useQuery({
     queryKey: ["/api/strategic-indicators"],
+    queryFn: () => {
+      return fetch("/api/strategic-indicators", { credentials: "include" }).then(r => r.json()).then(data => 
+        Array.isArray(data) ? data : []
+      ).catch(() => []);
+    }
   });
 
   const { data: availableQuarters = [] } = useQuery({
@@ -205,7 +238,7 @@ export default function ModernDashboard() {
   }).filter((kr: any) => kr !== null) || [];
 
   // Ações por sub-região
-  const actionsBySubRegion = (subRegions || [])?.map((subRegion: any) => {
+  const actionsBySubRegion = (subRegions || []).map((subRegion: any) => {
     const subRegionActions = actions?.filter((action: any) => {
       if (!action?.keyResultId) return false;
       // Buscar objective da ação via keyResult
@@ -236,7 +269,7 @@ export default function ModernDashboard() {
   ];
 
   // Indicadores estratégicos com KRs associados
-  const indicatorStats = (strategicIndicators || [])?.map((indicator: any) => {
+  const indicatorStats = (strategicIndicators || []).map((indicator: any) => {
     if (!indicator?.id || !indicator?.name) return null;
     
     const relatedKRs = keyResults?.filter((kr: any) => 

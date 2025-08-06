@@ -1,7 +1,9 @@
+import { useState } from "react";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import IndicatorsDashboard from "@/components/indicators-dashboard";
 import ExecutiveSummary from "@/components/executive-summary";
+import Filters from "@/components/filters";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, FileText, CheckSquare } from "lucide-react";
@@ -9,6 +11,11 @@ import ActionPlan from "@/components/action-plan";
 
 export default function Reports() {
   const { selectedQuarter } = useQuarterlyFilter();
+  const [filters, setFilters] = useState<{
+    regionId?: number;
+    subRegionId?: number;
+    serviceLineId?: number;
+  }>({});
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -19,6 +26,8 @@ export default function Reports() {
           title="Relatórios" 
           description="Indicadores estratégicos e resumo executivo da implementação OKRs"
         />
+        
+        <Filters filters={filters} onFiltersChange={setFilters} />
         
         <div className="flex-1 overflow-y-auto p-6">
           <Tabs defaultValue="indicators" className="space-y-6">
@@ -44,7 +53,7 @@ export default function Reports() {
                   Acompanhe os indicadores estratégicos da organização em tempo real
                 </p>
               </div>
-              <IndicatorsDashboard selectedQuarter={selectedQuarter} />
+              <IndicatorsDashboard selectedQuarter={selectedQuarter} filters={filters} />
             </TabsContent>
             
             <TabsContent value="executive" className="space-y-6">
