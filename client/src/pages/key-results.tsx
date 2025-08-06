@@ -214,7 +214,7 @@ export default function KeyResults() {
           showFilters={true}
         />
         
-        <div className="p-6 border-b bg-white">
+        <div className="p-6 border-b bg-white pt-20">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Resultados-Chave</h2>

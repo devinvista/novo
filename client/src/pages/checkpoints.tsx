@@ -73,7 +73,7 @@ export default function Checkpoints() {
       <main className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader showFilters={false} />
         
-        <div className="p-6 border-b bg-white" style={{ marginTop: '60px' }}>
+        <div className="p-6 border-b bg-white pt-20">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Checkpoints</h2>
