@@ -78,7 +78,7 @@ export default function Actions() {
                   <SelectValue placeholder="Filtrar por resultado-chave" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value=" ">Todos os resultados-chave</SelectItem>
+                  <SelectItem value="all">Todos os resultados-chave</SelectItem>
                   {keyResults?.filter((kr: any) => kr && kr.id && kr.title).map((kr: any) => (
                     <SelectItem key={kr.id} value={kr.id.toString()}>
                       {kr.title}

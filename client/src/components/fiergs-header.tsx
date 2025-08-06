@@ -59,7 +59,7 @@ export function FiergsHeader({ user, onFilterChange, showFilters = true }: Fierg
   const handleFilterChange = (key: string, value: string | undefined) => {
     const newFilters = {
       ...filters,
-      [key]: value ? parseInt(value) : undefined
+      [key]: value && value !== 'all' ? parseInt(value) : undefined
     };
     
     // Limpar sub-região se região mudou
@@ -136,14 +136,14 @@ export function FiergsHeader({ user, onFilterChange, showFilters = true }: Fierg
 
                 {/* Filtro de Região */}
                 <Select 
-                  value={filters.regionId?.toString() || ""} 
+                  value={filters.regionId?.toString() || "all"} 
                   onValueChange={(value) => handleFilterChange('regionId', value)}
                 >
                   <SelectTrigger className="w-40 bg-white/20 border-white/30 text-white placeholder:text-white/70">
                     <SelectValue placeholder="Região" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as Regiões</SelectItem>
+                    <SelectItem value="all">Todas as Regiões</SelectItem>
                     {regions.map((region: any) => (
                       <SelectItem key={region.id} value={region.id.toString()}>
                         {region.name}
@@ -154,7 +154,7 @@ export function FiergsHeader({ user, onFilterChange, showFilters = true }: Fierg
 
                 {/* Filtro de Sub-região */}
                 <Select 
-                  value={filters.subRegionId?.toString() || ""} 
+                  value={filters.subRegionId?.toString() || "all"} 
                   onValueChange={(value) => handleFilterChange('subRegionId', value)}
                   disabled={!filters.regionId}
                 >
@@ -162,7 +162,7 @@ export function FiergsHeader({ user, onFilterChange, showFilters = true }: Fierg
                     <SelectValue placeholder="Sub-região" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as Sub-regiões</SelectItem>
+                    <SelectItem value="all">Todas as Sub-regiões</SelectItem>
                     {filteredSubRegions.map((subRegion: any) => (
                       <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
                         {subRegion.name}
@@ -173,14 +173,14 @@ export function FiergsHeader({ user, onFilterChange, showFilters = true }: Fierg
 
                 {/* Filtro de Linha de Serviço */}
                 <Select 
-                  value={filters.serviceLineId?.toString() || ""} 
+                  value={filters.serviceLineId?.toString() || "all"} 
                   onValueChange={(value) => handleFilterChange('serviceLineId', value)}
                 >
                   <SelectTrigger className="w-44 bg-white/20 border-white/30 text-white placeholder:text-white/70">
                     <SelectValue placeholder="Linha de Serviço" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as Linhas</SelectItem>
+                    <SelectItem value="all">Todas as Linhas</SelectItem>
                     {serviceLines.map((line: any) => (
                       <SelectItem key={line.id} value={line.id.toString()}>
                         {line.name}
