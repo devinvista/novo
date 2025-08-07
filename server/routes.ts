@@ -807,15 +807,25 @@ export function registerRoutes(app: Express): Server {
       const actual = parseFloat(actualValue.replace(',', '.'));
       const progress = targetValue > 0 ? (actual / targetValue) * 100 : 0;
       
-      // Update checkpoint
-      const checkpoint = await storage.updateCheckpoint(id, {
+      // Prepare update data with proper date handling
+      const updateData: any = {
         actualValue: actualValue.toString(),
         notes,
         status: status || 'completed',
-        completedDate: completedDate || (status === 'completed' ? new Date().toISOString() : null),
-        completedAt: completedAt || (status === 'completed' ? new Date().toISOString() : null),
         progress: progress.toString()
-      });
+      };
+      
+      // Handle dates properly - convert ISO strings to Date objects or set current date
+      if (status === 'completed') {
+        updateData.completedDate = completedDate ? new Date(completedDate) : new Date();
+        updateData.completedAt = completedAt ? new Date(completedAt) : new Date();
+      } else {
+        updateData.completedDate = null;
+        updateData.completedAt = null;
+      }
+      
+      // Update checkpoint
+      const checkpoint = await storage.updateCheckpoint(id, updateData);
       
       // Update Key Result currentValue with the latest completed checkpoint value
       if (status === 'completed' || !status) {
