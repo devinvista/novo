@@ -767,15 +767,40 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // GET single checkpoint
+  app.get("/api/checkpoints/:id", requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`🔍 GET /api/checkpoints/${id} called by user ${req.user.id}`);
+      
+      const checkpoint = await storage.getCheckpoint(id, req.user.id);
+      if (!checkpoint) {
+        console.log(`❌ Checkpoint ${id} not found for user ${req.user.id}`);
+        return res.status(404).json({ message: "Checkpoint não encontrado ou sem acesso" });
+      }
+      
+      console.log(`✅ Found checkpoint ${id} for keyResultId: ${checkpoint.keyResultId}`);
+      res.json(checkpoint);
+    } catch (error) {
+      console.error(`Error fetching checkpoint ${req.params.id}:`, error);
+      res.status(500).json({ message: "Erro ao buscar checkpoint" });
+    }
+  });
+
   app.put("/api/checkpoints/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const { actualValue, notes, status, completedDate, completedAt } = req.body;
       
+      console.log(`🚀 PUT /api/checkpoints/${id} called with:`, { actualValue, notes, status, completedDate, completedAt });
+      
       const existingCheckpoint = await storage.getCheckpoint(id, req.user.id);
       if (!existingCheckpoint) {
+        console.log(`❌ Checkpoint ${id} not found for user ${req.user.id}`);
         return res.status(404).json({ message: "Checkpoint não encontrado ou sem acesso" });
       }
+      
+      console.log(`✅ Found checkpoint ${id} for keyResultId: ${existingCheckpoint.keyResultId}`);
       
       // Calculate progress
       const targetValue = parseFloat(existingCheckpoint.targetValue);
