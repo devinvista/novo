@@ -72,8 +72,8 @@ export interface IStorage {
   createAction(action: InsertAction): Promise<Action>;
   updateAction(id: number, action: Partial<InsertAction>): Promise<Action>;
   deleteAction(id: number): Promise<void>;
-  getCheckpoints(keyResultId?: number): Promise<Checkpoint[]>;
-  getCheckpoint(id: number): Promise<Checkpoint | undefined>;
+  getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<Checkpoint[]>;
+  getCheckpoint(id: number, currentUserId?: number): Promise<Checkpoint | undefined>;
   createCheckpoint(checkpoint: InsertCheckpoint): Promise<Checkpoint>;
   updateCheckpoint(id: number, checkpoint: Partial<InsertCheckpoint>): Promise<Checkpoint>;
   generateCheckpoints(keyResultId: number): Promise<Checkpoint[]>;
@@ -827,17 +827,82 @@ export class MySQLStorage implements IStorage {
     await pool.execute('DELETE FROM actions WHERE id = ?', [id]);
   }
 
-  async getCheckpoints(): Promise<Checkpoint[]> {
+  async getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<Checkpoint[]> {
     if (!this.connected) return [];
     
-    const [rows] = await pool.execute('SELECT * FROM checkpoints ORDER BY created_at DESC');
-    return rows as Checkpoint[];
+    console.log(`getCheckpoints called with: { keyResultId: ${keyResultId}, currentUserId: ${currentUserId} }`);
+    
+    let query = `
+      SELECT c.*, kr.title as keyResultTitle, kr.owner_id as keyResultOwnerId, u.username, u.role
+      FROM checkpoints c
+      LEFT JOIN key_results kr ON c.key_result_id = kr.id
+      LEFT JOIN users u ON kr.owner_id = u.id
+      WHERE 1=1
+    `;
+    const conditions: any[] = [];
+    
+    // Filter by keyResultId if provided
+    if (keyResultId) {
+      console.log(`Filtering by keyResultId: ${keyResultId}`);
+      query += ' AND c.key_result_id = ?';
+      conditions.push(keyResultId);
+    }
+    
+    // Access control: non-admin users can only see their own checkpoints
+    if (currentUserId) {
+      const [userRows] = await pool.execute('SELECT username, role FROM users WHERE id = ?', [currentUserId]);
+      const users = userRows as any[];
+      if (users.length > 0) {
+        const user = users[0];
+        console.log(`User for access control: ${user.username} ${user.role}`);
+        
+        if (user.role !== 'admin') {
+          console.log('Non-admin user, filtering by ownerId');
+          query += ' AND kr.owner_id = ?';
+          conditions.push(currentUserId);
+        } else {
+          console.log('Admin user, no ownership filtering');
+        }
+      }
+    }
+    
+    query += ' ORDER BY c.created_at DESC';
+    
+    console.log(`Executing checkpoints query with conditions length: ${conditions.length}`);
+    const [rows] = await pool.execute(query, conditions);
+    const result = rows as Checkpoint[];
+    
+    console.log(`Found ${result.length} checkpoint results`);
+    console.log(`Found ${result.length} checkpoints`);
+    
+    return result;
   }
 
-  async getCheckpoint(id: number): Promise<Checkpoint | undefined> {
+  async getCheckpoint(id: number, currentUserId?: number): Promise<Checkpoint | undefined> {
     if (!this.connected) return undefined;
     
-    const [rows] = await pool.execute('SELECT * FROM checkpoints WHERE id = ?', [id]);
+    let query = `
+      SELECT c.*, kr.title as keyResultTitle, kr.owner_id as keyResultOwnerId
+      FROM checkpoints c
+      LEFT JOIN key_results kr ON c.key_result_id = kr.id
+      WHERE c.id = ?
+    `;
+    const conditions: any[] = [id];
+    
+    // Access control: non-admin users can only see their own checkpoints
+    if (currentUserId) {
+      const [userRows] = await pool.execute('SELECT username, role FROM users WHERE id = ?', [currentUserId]);
+      const users = userRows as any[];
+      if (users.length > 0) {
+        const user = users[0];
+        if (user.role !== 'admin') {
+          query += ' AND kr.owner_id = ?';
+          conditions.push(currentUserId);
+        }
+      }
+    }
+    
+    const [rows] = await pool.execute(query, conditions);
     const checkpoints = rows as Checkpoint[];
     return checkpoints.length > 0 ? checkpoints[0] : undefined;
   }

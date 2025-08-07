@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Target, TrendingUp, AlertCircle } from "lucide-react";
+import { CalendarDays, Target, TrendingUp, AlertCircle, Plus, RefreshCw } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -16,6 +18,8 @@ interface SimpleCheckpointsProps {
 
 export default function SimpleCheckpoints({ keyResultId }: SimpleCheckpointsProps) {
   const [selectedKeyResultId, setSelectedKeyResultId] = useState(keyResultId);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
     queryKey: ["/api/key-results"],
@@ -40,6 +44,26 @@ export default function SimpleCheckpoints({ keyResultId }: SimpleCheckpointsProp
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,
+  });
+
+  const createCheckpointsMutation = useMutation({
+    mutationFn: async (keyResultId: number) => {
+      return apiRequest("POST", `/api/key-results/${keyResultId}/recreate-checkpoints`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Checkpoints criados",
+        description: "Os checkpoints foram criados com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar checkpoints.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (keyResultsLoading || checkpointsLoading) {
@@ -103,14 +127,32 @@ export default function SimpleCheckpoints({ keyResultId }: SimpleCheckpointsProp
               </SelectContent>
             </Select>
 
-            <div className="flex gap-2">
-              <Badge variant="outline">
-                {totalCheckpoints} checkpoint{totalCheckpoints !== 1 ? 's' : ''}
-              </Badge>
-              {completedCheckpoints > 0 && (
-                <Badge className="bg-green-100 text-green-800">
-                  {completedCheckpoints} concluído{completedCheckpoints !== 1 ? 's' : ''}
+            <div className="flex items-center gap-2">
+              <div className="flex gap-2">
+                <Badge variant="outline">
+                  {totalCheckpoints} checkpoint{totalCheckpoints !== 1 ? 's' : ''}
                 </Badge>
+                {completedCheckpoints > 0 && (
+                  <Badge className="bg-green-100 text-green-800">
+                    {completedCheckpoints} concluído{completedCheckpoints !== 1 ? 's' : ''}
+                  </Badge>
+                )}
+              </div>
+              
+              {selectedKeyResult && (
+                <Button
+                  onClick={() => createCheckpointsMutation.mutate(selectedKeyResult.id)}
+                  disabled={createCheckpointsMutation.isPending}
+                  variant="outline"
+                  size="sm"
+                >
+                  {createCheckpointsMutation.isPending ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Criar Checkpoints
+                </Button>
               )}
             </div>
           </div>
@@ -158,12 +200,31 @@ export default function SimpleCheckpoints({ keyResultId }: SimpleCheckpointsProp
               <p className="text-muted-foreground mb-2">
                 Nenhum checkpoint encontrado
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-4">
                 {selectedKeyResult 
                   ? 'Este resultado-chave ainda não possui checkpoints configurados.'
                   : 'Não há checkpoints disponíveis no momento.'
                 }
               </p>
+              {selectedKeyResult && (
+                <Button
+                  onClick={() => createCheckpointsMutation.mutate(selectedKeyResult.id)}
+                  disabled={createCheckpointsMutation.isPending}
+                  className="mx-auto"
+                >
+                  {createCheckpointsMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar Checkpoints Automáticos
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
