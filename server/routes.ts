@@ -867,11 +867,20 @@ export function registerRoutes(app: Express): Server {
             
             console.log(`🎯 Updating KR ${existingCheckpoint.keyResultId} currentValue to: ${latestValue}`);
             
+            // Get current key result to calculate new progress
+            const currentKR = await storage.getKeyResult(existingCheckpoint.keyResultId);
+            const targetValue = parseFloat(currentKR.targetValue || '0');
+            const currentValueNum = parseFloat(latestValue || '0');
+            const newProgress = targetValue > 0 ? (currentValueNum / targetValue) * 100 : 0;
+            
+            console.log(`📊 Calculating progress: ${currentValueNum}/${targetValue} = ${newProgress}%`);
+            
             await storage.updateKeyResult(existingCheckpoint.keyResultId, {
-              currentValue: latestValue.toString()
+              currentValue: latestValue.toString(),
+              progress: newProgress.toString()
             });
             
-            console.log(`✅ Successfully updated Key Result ${existingCheckpoint.keyResultId} currentValue to ${latestValue}`);
+            console.log(`✅ Successfully updated Key Result ${existingCheckpoint.keyResultId} currentValue to ${latestValue} and progress to ${newProgress}%`);
           } else {
             console.log(`⚠️ No completed checkpoints with values found for KR ${existingCheckpoint.keyResultId}`);
           }
