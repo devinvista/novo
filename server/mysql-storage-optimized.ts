@@ -1124,13 +1124,21 @@ export class MySQLStorageOptimized implements IStorage {
         conditions.push(eq(checkpoints.keyResultId, keyResultId));
       }
 
-      // Apply user access control (admin sees all, others see only their objectives)
+      // Apply user access control - use same logic as key results
       if (currentUserId && currentUserId !== undefined) {
         const user = await this.getUser(currentUserId);
         console.log('User for access control:', user?.username, user?.role);
         if (user && user.role !== 'admin') {
-          console.log('Non-admin user, filtering by ownerId');
-          conditions.push(eq(objectives.ownerId, currentUserId));
+          console.log('Non-admin user, checking accessible objectives');
+          // Get user's accessible objectives first (same logic as getKeyResults)
+          const userObjectives = await this.getObjectives({ currentUserId });
+          const objectiveIds = userObjectives.map(obj => obj.id);
+          if (objectiveIds.length > 0) {
+            conditions.push(inArray(objectives.id, objectiveIds));
+          } else {
+            console.log('No accessible objectives found, returning empty result');
+            return [];
+          }
         } else {
           console.log('Admin user, no ownership filtering');
         }
