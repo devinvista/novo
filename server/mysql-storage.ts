@@ -832,49 +832,23 @@ export class MySQLStorage implements IStorage {
     
     console.log(`getCheckpoints called with: { keyResultId: ${keyResultId}, currentUserId: ${currentUserId} }`);
     
-    let query = `
-      SELECT c.*, kr.title as keyResultTitle, kr.owner_id as keyResultOwnerId, u.username, u.role
-      FROM checkpoints c
-      LEFT JOIN key_results kr ON c.key_result_id = kr.id
-      LEFT JOIN users u ON kr.owner_id = u.id
-      WHERE 1=1
-    `;
+    let query = 'SELECT * FROM checkpoints WHERE 1=1';
     const conditions: any[] = [];
     
     // Filter by keyResultId if provided
     if (keyResultId) {
       console.log(`Filtering by keyResultId: ${keyResultId}`);
-      query += ' AND c.key_result_id = ?';
+      query += ' AND key_result_id = ?';
       conditions.push(keyResultId);
     }
     
-    // Access control: non-admin users can see checkpoints from their region
-    if (currentUserId) {
-      const [userRows] = await pool.execute('SELECT username, role, region_id FROM users WHERE id = ?', [currentUserId]);
-      const users = userRows as any[];
-      if (users.length > 0) {
-        const user = users[0];
-        console.log(`User for access control: ${user.username} ${user.role}`);
-        
-        if (user.role !== 'admin') {
-          console.log('Non-admin user, filtering by region access');
-          // Allow access to checkpoints from key results in the same region or owned by the user
-          query += ' AND (kr.owner_id = ? OR kr.region_id = ?)';
-          conditions.push(currentUserId, user.region_id);
-        } else {
-          console.log('Admin user, no ownership filtering');
-        }
-      }
-    }
+    query += ' ORDER BY created_at DESC';
     
-    query += ' ORDER BY c.created_at DESC';
-    
-    console.log(`Executing checkpoints query with conditions length: ${conditions.length}`);
+    console.log(`Executing simple checkpoints query with conditions length: ${conditions.length}`);
     const [rows] = await pool.execute(query, conditions);
     const result = rows as Checkpoint[];
     
     console.log(`Found ${result.length} checkpoint results`);
-    console.log(`Found ${result.length} checkpoints`);
     
     return result;
   }
@@ -882,29 +856,7 @@ export class MySQLStorage implements IStorage {
   async getCheckpoint(id: number, currentUserId?: number): Promise<Checkpoint | undefined> {
     if (!this.connected) return undefined;
     
-    let query = `
-      SELECT c.*, kr.title as keyResultTitle, kr.owner_id as keyResultOwnerId
-      FROM checkpoints c
-      LEFT JOIN key_results kr ON c.key_result_id = kr.id
-      WHERE c.id = ?
-    `;
-    const conditions: any[] = [id];
-    
-    // Access control: non-admin users can see checkpoints from their region
-    if (currentUserId) {
-      const [userRows] = await pool.execute('SELECT username, role, region_id FROM users WHERE id = ?', [currentUserId]);
-      const users = userRows as any[];
-      if (users.length > 0) {
-        const user = users[0];
-        if (user.role !== 'admin') {
-          // Allow access to checkpoints from key results in the same region or owned by the user
-          query += ' AND (kr.owner_id = ? OR kr.region_id = ?)';
-          conditions.push(currentUserId, user.region_id);
-        }
-      }
-    }
-    
-    const [rows] = await pool.execute(query, conditions);
+    const [rows] = await pool.execute('SELECT * FROM checkpoints WHERE id = ?', [id]);
     const checkpoints = rows as Checkpoint[];
     return checkpoints.length > 0 ? checkpoints[0] : undefined;
   }
