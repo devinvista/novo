@@ -848,18 +848,19 @@ export class MySQLStorage implements IStorage {
       conditions.push(keyResultId);
     }
     
-    // Access control: non-admin users can only see their own checkpoints
+    // Access control: non-admin users can see checkpoints from their region
     if (currentUserId) {
-      const [userRows] = await pool.execute('SELECT username, role FROM users WHERE id = ?', [currentUserId]);
+      const [userRows] = await pool.execute('SELECT username, role, region_id FROM users WHERE id = ?', [currentUserId]);
       const users = userRows as any[];
       if (users.length > 0) {
         const user = users[0];
         console.log(`User for access control: ${user.username} ${user.role}`);
         
         if (user.role !== 'admin') {
-          console.log('Non-admin user, filtering by ownerId');
-          query += ' AND kr.owner_id = ?';
-          conditions.push(currentUserId);
+          console.log('Non-admin user, filtering by region access');
+          // Allow access to checkpoints from key results in the same region or owned by the user
+          query += ' AND (kr.owner_id = ? OR kr.region_id = ?)';
+          conditions.push(currentUserId, user.region_id);
         } else {
           console.log('Admin user, no ownership filtering');
         }
@@ -889,15 +890,16 @@ export class MySQLStorage implements IStorage {
     `;
     const conditions: any[] = [id];
     
-    // Access control: non-admin users can only see their own checkpoints
+    // Access control: non-admin users can see checkpoints from their region
     if (currentUserId) {
-      const [userRows] = await pool.execute('SELECT username, role FROM users WHERE id = ?', [currentUserId]);
+      const [userRows] = await pool.execute('SELECT username, role, region_id FROM users WHERE id = ?', [currentUserId]);
       const users = userRows as any[];
       if (users.length > 0) {
         const user = users[0];
         if (user.role !== 'admin') {
-          query += ' AND kr.owner_id = ?';
-          conditions.push(currentUserId);
+          // Allow access to checkpoints from key results in the same region or owned by the user
+          query += ' AND (kr.owner_id = ? OR kr.region_id = ?)';
+          conditions.push(currentUserId, user.region_id);
         }
       }
     }
