@@ -770,7 +770,7 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/checkpoints/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { actualValue, notes } = req.body;
+      const { actualValue, notes, status, completedDate, completedAt } = req.body;
       
       const existingCheckpoint = await storage.getCheckpoint(id, req.user.id);
       if (!existingCheckpoint) {
@@ -779,17 +779,50 @@ export function registerRoutes(app: Express): Server {
       
       // Calculate progress
       const targetValue = parseFloat(existingCheckpoint.targetValue);
-      const actual = parseFloat(actualValue);
+      const actual = parseFloat(actualValue.replace(',', '.'));
       const progress = targetValue > 0 ? (actual / targetValue) * 100 : 0;
       
+      // Update checkpoint
       const checkpoint = await storage.updateCheckpoint(id, {
         actualValue: actualValue.toString(),
         notes,
-        status: 'completed',
+        status: status || 'completed',
+        completedDate: completedDate || (status === 'completed' ? new Date().toISOString() : null),
+        completedAt: completedAt || (status === 'completed' ? new Date().toISOString() : null),
+        progress: progress.toString()
       });
+      
+      // Update Key Result currentValue with the latest completed checkpoint value
+      if (status === 'completed' || !status) {
+        try {
+          // Get all checkpoints for this key result
+          const allCheckpoints = await storage.getCheckpoints(
+            existingCheckpoint.keyResultId,
+            req.user.id 
+          );
+          
+          // Filter only completed checkpoints and sort by due date (most recent first)
+          const completedCheckpoints = allCheckpoints
+            .filter((cp: any) => cp.status === 'completed' && cp.actualValue && parseFloat(cp.actualValue) > 0)
+            .sort((a: any, b: any) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+          
+          // Update Key Result with the most recent completed checkpoint value
+          if (completedCheckpoints.length > 0) {
+            const latestValue = completedCheckpoints[0].actualValue;
+            await storage.updateKeyResult(existingCheckpoint.keyResultId, {
+              currentValue: latestValue.toString()
+            });
+            console.log(`Updated Key Result ${existingCheckpoint.keyResultId} currentValue to ${latestValue} from latest checkpoint`);
+          }
+        } catch (updateError) {
+          console.error('Error updating Key Result currentValue:', updateError);
+          // Don't fail the checkpoint update if KR update fails
+        }
+      }
       
       res.json(checkpoint);
     } catch (error) {
+      console.error("Error updating checkpoint:", error);
       res.status(500).json({ message: "Erro ao atualizar checkpoint" });
     }
   });
