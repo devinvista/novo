@@ -1086,7 +1086,50 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async getAction(id: number, currentUserId?: number): Promise<any | undefined> {
-    return undefined;
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('getAction');
+      
+      const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.select({
+          action: actions,
+          keyResult: keyResults,
+          objective: objectives,
+        })
+        .from(actions)
+        .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
+        .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+        .where(eq(actions.id, id))
+        .limit(1);
+      });
+
+      MySQLPerformanceMonitor.endQuery('getAction', startTime);
+      
+      if (result.length === 0) return undefined;
+
+      const row = result[0];
+      
+      // Apply user access control if currentUserId is provided
+      if (currentUserId && currentUserId !== undefined) {
+        const user = await this.getUser(currentUserId);
+        if (user && user.role !== 'admin') {
+          // Check if user has access to the objective containing this action
+          const userObjectives = await this.getObjectives({ currentUserId });
+          const hasAccess = userObjectives.some(obj => obj.id === row.objective?.id);
+          if (!hasAccess) {
+            return undefined; // User doesn't have access to this action
+          }
+        }
+      }
+
+      return {
+        ...row.action,
+        keyResult: row.keyResult,
+        objective: row.objective,
+      };
+    } catch (error) {
+      console.error('Error fetching action:', error);
+      return undefined;
+    }
   }
 
   async createAction(action: InsertAction): Promise<Action> {
