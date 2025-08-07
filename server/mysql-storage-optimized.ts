@@ -924,14 +924,16 @@ export class MySQLStorageOptimized implements IStorage {
           }
         }
         
-        // Use calculated progress if database progress is null/undefined, otherwise use database value
-        const finalProgress = (kr.progress !== null && kr.progress !== undefined) 
-          ? parseFloat(kr.progress.toString()) 
-          : calculatedProgress;
+        // Always use calculated progress if we have current and target values
+        const finalProgress = (kr.currentValue && kr.targetValue && calculatedProgress > 0) 
+          ? calculatedProgress 
+          : (kr.progress !== null && kr.progress !== undefined) 
+            ? parseFloat(kr.progress.toString()) 
+            : 0;
           
-        // Debug logging for Key Result Teste
-        if (kr.title === 'Key Result Teste') {
-          console.log('🔍 Progress sync for Key Result Teste:', {
+        // Debug logging for OKOKSPASKAAKSAPSKP
+        if (kr.title === 'OKOKSPASKAAKSAPSKP') {
+          console.log('🔍 Progress sync for OKOKSPASKAAKSAPSKP:', {
             dbProgress: kr.progress,
             dbProgressType: typeof kr.progress,
             currentValue: kr.currentValue,
