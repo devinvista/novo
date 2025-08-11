@@ -135,13 +135,26 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   // Get the selected key result to check its service constraints
   const selectedKeyResult = keyResults?.find((kr: any) => kr.id === selectedKeyResultId);
   
+  // Debug log for selected key result (can be removed in production)
+  // console.log('🔍 Action Form - Selected KR:', selectedKeyResult);
+  
   // Filter service lines based on key result constraints
   const availableServiceLines = serviceLines?.filter((sl: any) => {
     if (!selectedKeyResult) return true; // If no KR selected, show all
     
+    // Parse serviceLineIds if it's a string
+    let serviceLineIds = selectedKeyResult.serviceLineIds;
+    if (typeof serviceLineIds === 'string') {
+      try {
+        serviceLineIds = JSON.parse(serviceLineIds);
+      } catch (e) {
+        serviceLineIds = [];
+      }
+    }
+    
     // If KR has specific service line constraints, filter by them
-    if (selectedKeyResult.serviceLineIds && selectedKeyResult.serviceLineIds.length > 0) {
-      return selectedKeyResult.serviceLineIds.includes(sl.id);
+    if (serviceLineIds && serviceLineIds.length > 0) {
+      return serviceLineIds.includes(sl.id);
     }
     
     // If KR has a single service line, filter by it
@@ -167,9 +180,19 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       return s.id === selectedKeyResult.serviceId;
     }
     
+    // Parse serviceLineIds if it's a string
+    let serviceLineIds = selectedKeyResult.serviceLineIds;
+    if (typeof serviceLineIds === 'string') {
+      try {
+        serviceLineIds = JSON.parse(serviceLineIds);
+      } catch (e) {
+        serviceLineIds = [];
+      }
+    }
+    
     // If KR has service line constraints, filter services by those lines
-    if (selectedKeyResult.serviceLineIds && selectedKeyResult.serviceLineIds.length > 0) {
-      return selectedKeyResult.serviceLineIds.includes(s.serviceLineId);
+    if (serviceLineIds && serviceLineIds.length > 0) {
+      return serviceLineIds.includes(s.serviceLineId);
     }
     
     // If KR has a single service line constraint
