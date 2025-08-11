@@ -214,9 +214,27 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
                         <p className="text-sm text-gray-600 mt-1">{action.description}</p>
                       )}
                       <div className="flex items-center gap-4 mt-2">
-                        {action.keyResult && (
+                        {action.keyResult && action.keyResult.title ? (
                           <span className="text-xs text-gray-500">
                             KR: {action.keyResult.title}
+                          </span>
+                        ) : action.keyResultTitle ? (
+                          <span className="text-xs text-gray-500">
+                            KR: {action.keyResultTitle}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-red-500">
+                            ⚠️ Resultado-chave não vinculado
+                          </span>
+                        )}
+                        {action.serviceLine && (
+                          <span className="text-xs text-blue-600">
+                            📋 {action.serviceLine.name}
+                          </span>
+                        )}
+                        {action.service && (
+                          <span className="text-xs text-green-600">
+                            🔧 {action.service.name}
                           </span>
                         )}
                         {action.responsible && (

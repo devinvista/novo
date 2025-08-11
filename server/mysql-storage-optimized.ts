@@ -909,7 +909,7 @@ export class MySQLStorageOptimized implements IStorage {
       });
 
       MySQLPerformanceMonitor.endQuery('getKeyResults', startTime);
-      console.log(`Fetching key results for objectiveId: ${filters?.objectiveId}`);
+      console.log(`Fetching key results with filters:`, filters);
       console.log(`Key results found: ${result.length}`);
       
       // Calculate and sync progress for each key result
@@ -1033,6 +1033,8 @@ export class MySQLStorageOptimized implements IStorage {
         status: actions.status,
         dueDate: actions.dueDate,
         keyResultId: actions.keyResultId,
+        serviceLineId: actions.serviceLineId,
+        serviceId: actions.serviceId,
         responsibleId: actions.responsibleId,
         number: actions.number,
         strategicIndicatorId: actions.strategicIndicatorId,
@@ -1041,12 +1043,16 @@ export class MySQLStorageOptimized implements IStorage {
         responsibleName: users.name,
         responsibleUsername: users.username,
         keyResultTitle: keyResults.title,
-        keyResultObjectiveId: keyResults.objectiveId
+        keyResultObjectiveId: keyResults.objectiveId,
+        serviceLineName: serviceLines.name,
+        serviceName: services.name
       })
       .from(actions)
       .leftJoin(users, eq(actions.responsibleId, users.id))
       .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
-      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
+      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
+      .leftJoin(serviceLines, eq(actions.serviceLineId, serviceLines.id))
+      .leftJoin(services, eq(actions.serviceId, services.id));
 
       let whereConditions: any[] = [];
 
@@ -1088,12 +1094,33 @@ export class MySQLStorageOptimized implements IStorage {
       
       // Map results to include key result information
       return result.map(action => ({
-        ...action,
-        keyResult: {
+        id: action.id,
+        title: action.title,
+        description: action.description,
+        priority: action.priority,
+        status: action.status,
+        dueDate: action.dueDate,
+        keyResultId: action.keyResultId,
+        serviceLineId: action.serviceLineId,
+        serviceId: action.serviceId,
+        responsibleId: action.responsibleId,
+        number: action.number,
+        strategicIndicatorId: action.strategicIndicatorId,
+        createdAt: action.createdAt,
+        updatedAt: action.updatedAt,
+        keyResult: action.keyResultTitle ? {
           id: action.keyResultId,
           title: action.keyResultTitle,
           objectiveId: action.keyResultObjectiveId
-        },
+        } : undefined,
+        serviceLine: action.serviceLineName ? {
+          id: action.serviceLineId,
+          name: action.serviceLineName
+        } : undefined,
+        service: action.serviceName ? {
+          id: action.serviceId,
+          name: action.serviceName
+        } : undefined,
         responsible: action.responsibleName ? {
           id: action.responsibleId,
           name: action.responsibleName,

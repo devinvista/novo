@@ -52,6 +52,24 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
     },
   });
 
+  const { data: serviceLines } = useQuery({
+    queryKey: ["/api/service-lines"],
+    queryFn: async () => {
+      const response = await fetch("/api/service-lines");
+      if (!response.ok) throw new Error("Erro ao carregar linhas de serviço");
+      return response.json();
+    },
+  });
+
+  const { data: services } = useQuery({
+    queryKey: ["/api/services"],
+    queryFn: async () => {
+      const response = await fetch("/api/services");
+      if (!response.ok) throw new Error("Erro ao carregar serviços");
+      return response.json();
+    },
+  });
+
   // Fetch comments for the action if editing
   const { data: comments, refetch: refetchComments } = useQuery({
     queryKey: ["/api/actions", action?.id?.toString() || "none", "comments"],
@@ -74,6 +92,8 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       description: action?.description || "",
       priority: action?.priority || "medium",
       status: action?.status || "pending",
+      serviceLineId: action?.serviceLineId || null,
+      serviceId: action?.serviceId || null,
       responsibleId: action?.responsibleId || null,
       dueDate: action?.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
     },
@@ -88,6 +108,8 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         description: action.description || "",
         priority: action.priority || "medium",
         status: action.status || "pending",
+        serviceLineId: action.serviceLineId || null,
+        serviceId: action.serviceId || null,
         responsibleId: action.responsibleId || null,
         dueDate: action.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
       });
@@ -98,11 +120,65 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         description: "",
         priority: "medium",
         status: "pending",
+        serviceLineId: null,
+        serviceId: null,
         responsibleId: null,
         dueDate: "",
       });
     }
   }, [action, form]);
+
+  // Watch for key result changes to filter service lines/services  
+  const selectedKeyResultId = form.watch("keyResultId");
+  const selectedServiceLineId = form.watch("serviceLineId");
+
+  // Get the selected key result to check its service constraints
+  const selectedKeyResult = keyResults?.find((kr: any) => kr.id === selectedKeyResultId);
+  
+  // Filter service lines based on key result constraints
+  const availableServiceLines = serviceLines?.filter((sl: any) => {
+    if (!selectedKeyResult) return true; // If no KR selected, show all
+    
+    // If KR has specific service line constraints, filter by them
+    if (selectedKeyResult.serviceLineIds && selectedKeyResult.serviceLineIds.length > 0) {
+      return selectedKeyResult.serviceLineIds.includes(sl.id);
+    }
+    
+    // If KR has a single service line, filter by it
+    if (selectedKeyResult.serviceLineId) {
+      return sl.id === selectedKeyResult.serviceLineId;
+    }
+    
+    // If no constraints, show all
+    return true;
+  });
+
+  // Filter services based on key result and selected service line
+  const availableServices = services?.filter((s: any) => {
+    // First filter by selected service line
+    if (selectedServiceLineId && s.serviceLineId !== selectedServiceLineId) {
+      return false;
+    }
+    
+    if (!selectedKeyResult) return true;
+    
+    // If KR has a specific service constraint
+    if (selectedKeyResult.serviceId) {
+      return s.id === selectedKeyResult.serviceId;
+    }
+    
+    // If KR has service line constraints, filter services by those lines
+    if (selectedKeyResult.serviceLineIds && selectedKeyResult.serviceLineIds.length > 0) {
+      return selectedKeyResult.serviceLineIds.includes(s.serviceLineId);
+    }
+    
+    // If KR has a single service line constraint
+    if (selectedKeyResult.serviceLineId) {
+      return s.serviceLineId === selectedKeyResult.serviceLineId;
+    }
+    
+    return true;
+  });
 
   const mutation = useMutation({
     mutationFn: async (data: ActionFormData) => {
@@ -250,6 +326,69 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                 placeholder="Descreva a ação em detalhes"
                 rows={3}
               />
+            </div>
+
+            {/* Service Line and Service Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Service Line Selection */}
+              <div>
+                <Label htmlFor="serviceLineId">Linha de Serviço</Label>
+                <Select
+                  value={form.watch("serviceLineId")?.toString() || ""}
+                  onValueChange={(value) => {
+                    const numValue = value ? parseInt(value) : null;
+                    form.setValue("serviceLineId", numValue);
+                    // Clear service selection when service line changes
+                    form.setValue("serviceId", null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma linha de serviço (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhuma linha de serviço</SelectItem>
+                    {availableServiceLines?.map((serviceLine: any) => (
+                      <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
+                        {serviceLine.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedKeyResult && (selectedKeyResult.serviceLineIds?.length > 0 || selectedKeyResult.serviceLineId) && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    📌 Filtrado pelo resultado-chave selecionado
+                  </p>
+                )}
+              </div>
+
+              {/* Service Selection */}
+              <div>
+                <Label htmlFor="serviceId">Serviço</Label>
+                <Select
+                  value={form.watch("serviceId")?.toString() || ""}
+                  onValueChange={(value) => {
+                    const numValue = value ? parseInt(value) : null;
+                    form.setValue("serviceId", numValue);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um serviço (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhum serviço</SelectItem>
+                    {availableServices?.map((service: any) => (
+                      <SelectItem key={service.id} value={service.id.toString()}>
+                        {service.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedKeyResult && selectedKeyResult.serviceId && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    📌 Filtrado pelo resultado-chave selecionado
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -75,6 +75,8 @@ export const actions = mysqlTable("actions", {
   description: text("description"),
   number: int("number").notNull().default(1),
   strategicIndicatorId: int("strategic_indicator_id").references(() => strategicIndicators.id),
+  serviceLineId: int("service_line_id").references(() => serviceLines.id),
+  serviceId: int("service_id").references(() => services.id),
   responsibleId: int("responsible_id").references(() => users.id),
   dueDate: varchar("due_date", { length: 10 }),
   status: varchar("status", { length: 50 }).notNull().default("pending"),
