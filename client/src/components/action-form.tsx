@@ -334,9 +334,9 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               <div>
                 <Label htmlFor="serviceLineId">Linha de Serviço</Label>
                 <Select
-                  value={form.watch("serviceLineId")?.toString() || ""}
+                  value={form.watch("serviceLineId")?.toString() || "0"}
                   onValueChange={(value) => {
-                    const numValue = value ? parseInt(value) : null;
+                    const numValue = value === "0" ? null : parseInt(value);
                     form.setValue("serviceLineId", numValue);
                     // Clear service selection when service line changes
                     form.setValue("serviceId", null);
@@ -346,7 +346,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     <SelectValue placeholder="Selecione uma linha de serviço (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhuma linha de serviço</SelectItem>
+                    <SelectItem value="0">Nenhuma linha de serviço</SelectItem>
                     {availableServiceLines?.map((serviceLine: any) => (
                       <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
                         {serviceLine.name}
@@ -365,9 +365,9 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               <div>
                 <Label htmlFor="serviceId">Serviço</Label>
                 <Select
-                  value={form.watch("serviceId")?.toString() || ""}
+                  value={form.watch("serviceId")?.toString() || "0"}
                   onValueChange={(value) => {
-                    const numValue = value ? parseInt(value) : null;
+                    const numValue = value === "0" ? null : parseInt(value);
                     form.setValue("serviceId", numValue);
                   }}
                 >
@@ -375,7 +375,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     <SelectValue placeholder="Selecione um serviço (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum serviço</SelectItem>
+                    <SelectItem value="0">Nenhum serviço</SelectItem>
                     {availableServices?.map((service: any) => (
                       <SelectItem key={service.id} value={service.id.toString()}>
                         {service.name}
