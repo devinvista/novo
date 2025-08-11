@@ -202,6 +202,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       objectiveId: parseInt(data.objectiveId),
       strategicIndicatorIds: data.strategicIndicatorIds || [],
       serviceLineIds: data.serviceLineIds || [],
+      serviceLineId: data.serviceLineIds && data.serviceLineIds.length > 0 ? data.serviceLineIds[0] : undefined,
       serviceId: data.serviceId ? parseInt(data.serviceId) : undefined,
       targetValue: convertBRToUS(data.targetValue || "0"), // Converte vírgula para ponto como string
       initialValue: convertBRToUS(data.initialValue || "0"), // Converte vírgula para ponto como string
