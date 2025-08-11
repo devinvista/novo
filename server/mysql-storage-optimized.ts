@@ -866,6 +866,8 @@ export class MySQLStorageOptimized implements IStorage {
         objectiveId: keyResults.objectiveId,
         strategicIndicatorIds: keyResults.strategicIndicatorIds,
         serviceLineIds: keyResults.serviceLineIds,
+        serviceLineId: keyResults.serviceLineId,
+        serviceId: keyResults.serviceId,
         createdAt: keyResults.createdAt,
         updatedAt: keyResults.updatedAt,
         // Join with objectives to get objective data
@@ -994,6 +996,10 @@ export class MySQLStorageOptimized implements IStorage {
         endDate: row.keyResults.endDate,
         status: row.keyResults.status,
         progress: row.keyResults.progress,
+        strategicIndicatorIds: row.keyResults.strategicIndicatorIds,
+        serviceLineIds: row.keyResults.serviceLineIds,
+        serviceLineId: row.keyResults.serviceLineId,
+        serviceId: row.keyResults.serviceId,
         createdAt: row.keyResults.createdAt,
         updatedAt: row.keyResults.updatedAt,
         objective: row.objectives,
@@ -1012,8 +1018,23 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async updateKeyResult(id: number, keyResult: Partial<InsertKeyResult>): Promise<KeyResult> {
+    console.log('🔧 Updating Key Result:', { id, keyResult });
+    console.log('🔧 Service fields received:', {
+      serviceLineId: keyResult.serviceLineId,
+      serviceId: keyResult.serviceId,
+      serviceLineIds: keyResult.serviceLineIds
+    });
+    
     await db.update(keyResults).set(keyResult).where(eq(keyResults.id, id));
     const updated = await db.select().from(keyResults).where(eq(keyResults.id, id)).limit(1);
+    
+    console.log('🔧 Updated Key Result from DB:', {
+      id: updated[0].id,
+      serviceLineId: updated[0].serviceLineId,
+      serviceId: updated[0].serviceId,
+      serviceLineIds: updated[0].serviceLineIds
+    });
+    
     return updated[0];
   }
 
