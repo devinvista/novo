@@ -52,6 +52,16 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
     },
   });
 
+  // Get current logged user
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/user"],
+    queryFn: async () => {
+      const response = await fetch("/api/user");
+      if (!response.ok) throw new Error("Erro ao carregar usuário atual");
+      return response.json();
+    },
+  });
+
   const { data: serviceLines } = useQuery({
     queryKey: ["/api/service-lines"],
     queryFn: async () => {
@@ -87,19 +97,19 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   const form = useForm<ActionFormData>({
     resolver: zodResolver(actionFormSchema),
     defaultValues: {
-      keyResultId: action?.keyResultId || 0,
+      keyResultId: action?.keyResultId || defaultKeyResultId || 0,
       title: action?.title || "",
       description: action?.description || "",
       priority: action?.priority || "medium",
       status: action?.status || "pending",
       serviceLineId: action?.serviceLineId || null,
       serviceId: action?.serviceId || null,
-      responsibleId: action?.responsibleId || null,
+      responsibleId: action?.responsibleId || (currentUser?.id || null),
       dueDate: action?.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
     },
   });
 
-  // Reset form when action changes
+  // Reset form when action or currentUser changes
   useEffect(() => {
     if (action) {
       form.reset({
@@ -122,11 +132,11 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         status: "pending",
         serviceLineId: null,
         serviceId: null,
-        responsibleId: null,
+        responsibleId: currentUser?.id || null, // Pre-select current user for new actions
         dueDate: "",
       });
     }
-  }, [action, form]);
+  }, [action, form, defaultKeyResultId, currentUser]);
 
   // Watch for key result changes to filter service lines/services  
   const selectedKeyResultId = form.watch("keyResultId");
@@ -465,7 +475,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     <SelectItem value="0">Sem responsável</SelectItem>
                     {users?.map((user: any) => (
                       <SelectItem key={user.id} value={user.id.toString()}>
-                        {user.username}
+                        {user.name || user.username}
                       </SelectItem>
                     ))}
                   </SelectContent>
