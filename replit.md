@@ -8,12 +8,15 @@ Estilo de comunicação preferido: Linguagem simples e cotidiana.
 Idioma do projeto: Português brasileiro - Toda interface, documentação e textos convertidos para português brasileiro.
 
 ## Recent Changes
-- **2025-08-07**: Migração completa para ambiente Replit padrão
+- **2025-08-11**: Migração completa para ambiente Replit padrão finalizada
   - Instalação e configuração de todas as dependências necessárias via packager tool
   - Correção do controle de acesso dos checkpoints para usar mesma lógica dos key results
   - Restauração da visualização visual dos checkpoints com círculos e timeline (CheckpointProgressGrid)
   - Sistema totalmente funcional com servidor Express na porta 5000 e frontend conectado via Vite
   - Performance monitoring MySQL ativado com cache LRU
+  - Correção da vinculação entre ações e resultados-chave com queries otimizadas
+  - Uniformização da interface getActions no storage layer para garantir consistência
+  - Sistema de controle de acesso hierárquico implementado corretamente
 
 ## System Architecture
 

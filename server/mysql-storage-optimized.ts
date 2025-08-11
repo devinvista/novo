@@ -1034,13 +1034,19 @@ export class MySQLStorageOptimized implements IStorage {
         dueDate: actions.dueDate,
         keyResultId: actions.keyResultId,
         responsibleId: actions.responsibleId,
+        number: actions.number,
+        strategicIndicatorId: actions.strategicIndicatorId,
         createdAt: actions.createdAt,
         updatedAt: actions.updatedAt,
         responsibleName: users.name,
-        responsibleUsername: users.username
+        responsibleUsername: users.username,
+        keyResultTitle: keyResults.title,
+        keyResultObjectiveId: keyResults.objectiveId
       })
       .from(actions)
-      .leftJoin(users, eq(actions.responsibleId, users.id));
+      .leftJoin(users, eq(actions.responsibleId, users.id))
+      .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
+      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
 
       let whereConditions: any[] = [];
 
@@ -1048,12 +1054,14 @@ export class MySQLStorageOptimized implements IStorage {
       if (filters?.currentUserId) {
         const user = await this.getUser(filters.currentUserId);
         if (user && user.role !== 'admin') {
-          // Get user's accessible key results first
-          const userKeyResults = await this.getKeyResults({ currentUserId: filters.currentUserId });
-          const keyResultIds = userKeyResults.map(kr => kr.id);
-          if (keyResultIds.length > 0) {
-            whereConditions.push(inArray(actions.keyResultId, keyResultIds));
+          // Get user's accessible objectives first
+          const userObjectives = await this.getObjectives({ currentUserId: filters.currentUserId });
+          const objectiveIds = userObjectives.map(obj => obj.id);
+          if (objectiveIds.length > 0) {
+            console.log(`Found ${objectiveIds.length} objectives for user ${user.id}`);
+            whereConditions.push(inArray(objectives.id, objectiveIds));
           } else {
+            console.log('No accessible objectives found, returning empty actions');
             return [];
           }
         }
@@ -1073,12 +1081,25 @@ export class MySQLStorageOptimized implements IStorage {
       }
 
       const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-        return await query;
+        return await query.orderBy(desc(actions.createdAt));
       });
 
       MySQLPerformanceMonitor.endQuery('getActions', startTime);
       
-      return result;
+      // Map results to include key result information
+      return result.map(action => ({
+        ...action,
+        keyResult: {
+          id: action.keyResultId,
+          title: action.keyResultTitle,
+          objectiveId: action.keyResultObjectiveId
+        },
+        responsible: action.responsibleName ? {
+          id: action.responsibleId,
+          name: action.responsibleName,
+          username: action.responsibleUsername
+        } : undefined
+      }));
     } catch (error) {
       console.error('Error fetching actions:', error);
       throw error;

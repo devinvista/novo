@@ -544,8 +544,13 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/actions", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
-      // Include currentUserId for hierarchical access control
-      const actions = await storage.getActions(keyResultId);
+      const filters = {
+        keyResultId,
+        currentUserId: req.user?.id
+      };
+      
+      console.log(`Found ${req.user ? 'logged in user' : 'no user'} for actions query`);
+      const actions = await storage.getActions(filters);
       res.json(actions);
     } catch (error) {
       console.error("Error fetching actions:", error);
