@@ -280,7 +280,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
               {mutation.isPending 
                 ? "Salvando..." 
                 : objective 
-                  ? "Salvar" 
+                  ? "Atualizar Objetivo" 
                   : "Criar Objetivo"
               }
             </Button>
