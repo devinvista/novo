@@ -644,7 +644,7 @@ export class MySQLStorageOptimized implements IStorage {
         
         // Get related key results and actions for quarterly objectives
         const objectiveIds = objectivesResult.map(obj => obj.id);
-        const allKeyResults = await this.getKeyResults({ currentUserId });
+        const allKeyResults = await this.getKeyResults(undefined, { currentUserId });
         const allActions = await this.getActions({ currentUserId });
         
         keyResultsResult = allKeyResults.filter(kr => objectiveIds.includes(kr.objectiveId));
@@ -654,7 +654,7 @@ export class MySQLStorageOptimized implements IStorage {
       } else {
         // Use regular filtering for all periods
         objectivesResult = await this.getObjectives(objectivesFilters);
-        keyResultsResult = await this.getKeyResults({ currentUserId });
+        keyResultsResult = await this.getKeyResults(undefined, { currentUserId });
         actionsResult = await this.getActions({ currentUserId });
       }
       

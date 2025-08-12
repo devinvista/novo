@@ -183,7 +183,7 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                     <SelectValue placeholder="Período" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     {availableQuarters.map((quarter: any) => {
                       const quarterValue = typeof quarter === 'string' ? quarter : quarter.id;
                       const quarterDisplay = typeof quarter === 'string' && quarter.includes('-T')
