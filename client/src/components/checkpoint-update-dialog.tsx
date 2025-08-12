@@ -100,7 +100,7 @@ export default function CheckpointUpdateDialog({
   const calculateProgress = () => {
     const target = parseFloat(checkpoint?.targetValue?.replace(',', '.') || '0');
     const actual = parseFloat(actualValue.replace(',', '.') || '0');
-    if (target === 0) return actual > 0 ? 100 : 0;
+    if (target === 0) return 0;
     return Math.min(100, Math.round((actual / target) * 100));
   };
 

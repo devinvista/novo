@@ -55,7 +55,7 @@ export default function CheckpointProgressGrid({
   const overallProgress = checkpoints.reduce((sum, cp) => {
     const targetValue = parseFloat(cp.targetValue);
     const actualValue = parseFloat(cp.actualValue);
-    return sum + (targetValue > 0 ? (actualValue / targetValue) * 100 : (actualValue > 0 ? 100 : 0));
+    return sum + (targetValue > 0 ? (actualValue / targetValue) * 100 : 0);
   }, 0) / totalCheckpoints;
 
   const getGridColumns = () => {
@@ -90,7 +90,7 @@ export default function CheckpointProgressGrid({
                 // Se é futuro e não tem valor registrado, não mostrar 0%
                 const progress = isFuture && actualValue === 0 
                   ? -1  // Valor especial para indicar "aguardando"
-                  : targetValue > 0 ? (actualValue / targetValue) * 100 : (actualValue > 0 ? 100 : 0);
+                  : targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
                 
                 return (
                   <motion.div

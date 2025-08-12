@@ -822,10 +822,10 @@ export function registerRoutes(app: Express): Server {
       
       console.log(`✅ Found checkpoint ${id} for keyResultId: ${existingCheckpoint.keyResultId}`);
       
-      // Calculate progress - if target is 0 and there's any actual value, it's 100%
+      // Calculate progress
       const targetValue = parseFloat(existingCheckpoint.targetValue);
       const actual = parseFloat(actualValue.replace(',', '.'));
-      const progress = targetValue > 0 ? (actual / targetValue) * 100 : (actual > 0 ? 100 : 0);
+      const progress = targetValue > 0 ? (actual / targetValue) * 100 : 0;
       
       // Prepare update data with proper date handling
       const updateData: any = {
@@ -891,7 +891,7 @@ export function registerRoutes(app: Express): Server {
             const currentKR = await storage.getKeyResult(existingCheckpoint.keyResultId);
             const targetValue = parseFloat(currentKR.targetValue || '0');
             const currentValueNum = parseFloat(latestValue || '0');
-            const newProgress = targetValue > 0 ? (currentValueNum / targetValue) * 100 : (currentValueNum > 0 ? 100 : 0);
+            const newProgress = targetValue > 0 ? (currentValueNum / targetValue) * 100 : 0;
             
             console.log(`📊 Calculating progress: ${currentValueNum}/${targetValue} = ${newProgress}%`);
             
