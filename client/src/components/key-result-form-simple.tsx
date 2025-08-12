@@ -89,7 +89,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           frequency: "monthly",
           startDate: "",
           endDate: "",
-          progress: "0",
+          progress: 0,
           status: "active",
         });
       }
@@ -502,7 +502,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                       )}
                     </label>
                   )) : (
-                    <p className="col-span-2 text-sm text-gray-500 text-center py-4">Nenhuma opção disponível</p>
+                    <p className="col-span-2 text-sm text-gray-500 text-center py-4">Opções não configuradas</p>
                   )}
                 </div>
                 {formData.serviceLineIds.length > 0 && (
@@ -527,7 +527,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                     <SelectValue placeholder="Selecione um serviço específico" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">🔹 Nenhum serviço específico</SelectItem>
+                    <SelectItem value="0">🔹 Aplicar de forma geral</SelectItem>
                     {services && services.length > 0 && 
                       services
                         .filter((service: any) => 

@@ -444,7 +444,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                           </label>
                         </div>
                       )) : (
-                        <p className="text-sm text-gray-500">Nenhuma opção disponível</p>
+                        <p className="text-sm text-gray-500">Opções não configuradas</p>
                       )}
                     </div>
                     <FormMessage />
@@ -465,7 +465,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="0">Nenhum serviço específico</SelectItem>
+                        <SelectItem value="0">Aplicar de forma geral</SelectItem>
                         {services && services.length > 0 && 
                           services
                             .filter((service: any) => {
