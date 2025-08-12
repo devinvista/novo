@@ -591,7 +591,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               Cancelar
             </Button>
             <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Salvando..." : action ? "Atualizar" : "Criar"}
+              {mutation.isPending ? "Salvando..." : action ? "Salvar" : "Criar"}
             </Button>
           </div>
         </form>

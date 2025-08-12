@@ -544,7 +544,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                 Cancelar
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Salvando..." : keyResult ? "Atualizar" : "Criar"}
+                {mutation.isPending ? "Salvando..." : keyResult ? "Salvar" : "Criar"}
               </Button>
             </div>
           </form>
