@@ -35,6 +35,9 @@ export default function Sidebar() {
 
   const adminItems = [
     { href: "/users", icon: Users, label: "Usuários" },
+  ];
+
+  const superAdminItems = [
     { href: "/settings", icon: Settings, label: "Configurações" },
   ];
 
@@ -101,6 +104,25 @@ export default function Sidebar() {
         {(user?.role === "admin" || user?.role === "gestor") && (
           <div className="pt-4 border-t border-sidebar-border mt-4">
             {adminItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link 
+                  key={item.href} 
+                  href={item.href}
+                  className={`flex items-center px-4 py-3 rounded-lg font-medium transition-colors ${
+                    isActive(item.href)
+                      ? "text-sidebar-primary bg-sidebar-primary/10"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }`}
+                >
+                  <Icon className="mr-3 h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+            
+            {/* Configurações - apenas para administradores */}
+            {user?.role === "admin" && superAdminItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link 
