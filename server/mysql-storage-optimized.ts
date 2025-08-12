@@ -847,9 +847,11 @@ export class MySQLStorageOptimized implements IStorage {
     await db.delete(objectives).where(eq(objectives.id, id));
   }
 
-  async getKeyResults(filters?: any): Promise<any[]> {
+  async getKeyResults(objectiveId?: number, filters?: any): Promise<any[]> {
     try {
       const startTime = MySQLPerformanceMonitor.startQuery('getKeyResults');
+      
+      console.log('🔍 getKeyResults called with:', { objectiveId, filters });
       
       let query = db.select({
         id: keyResults.id,
@@ -876,11 +878,40 @@ export class MySQLStorageOptimized implements IStorage {
         objectiveStartDate: objectives.startDate,
         objectiveEndDate: objectives.endDate,
         objectiveStatus: objectives.status,
+        objectiveRegionId: objectives.regionId,
+        objectiveSubRegionId: objectives.subRegionId,
       })
       .from(keyResults)
       .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
 
       let whereConditions: any[] = [];
+
+      // Apply objective ID filter (legacy parameter)
+      if (objectiveId) {
+        whereConditions.push(eq(keyResults.objectiveId, objectiveId));
+      }
+
+      // Apply filters from filter object
+      if (filters?.objectiveId) {
+        whereConditions.push(eq(keyResults.objectiveId, filters.objectiveId));
+      }
+
+      // Apply region and sub-region filters through objectives
+      if (filters?.regionId) {
+        whereConditions.push(eq(objectives.regionId, filters.regionId));
+        console.log('🔍 Applied regionId filter:', filters.regionId);
+      }
+
+      if (filters?.subRegionId) {
+        whereConditions.push(eq(objectives.subRegionId, filters.subRegionId));
+        console.log('🔍 Applied subRegionId filter:', filters.subRegionId);
+      }
+
+      // Apply service line filters
+      if (filters?.serviceLineId) {
+        whereConditions.push(eq(keyResults.serviceLineId, filters.serviceLineId));
+        console.log('🔍 Applied serviceLineId filter:', filters.serviceLineId);
+      }
 
       // Apply user access filters
       if (filters?.currentUserId) {
@@ -892,14 +923,10 @@ export class MySQLStorageOptimized implements IStorage {
           if (objectiveIds.length > 0) {
             whereConditions.push(inArray(keyResults.objectiveId, objectiveIds));
           } else {
+            console.log('🔍 No accessible objectives for user, returning empty array');
             return [];
           }
         }
-      }
-
-      // Apply other filters
-      if (filters?.objectiveId) {
-        whereConditions.push(eq(keyResults.objectiveId, filters.objectiveId));
       }
 
       if (whereConditions.length > 0) {
@@ -907,12 +934,11 @@ export class MySQLStorageOptimized implements IStorage {
       }
 
       const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-        return await query;
+        return await query.orderBy(desc(keyResults.createdAt));
       });
 
       MySQLPerformanceMonitor.endQuery('getKeyResults', startTime);
-      console.log(`Fetching key results with filters:`, filters);
-      console.log(`Key results found: ${result.length}`);
+      console.log(`🔍 Key results found: ${result.length}`);
       
       // Calculate and sync progress for each key result
       const keyResultsWithProgress = result.map(kr => {

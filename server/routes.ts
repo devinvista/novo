@@ -364,9 +364,16 @@ export function registerRoutes(app: Express): Server {
   // Key Results routes
   app.get("/api/key-results", requireAuth, async (req: any, res) => {
     try {
-      const objectiveId = req.query.objectiveId ? parseInt(req.query.objectiveId as string) : undefined;
-      console.log("Fetching key results for objectiveId:", objectiveId);
-      const keyResults = await storage.getKeyResults(objectiveId);
+      const filters = {
+        objectiveId: req.query.objectiveId ? parseInt(req.query.objectiveId as string) : undefined,
+        regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
+        subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
+        serviceLineId: req.query.serviceLineId ? parseInt(req.query.serviceLineId as string) : undefined,
+        currentUserId: req.user.id, // Adicionar controle de acesso
+      };
+      
+      console.log("Fetching key results with filters:", filters);
+      const keyResults = await storage.getKeyResults(filters.objectiveId, filters);
       console.log("Key results found:", keyResults.length);
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do banco para formato brasileiro
