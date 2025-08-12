@@ -853,37 +853,28 @@ export class MySQLStorageOptimized implements IStorage {
       
       console.log('🔍 getKeyResults called with:', { objectiveId, filters });
       
-      let query = db.select({
-        id: keyResults.id,
-        title: keyResults.title,
-        description: keyResults.description,
-        targetValue: keyResults.targetValue,
-        currentValue: keyResults.currentValue,
-        progress: keyResults.progress,
-        unit: keyResults.unit,
-        frequency: keyResults.frequency,
-        startDate: keyResults.startDate,
-        endDate: keyResults.endDate,
-        status: keyResults.status,
-        objectiveId: keyResults.objectiveId,
-        strategicIndicatorIds: keyResults.strategicIndicatorIds,
-        serviceLineIds: keyResults.serviceLineIds,
-        serviceLineId: keyResults.serviceLineId,
-        serviceId: keyResults.serviceId,
-        createdAt: keyResults.createdAt,
-        updatedAt: keyResults.updatedAt,
-        // Join with objectives to get objective data
-        objectiveTitle: objectives.title,
-        objectiveDescription: objectives.description,
-        objectiveStartDate: objectives.startDate,
-        objectiveEndDate: objectives.endDate,
-        objectiveStatus: objectives.status,
-        objectiveRegionId: objectives.regionId,
-        objectiveSubRegionId: objectives.subRegionId,
-      })
-      .from(keyResults)
-      .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
-
+      // Step 1: Get filtered objectives first if we have region/subRegion filters
+      let allowedObjectiveIds: number[] = [];
+      
+      if (filters?.regionId || filters?.subRegionId) {
+        const objectiveFilters: any = {};
+        if (filters.regionId) objectiveFilters.regionId = filters.regionId;
+        if (filters.subRegionId) objectiveFilters.subRegionId = filters.subRegionId;
+        if (filters.currentUserId) objectiveFilters.currentUserId = filters.currentUserId;
+        
+        const filteredObjectives = await this.getObjectives(objectiveFilters);
+        allowedObjectiveIds = filteredObjectives.map(obj => obj.id);
+        
+        console.log('🔍 Filtered objectives by region/subRegion:', allowedObjectiveIds);
+        
+        if (allowedObjectiveIds.length === 0) {
+          console.log('🔍 No objectives match region/subRegion filters, returning empty array');
+          return [];
+        }
+      }
+      
+      // Step 2: Build key results query
+      let query = db.select().from(keyResults);
       let whereConditions: any[] = [];
 
       // Apply objective ID filter (legacy parameter)
@@ -896,15 +887,9 @@ export class MySQLStorageOptimized implements IStorage {
         whereConditions.push(eq(keyResults.objectiveId, filters.objectiveId));
       }
 
-      // Apply region and sub-region filters through objectives
-      if (filters?.regionId) {
-        whereConditions.push(eq(objectives.regionId, filters.regionId));
-        console.log('🔍 Applied regionId filter:', filters.regionId);
-      }
-
-      if (filters?.subRegionId) {
-        whereConditions.push(eq(objectives.subRegionId, filters.subRegionId));
-        console.log('🔍 Applied subRegionId filter:', filters.subRegionId);
+      // Apply regional filtering through allowed objectives
+      if (allowedObjectiveIds.length > 0) {
+        whereConditions.push(inArray(keyResults.objectiveId, allowedObjectiveIds));
       }
 
       // Apply service line filters
@@ -913,8 +898,8 @@ export class MySQLStorageOptimized implements IStorage {
         console.log('🔍 Applied serviceLineId filter:', filters.serviceLineId);
       }
 
-      // Apply user access filters
-      if (filters?.currentUserId) {
+      // Apply user access filters (if not already handled by regional filtering)
+      if (filters?.currentUserId && allowedObjectiveIds.length === 0) {
         const user = await this.getUser(filters.currentUserId);
         if (user && user.role !== 'admin') {
           // Get user's accessible objectives first
@@ -975,15 +960,6 @@ export class MySQLStorageOptimized implements IStorage {
         
         return {
           ...kr,
-          // Add objective information to each key result
-          objective: {
-            id: kr.objectiveId,
-            title: kr.objectiveTitle,
-            description: kr.objectiveDescription,
-            startDate: kr.objectiveStartDate,
-            endDate: kr.objectiveEndDate,
-            status: kr.objectiveStatus
-          },
           progress: finalProgress
         };
       });
