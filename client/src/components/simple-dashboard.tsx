@@ -29,6 +29,8 @@ export default function SimpleDashboard({ filters }: SimpleDashboardProps) {
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ["/api/dashboard/kpis", selectedQuarter, filters],
     queryFn: () => {
+      console.log('📡 Dashboard: Fetching KPIs with filters:', { selectedQuarter, filters });
+      
       const params = new URLSearchParams();
       if (selectedQuarter && selectedQuarter !== 'all') params.append('quarter', selectedQuarter);
       if (filters?.regionId) params.append('regionId', filters.regionId.toString());
@@ -36,6 +38,7 @@ export default function SimpleDashboard({ filters }: SimpleDashboardProps) {
       if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
       
       const url = `/api/dashboard/kpis${params.toString() ? `?${params}` : ''}`;
+      console.log('📡 Dashboard KPI URL:', url);
       return fetch(url, { credentials: "include" }).then(r => r.json());
     },
     staleTime: 30000,

@@ -39,6 +39,8 @@ export default function Actions() {
   const { data: keyResults } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter, filters],
     queryFn: async () => {
+      console.log('📡 Actions: Fetching key results with filters:', { selectedQuarter, filters });
+      
       if (selectedQuarter && selectedQuarter !== "all") {
         const params = new URLSearchParams();
         if (filters?.regionId) params.append('regionId', filters.regionId.toString());
@@ -46,6 +48,7 @@ export default function Actions() {
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        console.log('📡 Actions KR Quarterly URL:', url);
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar key results trimestrais");
         const data = await response.json();
@@ -57,6 +60,7 @@ export default function Actions() {
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
+        console.log('📡 Actions KR URL:', url);
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar key results");
         return response.json();
