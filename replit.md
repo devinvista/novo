@@ -8,6 +8,8 @@ Estilo de comunicação preferido: Linguagem simples e cotidiana.
 Idioma do projeto: Português brasileiro - Toda interface, documentação e textos convertidos para português brasileiro.
 
 ## Recent Changes
+- **2025-08-12**: Migração completa para ambiente Replit padrão finalizada
+  - Textos genéricos implementados: "nenhuma linha de serviço" substituído por mensagens mais universais
 - **2025-08-11**: Migração completa para ambiente Replit padrão finalizada
   - Instalação e configuração de todas as dependências necessárias via packager tool
   - Correção do controle de acesso dos checkpoints para usar mesma lógica dos key results

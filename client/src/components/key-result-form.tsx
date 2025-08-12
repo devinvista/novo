@@ -444,7 +444,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                           </label>
                         </div>
                       )) : (
-                        <p className="text-sm text-gray-500">Nenhuma linha de serviço disponível</p>
+                        <p className="text-sm text-gray-500">Nenhuma opção disponível</p>
                       )}
                     </div>
                     <FormMessage />

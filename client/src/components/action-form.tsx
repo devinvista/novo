@@ -379,7 +379,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     <SelectValue placeholder="Selecione uma linha de serviço (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">Nenhuma linha de serviço</SelectItem>
+                    <SelectItem value="0">Nenhuma categoria selecionada</SelectItem>
                     {availableServiceLines?.map((serviceLine: any) => (
                       <SelectItem key={serviceLine.id} value={serviceLine.id.toString()}>
                         {serviceLine.name}

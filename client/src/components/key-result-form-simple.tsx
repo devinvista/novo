@@ -502,7 +502,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
                       )}
                     </label>
                   )) : (
-                    <p className="col-span-2 text-sm text-gray-500 text-center py-4">Nenhuma linha de serviço disponível</p>
+                    <p className="col-span-2 text-sm text-gray-500 text-center py-4">Nenhuma opção disponível</p>
                   )}
                 </div>
                 {formData.serviceLineIds.length > 0 && (
