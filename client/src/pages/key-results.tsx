@@ -11,6 +11,7 @@ import { useFilters } from "@/hooks/use-filters";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { translateFrequency } from "@/lib/frequency-translations";
+import { formatDateBR } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -392,7 +393,7 @@ export default function KeyResults() {
                         </div>
                         
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>Período: {kr.startDate ? new Date(kr.startDate).toLocaleDateString('pt-BR') : 'N/A'} - {kr.endDate ? new Date(kr.endDate).toLocaleDateString('pt-BR') : 'N/A'}</span>
+                          <span>Período: {kr.startDate ? formatDateBR(kr.startDate) : 'N/A'} - {kr.endDate ? formatDateBR(kr.endDate) : 'N/A'}</span>
                         </div>
                       </div>
                     </CardContent>
