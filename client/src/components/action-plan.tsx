@@ -20,20 +20,62 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default function ActionPlan() {
+interface ActionPlanProps {
+  selectedQuarter?: string;
+  filters?: {
+    regionId?: number;
+    subRegionId?: number;
+    serviceLineId?: number;
+  };
+}
+
+export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps) {
   const { data: objectives, isLoading: objectivesLoading } = useQuery({
-    queryKey: ["/api/objectives"],
-    staleTime: 5 * 60 * 1000,
+    queryKey: ["/api/objectives", JSON.stringify(filters)],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+      if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+      if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+      
+      const url = `/api/objectives${params.toString() ? `?${params}` : ''}`;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Erro ao carregar objetivos");
+      return response.json();
+    },
+    staleTime: 0,
   });
 
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
-    queryKey: ["/api/key-results"],
-    staleTime: 5 * 60 * 1000,
+    queryKey: ["/api/key-results", JSON.stringify(filters)],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+      if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+      if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+      
+      const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
+      return response.json();
+    },
+    staleTime: 0,
   });
 
   const { data: actions, isLoading: actionsLoading } = useQuery({
-    queryKey: ["/api/actions"],
-    staleTime: 5 * 60 * 1000,
+    queryKey: ["/api/actions", JSON.stringify(filters)],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+      if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+      if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+      
+      const url = `/api/actions${params.toString() ? `?${params}` : ''}`;
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Erro ao carregar ações");
+      return response.json();
+    },
+    staleTime: 0,
   });
 
   // Get strategic indicators data

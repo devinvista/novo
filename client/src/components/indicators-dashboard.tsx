@@ -26,7 +26,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
   });
 
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter, filters],
+    queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       console.log('📡 IndicatorsDashboard: Fetching key results with filters:', { selectedQuarter, filters });
       

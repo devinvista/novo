@@ -60,7 +60,7 @@ export default function Reports() {
             </TabsContent>
             
             <TabsContent value="action-plan" className="space-y-6">
-              <ActionPlan />
+              <ActionPlan selectedQuarter={selectedQuarter} filters={filters} />
             </TabsContent>
           </Tabs>
         </div>
