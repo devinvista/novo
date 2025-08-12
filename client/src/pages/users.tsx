@@ -140,50 +140,54 @@ export default function UsersPage() {
     ? regions 
     : regions.filter(region => 
         !currentUser?.regionIds || 
-        (currentUser.regionIds && currentUser.regionIds.length === 0) || 
-        (currentUser.regionIds && currentUser.regionIds.includes(region.id))
+        (Array.isArray(currentUser.regionIds) && currentUser.regionIds.length === 0) || 
+        (Array.isArray(currentUser.regionIds) && currentUser.regionIds.includes(region.id))
       );
 
   const availableSubRegions = currentUser?.role === "admin"
     ? subRegions
     : subRegions.filter(subRegion => 
         !currentUser?.subRegionIds ||
-        (currentUser.subRegionIds && currentUser.subRegionIds.length === 0) ||
-        (currentUser.subRegionIds && currentUser.subRegionIds.includes(subRegion.id))
+        (Array.isArray(currentUser.subRegionIds) && currentUser.subRegionIds.length === 0) ||
+        (Array.isArray(currentUser.subRegionIds) && currentUser.subRegionIds.includes(subRegion.id))
       );
 
   const availableSolutions = currentUser?.role === "admin"
     ? solutions
     : solutions.filter(solution => 
         !currentUser?.solutionIds ||
-        (currentUser.solutionIds && currentUser.solutionIds.length === 0) ||
-        (currentUser.solutionIds && currentUser.solutionIds.includes(solution.id))
+        (Array.isArray(currentUser.solutionIds) && currentUser.solutionIds.length === 0) ||
+        (Array.isArray(currentUser.solutionIds) && currentUser.solutionIds.includes(solution.id))
       );
 
   const availableServiceLines = currentUser?.role === "admin"
     ? serviceLines
     : serviceLines.filter(serviceLine => 
         !currentUser?.serviceLineIds ||
-        (currentUser.serviceLineIds && currentUser.serviceLineIds.length === 0) ||
-        (currentUser.serviceLineIds && currentUser.serviceLineIds.includes(serviceLine.id))
+        (Array.isArray(currentUser.serviceLineIds) && currentUser.serviceLineIds.length === 0) ||
+        (Array.isArray(currentUser.serviceLineIds) && currentUser.serviceLineIds.includes(serviceLine.id))
       );
 
   const availableServices = currentUser?.role === "admin"
     ? services
     : services.filter(service => 
         !currentUser?.serviceIds ||
-        (currentUser.serviceIds && currentUser.serviceIds.length === 0) ||
-        (currentUser.serviceIds && currentUser.serviceIds.includes(service.id))
+        (Array.isArray(currentUser.serviceIds) && currentUser.serviceIds.length === 0) ||
+        (Array.isArray(currentUser.serviceIds) && currentUser.serviceIds.includes(service.id))
       );
 
   // Mutations
   const createUserMutation = useMutation({
-    mutationFn: (userData: UserFormData) => 
-      apiRequest("/api/users", {
+    mutationFn: async (userData: UserFormData) => {
+      const response = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
-      }),
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Erro ao criar usuário");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending-users"] });
@@ -204,12 +208,16 @@ export default function UsersPage() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, userData }: { id: number; userData: Partial<UserFormData> }) =>
-      apiRequest(`/api/users/${id}`, {
+    mutationFn: async ({ id, userData }: { id: number; userData: Partial<UserFormData> }) => {
+      const response = await fetch(`/api/users/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
-      }),
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Erro ao atualizar usuário");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
@@ -230,10 +238,14 @@ export default function UsersPage() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (id: number) =>
-      apiRequest(`/api/users/${id}`, {
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/users/${id}`, {
         method: "DELETE",
-      }),
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Erro ao deletar usuário");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
@@ -251,12 +263,16 @@ export default function UsersPage() {
   });
 
   const toggleUserStatusMutation = useMutation({
-    mutationFn: ({ id, active }: { id: number; active: boolean }) =>
-      apiRequest(`/api/users/${id}/toggle-status`, {
+    mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
+      const response = await fetch(`/api/users/${id}/toggle-status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active }),
-      }),
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Erro ao alterar status");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
@@ -274,7 +290,7 @@ export default function UsersPage() {
   });
 
   const approveUserMutation = useMutation({
-    mutationFn: ({ 
+    mutationFn: async ({ 
       userId, 
       regionIds, 
       subRegionIds, 
@@ -288,8 +304,8 @@ export default function UsersPage() {
       solutionIds: number[];
       serviceLineIds: number[];
       serviceIds: number[];
-    }) =>
-      apiRequest(`/api/users/${userId}/approve`, {
+    }) => {
+      const response = await fetch(`/api/users/${userId}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -299,7 +315,11 @@ export default function UsersPage() {
           serviceLineIds,
           serviceIds,
         }),
-      }),
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Erro ao aprovar usuário");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pending-users"] });

@@ -1,24 +1,31 @@
-import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query"
+import { RotateCcw } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export function ForceRefresh() {
-  const queryClient = useQueryClient();
-  
-  useEffect(() => {
-    // Clear all cache data first
-    queryClient.clear();
+  const queryClient = useQueryClient()
+
+  const handleForceRefresh = () => {
+    // Clear all query cache
+    queryClient.clear()
     
-    // Force invalidate all key results queries
-    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+    // Add console log for debugging
+    console.log("🔄 Force refresh executed - all cache cleared")
     
-    // Force refetch all active queries
-    queryClient.refetchQueries({ type: "active" });
-    
-    console.log('🔄 Force refresh executed - all cache cleared');
-  }, [queryClient]);
-  
-  return null;
+    // Reload the page to ensure fresh data
+    window.location.reload()
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleForceRefresh}
+      className="flex items-center gap-2"
+      title="Atualizar dados"
+    >
+      <RotateCcw className="h-4 w-4" />
+      <span className="hidden sm:inline">Atualizar</span>
+    </Button>
+  )
 }
