@@ -9,7 +9,7 @@ import {
   type Solution, type Service, type ActionComment, type InsertActionComment
 } from "@shared/mysql-schema";
 import { db, connection } from "./mysql-db";
-import { eq, and, desc, sql, asc, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, asc, inArray, isNotNull, count, sum, isNull } from "drizzle-orm";
 import session from "express-session";
 // @ts-ignore - memorystore types are outdated
 import MemoryStore from "memorystore";
@@ -896,6 +896,24 @@ export class MySQLStorageOptimized implements IStorage {
       if (filters?.serviceLineId) {
         whereConditions.push(eq(keyResults.serviceLineId, filters.serviceLineId));
         console.log('🔍 Applied serviceLineId filter:', filters.serviceLineId);
+        
+        // Debug: Let's see what key results exist with service line data
+        const debugQuery = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+          return await db.select({
+            id: keyResults.id,
+            title: keyResults.title,
+            serviceLineId: keyResults.serviceLineId
+          }).from(keyResults).where(isNotNull(keyResults.serviceLineId));
+        });
+        console.log('🔍 All Key Results with Service Line IDs:', debugQuery.map(kr => ({
+          id: kr.id,
+          title: kr.title?.substring(0, 50) + '...',
+          serviceLineId: kr.serviceLineId
+        })));
+        
+        // Check if the vaccination KR exists
+        const vaccinationKRs = debugQuery.filter(kr => kr.title?.includes('Vacinação'));
+        console.log('🔍 Key Results containing "Vacinação":', vaccinationKRs);
       }
 
       // Apply user access filters (if not already handled by regional filtering)
