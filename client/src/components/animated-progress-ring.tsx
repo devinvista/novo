@@ -226,6 +226,8 @@ export default function AnimatedProgressRing({
         <div className="text-xs text-gray-500 mt-1">
           {progress === -1 ? "Aguardando período" : `${actualValue.toFixed(1)} / ${targetValue.toFixed(1)}`}
         </div>
+        
+
       </motion.div>
 
 
