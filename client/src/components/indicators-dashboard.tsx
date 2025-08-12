@@ -28,7 +28,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter, filters],
     queryFn: async () => {
-      console.log('📡 Fetching key results with filters:', { selectedQuarter, filters });
+      console.log('📡 IndicatorsDashboard: Fetching key results with filters:', { selectedQuarter, filters });
       
       if (selectedQuarter && selectedQuarter !== "all") {
         const params = new URLSearchParams();
@@ -57,6 +57,8 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
         return response.json();
       }
     },
+    refetchOnWindowFocus: false,
+    staleTime: 0, // Sempre refetch quando os filtros mudarem
   });
 
   const getIndicatorIcon = (name: string) => {
