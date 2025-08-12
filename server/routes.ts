@@ -243,7 +243,15 @@ export function registerRoutes(app: Express): Server {
       const { quarter } = req.params;
       const currentUser = req.user;
       
-      const data = await storage.getQuarterlyData(quarter, currentUser.id);
+      // Aplicar filtros de linha de serviço e outros filtros
+      const filters = {
+        regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
+        subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
+        serviceLineId: req.query.serviceLineId ? parseInt(req.query.serviceLineId as string) : undefined,
+        currentUserId: currentUser.id,
+      };
+      
+      const data = await storage.getQuarterlyData(quarter, currentUser.id, filters);
       
       res.json(data);
     } catch (error) {

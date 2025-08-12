@@ -467,7 +467,7 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async getQuarterlyData(quarter?: string, currentUserId?: number): Promise<any> {
+  async getQuarterlyData(quarter?: string, currentUserId?: number, filters?: any): Promise<any> {
     try {
       const startTime = MySQLPerformanceMonitor.startQuery('getQuarterlyData');
       
@@ -536,13 +536,21 @@ export class MySQLStorageOptimized implements IStorage {
       if (objectiveIds.length > 0) {
         // Get full key results data for these objectives
         quarterKeyResults = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-          return await db.select({
+          let keyResultsQuery = db.select({
             keyResults: keyResults,
             objectives: objectives,
           })
           .from(keyResults)
-          .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-          .where(inArray(keyResults.objectiveId, objectiveIds));
+          .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
+          
+          const conditions = [inArray(keyResults.objectiveId, objectiveIds)];
+          
+          // Apply service line filter if provided
+          if (filters?.serviceLineId) {
+            conditions.push(eq(keyResults.serviceLineId, filters.serviceLineId));
+          }
+          
+          return await keyResultsQuery.where(and(...conditions));
         });
 
         // Get key result IDs for actions
