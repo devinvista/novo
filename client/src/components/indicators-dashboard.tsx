@@ -28,16 +28,31 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter, filters],
     queryFn: async () => {
+      console.log('📡 Fetching key results with filters:', { selectedQuarter, filters });
+      
       if (selectedQuarter && selectedQuarter !== "all") {
-        const response = await fetch(`/api/quarters/${selectedQuarter}/data`, { credentials: "include" });
+        const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+        
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        console.log('📡 KR Quarterly URL:', url);
+        
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar resultados-chave trimestrais");
         const data = await response.json();
         return data.keyResults || [];
       } else {
         const params = new URLSearchParams();
+        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
-        const response = await fetch(`/api/key-results?${params}`, { credentials: "include" });
+        const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
+        console.log('📡 KR URL:', url);
+        
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
         return response.json();
       }

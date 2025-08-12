@@ -9,6 +9,10 @@ Idioma do projeto: Português brasileiro - Toda interface, documentação e text
 
 ## Recent Changes
 - **2025-08-12**: Migração completa para ambiente Replit padrão finalizada
+  - Correções na lógica de períodos trimestrais e filtros funcionando corretamente
+  - Sistema de filtragem por trimestre (2025-T1, T2, T3, T4) implementado e testado
+  - Performance MySQL otimizada com monitoring ativo
+  - Frontend com debugging aprimorado para filtros trimestrais
   - Textos genéricos implementados: "nenhuma linha de serviço" substituído por mensagens mais universais
 - **2025-08-11**: Migração completa para ambiente Replit padrão finalizada
   - Instalação e configuração de todas as dependências necessárias via packager tool

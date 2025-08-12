@@ -454,7 +454,19 @@ export class MySQLStorageOptimized implements IStorage {
         ];
       }
       
-      const quarters = getQuarterlyPeriods(allObjectives, null);
+      // Find earliest and latest dates from objectives
+      const dates = allObjectives.map(obj => [obj.startDate, obj.endDate]).flat();
+      const earliestDate = new Date(Math.min(...dates.map(d => new Date(d).getTime())));
+      const latestDate = new Date(Math.max(...dates.map(d => new Date(d).getTime())));
+      const quarterPeriods = getQuarterlyPeriods(earliestDate, latestDate);
+      
+      const quarters = quarterPeriods.map(period => ({
+        id: period.quarter,
+        name: `T${period.quarterNumber} ${period.year}`,
+        startDate: period.startDate.toISOString().split('T')[0],
+        endDate: period.endDate.toISOString().split('T')[0]
+      }));
+      
       return quarters.length > 0 ? quarters : [
         { id: '2025-T1', name: 'T1 2025', startDate: '2025-01-01', endDate: '2025-03-31' },
         { id: '2025-T2', name: 'T2 2025', startDate: '2025-04-01', endDate: '2025-06-30' },
@@ -503,24 +515,34 @@ export class MySQLStorageOptimized implements IStorage {
 
       // Apply quarterly filtering if quarter is specified
       if (quarter && quarter !== 'all') {
+        console.log(`🔍 Applying quarterly filter for: ${quarter}`);
         // Parse quarter string like "2025-T1" to get dates
         const quarterMatch = quarter.match(/(\d{4})-T(\d)/);
         if (quarterMatch) {
           const year = parseInt(quarterMatch[1]);
           const quarterNum = parseInt(quarterMatch[2]);
           
-          // Calculate quarter start and end dates
-          const quarterStartMonth = (quarterNum - 1) * 3;
+          // Calculate quarter start and end dates correctly
+          const quarterStartMonth = (quarterNum - 1) * 3; // 0, 3, 6, 9 for T1, T2, T3, T4
           const quarterStartDate = `${year}-${String(quarterStartMonth + 1).padStart(2, '0')}-01`;
-          const quarterEndMonth = quarterStartMonth + 2;
-          const quarterEndDate = `${year}-${String(quarterEndMonth + 1).padStart(2, '0')}-${new Date(year, quarterEndMonth + 1, 0).getDate()}`;
           
-          objectivesQuery = objectivesQuery.where(
-            and(
-              sql`${objectives.startDate} <= ${quarterEndDate}`,
-              sql`${objectives.endDate} >= ${quarterStartDate}`
-            )
+          // Calculate the last day of the quarter
+          const quarterEndMonth = quarterStartMonth + 2; // 2, 5, 8, 11 for T1, T2, T3, T4
+          const lastDayOfMonth = new Date(year, quarterEndMonth + 1, 0).getDate();
+          const quarterEndDate = `${year}-${String(quarterEndMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+          
+          console.log(`📅 Quarter ${quarter}: ${quarterStartDate} to ${quarterEndDate}`);
+          
+          // Filter objectives that overlap with the quarter
+          const quarterCondition = and(
+            sql`${objectives.startDate} <= ${quarterEndDate}`,
+            sql`${objectives.endDate} >= ${quarterStartDate}`
           );
+          if (quarterCondition) {
+            objectivesQuery = objectivesQuery.where(quarterCondition);
+          }
+        } else {
+          console.warn(`⚠️ Invalid quarter format: ${quarter}`);
         }
       }
 
@@ -548,6 +570,31 @@ export class MySQLStorageOptimized implements IStorage {
           // Apply service line filter if provided
           if (filters?.serviceLineId) {
             conditions.push(eq(keyResults.serviceLineId, filters.serviceLineId));
+            console.log(`🎯 Applied serviceLineId filter: ${filters.serviceLineId}`);
+          }
+          
+          // Apply quarter filter to key results as well if specified
+          if (quarter && quarter !== 'all') {
+            const quarterMatch = quarter.match(/(\d{4})-T(\d)/);
+            if (quarterMatch) {
+              const year = parseInt(quarterMatch[1]);
+              const quarterNum = parseInt(quarterMatch[2]);
+              
+              const quarterStartMonth = (quarterNum - 1) * 3;
+              const quarterStartDate = `${year}-${String(quarterStartMonth + 1).padStart(2, '0')}-01`;
+              const quarterEndMonth = quarterStartMonth + 2;
+              const lastDayOfMonth = new Date(year, quarterEndMonth + 1, 0).getDate();
+              const quarterEndDate = `${year}-${String(quarterEndMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+              
+              const quarterCondition = and(
+                sql`${keyResults.startDate} <= ${quarterEndDate}`,
+                sql`${keyResults.endDate} >= ${quarterStartDate}`
+              );
+              if (quarterCondition) {
+                conditions.push(quarterCondition);
+              }
+              console.log(`🎯 Applied quarter filter to key results: ${quarter}`);
+            }
           }
           
           return await keyResultsQuery.where(and(...conditions));
@@ -605,15 +652,21 @@ export class MySQLStorageOptimized implements IStorage {
       
       MySQLPerformanceMonitor.endQuery('getQuarterlyStats', startTime);
       
-      // Generate quarterly stats
-      const quarters = getQuarterlyPeriods(allObjectives, null);
+      // Generate quarterly stats from objectives dates
+      const dates = allObjectives.map(obj => [obj.startDate, obj.endDate]).flat();
+      if (dates.length === 0) return [];
+      
+      const earliestDate = new Date(Math.min(...dates.map(d => new Date(d).getTime())));
+      const latestDate = new Date(Math.max(...dates.map(d => new Date(d).getTime())));
+      const quarterPeriods = getQuarterlyPeriods(earliestDate, latestDate);
+      
       const stats = [];
       
-      for (const quarter of quarters) {
-        const quarterData = await this.getQuarterlyData(quarter.id);
+      for (const period of quarterPeriods) {
+        const quarterData = await this.getQuarterlyData(period.quarter);
         stats.push({
-          period: quarter.id,
-          name: quarter.name,
+          period: period.quarter,
+          name: `T${period.quarterNumber} ${period.year}`,
           ...quarterData
         });
       }
