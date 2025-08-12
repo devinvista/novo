@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -25,9 +26,10 @@ interface SimpleDashboardProps {
 
 export default function SimpleDashboard({ filters }: SimpleDashboardProps) {
   const { selectedQuarter } = useQuarterlyFilter();
+  const queryClient = useQueryClient();
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ["/api/dashboard/kpis", selectedQuarter, filters],
+    queryKey: ["/api/dashboard/kpis", selectedQuarter, JSON.stringify(filters)],
     queryFn: () => {
       console.log('📡 Dashboard: Fetching KPIs with filters:', { selectedQuarter, filters });
       
@@ -41,9 +43,15 @@ export default function SimpleDashboard({ filters }: SimpleDashboardProps) {
       console.log('📡 Dashboard KPI URL:', url);
       return fetch(url, { credentials: "include" }).then(r => r.json());
     },
-    staleTime: 30000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 SimpleDashboard: Filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+  }, [filters, queryClient]);
 
   if (dashboardLoading) {
     return (

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,9 +19,10 @@ interface ProgressVisualizationProps {
 
 export default function ProgressVisualization({ filters }: ProgressVisualizationProps) {
   const [viewType, setViewType] = useState<"overview" | "objectives" | "krs" | "trends">("overview");
+  const queryClient = useQueryClient();
 
   const { data: kpis } = useQuery({
-    queryKey: ["/api/dashboard/kpis", filters],
+    queryKey: ["/api/dashboard/kpis", JSON.stringify(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.regionId) params.append('regionId', filters.regionId.toString());
@@ -34,7 +35,7 @@ export default function ProgressVisualization({ filters }: ProgressVisualization
   });
 
   const { data: objectives } = useQuery({
-    queryKey: ["/api/objectives", filters],
+    queryKey: ["/api/objectives", JSON.stringify(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.regionId) params.append('regionId', filters.regionId.toString());
@@ -47,13 +48,22 @@ export default function ProgressVisualization({ filters }: ProgressVisualization
   });
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results", filters],
+    queryKey: ["/api/key-results", JSON.stringify(filters)],
     queryFn: async () => {
       const response = await fetch("/api/key-results");
       if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
       return response.json();
     },
+    staleTime: 0,
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 ProgressVisualization: Filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+  }, [filters, queryClient]);
 
   // Prepare data for charts
   const prepareOverviewData = () => {
@@ -232,7 +242,7 @@ export default function ProgressVisualization({ filters }: ProgressVisualization
 
           <div className="grid gap-4">
             <h4 className="text-md font-semibold">Detalhes dos Objetivos</h4>
-            {objectivesData.map((obj, index) => (
+            {objectivesData.map((obj: any, index: number) => (
               <Card key={index}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-2">
@@ -284,7 +294,7 @@ export default function ProgressVisualization({ filters }: ProgressVisualization
 
           <div className="grid gap-4">
             <h4 className="text-md font-semibold">Detalhes dos Resultados-Chave</h4>
-            {keyResultsData.map((kr, index) => (
+            {keyResultsData.map((kr: any, index: number) => (
               <Card key={index}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-2">

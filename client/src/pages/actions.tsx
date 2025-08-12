@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useLocation } from "wouter";
 import Sidebar from "@/components/sidebar";
@@ -21,6 +21,7 @@ import {
 
 export default function Actions() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [keyResultFilter, setKeyResultFilter] = useState<string>("");
   const { selectedQuarter } = useQuarterlyFilter();
@@ -37,7 +38,7 @@ export default function Actions() {
   }, [location]);
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter, filters],
+    queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       console.log('📡 Actions: Fetching key results with filters:', { selectedQuarter, filters });
       
@@ -66,7 +67,14 @@ export default function Actions() {
         return response.json();
       }
     },
+    staleTime: 0,
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 Actions: Filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+  }, [filters, queryClient]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

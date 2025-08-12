@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import ObjectivesTable from "@/components/objectives-table";
@@ -14,6 +14,7 @@ import { useFilters } from "@/hooks/use-filters";
 
 export default function Objectives() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { selectedQuarter } = useQuarterlyFilter();
   const { filters } = useFilters();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -22,7 +23,7 @@ export default function Objectives() {
   const canManageObjectives = user?.role === "admin" || user?.role === "gestor";
 
   const { data: objectives, isLoading } = useQuery({
-    queryKey: ["/api/objectives", selectedQuarter, filters],
+    queryKey: ["/api/objectives", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       console.log('📡 Fetching objectives with filters:', { selectedQuarter, filters });
       
@@ -51,7 +52,14 @@ export default function Objectives() {
         return response.json();
       }
     },
+    staleTime: 0,
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 Objectives: Filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+  }, [filters, queryClient]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

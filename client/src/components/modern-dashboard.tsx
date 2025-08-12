@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -72,9 +73,10 @@ interface ModernDashboardProps {
 
 export default function ModernDashboard({ filters }: ModernDashboardProps) {
   const { selectedQuarter } = useQuarterlyFilter();
+  const queryClient = useQueryClient();
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ["/api/dashboard/kpis", selectedQuarter, filters],
+    queryKey: ["/api/dashboard/kpis", selectedQuarter, JSON.stringify(filters)],
     queryFn: () => {
       const params = new URLSearchParams();
       if (selectedQuarter && selectedQuarter !== 'all') params.append('quarter', selectedQuarter);
@@ -85,12 +87,12 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
       const url = `/api/dashboard/kpis${params.toString() ? `?${params}` : ''}`;
       return fetch(url, { credentials: "include" }).then(r => r.json());
     },
-    staleTime: 30000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
   const { data: objectives = [] } = useQuery({
-    queryKey: ["/api/objectives", selectedQuarter, filters],
+    queryKey: ["/api/objectives", selectedQuarter, JSON.stringify(filters)],
     queryFn: () => {
       if (selectedQuarter && selectedQuarter !== 'all') {
         const params = new URLSearchParams();
@@ -114,12 +116,12 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
         }).catch(() => []);
       }
     },
-    staleTime: 30000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
   const { data: keyResults } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter, filters],
+    queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: () => {
       if (selectedQuarter && selectedQuarter !== 'all') {
         const params = new URLSearchParams();
@@ -143,12 +145,12 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
         }).catch(() => []);
       }
     },
-    staleTime: 30000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
   const { data: actions = [] } = useQuery({
-    queryKey: ["/api/actions", selectedQuarter, filters],
+    queryKey: ["/api/actions", selectedQuarter, JSON.stringify(filters)],
     queryFn: () => {
       if (selectedQuarter && selectedQuarter !== 'all') {
         const params = new URLSearchParams();
@@ -172,7 +174,7 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
         }).catch(() => []);
       }
     },
-    staleTime: 30000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
@@ -222,6 +224,15 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
       ).catch(() => ({}));
     }
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 ModernDashboard: Filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
+  }, [filters, queryClient]);
 
   if (dashboardLoading) {
     return (

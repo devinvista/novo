@@ -1,4 +1,5 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { CheckCircle, Circle, Clock, AlertCircle, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -43,6 +44,7 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
   const [showForm, setShowForm] = useState(false);
   const [deleteActionId, setDeleteActionId] = useState<number | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const deleteActionMutation = useMutation({
     mutationFn: (actionId: number) => apiRequest("DELETE", `/api/actions/${actionId}`),
@@ -64,7 +66,7 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
   });
 
   const { data: actions, isLoading } = useQuery({
-    queryKey: ["/api/actions", keyResultId, selectedQuarter, filters],
+    queryKey: ["/api/actions", keyResultId, selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       if (selectedQuarter && selectedQuarter !== "all") {
         const params = new URLSearchParams();
@@ -98,7 +100,14 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
         return Array.isArray(result) ? result : [];
       }
     },
+    staleTime: 0,
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 ActionTimeline: Filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
+  }, [filters, queryClient]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

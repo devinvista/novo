@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Eye, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
@@ -60,7 +60,7 @@ export default function KeyResults() {
   };
   
   const { data: keyResults, isLoading, error } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter, filters],
+    queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       console.log('📡 Fetching key results with filters:', { selectedQuarter, filters });
       
@@ -97,7 +97,14 @@ export default function KeyResults() {
     },
     retry: 1,
     refetchOnWindowFocus: false,
+    staleTime: 0,
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 KeyResults: Filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+  }, [filters, queryClient]);
 
   // Fetch actions and checkpoints counts for each key result
   const { data: actionsCounts } = useQuery({
