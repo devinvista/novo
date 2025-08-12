@@ -381,7 +381,7 @@ export function registerRoutes(app: Express): Server {
       };
       
       console.log("Fetching key results with filters:", filters);
-      const keyResults = await storage.getKeyResults(filters.objectiveId, filters);
+      const keyResults = await storage.getKeyResults(undefined, filters);
       console.log("Key results found:", keyResults.length);
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do banco para formato brasileiro
@@ -943,7 +943,7 @@ export function registerRoutes(app: Express): Server {
       
       // Get all objectives, key results, actions, and checkpoints with real data
       const objectives = await storage.getObjectives(currentUserId ? { currentUserId } : {});
-      const keyResults = await storage.getKeyResults(currentUserId ? { currentUserId } : {});
+      const keyResults = await storage.getKeyResults(undefined, currentUserId ? { currentUserId } : {});
       const actions = await storage.getActions(currentUserId ? { currentUserId } : {});
       const checkpoints = await storage.getCheckpoints(currentUserId ? { currentUserId } : {});
       
@@ -1368,7 +1368,7 @@ export function registerRoutes(app: Express): Server {
       const id = parseInt(req.params.id);
       
       // Check if indicator is being used
-      const keyResults = await storage.getKeyResults({});
+      const keyResults = await storage.getKeyResults(undefined, {});
       const isUsed = keyResults.some(kr => {
         const indicators = Array.isArray(kr.strategicIndicatorIds) 
           ? kr.strategicIndicatorIds 
@@ -1602,7 +1602,7 @@ export function registerRoutes(app: Express): Server {
       // Check if service line is being used
       const services = await storage.getServices();
       const objectives = await storage.getObjectives({});
-      const keyResults = await storage.getKeyResults({});
+      const keyResults = await storage.getKeyResults(undefined, {});
       
       const hasServices = services.some(s => s.serviceLineId === id);
       const isUsedInObjectives = objectives.some(obj => obj.serviceLineId === id);
@@ -1661,7 +1661,7 @@ export function registerRoutes(app: Express): Server {
       const id = parseInt(req.params.id);
       
       // Check if service is being used
-      const keyResults = await storage.getKeyResults({});
+      const keyResults = await storage.getKeyResults(undefined, {});
       const isUsed = keyResults.some(kr => kr.serviceId === id);
       
       if (isUsed) {
