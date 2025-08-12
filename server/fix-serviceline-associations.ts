@@ -17,13 +17,13 @@ async function fixServiceLineAssociations() {
     
     // Define associations based on key result content
     const associations = [
-      { keyword: 'Vacinação', serviceLineId: 15, serviceName: 'Saúde Ocupacional' },
-      { keyword: 'Saúde Ocupacional', serviceLineId: 15, serviceName: 'Saúde Ocupacional' },
-      { keyword: 'Nutrição', serviceLineId: 14, serviceName: 'Nutrição' },
+      { keyword: 'Vacinação', serviceLineId: 15, serviceName: 'Vacinação' },
+      { keyword: 'Saúde Ocupacional', serviceLineId: 13, serviceName: 'Saúde Ocupacional' },
+      { keyword: 'Nutrição', serviceLineId: 8, serviceName: 'Nutrição' },
       { keyword: 'Atividades Físicas', serviceLineId: 4, serviceName: 'Atividade Física' },
-      { keyword: 'NRs', serviceLineId: 15, serviceName: 'Saúde Ocupacional' },
+      { keyword: 'NRs', serviceLineId: 14, serviceName: 'Segurança do Trabalho' },
       { keyword: 'Pilates', serviceLineId: 4, serviceName: 'Atividade Física' },
-      { keyword: 'bioimpedância', serviceLineId: 14, serviceName: 'Nutrição' }
+      { keyword: 'bioimpedância', serviceLineId: 8, serviceName: 'Nutrição' }
     ];
     
     let updatedCount = 0;
