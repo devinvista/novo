@@ -7,6 +7,7 @@ import { ForceRefresh } from "@/components/force-refresh";
 import { AuthProvider } from "@/hooks/use-auth";
 import { QuarterlyFilterProvider } from "@/hooks/use-quarterly-filter";
 import { SidebarProvider } from "@/hooks/use-sidebar-toggle";
+import { FiltersProvider } from "@/hooks/use-filters";
 import { ProtectedRoute } from "./lib/protected-route";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
@@ -41,15 +42,17 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <QuarterlyFilterProvider>
-          <SidebarProvider>
-            <TooltipProvider>
-              <ForceRefresh />
-              <Toaster />
-              <Router />
-            </TooltipProvider>
-          </SidebarProvider>
-        </QuarterlyFilterProvider>
+        <FiltersProvider>
+          <QuarterlyFilterProvider>
+            <SidebarProvider>
+              <TooltipProvider>
+                <ForceRefresh />
+                <Toaster />
+                <Router />
+              </TooltipProvider>
+            </SidebarProvider>
+          </QuarterlyFilterProvider>
+        </FiltersProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

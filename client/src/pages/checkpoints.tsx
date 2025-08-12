@@ -15,6 +15,7 @@ import NextCheckpointsOverview from "@/components/next-checkpoints-overview";
 import CheckpointUpdateDialog from "@/components/checkpoint-update-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useFilters } from "@/hooks/use-filters";
 
 type ViewMode = 'circles' | 'simple';
 

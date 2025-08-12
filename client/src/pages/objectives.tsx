@@ -10,16 +10,13 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ObjectiveForm from "@/components/objective-form";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
+import { useFilters } from "@/hooks/use-filters";
 
 export default function Objectives() {
   const { user } = useAuth();
   const { selectedQuarter } = useQuarterlyFilter();
+  const { filters } = useFilters();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [filters, setFilters] = useState<{
-    regionId?: number;
-    subRegionId?: number;
-    serviceLineId?: number;
-  }>({});
 
   // Check if user can create/edit objectives
   const canManageObjectives = user?.role === "admin" || user?.role === "gestor";
@@ -58,7 +55,6 @@ export default function Objectives() {
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader 
-          onFilterChange={setFilters}
           showFilters={true}
         />
         

@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import ActionForm from "@/components/action-form";
 import ActionTimeline from "@/components/action-timeline";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
+import { useFilters } from "@/hooks/use-filters";
 import {
   Select,
   SelectContent,
@@ -23,12 +24,8 @@ export default function Actions() {
   const [showForm, setShowForm] = useState(false);
   const [keyResultFilter, setKeyResultFilter] = useState<string>("");
   const { selectedQuarter } = useQuarterlyFilter();
+  const { filters } = useFilters();
   const [location] = useLocation();
-  const [filters, setFilters] = useState<{
-    regionId?: number;
-    subRegionId?: number;
-    serviceLineId?: number;
-  }>({});
 
   // Read kr parameter from URL and set filter
   useEffect(() => {
@@ -73,7 +70,6 @@ export default function Actions() {
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader 
-          onFilterChange={setFilters}
           showFilters={true}
         />
         

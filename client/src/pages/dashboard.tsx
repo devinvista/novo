@@ -3,14 +3,11 @@ import Sidebar from "@/components/sidebar";
 import SimpleDashboard from "@/components/simple-dashboard";
 import CompactHeader from "@/components/compact-header";
 import { useAuth } from "@/hooks/use-auth";
+import { useFilters } from "@/hooks/use-filters";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [filters, setFilters] = useState<{
-    regionId?: number;
-    subRegionId?: number;
-    serviceLineId?: number;
-  }>({});
+  const { filters } = useFilters();
   
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -18,7 +15,6 @@ export default function Dashboard() {
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader 
-          onFilterChange={setFilters}
           showFilters={true}
         />
         

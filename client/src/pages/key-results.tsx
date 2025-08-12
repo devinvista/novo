@@ -7,6 +7,7 @@ import CompactHeader from "@/components/compact-header";
 import KeyResultForm from "@/components/key-result-form-simple";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useAuth } from "@/hooks/use-auth";
+import { useFilters } from "@/hooks/use-filters";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { translateFrequency } from "@/lib/frequency-translations";
@@ -23,14 +24,10 @@ export default function KeyResults() {
   const [selectedKeyResult, setSelectedKeyResult] = useState<any>(null);
   const [, setLocation] = useLocation();
   const { selectedQuarter } = useQuarterlyFilter();
+  const { filters } = useFilters();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState<{
-    regionId?: number;
-    subRegionId?: number;
-    serviceLineId?: number;
-  }>({});
   
   // Check if user can manage key results
   const canManageKeyResults = user?.role === "admin" || user?.role === "gestor";
@@ -210,7 +207,6 @@ export default function KeyResults() {
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader 
-          onFilterChange={setFilters}
           showFilters={true}
         />
         

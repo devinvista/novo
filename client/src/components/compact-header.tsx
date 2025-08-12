@@ -5,7 +5,8 @@ import {
   ChevronDown,
   User,
   Settings,
-  LogOut
+  LogOut,
+  X
 } from "lucide-react";
 import {
   Select,
@@ -25,23 +26,44 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
+import { useFilters } from "@/hooks/use-filters";
 import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 import darkLogoImage from "@assets/e03da512-3870-4e22-a75b-b15313a7ad9b_1754514316144.png";
 
-interface CompactHeaderProps {
-  showFilters?: boolean;
-  onFilterChange?: (filters: any) => void;
+interface Region {
+  id: number;
+  name: string;
+  code: string;
 }
 
-export default function CompactHeader({ showFilters = true, onFilterChange }: CompactHeaderProps) {
+interface SubRegion {
+  id: number;
+  name: string;
+  code: string;
+  regionId: number;
+}
+
+interface ServiceLine {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+interface Quarter {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface CompactHeaderProps {
+  showFilters?: boolean;
+}
+
+export default function CompactHeader({ showFilters = true }: CompactHeaderProps) {
   const { selectedQuarter, setSelectedQuarter } = useQuarterlyFilter();
   const { isOpen, toggle } = useSidebarToggle();
-  
-  const [filters, setFilters] = useState({
-    regionId: undefined as number | undefined,
-    subRegionId: undefined as number | undefined,
-    serviceLineId: undefined as number | undefined,
-  });
+  const { filters, setFilters, clearFilters } = useFilters();
 
   const { data: user }: { data: any } = useQuery({
     queryKey: ["/api/user"],
@@ -49,19 +71,19 @@ export default function CompactHeader({ showFilters = true, onFilterChange }: Co
     gcTime: 0,
   });
 
-  const { data: availableQuarters = [] } = useQuery({
+  const { data: availableQuarters = [] } = useQuery<Quarter[]>({
     queryKey: ["/api/quarters"],
   });
 
-  const { data: regions = [] } = useQuery({
+  const { data: regions = [] } = useQuery<Region[]>({
     queryKey: ["/api/regions"],
   });
 
-  const { data: subRegions = [] } = useQuery({
+  const { data: subRegions = [] } = useQuery<SubRegion[]>({
     queryKey: ["/api/sub-regions"],
   });
 
-  const { data: serviceLines = [] } = useQuery({
+  const { data: serviceLines = [] } = useQuery<ServiceLine[]>({
     queryKey: ["/api/service-lines"],
   });
 
@@ -76,7 +98,6 @@ export default function CompactHeader({ showFilters = true, onFilterChange }: Co
     }
     
     setFilters(newFilters);
-    onFilterChange?.(newFilters);
   };
 
   const handleLogout = async () => {
@@ -102,9 +123,11 @@ export default function CompactHeader({ showFilters = true, onFilterChange }: Co
     return user?.name || user?.username || "Usuário";
   };
 
-  const filteredSubRegions = subRegions.filter((sr: any) => 
+  const filteredSubRegions = subRegions.filter((sr: SubRegion) => 
     !filters.regionId || sr.regionId === filters.regionId
   );
+
+  const hasActiveFilters = filters.regionId || filters.subRegionId || filters.serviceLineId;
 
   return (
     <header className={`bg-gradient-to-r from-[#1a4b9f] to-[#0091d6] text-white shadow-md border-b-2 border-[#4db74f] fixed top-0 z-50 transition-all duration-300 ${
