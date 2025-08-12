@@ -957,6 +957,7 @@ export class MySQLStorageOptimized implements IStorage {
       if (filters?.serviceLineId) {
         whereConditions.push(eq(keyResults.serviceLineId, filters.serviceLineId));
         console.log('🔍 Applied serviceLineId filter:', filters.serviceLineId);
+        console.log('🔍 WHERE conditions length after serviceLineId:', whereConditions.length);
       }
 
       // Apply user access filters (if not already handled by regional filtering)
@@ -985,6 +986,17 @@ export class MySQLStorageOptimized implements IStorage {
 
       MySQLPerformanceMonitor.endQuery('getKeyResults', startTime);
       console.log(`🔍 Key results found: ${result.length}`);
+      
+      // Debug: log first few results with serviceLineId
+      if (result.length > 0) {
+        console.log('🔍 Sample key results serviceLineId values:', 
+          result.slice(0, 3).map(kr => ({ 
+            id: kr.id, 
+            title: kr.title?.substring(0, 30), 
+            serviceLineId: kr.serviceLineId 
+          }))
+        );
+      }
       
       // Calculate and sync progress for each key result
       const keyResultsWithProgress = result.map(kr => {
