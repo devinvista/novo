@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import QuarterlyFilter from "@/components/quarterly-filter";
+
 import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 
 export default function Sidebar() {
@@ -76,13 +76,7 @@ export default function Sidebar() {
         />
       </div>
 
-      {/* Quarterly Filter */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="text-xs text-sidebar-foreground/60 mb-2 font-medium uppercase tracking-wide">
-          Período
-        </div>
-        <QuarterlyFilter variant="sidebar" />
-      </div>
+
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 space-y-2">

@@ -178,17 +178,28 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                 <Filter className="h-3 w-3" />
                 
                 {/* Filtro de Trimestre */}
-                <Select value={selectedQuarter || "all"} onValueChange={setSelectedQuarter}>
-                  <SelectTrigger className="w-28 h-7 bg-white/20 border-white/30 text-white text-xs placeholder:text-white/70">
-                    <SelectValue placeholder="Trimestre" />
+                <Select value={selectedQuarter || ""} onValueChange={setSelectedQuarter}>
+                  <SelectTrigger className="w-32 h-7 bg-white/20 border-white/30 text-white text-xs placeholder:text-white/70">
+                    <SelectValue placeholder="Período" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {availableQuarters.map((quarter: any) => (
-                      <SelectItem key={quarter.id || quarter} value={quarter.id || quarter}>
-                        {quarter.name || quarter}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="">Todos</SelectItem>
+                    {availableQuarters.map((quarter: any) => {
+                      const quarterValue = typeof quarter === 'string' ? quarter : quarter.id;
+                      const quarterDisplay = typeof quarter === 'string' && quarter.includes('-T')
+                        ? (() => {
+                            const [year, q] = quarter.split('-T');
+                            const quarterNames = ['1º Tri', '2º Tri', '3º Tri', '4º Tri'];
+                            return `${quarterNames[parseInt(q) - 1]} ${year}`;
+                          })()
+                        : (quarter?.name || quarterValue || quarter);
+                      
+                      return (
+                        <SelectItem key={quarterValue} value={quarterValue}>
+                          {quarterDisplay}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
 
