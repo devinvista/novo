@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { 
   Target, 
   Calendar, 
@@ -30,6 +31,7 @@ interface ActionPlanProps {
 }
 
 export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps) {
+  const queryClient = useQueryClient();
   const { data: objectives, isLoading: objectivesLoading } = useQuery({
     queryKey: ["/api/objectives", JSON.stringify(filters)],
     queryFn: async () => {
@@ -77,6 +79,14 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
     },
     staleTime: 0,
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 ActionPlan filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
+  }, [filters, queryClient]);
 
   // Get strategic indicators data
   const { data: strategicIndicators } = useQuery({

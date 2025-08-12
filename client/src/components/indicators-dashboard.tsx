@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -21,6 +22,7 @@ interface IndicatorsDashboardProps {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
 export default function IndicatorsDashboard({ selectedQuarter, filters }: IndicatorsDashboardProps) {
+  const queryClient = useQueryClient();
   const { data: indicators, isLoading: indicatorsLoading } = useQuery({
     queryKey: ["/api/strategic-indicators"],
   });
@@ -60,6 +62,12 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
     refetchOnWindowFocus: false,
     staleTime: 0, // Sempre refetch quando os filtros mudarem
   });
+
+  // Force invalidation when filters change
+  useEffect(() => {
+    console.log('🔄 Filters changed, invalidating queries:', filters);
+    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+  }, [filters, queryClient]);
 
   const getIndicatorIcon = (name: string) => {
     switch (name) {
