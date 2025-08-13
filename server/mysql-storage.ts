@@ -6,7 +6,7 @@ import {
   StrategicIndicator, Objective, InsertObjective, KeyResult, InsertKeyResult,
   Action, InsertAction, Checkpoint, InsertCheckpoint, Activity
 } from '../shared/schema';
-// Removed parseDecimalBR - using parseFloat directly
+import { convertBRToDatabase } from './formatters';
 
 // MySQL connection configuration for Replit
 const mysqlConfig = {
@@ -594,8 +594,8 @@ export class MySQLStorage implements IStorage {
       console.log('Creating key result with data:', keyResult);
       
       // Garantir que valores decimais sejam válidos 
-      const targetValue = parseFloat((keyResult.targetValue || "0").toString().replace(',', '.')) || 0;
-      const currentValue = parseFloat((keyResult.initialValue || "0").toString().replace(',', '.')) || 0;
+      const targetValue = convertBRToDatabase(keyResult.targetValue || "0");
+      const currentValue = convertBRToDatabase(keyResult.initialValue || "0");
       
       console.log('Processing Key Result values:', {
         originalTarget: keyResult.targetValue,

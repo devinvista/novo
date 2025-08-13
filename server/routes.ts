@@ -822,14 +822,14 @@ export function registerRoutes(app: Express): Server {
       
       console.log(`✅ Found checkpoint ${id} for keyResultId: ${existingCheckpoint.keyResultId}`);
       
-      // Calculate progress
-      const targetValue = parseFloat(existingCheckpoint.targetValue);
-      const actual = parseFloat(actualValue.replace(',', '.'));
+      // Calculate progress - CORREÇÃO: usar convertBRToDatabase para conversão adequada
+      const targetValue = convertBRToDatabase(existingCheckpoint.targetValue);
+      const actual = convertBRToDatabase(actualValue);
       const progress = targetValue > 0 ? (actual / targetValue) * 100 : 0;
       
-      // Prepare update data with proper date handling
+      // Prepare update data with proper date handling - CORREÇÃO: converter actualValue para formato do banco
       const updateData: any = {
-        actualValue: actualValue.toString(),
+        actualValue: actual.toString(), // Usar valor já convertido para banco
         notes,
         status: status || 'completed',
         progress: progress.toString()
@@ -866,7 +866,7 @@ export function registerRoutes(app: Express): Server {
               // The checkpoint data is directly in cp, not nested
               const isCompleted = cp.status === 'completed';
               const actualValue = cp.actualValue;
-              const numValue = actualValue ? parseFloat(actualValue) : 0;
+              const numValue = actualValue ? convertBRToDatabase(actualValue) : 0;
               
               console.log(`🔍 Checkpoint ${cp.id}: status=${cp.status}, actualValue=${actualValue}, numValue=${numValue}`);
               
@@ -889,8 +889,8 @@ export function registerRoutes(app: Express): Server {
             
             // Get current key result to calculate new progress
             const currentKR = await storage.getKeyResult(existingCheckpoint.keyResultId);
-            const targetValue = parseFloat(currentKR.targetValue || '0');
-            const currentValueNum = parseFloat(latestValue || '0');
+            const targetValue = convertBRToDatabase(currentKR.targetValue || '0');
+            const currentValueNum = convertBRToDatabase(latestValue || '0');
             const newProgress = targetValue > 0 ? (currentValueNum / targetValue) * 100 : 0;
             
             console.log(`📊 Calculating progress: ${currentValueNum}/${targetValue} = ${newProgress}%`);
