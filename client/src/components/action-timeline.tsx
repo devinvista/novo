@@ -65,39 +65,44 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
     },
   });
 
-  const { data: actions, isLoading } = useQuery({
+  const { data: actions, isLoading, error: actionsError } = useQuery({
     queryKey: ["/api/actions", keyResultId, selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
-      if (selectedQuarter && selectedQuarter !== "all") {
-        const params = new URLSearchParams();
-        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
-        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
-        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
-        
-        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
-        const response = await fetch(url, { credentials: "include" });
-        if (!response.ok) throw new Error("Erro ao carregar ações trimestrais");
-        const data = await response.json();
-        let actions = Array.isArray(data.actions) ? data.actions : [];
-        
-        // Filter by keyResultId if specified
-        if (keyResultId) {
-          actions = actions.filter((action: any) => action.keyResult?.id === keyResultId);
+      try {
+        if (selectedQuarter && selectedQuarter !== "all") {
+          const params = new URLSearchParams();
+          if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+          if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+          if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+          
+          const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+          const response = await fetch(url, { credentials: "include" });
+          if (!response.ok) throw new Error("Erro ao carregar ações trimestrais");
+          const data = await response.json();
+          let actions = Array.isArray(data.actions) ? data.actions : [];
+          
+          // Filter by keyResultId if specified
+          if (keyResultId) {
+            actions = actions.filter((action: any) => action.keyResult?.id === keyResultId);
+          }
+          
+          return actions;
+        } else {
+          const params = new URLSearchParams();
+          if (keyResultId) params.append('keyResultId', keyResultId.toString());
+          if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+          if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+          if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+          
+          const url = `/api/actions${params.toString() ? `?${params}` : ''}`;
+          const response = await fetch(url, { credentials: "include" });
+          if (!response.ok) throw new Error("Erro ao carregar ações");
+          const result = await response.json();
+          return Array.isArray(result) ? result : [];
         }
-        
-        return actions;
-      } else {
-        const params = new URLSearchParams();
-        if (keyResultId) params.append('keyResultId', keyResultId.toString());
-        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
-        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
-        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
-        
-        const url = `/api/actions${params.toString() ? `?${params}` : ''}`;
-        const response = await fetch(url, { credentials: "include" });
-        if (!response.ok) throw new Error("Erro ao carregar ações");
-        const result = await response.json();
-        return Array.isArray(result) ? result : [];
+      } catch (error) {
+        console.error('Error fetching actions:', error);
+        return [];
       }
     },
     staleTime: 0,

@@ -37,34 +37,40 @@ export default function Actions() {
     }
   }, [location]);
 
-  const { data: keyResults } = useQuery({
+  const { data: keyResults, error: keyResultsError } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
-      console.log('📡 Actions: Fetching key results with filters:', { selectedQuarter, filters });
-      
-      if (selectedQuarter && selectedQuarter !== "all") {
-        const params = new URLSearchParams();
-        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
-        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
-        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+      try {
+        console.log('📡 Actions: Fetching key results with filters:', { selectedQuarter, filters });
         
-        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
-        console.log('📡 Actions KR Quarterly URL:', url);
-        const response = await fetch(url, { credentials: "include" });
-        if (!response.ok) throw new Error("Erro ao carregar key results trimestrais");
-        const data = await response.json();
-        return data.keyResults || [];
-      } else {
-        const params = new URLSearchParams();
-        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
-        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
-        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
-        
-        const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
-        console.log('📡 Actions KR URL:', url);
-        const response = await fetch(url, { credentials: "include" });
-        if (!response.ok) throw new Error("Erro ao carregar key results");
-        return response.json();
+        if (selectedQuarter && selectedQuarter !== "all") {
+          const params = new URLSearchParams();
+          if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+          if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+          if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+          
+          const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+          console.log('📡 Actions KR Quarterly URL:', url);
+          const response = await fetch(url, { credentials: "include" });
+          if (!response.ok) throw new Error("Erro ao carregar key results trimestrais");
+          const data = await response.json();
+          return Array.isArray(data.keyResults) ? data.keyResults : [];
+        } else {
+          const params = new URLSearchParams();
+          if (filters?.regionId) params.append('regionId', filters.regionId.toString());
+          if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
+          if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
+          
+          const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
+          console.log('📡 Actions KR URL:', url);
+          const response = await fetch(url, { credentials: "include" });
+          if (!response.ok) throw new Error("Erro ao carregar key results");
+          const result = await response.json();
+          return Array.isArray(result) ? result : [];
+        }
+      } catch (error) {
+        console.error('Error fetching key results:', error);
+        return [];
       }
     },
     staleTime: 0,
@@ -98,7 +104,7 @@ export default function Actions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os resultados-chave</SelectItem>
-                  {keyResults?.filter((kr: any) => kr && kr.id && kr.title).map((kr: any) => (
+                  {Array.isArray(keyResults) && keyResults.filter((kr: any) => kr && kr.id && kr.title).map((kr: any) => (
                     <SelectItem key={kr.id} value={kr.id.toString()}>
                       {kr.title}
                     </SelectItem>

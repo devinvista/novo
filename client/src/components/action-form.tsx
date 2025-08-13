@@ -15,8 +15,13 @@ import { MessageSquare, Calendar, User } from "lucide-react";
 import { z } from "zod";
 import { formatDateBR } from "@/lib/formatters";
 
-// Use the proper insert schema directly
-const actionFormSchema = insertActionSchema;
+// Use the proper insert schema directly - with error handling
+const actionFormSchema = insertActionSchema.omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  number: true 
+});
 
 type ActionFormData = z.infer<typeof actionFormSchema>;
 
