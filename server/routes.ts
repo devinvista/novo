@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema, insertUserSchema } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { z } from "zod";
-import { formatDecimalBR, formatNumberBR, convertBRToDatabase, convertDatabaseToBR } from "./formatters";
+import { formatDecimalBR, formatNumberBR, convertBRToDatabase, convertDatabaseToBR, formatBrazilianNumber } from "./formatters";
 import * as XLSX from "xlsx";
 import multer from "multer";
 
@@ -723,9 +723,9 @@ export function registerRoutes(app: Express): Server {
       // Usar formatação inteligente (sem decimais desnecessários)
       const checkpointsBR = checkpoints.map(checkpoint => ({
         ...checkpoint,
-        actualValue: checkpoint.actualValue ? convertDatabaseToBR(checkpoint.actualValue) : null,
-        targetValue: convertDatabaseToBR(checkpoint.targetValue || "0"),
-        progress: checkpoint.progress ? convertDatabaseToBR(checkpoint.progress) : "0"
+        actualValue: checkpoint.actualValue ? formatBrazilianNumber(checkpoint.actualValue) : null,
+        targetValue: formatBrazilianNumber(checkpoint.targetValue || "0"),
+        progress: checkpoint.progress ? parseFloat(checkpoint.progress).toFixed(2) : "0"
       }));
       
       res.json(checkpointsBR);
@@ -757,9 +757,9 @@ export function registerRoutes(app: Express): Server {
       // CONVERSÃO PADRÃO BRASILEIRO: Converter resposta para formato brasileiro
       const updatedBR = {
         ...updated,
-        actualValue: convertDatabaseToBR(updated.actualValue || "0", 2),
-        targetValue: convertDatabaseToBR(updated.targetValue || "0", 2),
-        progress: updated.progress ? convertDatabaseToBR(updated.progress, 2) : "0,00"
+        actualValue: formatBrazilianNumber(updated.actualValue || "0"),
+        targetValue: formatBrazilianNumber(updated.targetValue || "0"),
+        progress: updated.progress ? parseFloat(updated.progress).toFixed(2) : "0,00"
       };
       
       res.json(updatedBR);
