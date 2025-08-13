@@ -45,9 +45,8 @@ export function formatNumberBR(value: number | string, decimals: number = 2): st
   return formatBrazilianNumber(value, decimals);
 }
 
-export function convertDatabaseToBR(value: number | string, decimals?: number): string {
-  return formatBrazilianNumber(value, decimals);
-}
+// REMOVIDA: convertDatabaseToBR era duplicata de formatBrazilianNumber
+// Use formatBrazilianNumber diretamente
 
 // Converte valor brasileiro (vírgula, pontos) para valor de banco (apenas ponto decimal)
 export function convertBRToDatabase(value: string | number): number {

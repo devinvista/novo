@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Target, TrendingUp, Award, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getProgressBadgeVariant, getProgressBadgeText } from "@/lib/checkpoint-utils";
-import { formatNumberBR } from "@/lib/formatters";
+import { formatBrazilianNumber } from "@/lib/formatters";
 
 interface AnimatedProgressRingProps {
   progress: number;
@@ -225,7 +225,7 @@ export default function AnimatedProgressRing({
         
         {/* Progress Values */}
         <div className="text-xs text-gray-500 mt-1">
-          {progress === -1 ? "Aguardando período" : `${formatNumberBR(actualValue)} / ${formatNumberBR(targetValue)}`}
+          {progress === -1 ? "Aguardando período" : `${formatBrazilianNumber(actualValue)} / ${formatBrazilianNumber(targetValue)}`}
         </div>
       </motion.div>
 

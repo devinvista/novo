@@ -113,25 +113,9 @@ export function parseDecimalBR(value: string): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
-// Formata número float para string com vírgula (padrão brasileiro)
-// Mostra inteiros quando possível, decimais apenas quando necessário
-export function formatDecimalBR(value: number | string, decimals: number = 2): string {
-  if (value === null || value === undefined || value === "") return "0";
-  
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0";
-  
-  // Se o número é inteiro, não mostrar decimais
-  if (num % 1 === 0) {
-    return num.toString();
-  }
-  
-  return num.toFixed(decimals).replace(".", ",");
-}
-
-// Formata número para exibição com separador de milhares brasileiro
-// Mostra inteiros quando possível, decimais apenas quando necessário
-export function formatNumberBR(value: number | string, decimals?: number): string {
+// FUNÇÃO CENTRAL: Formata números para padrão brasileiro
+// Unifica toda a formatação em uma só função para evitar duplicidade
+export function formatBrazilianNumber(value: number | string, decimals?: number): string {
   if (value === null || value === undefined || value === "" || value === "0") return "0";
   
   let num: number;
@@ -167,6 +151,15 @@ export function formatNumberBR(value: number | string, decimals?: number): strin
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(num);
+}
+
+// ALIASES para manter compatibilidade (todas delegam para a função central)
+export function formatDecimalBR(value: number | string, decimals: number = 2): string {
+  return formatBrazilianNumber(value, decimals);
+}
+
+export function formatNumberBR(value: number | string, decimals?: number): string {
+  return formatBrazilianNumber(value, decimals);
 }
 
 // Converte valor brasileiro (com vírgula) para valor internacional (com ponto) para envio ao servidor
