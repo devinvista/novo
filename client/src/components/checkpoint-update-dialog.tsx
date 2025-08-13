@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { NumberInputBR } from "@/components/ui/number-input-br";
+import { parseDecimalBR } from "@/lib/formatters";
 
 interface CheckpointUpdateDialogProps {
   checkpoint: any;
@@ -67,7 +68,7 @@ export default function CheckpointUpdateDialog({
     e.preventDefault();
     
     const updateData = {
-      actualValue: actualValue.replace(',', '.'), // Convert to database format
+      actualValue: parseDecimalBR(actualValue).toString(), // Convert to database format using proper parser
       status,
       notes: notes.trim() || null,
       completedDate: status === 'completed' ? new Date().toISOString() : null,
@@ -98,8 +99,9 @@ export default function CheckpointUpdateDialog({
   };
 
   const calculateProgress = () => {
-    const target = parseFloat(checkpoint?.targetValue?.replace(',', '.') || '0');
-    const actual = parseFloat(actualValue.replace(',', '.') || '0');
+    // CORREÇÃO: Usar parseDecimalBR para converter corretamente valores brasileiros
+    const target = parseDecimalBR(checkpoint?.targetValue || '0');
+    const actual = parseDecimalBR(actualValue || '0');
     if (target === 0) return 0;
     return Math.min(100, Math.round((actual / target) * 100));
   };
