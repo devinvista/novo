@@ -131,7 +131,7 @@ export function formatDecimalBR(value: number | string, decimals: number = 2): s
 
 // Formata número para exibição com separador de milhares brasileiro
 // Mostra inteiros quando possível, decimais apenas quando necessário
-export function formatNumberBR(value: number | string, decimals: number = 2): string {
+export function formatNumberBR(value: number | string, decimals?: number): string {
   if (value === null || value === undefined || value === "" || value === "0") return "0";
   
   let num: number;
@@ -145,14 +145,24 @@ export function formatNumberBR(value: number | string, decimals: number = 2): st
   
   if (isNaN(num)) return "0";
   
-  // Se o número é inteiro, não mostrar decimais
-  if (num % 1 === 0) {
-    return new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(num);
+  // Se decimals não foi especificado, usar formatação inteligente
+  if (decimals === undefined) {
+    // Se o número é inteiro, não mostrar decimais
+    if (num % 1 === 0) {
+      return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(num);
+    } else {
+      // Se tem decimais, mostrar até 2 casas (sem zeros desnecessários)
+      return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(num);
+    }
   }
   
+  // Se decimals foi especificado, usar o valor fornecido
   return new Intl.NumberFormat('pt-BR', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
