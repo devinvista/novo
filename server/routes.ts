@@ -388,8 +388,8 @@ export function registerRoutes(app: Express): Server {
       // Usar formatação inteligente (sem decimais desnecessários)
       const keyResultsBR = keyResults.map(kr => ({
         ...kr,
-        currentValue: convertDatabaseToBR(kr.currentValue || "0"),
-        targetValue: convertDatabaseToBR(kr.targetValue || "0"),
+        currentValue: formatBrazilianNumber(kr.currentValue || "0"),
+        targetValue: formatBrazilianNumber(kr.targetValue || "0"),
         progress: kr.progress !== null && kr.progress !== undefined ? parseFloat(kr.progress.toString()) : 0
       }));
       
@@ -983,8 +983,8 @@ export function registerRoutes(app: Express): Server {
         .map(kr => ({
           title: kr.title,
           progress: kr.progress || 0,
-          currentValue: kr.currentValue ? convertDatabaseToBR(kr.currentValue) : '0',
-          targetValue: kr.targetValue ? convertDatabaseToBR(kr.targetValue) : '0'
+          currentValue: kr.currentValue ? formatBrazilianNumber(kr.currentValue) : '0',
+          targetValue: kr.targetValue ? formatBrazilianNumber(kr.targetValue) : '0'
         }));
       
       // Calculate strategic indicators performance
