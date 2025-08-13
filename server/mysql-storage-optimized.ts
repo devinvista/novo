@@ -483,158 +483,94 @@ export class MySQLStorageOptimized implements IStorage {
     try {
       const startTime = MySQLPerformanceMonitor.startQuery('getQuarterlyData');
       
-      // Build base query for objectives with access control (complete objective data)
-      let objectivesQuery = db.select({
-        id: objectives.id,
-        title: objectives.title,
-        description: objectives.description,
-        startDate: objectives.startDate,
-        endDate: objectives.endDate,
-        status: objectives.status,
-        regionId: objectives.regionId,
-        ownerId: objectives.ownerId,
-        createdAt: objectives.createdAt,
-        updatedAt: objectives.updatedAt,
-        ownerName: users.name,
-        ownerUsername: users.username
-      }).from(objectives)
-      .leftJoin(users, eq(objectives.ownerId, users.id));
-
-      // Apply user access control if user is provided
-      if (currentUserId) {
-        const user = await this.getUser(currentUserId);
-        if (user && user.role !== 'admin') {
-          const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
-          if (userRegionIds.length > 0) {
-            objectivesQuery = objectivesQuery.where(
-              inArray(objectives.regionId, userRegionIds)
-            );
-          }
-        }
+      console.log(`🔍 getQuarterlyData called with quarter: ${quarter}, currentUserId: ${currentUserId}, filters:`, filters);
+      
+      // CRÍTICO: Validar userId
+      if (!currentUserId) {
+        console.log(`🚫 No currentUserId provided, returning empty data`);
+        MySQLPerformanceMonitor.endQuery('getQuarterlyData', startTime);
+        return { objectives: [], keyResults: [], actions: [] };
       }
 
-      // Apply quarterly filtering if quarter is specified
+      // Construir filtros baseados nos parâmetros preservando controle de acesso
+      const objectiveFilters = {
+        currentUserId,
+        regionId: filters?.regionId,
+        subRegionId: filters?.subRegionId,
+        serviceLineId: filters?.serviceLineId
+      };
+
+      console.log(`🔍 Using filters with currentUserId preserved:`, objectiveFilters);
+
+      // ETAPA 1: Obter TODOS os objetivos que o usuário tem acesso (sempre aplicar controle de acesso primeiro)
+      const userObjectives = await this.getObjectives(objectiveFilters);
+      console.log(`🔒 User has access to ${userObjectives.length} objectives total`);
+
+      // ETAPA 2: Aplicar filtro trimestral aos objetivos do usuário SE especificado
+      let quarterObjectives = userObjectives;
       if (quarter && quarter !== 'all') {
-        console.log(`🔍 Applying quarterly filter for: ${quarter}`);
-        // Parse quarter string like "2025-T1" to get dates
         const quarterMatch = quarter.match(/(\d{4})-T(\d)/);
         if (quarterMatch) {
           const year = parseInt(quarterMatch[1]);
           const quarterNum = parseInt(quarterMatch[2]);
           
-          // Calculate quarter start and end dates correctly
-          const quarterStartMonth = (quarterNum - 1) * 3; // 0, 3, 6, 9 for T1, T2, T3, T4
-          const quarterStartDate = `${year}-${String(quarterStartMonth + 1).padStart(2, '0')}-01`;
+          const quarterStartMonth = (quarterNum - 1) * 3;
+          const quarterStartDate = new Date(year, quarterStartMonth, 1);
+          const quarterEndDate = new Date(year, quarterStartMonth + 3, 0);
           
-          // Calculate the last day of the quarter
-          const quarterEndMonth = quarterStartMonth + 2; // 2, 5, 8, 11 for T1, T2, T3, T4
-          const lastDayOfMonth = new Date(year, quarterEndMonth + 1, 0).getDate();
-          const quarterEndDate = `${year}-${String(quarterEndMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+          console.log(`📅 Quarter ${quarter}: ${quarterStartDate.toISOString().split('T')[0]} to ${quarterEndDate.toISOString().split('T')[0]}`);
           
-          console.log(`📅 Quarter ${quarter}: ${quarterStartDate} to ${quarterEndDate}`);
+          // Filtrar objetivos que sobrepõem com o trimestre
+          quarterObjectives = userObjectives.filter(obj => {
+            const objStart = new Date(obj.startDate);
+            const objEnd = new Date(obj.endDate);
+            
+            // Sobreposição: obj.start <= quarter.end && obj.end >= quarter.start
+            return objStart <= quarterEndDate && objEnd >= quarterStartDate;
+          });
           
-          // Filter objectives that overlap with the quarter
-          const quarterCondition = and(
-            sql`${objectives.startDate} <= ${quarterEndDate}`,
-            sql`${objectives.endDate} >= ${quarterStartDate}`
-          );
-          if (quarterCondition) {
-            objectivesQuery = objectivesQuery.where(quarterCondition);
-          }
+          console.log(`🔍 After quarterly filter: ${quarterObjectives.length} objectives for user`);
         } else {
           console.warn(`⚠️ Invalid quarter format: ${quarter}`);
         }
       }
 
-      const quarterObjectives = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-        return await objectivesQuery;
-      });
-
-      // Get related key results, actions, and checkpoints for the objectives
+      // ETAPA 3: Obter Key Results e Actions relacionados preservando controle de acesso
       const objectiveIds = quarterObjectives.map(obj => obj.id);
       let quarterKeyResults: any[] = [];
       let quarterActions: any[] = [];
 
       if (objectiveIds.length > 0) {
-        // Get full key results data for these objectives
-        quarterKeyResults = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-          let keyResultsQuery = db.select({
-            keyResults: keyResults,
-            objectives: objectives,
-          })
-          .from(keyResults)
-          .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
-          
-          const conditions = [inArray(keyResults.objectiveId, objectiveIds)];
-          
-          // Apply service line filter if provided
-          if (filters?.serviceLineId) {
-            conditions.push(eq(keyResults.serviceLineId, filters.serviceLineId));
-            console.log(`🎯 Applied serviceLineId filter: ${filters.serviceLineId}`);
-          }
-          
-          // Apply quarter filter to key results as well if specified
-          if (quarter && quarter !== 'all') {
-            const quarterMatch = quarter.match(/(\d{4})-T(\d)/);
-            if (quarterMatch) {
-              const year = parseInt(quarterMatch[1]);
-              const quarterNum = parseInt(quarterMatch[2]);
-              
-              const quarterStartMonth = (quarterNum - 1) * 3;
-              const quarterStartDate = `${year}-${String(quarterStartMonth + 1).padStart(2, '0')}-01`;
-              const quarterEndMonth = quarterStartMonth + 2;
-              const lastDayOfMonth = new Date(year, quarterEndMonth + 1, 0).getDate();
-              const quarterEndDate = `${year}-${String(quarterEndMonth + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
-              
-              const quarterCondition = and(
-                sql`${keyResults.startDate} <= ${quarterEndDate}`,
-                sql`${keyResults.endDate} >= ${quarterStartDate}`
-              );
-              if (quarterCondition) {
-                conditions.push(quarterCondition);
-              }
-              console.log(`🎯 Applied quarter filter to key results: ${quarter}`);
-            }
-          }
-          
-          return await keyResultsQuery.where(and(...conditions));
-        });
-
-        // Get key result IDs for actions
-        const krIds = quarterKeyResults.map(row => row.keyResults.id);
+        // Obter Key Results com controle de acesso preservado
+        const userKeyResults = await this.getKeyResults(undefined, { currentUserId });
+        quarterKeyResults = userKeyResults.filter(kr => objectiveIds.includes(kr.objectiveId));
         
-        if (krIds.length > 0) {
-          // Get full actions data for these key results
-          quarterActions = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-            return await db.select({
-              actions: actions,
-              keyResults: keyResults,
-              users: users,
-            })
-            .from(actions)
-            .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
-            .leftJoin(users, eq(actions.responsibleId, users.id))
-            .where(inArray(actions.keyResultId, krIds));
-          });
+        // Aplicar filtro adicional de linha de serviço se especificado
+        if (filters?.serviceLineId) {
+          quarterKeyResults = quarterKeyResults.filter(kr => kr.serviceLineId === filters.serviceLineId);
+          console.log(`🎯 Applied serviceLineId filter: ${filters.serviceLineId}`);
+        }
+
+        // Obter Actions com controle de acesso preservado
+        const keyResultIds = quarterKeyResults.map(kr => kr.id);
+        if (keyResultIds.length > 0) {
+          const userActions = await this.getActions({ currentUserId });
+          quarterActions = userActions.filter(action => keyResultIds.includes(action.keyResultId));
         }
       }
+
+      console.log(`🔍 Final results: ${quarterObjectives.length} objectives, ${quarterKeyResults.length} key results, ${quarterActions.length} actions`);
 
       MySQLPerformanceMonitor.endQuery('getQuarterlyData', startTime);
       
       return {
         objectives: quarterObjectives,
-        keyResults: quarterKeyResults.map(row => ({
-          ...row.keyResults,
-          objective: row.objectives!,
-        })),
-        actions: quarterActions.map(row => ({
-          ...row.actions,
-          keyResult: row.keyResults!,
-          responsible: row.users ? this.parseUserJsonFields(row.users) : undefined,
-        })),
+        keyResults: quarterKeyResults,
+        actions: quarterActions
       };
     } catch (error) {
       console.error('Error getting quarterly data:', error);
+      MySQLPerformanceMonitor.endQuery('getQuarterlyData', Date.now());
       throw error;
     }
   }
