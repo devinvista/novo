@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
 import { NumberInputBR } from "@/components/ui/number-input-br";
-import { parseDecimalBR, convertBRToUS, convertUSToBR, formatDateBR } from "@/lib/formatters";
+import { parseDecimalBR, convertBRToUS, formatBrazilianNumber, formatDateBR } from "@/lib/formatters";
 
 // Form validation schema that accepts strings for conversion to numbers
 const formKeyResultSchema = z.object({
@@ -158,8 +158,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       strategicIndicatorIds: keyResult?.strategicIndicatorIds || [],
       serviceLineIds: keyResult?.serviceLineIds || [],
       serviceId: keyResult?.serviceId?.toString() || "",
-      targetValue: keyResult?.targetValue ? convertUSToBR(keyResult.targetValue.toString()) : "",
-      initialValue: keyResult?.currentValue ? convertUSToBR(keyResult.currentValue.toString()) : "0,00",
+      targetValue: keyResult?.targetValue ? formatBrazilianNumber(keyResult.targetValue.toString()) : "",
+      initialValue: keyResult?.currentValue ? formatBrazilianNumber(keyResult.currentValue.toString()) : "0,00",
       unit: keyResult?.unit || "",
       frequency: keyResult?.frequency || "monthly",
       startDate: keyResult?.startDate ? new Date(keyResult.startDate).toISOString().split('T')[0] : "",

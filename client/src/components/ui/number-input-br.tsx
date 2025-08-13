@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { maskBRNumber, parseDecimalBR, formatDecimalBR } from "@/lib/formatters";
+import { maskBRNumber, parseDecimalBR, formatBrazilianNumber } from "@/lib/formatters";
 
 export interface NumberInputBRProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
   value?: string | number;
@@ -13,7 +13,7 @@ const NumberInputBR = React.forwardRef<HTMLInputElement, NumberInputBRProps>(
     const [internalValue, setInternalValue] = React.useState<string>(() => {
       if (value === undefined || value === null || value === "") return "";
       // Usar formatação inteligente (sem decimais desnecessários)
-      return formatDecimalBR(value.toString());
+      return formatBrazilianNumber(value.toString());
     });
 
     // Atualiza valor interno quando prop value muda
@@ -22,7 +22,7 @@ const NumberInputBR = React.forwardRef<HTMLInputElement, NumberInputBRProps>(
         setInternalValue("");
       } else {
         // Usar formatação inteligente (sem decimais desnecessários)
-        setInternalValue(formatDecimalBR(value.toString()));
+        setInternalValue(formatBrazilianNumber(value.toString()));
       }
     }, [value]);
 

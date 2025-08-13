@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
-import { formatNumberBR, formatDecimalBR } from "@/lib/formatters";
+import { formatBrazilianNumber } from "@/lib/formatters";
 import {
   Target,
   TrendingUp,
@@ -591,7 +591,7 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${formatDecimalBR(percent * 100, 0)}%`}
+                  label={({ name, percent }) => `${name} ${formatBrazilianNumber(percent * 100, 0)}%`}
                 >
                   {actionStatusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -620,7 +620,7 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
                 <div className="flex-1">
                   <div className="font-medium text-sm truncate max-w-md">{kr.title}</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {formatNumberBR(kr.current)} / {formatNumberBR(kr.target)} ({formatDecimalBR(kr.percentage, 1)}%)
+                    {formatBrazilianNumber(kr.current)} / {formatBrazilianNumber(kr.target)} ({formatBrazilianNumber(kr.percentage, 1)}%)
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 ml-4">
@@ -635,7 +635,7 @@ export default function ModernDashboard({ filters }: ModernDashboardProps) {
                   <Badge 
                     variant={kr.status === 'completed' ? 'success' : kr.status === 'active' ? 'info' : 'warning'}
                   >
-                    {formatDecimalBR(kr.percentage, 1)}%
+                    {formatBrazilianNumber(kr.percentage, 1)}%
                   </Badge>
                 </div>
               </div>

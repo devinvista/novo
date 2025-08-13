@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { NumberInputBR } from "@/components/ui/number-input-br";
-import { parseDecimalBR, formatDecimalBR } from "@/lib/formatters";
+import { parseDecimalBR, formatBrazilianNumber } from "@/lib/formatters";
 import { getProgressBadgeVariant, getProgressClassName } from "@/lib/checkpoint-utils";
 import {
   Dialog,

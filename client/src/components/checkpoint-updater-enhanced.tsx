@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import CheckpointProgressGrid from "./checkpoint-progress-grid";
 import { NumberInputBR } from "@/components/ui/number-input-br";
-import { parseDecimalBR, formatDecimalBR } from "@/lib/formatters";
+import { parseDecimalBR, formatBrazilianNumber } from "@/lib/formatters";
 import { getProgressBadgeVariant, getProgressBadgeText } from "@/lib/checkpoint-utils";
 import {
   Dialog,
@@ -42,7 +42,7 @@ function CheckpointEditFormInline({ checkpoint, onClose, onUpdate }: {
   onUpdate: () => void;
 }) {
   const { toast } = useToast();
-  const [actualValue, setActualValue] = useState(formatDecimalBR(checkpoint.actualValue));
+  const [actualValue, setActualValue] = useState(formatBrazilianNumber(checkpoint.actualValue));
   const [notes, setNotes] = useState(checkpoint.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -84,7 +84,7 @@ function CheckpointEditFormInline({ checkpoint, onClose, onUpdate }: {
           placeholder="0,00"
         />
         <p className="text-sm text-muted-foreground">
-          Meta: {formatDecimalBR(checkpoint.targetValue)}
+          Meta: {formatBrazilianNumber(checkpoint.targetValue)}
         </p>
       </div>
 
