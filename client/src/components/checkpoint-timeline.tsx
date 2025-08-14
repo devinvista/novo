@@ -139,13 +139,15 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
 
           {/* Timeline Container compacto */}
           <div className="relative">
-            {/* Background Timeline */}
-            <div className="w-full h-1.5 bg-gray-200 rounded-full relative overflow-hidden">
-              {/* Progress Bar */}
+            {/* Background Timeline - design sutil e diferenciado */}
+            <div className="w-full h-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full relative overflow-hidden border border-gray-200/50">
+              {/* Progress Bar - usando tons de cinza para não competir com o progresso principal */}
               <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
+                className="h-full bg-gradient-to-r from-slate-400 to-slate-500 rounded-full transition-all duration-500 shadow-sm"
                 style={{ width: `${timeProgress}%` }}
-              />
+              >
+                <div className="h-full bg-gradient-to-t from-slate-500/20 to-transparent rounded-full"></div>
+              </div>
             </div>
 
             {/* Checkpoint Markers */}

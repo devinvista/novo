@@ -222,7 +222,7 @@ export default function Checkpoints() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="overview">Visão Geral - Próximos & Atrasados</SelectItem>
-                            <SelectItem disabled className="text-xs font-medium text-gray-500 py-2">
+                            <SelectItem value="separator" disabled className="text-xs font-medium text-gray-500 py-2">
                               ── Key Results Específicos ──
                             </SelectItem>
                             {keyResults?.map((kr: any) => (
