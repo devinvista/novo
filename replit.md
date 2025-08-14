@@ -16,6 +16,14 @@ Idioma do projeto: Português brasileiro - Toda interface, documentação e text
   - ✅ CORRIGIDO: Erro LSP no SelectItem sem propriedade value obrigatória
   - Instalação da dependência tsx que estava faltando via packager tool
   - Servidor Express funcionando perfeitamente na porta 5000 com MySQL
+- **2025-08-14**: Migração completa do Agent para ambiente Replit finalizada com sucesso + Melhoria visual significativa na interface de checkpoints
+  - Correção visual: substituição das duas barras azuis idênticas por design diferenciado
+  - ✅ NOVO: Progresso Geral agora é um indicador circular elegante com gradiente azul
+  - ✅ NOVO: Timeline dos checkpoints com design sutil em tons neutros para não competir visualmente
+  - ✅ NOVO: Checkpoints com círculos maiores, sombras coloridas e tooltips informativos melhorados
+  - ✅ CORRIGIDO: Erro LSP no SelectItem sem propriedade value obrigatória
+  - Instalação da dependência tsx que estava faltando via packager tool
+  - Servidor Express funcionando perfeitamente na porta 5000 com MySQL
 - **2025-08-14**: Migração completa do Agent para ambiente Replit finalizada com sucesso + Correção crítica de formatação brasileira
   - Instalação da dependência tsx que estava faltando via packager tool
   - Servidor Express funcionando perfeitamente na porta 5000 com MySQL

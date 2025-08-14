@@ -77,33 +77,112 @@ export default function CheckpointTimelineHeader({
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
-        {/* Key Result Info */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
+        {/* Header compacto */}
+        <div className="mb-4">
+          <div className="flex items-center gap-3 mb-3">
             <Target className="h-5 w-5 text-blue-600" />
             <h3 className="text-xl font-semibold text-gray-900">{keyResult.title}</h3>
-          </div>
-          <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              {format(timelineData.startDate, 'dd/MM/yyyy', { locale: ptBR })} - {format(timelineData.endDate, 'dd/MM/yyyy', { locale: ptBR })}
-            </div>
-            <div className="flex items-center gap-1">
-              <TrendingUp className="h-4 w-4" />
-              Meta: {keyResult.targetValue} {keyResult.unit}
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
+            <Badge variant="outline" className="text-xs">
               {timelineData.checkpoints.length} checkpoints
+            </Badge>
+          </div>
+        </div>
+
+        {/* Layout otimizado: Timeline à esquerda, Progresso à direita */}
+        <div className="flex gap-6 items-start">
+          
+          {/* Timeline à esquerda - 70% do espaço */}
+          <div className="flex-1">
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                <span className="font-medium">Timeline de Checkpoints</span>
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                  {timelineData.timeProgress.toFixed(0)}% do prazo decorrido
+                </span>
+              </div>
+            </div>
+            
+            <div className="relative">
+              {/* Timeline base line - design mais sutil */}
+              <div className="w-full h-2 bg-gradient-to-r from-slate-100 to-slate-200 rounded-full border border-slate-200/50">
+                {/* Progress line - tons neutros */}
+                <motion.div 
+                  className="h-full bg-gradient-to-r from-slate-300 via-slate-400 to-slate-500 rounded-full shadow-sm"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${timelineData.timeProgress}%` }}
+                  transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+                >
+                  <div className="h-full bg-gradient-to-t from-slate-400/30 to-transparent rounded-full"></div>
+                </motion.div>
+              </div>
+
+              {/* Checkpoints */}
+              <div className="relative pt-3 pb-12">
+                {timelineData.checkpoints.map((checkpoint) => (
+                  <motion.div
+                    key={checkpoint.id}
+                    className="absolute transform -translate-x-1/2 cursor-pointer group"
+                    style={{ left: `${checkpoint.position}%` }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: checkpoint.index * 0.1 }}
+                    onClick={() => onCheckpointClick(checkpoint)}
+                  >
+                    {/* Checkpoint circle - melhor contraste */}
+                    <div className={`w-5 h-5 rounded-full border-3 ${getStatusColor(checkpoint)} 
+                      transition-all duration-200 group-hover:scale-125 group-hover:shadow-lg relative z-10 shadow-md`}>
+                    </div>
+                    
+                    {/* Checkpoint label - tooltip melhorado */}
+                    <div className="absolute top-8 left-1/2 transform -translate-x-1/2 min-w-max z-20">
+                      <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-3 text-xs opacity-0 group-hover:opacity-100 
+                        transition-all duration-300 transform group-hover:scale-105 max-w-48">
+                        <div className="font-semibold text-gray-900 mb-1">
+                          {checkpoint.title}
+                        </div>
+                        <div className="text-gray-600 mb-2">
+                          📅 {format(new Date(checkpoint.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge 
+                            variant={checkpoint.status === 'completed' ? "default" : checkpoint.isPast ? "destructive" : "secondary"} 
+                            className="text-xs"
+                          >
+                            {getStatusText(checkpoint)}
+                          </Badge>
+                        </div>
+                        <div className="text-gray-700 font-medium">
+                          📊 {checkpoint.actualValue}/{checkpoint.targetValue} {keyResult.unit}
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-gray-100 text-center text-gray-500">
+                          Clique para atualizar
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Timeline labels */}
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div>
+                <div className="font-medium">{format(timelineData.startDate, 'dd/MM/yyyy', { locale: ptBR })}</div>
+                <div className="text-gray-400">Início</div>
+              </div>
+              <div className="text-right">
+                <div className="font-medium">{format(timelineData.endDate, 'dd/MM/yyyy', { locale: ptBR })}</div>
+                <div className="text-gray-400">Meta</div>
+              </div>
             </div>
           </div>
-          
-          {/* Overall Progress - Design circular elegante */}
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative w-20 h-20">
+
+          {/* Progresso Geral à direita - design circular compacto */}
+          <div className="flex-shrink-0">
+            <div className="flex flex-col items-center gap-3 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
+              <div className="relative w-16 h-16">
                 {/* Círculo de fundo */}
-                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+                <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
                   <path
                     d="M18 2.0845
                     a 15.9155 15.9155 0 0 1 0 31.831
@@ -136,109 +215,29 @@ export default function CheckpointTimelineHeader({
                 </svg>
                 {/* Texto no centro do círculo */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-gray-900">
+                  <span className="text-sm font-bold text-gray-900">
                     {timelineData.progress.toFixed(0)}%
                   </span>
                 </div>
               </div>
               
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-1">Progresso Geral</h4>
-                <div className="text-2xl font-bold text-gray-900">
+              <div className="text-center">
+                <h4 className="text-xs font-medium text-gray-600 mb-1">Progresso Geral</h4>
+                <div className="text-lg font-bold text-gray-900">
                   {keyResult.currentValue} / {keyResult.targetValue}
                 </div>
-                <div className="text-sm text-gray-500">{keyResult.unit}</div>
+                <div className="text-xs text-gray-500">{keyResult.unit}</div>
+                
+                {/* Status badge compacto */}
+                <Badge 
+                  variant={timelineData.progress >= 70 ? "default" : timelineData.progress >= 40 ? "secondary" : "destructive"}
+                  className="text-xs px-2 py-1 mt-2"
+                >
+                  {timelineData.progress >= 70 ? "No prazo" : timelineData.progress >= 40 ? "Atenção" : "Crítico"}
+                </Badge>
               </div>
             </div>
-            
-            {/* Status badge */}
-            <div>
-              <Badge 
-                variant={timelineData.progress >= 70 ? "default" : timelineData.progress >= 40 ? "secondary" : "destructive"}
-                className="text-sm px-3 py-1"
-              >
-                {timelineData.progress >= 70 ? "No prazo" : timelineData.progress >= 40 ? "Atenção" : "Crítico"}
-              </Badge>
-            </div>
           </div>
-        </div>
-
-        {/* Timeline - design diferenciado e sutil */}
-        <div className="relative">
-          <div className="mb-3">
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-              <span className="font-medium">Timeline de Checkpoints</span>
-              <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-                {timelineData.timeProgress.toFixed(0)}% do prazo decorrido
-              </span>
-            </div>
-          </div>
-          
-          {/* Timeline base line - design mais sutil */}
-          <div className="absolute top-10 left-0 w-full h-2 bg-gradient-to-r from-slate-100 to-slate-200 rounded-full border border-slate-200/50">
-            {/* Progress line - tons neutros */}
-            <motion.div 
-              className="h-full bg-gradient-to-r from-slate-300 via-slate-400 to-slate-500 rounded-full shadow-sm"
-              initial={{ width: 0 }}
-              animate={{ width: `${timelineData.timeProgress}%` }}
-              transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
-            >
-              <div className="h-full bg-gradient-to-t from-slate-400/30 to-transparent rounded-full"></div>
-            </motion.div>
-          </div>
-
-          {/* Checkpoints */}
-          <div className="relative pt-6 pb-16">
-            {timelineData.checkpoints.map((checkpoint) => (
-              <motion.div
-                key={checkpoint.id}
-                className="absolute transform -translate-x-1/2 cursor-pointer group"
-                style={{ left: `${checkpoint.position}%` }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: checkpoint.index * 0.1 }}
-                onClick={() => onCheckpointClick(checkpoint)}
-              >
-                {/* Checkpoint circle - melhor contraste */}
-                <div className={`w-5 h-5 rounded-full border-3 ${getStatusColor(checkpoint)} 
-                  transition-all duration-200 group-hover:scale-125 group-hover:shadow-lg relative z-10 shadow-md`}>
-                </div>
-                
-                {/* Checkpoint label - tooltip melhorado */}
-                <div className="absolute top-8 left-1/2 transform -translate-x-1/2 min-w-max z-20">
-                  <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-3 text-xs opacity-0 group-hover:opacity-100 
-                    transition-all duration-300 transform group-hover:scale-105 max-w-48">
-                    <div className="font-semibold text-gray-900 mb-1">
-                      {checkpoint.title}
-                    </div>
-                    <div className="text-gray-600 mb-2">
-                      📅 {format(new Date(checkpoint.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                    </div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge 
-                        variant={checkpoint.status === 'completed' ? "default" : checkpoint.isPast ? "destructive" : "secondary"} 
-                        className="text-xs"
-                      >
-                        {getStatusText(checkpoint)}
-                      </Badge>
-                    </div>
-                    <div className="text-gray-700 font-medium">
-                      📊 {checkpoint.actualValue}/{checkpoint.targetValue} {keyResult.unit}
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-gray-100 text-center text-gray-500">
-                      Clique para atualizar
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        {/* Timeline labels */}
-        <div className="flex justify-between text-xs text-gray-500 mt-2">
-          <span>{format(timelineData.startDate, 'dd/MM/yyyy', { locale: ptBR })}</span>
-          <span>{format(timelineData.endDate, 'dd/MM/yyyy', { locale: ptBR })}</span>
         </div>
       </CardContent>
     </Card>
