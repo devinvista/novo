@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { parseDecimalBR } from "@/lib/formatters";
+import { cleanupOnDialogClose } from "@/lib/modal-cleanup";
 
 interface CheckpointUpdateDialogProps {
   checkpoint: any;
@@ -109,8 +110,15 @@ export default function CheckpointUpdateDialog({
 
   if (!checkpoint) return null;
 
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      cleanupOnDialogClose();
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={() => onClose()}>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

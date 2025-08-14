@@ -1,69 +1,90 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ForceRefresh } from "@/components/force-refresh";
-import { AuthProvider } from "@/hooks/use-auth";
-import { QuarterlyFilterProvider } from "@/hooks/use-quarterly-filter";
-import { SidebarProvider } from "@/hooks/use-sidebar-toggle";
-import { FiltersProvider } from "@/hooks/use-filters";
-import { ProtectedRoute } from "./lib/protected-route";
-import { debugClickBlocker } from "@/lib/modal-debug";
-import { useEffect } from "react";
-import NotFound from "@/pages/not-found";
-import AuthPage from "@/pages/auth-page";
-import Dashboard from "@/pages/dashboard";
-import Objectives from "@/pages/objectives";
-import KeyResults from "@/pages/key-results";
-import Actions from "@/pages/actions";
-import Checkpoints from "@/pages/checkpoints";
-import Reports from "@/pages/reports";
-import Users from "@/pages/users";
-import Settings from "@/pages/settings";
+import { useEffect } from 'react';
+import { Router, Route, Switch } from 'wouter';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from 'next-themes';
+import { cleanupOnDialogClose } from '@/lib/modal-cleanup';
 
-function Router() {
+// Import pages
+import AuthPage from '@/pages/auth-page';
+import Dashboard from '@/pages/dashboard';
+import Objectives from '@/pages/objectives';
+import KeyResults from '@/pages/key-results';
+import Actions from '@/pages/actions';
+import Checkpoints from '@/pages/checkpoints';
+import Users from '@/pages/users';
+import Reports from '@/pages/reports';
+import Settings from '@/pages/settings';
+import NotFound from '@/pages/not-found';
+
+// Import components
+import Sidebar from '@/components/sidebar';
+import { useAuth, AuthProvider } from '@/hooks/use-auth';
+
+// Query client configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes
+    },
+  },
+});
+
+function AppContent() {
+  const { user } = useAuth();
+  
+  // Global cleanup on mount to handle any leftover modals
+  useEffect(() => {
+    cleanupOnDialogClose();
+    
+    // Set up global keyboard shortcut to force cleanup if needed (Dev only)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && e.ctrlKey && e.shiftKey) {
+        console.log('🔧 Manual modal cleanup triggered');
+        cleanupOnDialogClose();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
   return (
-    <Switch>
-      <ProtectedRoute path="/" component={Dashboard} />
-      <ProtectedRoute path="/objectives" component={Objectives} />
-      <ProtectedRoute path="/key-results" component={KeyResults} />
-      <ProtectedRoute path="/actions" component={Actions} />
-      <ProtectedRoute path="/checkpoints" component={Checkpoints} />
-      <ProtectedRoute path="/reports" component={Reports} />
-      <ProtectedRoute path="/indicators" component={Reports} />
-      <ProtectedRoute path="/users" component={Users} />
-      <ProtectedRoute path="/settings" component={Settings} />
-      <Route path="/auth" component={AuthPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <div className="flex-1 overflow-auto">
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/objectives" component={Objectives} />
+          <Route path="/key-results" component={KeyResults} />
+          <Route path="/actions" component={Actions} />
+          <Route path="/checkpoints" component={Checkpoints} />
+          <Route path="/users" component={Users} />
+          <Route path="/reports" component={Reports} />
+          <Route path="/settings" component={Settings} />
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+    </div>
   );
 }
 
-function App() {
-  useEffect(() => {
-    // Ativa debug de cliques bloqueados em desenvolvimento
-    const cleanup = debugClickBlocker();
-    return cleanup;
-  }, []);
-
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <FiltersProvider>
-          <QuarterlyFilterProvider>
-            <SidebarProvider>
-              <TooltipProvider>
-                <ForceRefresh />
-                <Toaster />
-                <Router />
-              </TooltipProvider>
-            </SidebarProvider>
-          </QuarterlyFilterProvider>
-        </FiltersProvider>
+        <ThemeProvider attribute="class" defaultTheme="light">
+          <Router>
+            <AppContent />
+          </Router>
+          <Toaster />
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
-
-export default App;

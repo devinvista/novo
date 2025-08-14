@@ -163,6 +163,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                     className="resize-none"
                     rows={3}
                     {...field}
+                    value={field.value || ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -217,9 +218,9 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
                         <input
                           type="checkbox"
                           id={`subregion-${subRegion.id}`}
-                          checked={field.value.includes(subRegion.id)}
+                          checked={Array.isArray(field.value) && field.value.includes(subRegion.id)}
                           onChange={(e) => {
-                            const currentValues = field.value || [];
+                            const currentValues = Array.isArray(field.value) ? field.value : [];
                             if (e.target.checked) {
                               field.onChange([...currentValues, subRegion.id]);
                             } else {

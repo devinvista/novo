@@ -17,6 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
 import { NumberInputBR } from "@/components/ui/number-input-br";
 import { parseDecimalBR, formatBrazilianNumber, formatDateBR } from "@/lib/formatters";
+import { cleanupOnDialogClose } from "@/lib/modal-cleanup";
 
 // Form validation schema that accepts strings for conversion to numbers
 const formKeyResultSchema = z.object({
@@ -213,8 +214,16 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     mutation.mutate(processedData);
   };
 
+  const handleDialogChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      form.reset();
+      cleanupOnDialogClose();
+    }
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>

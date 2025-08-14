@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { MessageSquare, Calendar, User } from "lucide-react";
 import { z } from "zod";
 import { formatDateBR } from "@/lib/formatters";
-// import { useModalCleanup } from "@/hooks/use-modal-cleanup";
+import { cleanupOnDialogClose } from "@/lib/modal-cleanup";
 
 // Use the proper insert schema directly - with error handling
 const actionFormSchema = insertActionSchema.omit({ 
@@ -314,24 +314,9 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen && !mutation.isPending) {
-      // Force clean close
-      setTimeout(() => {
-        form.reset();
-        setNewComment("");
-        
-        // Manual cleanup após fechar
-        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
-        const portals = document.querySelectorAll('[data-radix-dialog-portal]');
-        const closedDialogs = document.querySelectorAll('[data-state="closed"]');
-        
-        overlays.forEach(el => el.parentNode && el.remove());
-        portals.forEach(el => !el.querySelector('[data-state="open"]') && el.parentNode && el.remove());
-        closedDialogs.forEach(el => {
-          if (el.classList.contains('fixed') && el.parentNode) {
-            el.remove();
-          }
-        });
-      }, 200);
+      form.reset();
+      setNewComment("");
+      cleanupOnDialogClose();
     }
     onOpenChange(isOpen);
   };
