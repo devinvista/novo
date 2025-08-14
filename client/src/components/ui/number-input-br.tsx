@@ -28,11 +28,9 @@ const NumberInputBR = React.forwardRef<HTMLInputElement, NumberInputBRProps>(
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
-      console.log('🔢 NumberInputBR - Raw input:', rawValue);
       
       // Permitir digitação livre, removendo apenas caracteres não-numéricos (exceto vírgula e ponto)
       let newValue = rawValue.replace(/[^\d.,]/g, "");
-      console.log('🔢 NumberInputBR - After cleanup:', newValue);
       
       // Normalizar separador decimal para vírgula
       if (newValue.includes(".") && !newValue.includes(",")) {
@@ -45,7 +43,6 @@ const NumberInputBR = React.forwardRef<HTMLInputElement, NumberInputBRProps>(
         newValue = commas[0] + "," + commas.slice(1).join("");
       }
       
-      console.log('🔢 NumberInputBR - Final value:', newValue);
       setInternalValue(newValue);
       
       if (onChange) {

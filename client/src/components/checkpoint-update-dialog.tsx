@@ -34,7 +34,9 @@ export default function CheckpointUpdateDialog({
 
   useEffect(() => {
     if (checkpoint) {
-      setActualValue(checkpoint.actualValue || "");
+      // Se o valor é 0 ou "0", deixar campo vazio para melhor UX
+      const currentValue = checkpoint.actualValue;
+      setActualValue((currentValue && currentValue !== "0" && currentValue !== 0) ? currentValue : "");
       setStatus(checkpoint.status || "pending");
       setNotes(checkpoint.notes || "");
     }
@@ -101,7 +103,7 @@ export default function CheckpointUpdateDialog({
     // CORREÇÃO: Usar parseDecimalBR para converter corretamente valores brasileiros
     const target = parseDecimalBR(checkpoint?.targetValue || '0');
     const actual = parseDecimalBR(actualValue || '0');
-    if (target === 0) return 0;
+    if (target === 0 || !actualValue || actualValue === "") return 0;
     return Math.min(100, Math.round((actual / target) * 100));
   };
 
@@ -158,10 +160,7 @@ export default function CheckpointUpdateDialog({
                 id="actualValue"
                 type="text"
                 value={actualValue}
-                onChange={(e) => {
-                  console.log('🔢 Direct Input - Raw value:', e.target.value);
-                  setActualValue(e.target.value);
-                }}
+                onChange={(e) => setActualValue(e.target.value)}
                 placeholder="Digite o valor atual (ex: 20000 ou 20000,50)"
                 required
               />

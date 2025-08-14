@@ -12,8 +12,11 @@ Idioma do projeto: Português brasileiro - Toda interface, documentação e text
   - Instalação da dependência tsx que estava faltando via packager tool
   - Servidor Express funcionando perfeitamente na porta 5000 com MySQL
   - ✅ CORRIGIDO: Bug crítico onde 1000 era convertido para 1 na visualização de checkpoints
+  - ✅ CORRIGIDO: Problema onde não conseguia digitar 20000 (convertia para 2)
+  - ✅ CORRIGIDO: Campo valor inicial mostra 0 - agora inicia vazio para melhor UX
   - ✅ CORRIGIDO: Formatação de números decimais nos checkpoints (8.333333 → "8,333" preservando precisão)
   - ✅ CORRIGIDO: Substituição de parseFloat por parseDecimalBR em checkpoint-progress-grid.tsx
+  - ✅ CORRIGIDO: Substituição de NumberInputBR por Input comum no diálogo de checkpoint
   - ✅ CORRIGIDO: Remoção do texto "Aguardando período" - valores sempre exibidos
   - Função formatBrazilianNumber otimizada com detecção automática de casas decimais significativas (2-4 casas)
   - Parse inteligente de números brasileiros: distingue 1.000 (milhar) vs 1,000 (decimal)
