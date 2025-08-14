@@ -9,6 +9,8 @@ import { QuarterlyFilterProvider } from "@/hooks/use-quarterly-filter";
 import { SidebarProvider } from "@/hooks/use-sidebar-toggle";
 import { FiltersProvider } from "@/hooks/use-filters";
 import { ProtectedRoute } from "./lib/protected-route";
+import { debugClickBlocker } from "@/lib/modal-debug";
+import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
@@ -39,6 +41,12 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    // Ativa debug de cliques bloqueados em desenvolvimento
+    const cleanup = debugClickBlocker();
+    return cleanup;
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

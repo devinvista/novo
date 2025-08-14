@@ -290,21 +290,6 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       }, 50);
     }
     onOpenChange(isOpen);
-    
-    // Force remove any stuck overlays
-    if (!isOpen) {
-      setTimeout(() => {
-        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
-        overlays.forEach(overlay => overlay.remove());
-        // Also remove any modal backdrop elements
-        const backdrops = document.querySelectorAll('[data-state="closed"]');
-        backdrops.forEach(backdrop => {
-          if (backdrop.getAttribute('data-radix-dialog-overlay') !== null) {
-            backdrop.remove();
-          }
-        });
-      }, 100);
-    }
   };
 
   return (

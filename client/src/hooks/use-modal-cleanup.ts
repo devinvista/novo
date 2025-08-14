@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { forceRemoveAllOverlays } from '@/lib/modal-debug';
 
 /**
  * Hook para limpeza forçada de overlays modais que ficam "presos" na DOM
@@ -7,45 +8,57 @@ import { useEffect } from 'react';
 export function useModalCleanup(isOpen: boolean) {
   useEffect(() => {
     if (!isOpen) {
-      // Aguarda um pouco para garantir que as animações terminem
-      const cleanup = setTimeout(() => {
-        // Remove overlays de diálogo que ficaram presos
-        const dialogOverlays = document.querySelectorAll('[data-radix-dialog-overlay]');
-        dialogOverlays.forEach(overlay => {
-          if (overlay.getAttribute('data-state') === 'closed') {
-            overlay.remove();
-          }
-        });
+      // Limpeza imediata + aguarda animações
+      const immediateCleanup = () => {
+        // Remove TODOS os overlays de diálogo
+        const allOverlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+        allOverlays.forEach(overlay => overlay.remove());
         
-        // Remove portals órfãos
-        const portals = document.querySelectorAll('[data-radix-dialog-portal]');
-        portals.forEach(portal => {
-          if (!portal.querySelector('[data-state="open"]')) {
-            portal.remove();
-          }
-        });
+        // Remove TODOS os portals de diálogo
+        const allPortals = document.querySelectorAll('[data-radix-dialog-portal]');
+        allPortals.forEach(portal => portal.remove());
         
-        // Remove elementos z-index altos que possam estar bloqueando cliques
-        const highZElements = document.querySelectorAll('[style*="z-index"]');
-        highZElements.forEach(element => {
+        // Remove elementos com position fixed e z-index alto
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(element => {
           const style = window.getComputedStyle(element);
-          const zIndex = parseInt(style.zIndex);
-          if (zIndex > 40 && !element.closest('[data-state="open"]')) {
+          const zIndex = parseInt(style.zIndex) || 0;
+          const position = style.position;
+          
+          if (position === 'fixed' && zIndex >= 50) {
             const rect = element.getBoundingClientRect();
-            if (rect.width === window.innerWidth && rect.height === window.innerHeight) {
+            // Se cobre toda a tela, provavelmente é um overlay órfão
+            if (rect.width >= window.innerWidth - 50 && rect.height >= window.innerHeight - 50) {
               element.remove();
             }
           }
         });
         
-        // Force document body scroll restoration
+        // Remove atributos que podem estar bloqueando
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
+        document.documentElement.style.overflow = '';
         
-        console.log('🧹 Modal cleanup executado');
-      }, 150);
+        // Remove classes que podem estar afetando o pointer-events
+        const bodyClasses = document.body.className.split(' ');
+        const filteredClasses = bodyClasses.filter(cls => 
+          !cls.includes('modal') && !cls.includes('dialog') && !cls.includes('overlay')
+        );
+        document.body.className = filteredClasses.join(' ');
+        
+        console.log('🧹 Limpeza agressiva de modais executada');
+      };
       
-      return () => clearTimeout(cleanup);
+      // Executa imediatamente
+      immediateCleanup();
+      
+      // Executa a limpeza mais robusta após um delay
+      const delayedCleanup = setTimeout(() => {
+        immediateCleanup();
+        forceRemoveAllOverlays();
+      }, 100);
+      
+      return () => clearTimeout(delayedCleanup);
     }
   }, [isOpen]);
 }

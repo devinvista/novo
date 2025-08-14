@@ -321,14 +321,6 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       }, 50);
     }
     onOpenChange(isOpen);
-    
-    // Force remove any stuck overlays
-    if (!isOpen) {
-      setTimeout(() => {
-        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
-        overlays.forEach(overlay => overlay.remove());
-      }, 100);
-    }
   };
 
   return (
