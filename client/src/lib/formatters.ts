@@ -138,10 +138,14 @@ export function formatBrazilianNumber(value: number | string, decimals?: number)
         maximumFractionDigits: 0,
       }).format(num);
     } else {
-      // Se tem decimais, mostrar até 2 casas (sem zeros desnecessários)
+      // Para números decimais, detectar automaticamente casas necessárias
+      const decimalPart = num.toString().split('.')[1] || '';
+      const significantDecimals = decimalPart.replace(/0+$/, '').length; // Remove zeros à direita
+      const maxDecimals = Math.max(2, Math.min(significantDecimals, 4)); // Entre 2 e 4 casas
+      
       return new Intl.NumberFormat('pt-BR', {
         minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
+        maximumFractionDigits: maxDecimals,
       }).format(num);
     }
   }

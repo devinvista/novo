@@ -21,12 +21,17 @@ export function formatBrazilianNumber(value: number | string, decimals?: number)
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(num);
+    } else {
+      // Para números decimais, detectar automaticamente casas necessárias
+      const decimalPart = num.toString().split('.')[1] || '';
+      const significantDecimals = decimalPart.replace(/0+$/, '').length; // Remove zeros à direita
+      const maxDecimals = Math.max(2, Math.min(significantDecimals, 4)); // Entre 2 e 4 casas
+      
+      return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: maxDecimals,
+      }).format(num);
     }
-    // Se tem decimais, usar 2 casas
-    return new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
   }
   
   // Se decimais especificadas, usar o valor fornecido
