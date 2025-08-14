@@ -104,11 +104,33 @@ export function isValidDateBR(dateBR: string): boolean {
  */
 
 // Converte string com vírgula para float (padrão brasileiro para banco)
-export function parseDecimalBR(value: string): number {
+export function parseDecimalBR(value: string | number): number {
   if (!value || value === "") return 0;
   
-  // Remove espaços e substitui vírgula por ponto para parseFloat
-  const cleanValue = value.toString().replace(/\s/g, "").replace(",", ".");
+  // Se já é número, retorna direto
+  if (typeof value === "number") return value;
+  
+  // Parse inteligente similar ao formatBrazilianNumber
+  let cleanValue = value.toString().trim();
+  
+  // Se tem ponto E vírgula, assume formato brasileiro: 1.234.567,89
+  if (cleanValue.includes('.') && cleanValue.includes(',')) {
+    cleanValue = cleanValue.replace(/\./g, "").replace(",", ".");
+  }
+  // Se só tem vírgula, assume que é decimal brasileiro: 1234,56
+  else if (cleanValue.includes(',') && !cleanValue.includes('.')) {
+    cleanValue = cleanValue.replace(",", ".");
+  }
+  // Se só tem ponto, pode ser milhar (1.000) ou decimal (1000.50)
+  else if (cleanValue.includes('.') && !cleanValue.includes(',')) {
+    const parts = cleanValue.split('.');
+    // Se a última parte tem 3 dígitos e não há outra parte decimal, assume separador de milhar
+    if (parts.length === 2 && parts[1].length === 3 && !/\d{4,}/.test(parts[0])) {
+      cleanValue = cleanValue.replace(".", "");
+    }
+    // Senão, mantém como decimal internacional
+  }
+  
   const parsed = parseFloat(cleanValue);
   return isNaN(parsed) ? 0 : parsed;
 }
@@ -120,8 +142,28 @@ export function formatBrazilianNumber(value: number | string, decimals?: number)
   
   let num: number;
   if (typeof value === "string") {
-    // Se valor já está em formato brasileiro, converter primeiro
-    const cleanValue = value.replace(/\./g, "").replace(",", ".");
+    // Parse inteligente: detecta se é formato brasileiro ou internacional
+    let cleanValue = value.toString().trim();
+    
+    // Se tem ponto E vírgula, assume formato brasileiro: 1.234.567,89
+    if (cleanValue.includes('.') && cleanValue.includes(',')) {
+      // Remove pontos (separadores de milhar) e troca vírgula por ponto
+      cleanValue = cleanValue.replace(/\./g, "").replace(",", ".");
+    }
+    // Se só tem vírgula, assume que é decimal brasileiro: 1234,56
+    else if (cleanValue.includes(',') && !cleanValue.includes('.')) {
+      cleanValue = cleanValue.replace(",", ".");
+    }
+    // Se só tem ponto, pode ser milhar (1.000) ou decimal (1000.50)
+    else if (cleanValue.includes('.') && !cleanValue.includes(',')) {
+      const parts = cleanValue.split('.');
+      // Se a última parte tem 3 dígitos e não há outra parte decimal, assume separador de milhar
+      if (parts.length === 2 && parts[1].length === 3 && !/\d{4,}/.test(parts[0])) {
+        cleanValue = cleanValue.replace(".", "");
+      }
+      // Senão, mantém como decimal internacional
+    }
+    
     num = parseFloat(cleanValue);
   } else {
     num = value;
