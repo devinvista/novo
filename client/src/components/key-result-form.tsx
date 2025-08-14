@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertKeyResultSchema } from "@shared/schema";
 import { NumberInputBR } from "@/components/ui/number-input-br";
-import { parseDecimalBR, convertBRToUS, formatBrazilianNumber, formatDateBR } from "@/lib/formatters";
+import { parseDecimalBR, formatBrazilianNumber, formatDateBR } from "@/lib/formatters";
 
 // Form validation schema that accepts strings for conversion to numbers
 const formKeyResultSchema = z.object({
@@ -204,8 +204,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       serviceLineIds: data.serviceLineIds || [],
       serviceLineId: data.serviceLineIds && data.serviceLineIds.length > 0 ? data.serviceLineIds[0] : undefined,
       serviceId: data.serviceId ? parseInt(data.serviceId) : undefined,
-      targetValue: convertBRToUS(data.targetValue || "0"), // Converte vírgula para ponto como string
-      initialValue: convertBRToUS(data.initialValue || "0"), // Converte vírgula para ponto como string
+      targetValue: parseDecimalBR(data.targetValue || "0").toString(), // Converte e padroniza formato
+      initialValue: parseDecimalBR(data.initialValue || "0").toString(), // Converte e padroniza formato
       unit: data.unit || "",
     };
     

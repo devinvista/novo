@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Target, Activity } from "lucide-react";
+import { parseDecimalBR } from "@/lib/formatters";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
@@ -109,9 +110,9 @@ export default function ProgressVisualization({ filters }: ProgressVisualization
     return keyResults.map((kr: any, index: number) => ({
       name: kr.title.length > 15 ? kr.title.substring(0, 15) + "..." : kr.title,
       fullName: kr.title,
-      current: parseFloat((kr.currentValue || "0").toString().replace(',', '.')),
-      target: parseFloat((kr.targetValue || "0").toString().replace(',', '.')),
-      progress: parseFloat((kr.progress || "0").toString().replace(',', '.')),
+      current: parseDecimalBR(kr.currentValue || "0"),
+      target: parseDecimalBR(kr.targetValue || "0"),
+      progress: parseDecimalBR(kr.progress || "0"),
       status: kr.status,
       color: COLORS[index % COLORS.length],
     }));

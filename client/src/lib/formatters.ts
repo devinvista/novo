@@ -166,11 +166,8 @@ export function formatNumberBR(value: number | string, decimals?: number): strin
   return formatBrazilianNumber(value, decimals);
 }
 
-// Converte valor brasileiro (com vírgula) para valor internacional (com ponto) para envio ao servidor
-export function convertBRToUS(value: string): string {
-  if (!value || value === "") return "0";
-  return value.replace(",", ".");
-}
+// DEPRECATED: Use parseDecimalBR() instead
+// Esta função está sendo removida - use parseDecimalBR() para conversões adequadas
 
 // Converte valor internacional (com ponto) para valor brasileiro (com vírgula) para exibição
 export function convertUSToBR(value: string | number): string {

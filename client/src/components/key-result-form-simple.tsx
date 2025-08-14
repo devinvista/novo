@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Target, Calendar, TrendingUp, Settings, Users, Briefcase, CheckCircle2 } from "lucide-react";
-import { formatDateBR } from "@/lib/formatters";
+import { formatDateBR, parseDecimalBR } from "@/lib/formatters";
 
 interface KeyResultFormProps {
   keyResult?: any;
@@ -238,8 +238,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       strategicIndicatorIds: formData.strategicIndicatorIds,
       serviceLineIds: formData.serviceLineIds,
       serviceId: formData.serviceId || null,
-      initialValue: String(formData.initialValue || "0"), // Keep as string for schema
-      targetValue: String(formData.targetValue || "0"), // Keep as string for schema
+      initialValue: parseDecimalBR(formData.initialValue || "0").toString(), // Converte BR para número e formata
+      targetValue: parseDecimalBR(formData.targetValue || "0").toString(), // Converte BR para número e formata
       unit: formData.unit || null,
       frequency: formData.frequency,
       startDate: formData.startDate,

@@ -11,7 +11,7 @@ import { useFilters } from "@/hooks/use-filters";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { translateFrequency } from "@/lib/frequency-translations";
-import { formatDateBR } from "@/lib/formatters";
+import { formatDateBR, parseDecimalBR } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -263,7 +263,7 @@ export default function KeyResults() {
           ) : (
             <div className="grid gap-6">
               {keyResults && keyResults.length > 0 ? keyResults.map((kr: any, index: number) => {
-                const progress = typeof kr.progress === 'number' ? kr.progress : (parseFloat((kr.progress || '0').toString().replace(',', '.')) || 0);
+                const progress = typeof kr.progress === 'number' ? kr.progress : parseDecimalBR(kr.progress || '0');
                 console.log(`🔍 KR "${kr.title}" - progress field:`, kr.progress, 'type:', typeof kr.progress, 'parsed:', progress);
                 const statusBadge = getStatusBadge(kr.status || 'active');
                 
