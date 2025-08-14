@@ -173,9 +173,13 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      // Use setTimeout to prevent dialog close blocking
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      }, 100);
+      
       toast({
         title: "Sucesso",
         description: keyResult ? "Resultado-chave atualizado com sucesso!" : "Resultado-chave criado com sucesso!",
@@ -258,8 +262,32 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     }
   };
 
+  const handleClose = (isOpen: boolean) => {
+    if (!isOpen && !mutation.isPending) {
+      // Reset form data when closing
+      setFormData({
+        objectiveId: "",
+        title: "",
+        description: "",
+        strategicIndicatorIds: [],
+        serviceLineIds: [],
+        serviceId: undefined,
+        targetValue: "0",
+        initialValue: "0",
+        currentValue: "0",
+        unit: "",
+        frequency: "monthly",
+        startDate: "",
+        endDate: "",
+        status: "active",
+        progress: 0,
+      });
+    }
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="text-center space-y-3 pb-6">
           <div className="flex items-center justify-center space-x-2">

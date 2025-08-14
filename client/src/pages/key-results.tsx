@@ -100,10 +100,13 @@ export default function KeyResults() {
     staleTime: 0,
   });
 
-  // Force invalidation when filters change
+  // Force invalidation when filters change - with debounce
   useEffect(() => {
     console.log('🔄 KeyResults: Filters changed, invalidating queries:', filters);
-    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+    const timer = setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+    }, 300);
+    return () => clearTimeout(timer);
   }, [filters, queryClient]);
 
   // Fetch actions and checkpoints counts for each key result
@@ -425,9 +428,17 @@ export default function KeyResults() {
       
       <KeyResultForm 
         keyResult={selectedKeyResult}
-        onSuccess={handleFormSuccess}
+        onSuccess={() => {
+          setIsFormOpen(false);
+          setSelectedKeyResult(null);
+        }}
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) {
+            setSelectedKeyResult(null);
+          }
+        }}
       />
     </div>
   );

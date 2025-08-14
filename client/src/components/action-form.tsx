@@ -232,7 +232,11 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
+      // Use setTimeout to prevent dialog close blocking
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
+      }, 100);
+      
       toast({
         title: action ? "Ação atualizada" : "Ação criada",
         description: action ? "A ação foi atualizada com sucesso." : "A ação foi criada com sucesso.",
@@ -304,8 +308,17 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
     mutation.mutate(cleanedData);
   };
 
+  const handleClose = (isOpen: boolean) => {
+    if (!isOpen && !mutation.isPending) {
+      // Reset form when closing
+      form.reset();
+      setNewComment("");
+    }
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>

@@ -76,10 +76,13 @@ export default function Actions() {
     staleTime: 0,
   });
 
-  // Force invalidation when filters change
+  // Force invalidation when filters change - with debounce
   useEffect(() => {
     console.log('🔄 Actions: Filters changed, invalidating queries:', filters);
-    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+    const timer = setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+    }, 300);
+    return () => clearTimeout(timer);
   }, [filters, queryClient]);
 
   return (
@@ -133,9 +136,13 @@ export default function Actions() {
 
       <ActionForm
         action={null}
-        onSuccess={() => setShowForm(false)}
+        onSuccess={() => {
+          setShowForm(false);
+        }}
         open={showForm}
-        onOpenChange={setShowForm}
+        onOpenChange={(open) => {
+          setShowForm(open);
+        }}
       />
     </div>
   );
