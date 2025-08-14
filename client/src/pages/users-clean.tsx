@@ -15,7 +15,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Edit, Trash2 } from "lucide-react";
-import Sidebar from "@/components/sidebar";
 import CompactHeader from "@/components/compact-header";
 
 interface User {

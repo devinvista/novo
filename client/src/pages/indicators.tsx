@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Sidebar from "@/components/sidebar";
+
 import CompactHeader from "@/components/compact-header";
 import IndicatorsDashboard from "@/components/indicators-dashboard";
 import Filters from "@/components/filters";
@@ -14,9 +14,7 @@ export default function Indicators() {
   }>({});
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      
+    <div className="flex-1 flex flex-col overflow-hidden">
       <main className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader showFilters={false} />
         

@@ -16,7 +16,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Edit, Trash2, Shield, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import Sidebar from "@/components/sidebar";
 import CompactHeader from "@/components/compact-header";
 
 interface User {
@@ -427,22 +426,17 @@ export default function UsersPage() {
 
   if (loadingUsers) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">
-          <CompactHeader />
-          <div className="p-6">
-            <div className="text-center">Carregando...</div>
-          </div>
-        </main>
+      <div className="flex-1 overflow-y-auto">
+        <CompactHeader />
+        <div className="p-6">
+          <div className="text-center">Carregando...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto">
         <CompactHeader />
         <div className="p-4 sm:p-6 pt-16">
           {/* Pending Users Section */}
@@ -761,7 +755,7 @@ export default function UsersPage() {
             </DialogContent>
           </Dialog>
         </div>
-      </main>
+      
     </div>
   );
 }

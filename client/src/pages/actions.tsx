@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useLocation } from "wouter";
-import Sidebar from "@/components/sidebar";
 import CompactHeader from "@/components/compact-header";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -86,10 +85,7 @@ export default function Actions() {
   // }, [filters, queryClient]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      
-      <main className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader 
           showFilters={true}
         />
@@ -132,7 +128,7 @@ export default function Actions() {
             />
           </Card>
         </div>
-      </main>
+      
 
       <ActionForm
         action={null}

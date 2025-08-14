@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Target, RotateCcw, Grid3X3, List, ArrowLeft, Settings } from "lucide-react";
-import Sidebar from "@/components/sidebar";
+
 import CompactHeader from "@/components/compact-header";
 import CheckpointProgressGrid from "@/components/checkpoint-progress-grid";
 import CheckpointTimelineHeader from "@/components/checkpoint-timeline-header";
@@ -107,30 +107,26 @@ export default function Checkpoints() {
 
   if (keyResultsLoading || checkpointsLoading) {
     return (
-      <div className="flex h-screen overflow-hidden bg-background">
-        <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <CompactHeader showFilters={false} />
         
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <CompactHeader showFilters={false} />
-          
-          <div className="flex-1 overflow-y-auto p-6 pt-16">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-48" />
-                  <Skeleton className="h-4 w-64" />
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {[...Array(6)].map((_, i) => (
-                      <Skeleton key={i} className="h-32 rounded-lg" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+        <div className="flex-1 overflow-y-auto p-6 pt-16">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <Skeleton key={i} className="h-32 rounded-lg" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
@@ -141,13 +137,10 @@ export default function Checkpoints() {
     : checkpoints || [];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <CompactHeader showFilters={false} />
       
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <CompactHeader showFilters={false} />
-        
-        <div className="flex-1 overflow-y-auto p-6 pt-16 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-6 pt-16 bg-gray-50">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -346,7 +339,6 @@ export default function Checkpoints() {
             )}
           </div>
         </div>
-      </main>
 
       {/* Update Dialog */}
       <CheckpointUpdateDialog

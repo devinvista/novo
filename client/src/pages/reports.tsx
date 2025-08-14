@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Sidebar from "@/components/sidebar";
 import IndicatorsDashboard from "@/components/indicators-dashboard";
 import ExecutiveSummary from "@/components/executive-summary";
 import CompactHeader from "@/components/compact-header";
@@ -19,12 +18,8 @@ export default function Reports() {
   }>({});
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      
-      <main className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader 
-          onFilterChange={setFilters}
           showFilters={true}
         />
         
@@ -64,7 +59,7 @@ export default function Reports() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
+      
     </div>
   );
 }

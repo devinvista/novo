@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import Sidebar from "@/components/sidebar";
 import ObjectivesTable from "@/components/objectives-table";
 import CompactHeader from "@/components/compact-header";
 import { Button } from "@/components/ui/button";
@@ -62,10 +61,7 @@ export default function Objectives() {
   }, [filters, queryClient]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      
-      <main className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader 
           showFilters={true}
         />
@@ -97,7 +93,7 @@ export default function Objectives() {
         <div className="flex-1 overflow-y-auto p-6">
           <ObjectivesTable objectives={objectives || []} isLoading={isLoading} />
         </div>
-      </main>
+      
     </div>
   );
 }

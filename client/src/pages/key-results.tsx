@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Eye, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
-import Sidebar from "@/components/sidebar";
 import CompactHeader from "@/components/compact-header";
 import KeyResultForm from "@/components/key-result-form-simple";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
@@ -217,10 +216,7 @@ export default function KeyResults() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      
-      <main className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader 
           showFilters={true}
         />
@@ -424,7 +420,7 @@ export default function KeyResults() {
             </div>
           )}
         </div>
-      </main>
+      
       
       <KeyResultForm 
         keyResult={selectedKeyResult}
