@@ -1,8 +1,5 @@
 import { useEffect } from 'react';
 import { Router, Route, Switch } from 'wouter';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from 'next-themes';
 import { cleanupOnDialogClose } from '@/lib/modal-cleanup';
 
 // Import pages
@@ -17,19 +14,10 @@ import Reports from '@/pages/reports';
 import Settings from '@/pages/settings';
 import NotFound from '@/pages/not-found';
 
-// Import components
+// Import components and providers
 import Sidebar from '@/components/sidebar';
-import { useAuth, AuthProvider } from '@/hooks/use-auth';
-
-// Query client configuration
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes
-    },
-  },
-});
+import { useAuth } from '@/hooks/use-auth';
+import { AppProviders } from '@/providers/app-providers';
 
 function AppContent() {
   const { user } = useAuth();
@@ -76,15 +64,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider attribute="class" defaultTheme="light">
-          <Router>
-            <AppContent />
-          </Router>
-          <Toaster />
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <AppProviders>
+      <Router>
+        <AppContent />
+      </Router>
+    </AppProviders>
   );
 }

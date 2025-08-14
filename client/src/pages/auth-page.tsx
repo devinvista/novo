@@ -27,6 +27,12 @@ export default function AuthPage() {
   // Load managers for registration
   const { data: managers } = useQuery({
     queryKey: ["/api/managers"],
+    queryFn: async () => {
+      const response = await fetch('/api/managers', { credentials: 'include' });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: true,
   });
 
   // Use effect to redirect if already logged in
