@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Target, Calendar, TrendingUp, Settings, Users, Briefcase, CheckCircle2 } from "lucide-react";
 import { formatDateBR, parseDecimalBR } from "@/lib/formatters";
-import { useModalCleanup } from "@/hooks/use-modal-cleanup";
+// import { useModalCleanup } from "@/hooks/use-modal-cleanup";
 
 interface KeyResultFormProps {
   keyResult?: any;
@@ -26,8 +26,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Hook para limpeza de modais órfãos
-  useModalCleanup(open);
+  // // Hook para limpeza de modais órfãos
+  // useModalCleanup(open);
   
   const [formData, setFormData] = useState({
     objectiveId: "",
@@ -287,7 +287,20 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           status: "active",
           progress: 0,
         });
-      }, 50);
+        
+        // Manual cleanup após fechar
+        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+        const portals = document.querySelectorAll('[data-radix-dialog-portal]');
+        const closedDialogs = document.querySelectorAll('[data-state="closed"]');
+        
+        overlays.forEach(el => el.parentNode && el.remove());
+        portals.forEach(el => !el.querySelector('[data-state="open"]') && el.parentNode && el.remove());
+        closedDialogs.forEach(el => {
+          if (el.classList.contains('fixed') && el.parentNode) {
+            el.remove();
+          }
+        });
+      }, 200);
     }
     onOpenChange(isOpen);
   };

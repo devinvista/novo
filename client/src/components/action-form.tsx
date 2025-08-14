@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { MessageSquare, Calendar, User } from "lucide-react";
 import { z } from "zod";
 import { formatDateBR } from "@/lib/formatters";
-import { useModalCleanup } from "@/hooks/use-modal-cleanup";
+// import { useModalCleanup } from "@/hooks/use-modal-cleanup";
 
 // Use the proper insert schema directly - with error handling
 const actionFormSchema = insertActionSchema.omit({ 
@@ -40,8 +40,8 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   
-  // Hook para limpeza de modais órfãos
-  useModalCleanup(open);
+  // // Hook para limpeza de modais órfãos
+  // useModalCleanup(open);
 
   const { data: keyResults } = useQuery({
     queryKey: ["/api/key-results"],
@@ -318,7 +318,20 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       setTimeout(() => {
         form.reset();
         setNewComment("");
-      }, 50);
+        
+        // Manual cleanup após fechar
+        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+        const portals = document.querySelectorAll('[data-radix-dialog-portal]');
+        const closedDialogs = document.querySelectorAll('[data-state="closed"]');
+        
+        overlays.forEach(el => el.parentNode && el.remove());
+        portals.forEach(el => !el.querySelector('[data-state="open"]') && el.parentNode && el.remove());
+        closedDialogs.forEach(el => {
+          if (el.classList.contains('fixed') && el.parentNode) {
+            el.remove();
+          }
+        });
+      }, 200);
     }
     onOpenChange(isOpen);
   };
