@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, TrendingUp, Target, RotateCcw } from "lucide-react";
 import AnimatedProgressRing from "./animated-progress-ring";
+import { parseDecimalBR } from "@/lib/formatters";
 
 interface CheckpointProgressGridProps {
   checkpoints: any[];
@@ -53,8 +54,8 @@ export default function CheckpointProgressGrid({
   const totalCheckpoints = checkpoints.length;
   const completedCheckpoints = checkpoints.filter(cp => cp.status === "completed").length;
   const overallProgress = checkpoints.reduce((sum, cp) => {
-    const targetValue = parseFloat(cp.targetValue);
-    const actualValue = parseFloat(cp.actualValue);
+    const targetValue = parseDecimalBR(cp.targetValue || "0");
+    const actualValue = parseDecimalBR(cp.actualValue || "0");
     return sum + (targetValue > 0 ? (actualValue / targetValue) * 100 : 0);
   }, 0) / totalCheckpoints;
 
@@ -79,8 +80,8 @@ export default function CheckpointProgressGrid({
       >
             <AnimatePresence>
               {checkpoints.map((checkpoint, index) => {
-                const targetValue = parseFloat(checkpoint.targetValue);
-                const actualValue = parseFloat(checkpoint.actualValue);
+                const targetValue = parseDecimalBR(checkpoint.targetValue || "0");
+                const actualValue = parseDecimalBR(checkpoint.actualValue || "0");
                 
                 // Verificar se é checkpoint futuro
                 const today = new Date();
