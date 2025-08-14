@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { NumberInputBR } from "@/components/ui/number-input-br";
 import { parseDecimalBR } from "@/lib/formatters";
 
 interface CheckpointUpdateDialogProps {
@@ -155,11 +154,15 @@ export default function CheckpointUpdateDialog({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="actualValue">Valor Atual</Label>
-              <NumberInputBR
+              <Input
                 id="actualValue"
+                type="text"
                 value={actualValue}
-                onChange={setActualValue}
-                placeholder="Digite o valor atual"
+                onChange={(e) => {
+                  console.log('🔢 Direct Input - Raw value:', e.target.value);
+                  setActualValue(e.target.value);
+                }}
+                placeholder="Digite o valor atual (ex: 20000 ou 20000,50)"
                 required
               />
               <div className="text-xs text-gray-500">

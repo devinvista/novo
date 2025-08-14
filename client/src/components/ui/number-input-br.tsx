@@ -27,26 +27,27 @@ const NumberInputBR = React.forwardRef<HTMLInputElement, NumberInputBRProps>(
     }, [value]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      let newValue = e.target.value;
+      const rawValue = e.target.value;
+      console.log('🔢 NumberInputBR - Raw input:', rawValue);
       
-      // Permite apenas números, vírgula e ponto durante digitação
-      newValue = newValue.replace(/[^\d.,]/g, "");
+      // Permitir digitação livre, removendo apenas caracteres não-numéricos (exceto vírgula e ponto)
+      let newValue = rawValue.replace(/[^\d.,]/g, "");
+      console.log('🔢 NumberInputBR - After cleanup:', newValue);
       
-      // Converte ponto para vírgula (padrão brasileiro)
+      // Normalizar separador decimal para vírgula
       if (newValue.includes(".") && !newValue.includes(",")) {
-        newValue = newValue.replace(".", ",");
+        newValue = newValue.replace(/\./g, ",");
       }
       
-      // Permite apenas uma vírgula
-      const commaCount = (newValue.match(/,/g) || []).length;
-      if (commaCount > 1) {
-        const firstCommaIndex = newValue.indexOf(",");
-        newValue = newValue.substring(0, firstCommaIndex + 1) + newValue.substring(firstCommaIndex + 1).replace(/,/g, "");
+      // Permitir apenas uma vírgula como separador decimal
+      const commas = newValue.split(",");
+      if (commas.length > 2) {
+        newValue = commas[0] + "," + commas.slice(1).join("");
       }
       
+      console.log('🔢 NumberInputBR - Final value:', newValue);
       setInternalValue(newValue);
       
-      // Chama onChange com valor no formato brasileiro (vírgula)
       if (onChange) {
         onChange(newValue);
       }
