@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Target, Calendar, TrendingUp, Settings, Users, Briefcase, CheckCircle2 } from "lucide-react";
 import { formatDateBR, parseDecimalBR } from "@/lib/formatters";
+import { useModalCleanup } from "@/hooks/use-modal-cleanup";
 
 interface KeyResultFormProps {
   keyResult?: any;
@@ -24,6 +25,9 @@ interface KeyResultFormProps {
 export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange }: KeyResultFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Hook para limpeza de modais órfãos
+  useModalCleanup(open);
   
   const [formData, setFormData] = useState({
     objectiveId: "",
@@ -264,26 +268,43 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen && !mutation.isPending) {
-      // Reset form data when closing
-      setFormData({
-        objectiveId: "",
-        title: "",
-        description: "",
-        strategicIndicatorIds: [],
-        serviceLineIds: [],
-        serviceId: undefined,
-        targetValue: "0",
-        initialValue: "0",
-        currentValue: "0",
-        unit: "",
-        frequency: "monthly",
-        startDate: "",
-        endDate: "",
-        status: "active",
-        progress: 0,
-      });
+      // Force clean close
+      setTimeout(() => {
+        setFormData({
+          objectiveId: "",
+          title: "",
+          description: "",
+          strategicIndicatorIds: [],
+          serviceLineIds: [],
+          serviceId: undefined,
+          targetValue: "0",
+          initialValue: "0",
+          currentValue: "0",
+          unit: "",
+          frequency: "monthly",
+          startDate: "",
+          endDate: "",
+          status: "active",
+          progress: 0,
+        });
+      }, 50);
     }
     onOpenChange(isOpen);
+    
+    // Force remove any stuck overlays
+    if (!isOpen) {
+      setTimeout(() => {
+        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+        overlays.forEach(overlay => overlay.remove());
+        // Also remove any modal backdrop elements
+        const backdrops = document.querySelectorAll('[data-state="closed"]');
+        backdrops.forEach(backdrop => {
+          if (backdrop.getAttribute('data-radix-dialog-overlay') !== null) {
+            backdrop.remove();
+          }
+        });
+      }, 100);
+    }
   };
 
   return (

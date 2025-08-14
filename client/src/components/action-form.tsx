@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { MessageSquare, Calendar, User } from "lucide-react";
 import { z } from "zod";
 import { formatDateBR } from "@/lib/formatters";
+import { useModalCleanup } from "@/hooks/use-modal-cleanup";
 
 // Use the proper insert schema directly - with error handling
 const actionFormSchema = insertActionSchema.omit({ 
@@ -38,6 +39,9 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  
+  // Hook para limpeza de modais órfãos
+  useModalCleanup(open);
 
   const { data: keyResults } = useQuery({
     queryKey: ["/api/key-results"],
@@ -310,11 +314,21 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen && !mutation.isPending) {
-      // Reset form when closing
-      form.reset();
-      setNewComment("");
+      // Force clean close
+      setTimeout(() => {
+        form.reset();
+        setNewComment("");
+      }, 50);
     }
     onOpenChange(isOpen);
+    
+    // Force remove any stuck overlays
+    if (!isOpen) {
+      setTimeout(() => {
+        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+        overlays.forEach(overlay => overlay.remove());
+      }, 100);
+    }
   };
 
   return (
