@@ -10,29 +10,45 @@ export function useModalCleanup(isOpen: boolean) {
     if (!isOpen) {
       // Limpeza imediata + aguarda animações
       const immediateCleanup = () => {
-        // Remove TODOS os overlays de diálogo
-        const allOverlays = document.querySelectorAll('[data-radix-dialog-overlay]');
-        allOverlays.forEach(overlay => overlay.remove());
-        
-        // Remove TODOS os portals de diálogo
-        const allPortals = document.querySelectorAll('[data-radix-dialog-portal]');
-        allPortals.forEach(portal => portal.remove());
-        
-        // Remove elementos com position fixed e z-index alto
-        const allElements = document.querySelectorAll('*');
-        allElements.forEach(element => {
-          const style = window.getComputedStyle(element);
-          const zIndex = parseInt(style.zIndex) || 0;
-          const position = style.position;
-          
-          if (position === 'fixed' && zIndex >= 50) {
-            const rect = element.getBoundingClientRect();
-            // Se cobre toda a tela, provavelmente é um overlay órfão
-            if (rect.width >= window.innerWidth - 50 && rect.height >= window.innerHeight - 50) {
-              element.remove();
+        try {
+          // Remove TODOS os overlays de diálogo com verificação segura
+          const allOverlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+          allOverlays.forEach(overlay => {
+            if (overlay.parentNode) {
+              overlay.remove();
             }
-          }
-        });
+          });
+          
+          // Remove TODOS os portals de diálogo com verificação segura
+          const allPortals = document.querySelectorAll('[data-radix-dialog-portal]');
+          allPortals.forEach(portal => {
+            if (portal.parentNode) {
+              portal.remove();
+            }
+          });
+          
+          // Remove elementos com position fixed e z-index alto
+          const allElements = document.querySelectorAll('*');
+          allElements.forEach(element => {
+            try {
+              const style = window.getComputedStyle(element);
+              const zIndex = parseInt(style.zIndex) || 0;
+              const position = style.position;
+              
+              if (position === 'fixed' && zIndex >= 50 && element.parentNode) {
+                const rect = element.getBoundingClientRect();
+                // Se cobre toda a tela, provavelmente é um overlay órfão
+                if (rect.width >= window.innerWidth - 50 && rect.height >= window.innerHeight - 50) {
+                  element.remove();
+                }
+              }
+            } catch (error) {
+              // Ignora erros de elementos já removidos
+            }
+          });
+        } catch (error) {
+          console.log('⚠️ Erro na limpeza imediata:', error);
+        }
         
         // Remove atributos que podem estar bloqueando
         document.body.style.overflow = '';
