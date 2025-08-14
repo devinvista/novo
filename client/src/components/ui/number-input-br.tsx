@@ -27,7 +27,23 @@ const NumberInputBR = React.forwardRef<HTMLInputElement, NumberInputBRProps>(
     }, [value]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = maskBRNumber(e.target.value);
+      let newValue = e.target.value;
+      
+      // Permite apenas números, vírgula e ponto durante digitação
+      newValue = newValue.replace(/[^\d.,]/g, "");
+      
+      // Converte ponto para vírgula (padrão brasileiro)
+      if (newValue.includes(".") && !newValue.includes(",")) {
+        newValue = newValue.replace(".", ",");
+      }
+      
+      // Permite apenas uma vírgula
+      const commaCount = (newValue.match(/,/g) || []).length;
+      if (commaCount > 1) {
+        const firstCommaIndex = newValue.indexOf(",");
+        newValue = newValue.substring(0, firstCommaIndex + 1) + newValue.substring(firstCommaIndex + 1).replace(/,/g, "");
+      }
+      
       setInternalValue(newValue);
       
       // Chama onChange com valor no formato brasileiro (vírgula)

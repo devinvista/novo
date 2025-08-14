@@ -228,19 +228,24 @@ export function isValidBRNumber(value: string): boolean {
   return brazilianNumberRegex.test(value.replace(/\s/g, ""));
 }
 
-// Máscara para input numérico brasileiro
+// Máscara para input numérico brasileiro - permite digitação livre de números
 export function maskBRNumber(value: string): string {
   if (!value) return "";
   
   // Remove tudo que não é número, vírgula ou ponto
   let cleaned = value.replace(/[^\d.,]/g, "");
   
-  // Permite apenas uma vírgula ou ponto
-  const parts = cleaned.split(/[.,]/);
-  if (parts.length > 2) {
-    cleaned = parts[0] + "," + parts[1];
-  } else if (parts.length === 2) {
-    cleaned = parts[0] + "," + parts[1];
+  // Permite apenas uma vírgula ou ponto como separador decimal
+  const decimalSeparators = cleaned.match(/[.,]/g);
+  if (decimalSeparators && decimalSeparators.length > 1) {
+    // Se há múltiplos separadores, manter apenas o primeiro
+    const firstSeparatorIndex = cleaned.search(/[.,]/);
+    const beforeSeparator = cleaned.substring(0, firstSeparatorIndex);
+    const afterSeparator = cleaned.substring(firstSeparatorIndex + 1).replace(/[.,]/g, "");
+    cleaned = beforeSeparator + "," + afterSeparator;
+  } else if (decimalSeparators && decimalSeparators.length === 1) {
+    // Normalizar separador para vírgula
+    cleaned = cleaned.replace(".", ",");
   }
   
   return cleaned;
