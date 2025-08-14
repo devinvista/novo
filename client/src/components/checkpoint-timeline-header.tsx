@@ -77,13 +77,23 @@ export default function CheckpointTimelineHeader({
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
-        {/* Header compacto */}
+        {/* Header compacto com status */}
         <div className="mb-4">
-          <div className="flex items-center gap-3 mb-3">
-            <Target className="h-5 w-5 text-blue-600" />
-            <h3 className="text-xl font-semibold text-gray-900">{keyResult.title}</h3>
-            <Badge variant="outline" className="text-xs">
-              {timelineData.checkpoints.length} checkpoints
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Target className="h-5 w-5 text-blue-600" />
+              <h3 className="text-xl font-semibold text-gray-900">{keyResult.title}</h3>
+              <Badge variant="outline" className="text-xs">
+                {timelineData.checkpoints.length} checkpoints
+              </Badge>
+            </div>
+            
+            {/* Status badge no topo */}
+            <Badge 
+              variant={timelineData.progress >= 70 ? "default" : timelineData.progress >= 40 ? "secondary" : "destructive"}
+              className="text-sm px-3 py-1"
+            >
+              {timelineData.progress >= 70 ? "No prazo" : timelineData.progress >= 40 ? "Atenção" : "Crítico"}
             </Badge>
           </div>
         </div>
@@ -177,12 +187,12 @@ export default function CheckpointTimelineHeader({
             </div>
           </div>
 
-          {/* Progresso Geral à direita - design circular compacto */}
+          {/* Progresso Geral à direita - design circular otimizado */}
           <div className="flex-shrink-0">
-            <div className="flex flex-col items-center gap-3 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
-              <div className="relative w-16 h-16">
+            <div className="flex flex-col items-center gap-2 bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100">
+              <div className="relative w-20 h-20">
                 {/* Círculo de fundo */}
-                <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                <svg className="w-20 h-20" viewBox="0 0 36 36">
                   <path
                     d="M18 2.0845
                     a 15.9155 15.9155 0 0 1 0 31.831
@@ -215,7 +225,7 @@ export default function CheckpointTimelineHeader({
                 </svg>
                 {/* Texto no centro do círculo */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-bold text-gray-900">
+                  <span className="text-lg font-bold text-gray-900">
                     {timelineData.progress.toFixed(0)}%
                   </span>
                 </div>
@@ -223,18 +233,10 @@ export default function CheckpointTimelineHeader({
               
               <div className="text-center">
                 <h4 className="text-xs font-medium text-gray-600 mb-1">Progresso Geral</h4>
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-base font-bold text-gray-900">
                   {keyResult.currentValue} / {keyResult.targetValue}
                 </div>
                 <div className="text-xs text-gray-500">{keyResult.unit}</div>
-                
-                {/* Status badge compacto */}
-                <Badge 
-                  variant={timelineData.progress >= 70 ? "default" : timelineData.progress >= 40 ? "secondary" : "destructive"}
-                  className="text-xs px-2 py-1 mt-2"
-                >
-                  {timelineData.progress >= 70 ? "No prazo" : timelineData.progress >= 40 ? "Atenção" : "Crítico"}
-                </Badge>
               </div>
             </div>
           </div>
