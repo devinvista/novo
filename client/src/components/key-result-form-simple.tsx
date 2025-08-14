@@ -173,18 +173,18 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       return await response.json();
     },
     onSuccess: () => {
-      // Use setTimeout to prevent dialog close blocking
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      }, 100);
-      
       toast({
         title: "Sucesso",
         description: keyResult ? "Resultado-chave atualizado com sucesso!" : "Resultado-chave criado com sucesso!",
       });
       onSuccess();
+      
+      // Invalidate after dialog close
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      }, 200);
     },
     onError: (error: any) => {
       toast({

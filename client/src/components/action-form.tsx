@@ -232,16 +232,16 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       }
     },
     onSuccess: () => {
-      // Use setTimeout to prevent dialog close blocking
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
-      }, 100);
-      
       toast({
         title: action ? "Ação atualizada" : "Ação criada",
         description: action ? "A ação foi atualizada com sucesso." : "A ação foi criada com sucesso.",
       });
       onSuccess();
+      
+      // Invalidate after dialog close
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
+      }, 200);
     },
     onError: (error: any) => {
       toast({

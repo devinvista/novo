@@ -76,14 +76,14 @@ export default function Actions() {
     staleTime: 0,
   });
 
-  // Force invalidation when filters change - with debounce
-  useEffect(() => {
-    console.log('🔄 Actions: Filters changed, invalidating queries:', filters);
-    const timer = setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [filters, queryClient]);
+  // Remove automatic invalidation - let queries handle their own cache
+  // useEffect(() => {
+  //   console.log('🔄 Actions: Filters changed, invalidating queries:', filters);
+  //   const timer = setTimeout(() => {
+  //     queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+  //   }, 300);
+  //   return () => clearTimeout(timer);
+  // }, [filters, queryClient]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

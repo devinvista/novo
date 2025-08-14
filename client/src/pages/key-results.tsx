@@ -100,14 +100,14 @@ export default function KeyResults() {
     staleTime: 0,
   });
 
-  // Force invalidation when filters change - with debounce
-  useEffect(() => {
-    console.log('🔄 KeyResults: Filters changed, invalidating queries:', filters);
-    const timer = setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [filters, queryClient]);
+  // Remove automatic invalidation - let queries handle their own cache
+  // useEffect(() => {
+  //   console.log('🔄 KeyResults: Filters changed, invalidating queries:', filters);
+  //   const timer = setTimeout(() => {
+  //     queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+  //   }, 300);
+  //   return () => clearTimeout(timer);
+  // }, [filters, queryClient]);
 
   // Fetch actions and checkpoints counts for each key result
   const { data: actionsCounts } = useQuery({

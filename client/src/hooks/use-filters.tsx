@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useState } from "react";
+import { createContext, useContext, ReactNode, useState, useMemo, useCallback } from "react";
 
 interface Filters {
   regionId?: number;
@@ -17,17 +17,19 @@ const FiltersContext = createContext<FiltersContextType | undefined>(undefined);
 export function FiltersProvider({ children }: { children: ReactNode }) {
   const [filters, setFilters] = useState<Filters>({});
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     console.log('🔄 Clearing filters');
     setFilters({});
-  };
+  }, []);
 
-  console.log('🎯 Current filters state:', filters);
+  const contextValue = useMemo(() => ({
+    filters,
+    setFilters,
+    clearFilters
+  }), [filters, clearFilters]);
 
   return (
-    <FiltersContext.Provider 
-      value={{ filters, setFilters, clearFilters }}
-    >
+    <FiltersContext.Provider value={contextValue}>
       {children}
     </FiltersContext.Provider>
   );
