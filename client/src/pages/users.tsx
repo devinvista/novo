@@ -50,6 +50,26 @@ interface SubRegion {
   regionId: number;
 }
 
+interface Solution {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+interface ServiceLine {
+  id: number;
+  name: string;
+  description?: string;
+  solutionId: number;
+}
+
+interface Service {
+  id: number;
+  name: string;
+  description?: string;
+  serviceLineId: number;
+}
+
 const userFormSchema = z.object({
   username: z.string().min(3, "Usuário deve ter pelo menos 3 caracteres"),
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -122,15 +142,15 @@ export default function UsersPage() {
     queryKey: ["/api/sub-regions"],
   });
 
-  const { data: solutions = [] } = useQuery<any[]>({
+  const { data: solutions = [] } = useQuery<Solution[]>({
     queryKey: ["/api/solutions"],
   });
 
-  const { data: serviceLines = [] } = useQuery<any[]>({
+  const { data: serviceLines = [] } = useQuery<ServiceLine[]>({
     queryKey: ["/api/service-lines"],
   });
 
-  const { data: services = [] } = useQuery<any[]>({
+  const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
 
@@ -174,6 +194,20 @@ export default function UsersPage() {
         (Array.isArray(currentUser.serviceIds) && currentUser.serviceIds.length === 0) ||
         (Array.isArray(currentUser.serviceIds) && currentUser.serviceIds.includes(service.id))
       );
+
+  // Filtros responsivos baseados nas seleções do formulário
+  const selectedSolutionIds = form.watch("solutionIds") || [];
+  const selectedServiceLineIds = form.watch("serviceLineIds") || [];
+
+  // Linhas de serviço filtradas pelas soluções selecionadas
+  const filteredServiceLines = selectedSolutionIds.length > 0
+    ? availableServiceLines.filter(serviceLine => selectedSolutionIds.includes(serviceLine.solutionId))
+    : availableServiceLines;
+
+  // Serviços filtrados pelas linhas de serviço selecionadas
+  const filteredServices = selectedServiceLineIds.length > 0
+    ? availableServices.filter(service => selectedServiceLineIds.includes(service.serviceLineId))
+    : availableServices;
 
   // Mutations
   const createUserMutation = useMutation({
@@ -642,7 +676,25 @@ export default function UsersPage() {
                                               if (checked) {
                                                 field.onChange([...currentValues, solution.id]);
                                               } else {
-                                                field.onChange(currentValues.filter(id => id !== solution.id));
+                                                // Remover solução e linhas/serviços dependentes
+                                                const newSolutions = currentValues.filter(id => id !== solution.id);
+                                                field.onChange(newSolutions);
+                                                
+                                                // Remover linhas de serviço da solução removida
+                                                const currentServiceLines = form.getValues("serviceLineIds") || [];
+                                                const serviceLinesToRemove = serviceLines
+                                                  .filter(sl => sl.solutionId === solution.id)
+                                                  .map(sl => sl.id);
+                                                const newServiceLines = currentServiceLines.filter(id => !serviceLinesToRemove.includes(id));
+                                                form.setValue("serviceLineIds", newServiceLines);
+                                                
+                                                // Remover serviços das linhas removidas
+                                                const currentServices = form.getValues("serviceIds") || [];
+                                                const servicesToRemove = services
+                                                  .filter(s => serviceLinesToRemove.includes(s.serviceLineId))
+                                                  .map(s => s.id);
+                                                const newServices = currentServices.filter(id => !servicesToRemove.includes(id));
+                                                form.setValue("serviceIds", newServices);
                                               }
                                             }}
                                           />
@@ -668,28 +720,44 @@ export default function UsersPage() {
                                   <FormItem>
                                     <FormLabel>Linhas de Serviço</FormLabel>
                                     <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-2">
-                                      {availableServiceLines.map((serviceLine) => (
-                                        <div key={serviceLine.id} className="flex items-center space-x-2">
-                                          <Checkbox
-                                            id={`serviceLine-${serviceLine.id}`}
-                                            checked={field.value?.includes(serviceLine.id) || false}
-                                            onCheckedChange={(checked) => {
-                                              const currentValues = field.value || [];
-                                              if (checked) {
-                                                field.onChange([...currentValues, serviceLine.id]);
-                                              } else {
-                                                field.onChange(currentValues.filter(id => id !== serviceLine.id));
-                                              }
-                                            }}
-                                          />
-                                          <label 
-                                            htmlFor={`serviceLine-${serviceLine.id}`} 
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                          >
-                                            {serviceLine.name}
-                                          </label>
+                                      {filteredServiceLines.length === 0 && selectedSolutionIds.length > 0 ? (
+                                        <div className="col-span-2 text-sm text-muted-foreground text-center py-2">
+                                          Nenhuma linha de serviço disponível para as soluções selecionadas
                                         </div>
-                                      ))}
+                                      ) : (
+                                        filteredServiceLines.map((serviceLine) => (
+                                          <div key={serviceLine.id} className="flex items-center space-x-2">
+                                            <Checkbox
+                                              id={`serviceLine-${serviceLine.id}`}
+                                              checked={field.value?.includes(serviceLine.id) || false}
+                                              onCheckedChange={(checked) => {
+                                                const currentValues = field.value || [];
+                                                if (checked) {
+                                                  field.onChange([...currentValues, serviceLine.id]);
+                                                } else {
+                                                  // Remover linha de serviço e serviços dependentes
+                                                  const newServiceLines = currentValues.filter(id => id !== serviceLine.id);
+                                                  field.onChange(newServiceLines);
+                                                  
+                                                  // Remover serviços da linha removida
+                                                  const currentServices = form.getValues("serviceIds") || [];
+                                                  const servicesToRemove = services
+                                                    .filter(s => s.serviceLineId === serviceLine.id)
+                                                    .map(s => s.id);
+                                                  const newServices = currentServices.filter(id => !servicesToRemove.includes(id));
+                                                  form.setValue("serviceIds", newServices);
+                                                }
+                                              }}
+                                            />
+                                            <label 
+                                              htmlFor={`serviceLine-${serviceLine.id}`} 
+                                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                              {serviceLine.name}
+                                            </label>
+                                          </div>
+                                        ))
+                                      )}
                                     </div>
                                     <FormMessage />
                                   </FormItem>
@@ -704,28 +772,38 @@ export default function UsersPage() {
                                   <FormItem>
                                     <FormLabel>Serviços</FormLabel>
                                     <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-2">
-                                      {availableServices.map((service) => (
-                                        <div key={service.id} className="flex items-center space-x-2">
-                                          <Checkbox
-                                            id={`service-${service.id}`}
-                                            checked={field.value?.includes(service.id) || false}
-                                            onCheckedChange={(checked) => {
-                                              const currentValues = field.value || [];
-                                              if (checked) {
-                                                field.onChange([...currentValues, service.id]);
-                                              } else {
-                                                field.onChange(currentValues.filter(id => id !== service.id));
-                                              }
-                                            }}
-                                          />
-                                          <label 
-                                            htmlFor={`service-${service.id}`} 
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                          >
-                                            {service.name}
-                                          </label>
+                                      {filteredServices.length === 0 && selectedServiceLineIds.length > 0 ? (
+                                        <div className="col-span-2 text-sm text-muted-foreground text-center py-2">
+                                          Nenhum serviço disponível para as linhas de serviço selecionadas
                                         </div>
-                                      ))}
+                                      ) : selectedServiceLineIds.length === 0 && selectedSolutionIds.length > 0 ? (
+                                        <div className="col-span-2 text-sm text-muted-foreground text-center py-2">
+                                          Selecione uma linha de serviço primeiro
+                                        </div>
+                                      ) : (
+                                        filteredServices.map((service) => (
+                                          <div key={service.id} className="flex items-center space-x-2">
+                                            <Checkbox
+                                              id={`service-${service.id}`}
+                                              checked={field.value?.includes(service.id) || false}
+                                              onCheckedChange={(checked) => {
+                                                const currentValues = field.value || [];
+                                                if (checked) {
+                                                  field.onChange([...currentValues, service.id]);
+                                                } else {
+                                                  field.onChange(currentValues.filter(id => id !== service.id));
+                                                }
+                                              }}
+                                            />
+                                            <label 
+                                              htmlFor={`service-${service.id}`} 
+                                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                              {service.name}
+                                            </label>
+                                          </div>
+                                        ))
+                                      )}
                                     </div>
                                     <FormMessage />
                                   </FormItem>
