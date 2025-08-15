@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { useFilters } from "@/hooks/use-filters";
+import { useAuth } from "@/hooks/use-auth";
 import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 import darkLogoImage from "@assets/e03da512-3870-4e22-a75b-b15313a7ad9b_1754514316144.png";
 
@@ -64,12 +65,7 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
   const { selectedQuarter, setSelectedQuarter } = useQuarterlyFilter();
   const { isOpen, toggle } = useSidebarToggle();
   const { filters, setFilters, clearFilters } = useFilters();
-
-  const { data: user }: { data: any } = useQuery({
-    queryKey: ["/api/user"],
-    staleTime: 0,
-    gcTime: 0,
-  });
+  const { user, logoutMutation } = useAuth();
 
   const { data: availableQuarters = [] } = useQuery<Quarter[]>({
     queryKey: ["/api/quarters"],
@@ -101,17 +97,7 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
     setFilters(newFilters);
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { 
-        method: "POST", 
-        credentials: "include" 
-      });
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-    }
-  };
+
 
   const getUserInitials = (name?: string, username?: string) => {
     if (name) {
@@ -286,7 +272,11 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                   Configurações
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <DropdownMenuItem 
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                  className="text-red-600"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair
                 </DropdownMenuItem>
