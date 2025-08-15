@@ -299,7 +299,7 @@ export default function UsersPage() {
 
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
-      const response = await fetch(`/api/users/${id}/toggle-status`, {
+      const response = await fetch(`/api/users/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active }),
