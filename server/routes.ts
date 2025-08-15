@@ -1181,39 +1181,48 @@ export function registerRoutes(app: Express): Server {
         const currentUserServiceLineIds = Array.isArray(currentUser.serviceLineIds) ? currentUser.serviceLineIds : [];
         const currentUserServiceIds = Array.isArray(currentUser.serviceIds) ? currentUser.serviceIds : [];
 
-        // Verificar Soluções
+        // Verificar Soluções - só validar se o gestor tem restrições E o usuário está tentando atribuir algo
         if (userData.solutionIds && Array.isArray(userData.solutionIds) && userData.solutionIds.length > 0) {
-          const invalidSolutions = userData.solutionIds.filter((id: number) => 
-            currentUserSolutionIds.length > 0 && !currentUserSolutionIds.includes(id)
-          );
-          if (invalidSolutions.length > 0) {
-            return res.status(403).json({ 
-              message: "Você não tem permissão para atribuir estas soluções ao usuário" 
-            });
+          // Se o gestor tem restrições de soluções, validar
+          if (currentUserSolutionIds.length > 0) {
+            const invalidSolutions = userData.solutionIds.filter((id: number) => 
+              !currentUserSolutionIds.includes(id)
+            );
+            if (invalidSolutions.length > 0) {
+              return res.status(403).json({ 
+                message: "Você não tem permissão para atribuir estas soluções ao usuário" 
+              });
+            }
           }
         }
 
-        // Verificar Linhas de Serviço
+        // Verificar Linhas de Serviço - só validar se o gestor tem restrições E o usuário está tentando atribuir algo
         if (userData.serviceLineIds && Array.isArray(userData.serviceLineIds) && userData.serviceLineIds.length > 0) {
-          const invalidServiceLines = userData.serviceLineIds.filter((id: number) => 
-            currentUserServiceLineIds.length > 0 && !currentUserServiceLineIds.includes(id)
-          );
-          if (invalidServiceLines.length > 0) {
-            return res.status(403).json({ 
-              message: "Você não tem permissão para atribuir estas linhas de serviço ao usuário" 
-            });
+          // Se o gestor tem restrições de linhas, validar
+          if (currentUserServiceLineIds.length > 0) {
+            const invalidServiceLines = userData.serviceLineIds.filter((id: number) => 
+              !currentUserServiceLineIds.includes(id)
+            );
+            if (invalidServiceLines.length > 0) {
+              return res.status(403).json({ 
+                message: "Você não tem permissão para atribuir estas linhas de serviço ao usuário" 
+              });
+            }
           }
         }
 
-        // Verificar Serviços
+        // Verificar Serviços - só validar se o gestor tem restrições E o usuário está tentando atribuir algo
         if (userData.serviceIds && Array.isArray(userData.serviceIds) && userData.serviceIds.length > 0) {
-          const invalidServices = userData.serviceIds.filter((id: number) => 
-            currentUserServiceIds.length > 0 && !currentUserServiceIds.includes(id)
-          );
-          if (invalidServices.length > 0) {
-            return res.status(403).json({ 
-              message: "Você não tem permissão para atribuir estes serviços ao usuário" 
-            });
+          // Se o gestor tem restrições de serviços, validar
+          if (currentUserServiceIds.length > 0) {
+            const invalidServices = userData.serviceIds.filter((id: number) => 
+              !currentUserServiceIds.includes(id)
+            );
+            if (invalidServices.length > 0) {
+              return res.status(403).json({ 
+                message: "Você não tem permissão para atribuir estes serviços ao usuário" 
+              });
+            }
           }
         }
 
@@ -1264,39 +1273,48 @@ export function registerRoutes(app: Express): Server {
         const currentUserServiceLineIds = Array.isArray(currentUser.serviceLineIds) ? currentUser.serviceLineIds : [];
         const currentUserServiceIds = Array.isArray(currentUser.serviceIds) ? currentUser.serviceIds : [];
 
-        // Verificar Soluções
+        // Verificar Soluções - só validar se o gestor tem restrições E o usuário está tentando atribuir algo
         if (userData.solutionIds && Array.isArray(userData.solutionIds) && userData.solutionIds.length > 0) {
-          const invalidSolutions = userData.solutionIds.filter((id: number) => 
-            currentUserSolutionIds.length > 0 && !currentUserSolutionIds.includes(id)
-          );
-          if (invalidSolutions.length > 0) {
-            return res.status(403).json({ 
-              message: "Você não tem permissão para atribuir estas soluções ao usuário" 
-            });
+          // Se o gestor tem restrições de soluções, validar
+          if (currentUserSolutionIds.length > 0) {
+            const invalidSolutions = userData.solutionIds.filter((id: number) => 
+              !currentUserSolutionIds.includes(id)
+            );
+            if (invalidSolutions.length > 0) {
+              return res.status(403).json({ 
+                message: "Você não tem permissão para atribuir estas soluções ao usuário" 
+              });
+            }
           }
         }
 
-        // Verificar Linhas de Serviço
+        // Verificar Linhas de Serviço - só validar se o gestor tem restrições E o usuário está tentando atribuir algo
         if (userData.serviceLineIds && Array.isArray(userData.serviceLineIds) && userData.serviceLineIds.length > 0) {
-          const invalidServiceLines = userData.serviceLineIds.filter((id: number) => 
-            currentUserServiceLineIds.length > 0 && !currentUserServiceLineIds.includes(id)
-          );
-          if (invalidServiceLines.length > 0) {
-            return res.status(403).json({ 
-              message: "Você não tem permissão para atribuir estas linhas de serviço ao usuário" 
-            });
+          // Se o gestor tem restrições de linhas, validar
+          if (currentUserServiceLineIds.length > 0) {
+            const invalidServiceLines = userData.serviceLineIds.filter((id: number) => 
+              !currentUserServiceLineIds.includes(id)
+            );
+            if (invalidServiceLines.length > 0) {
+              return res.status(403).json({ 
+                message: "Você não tem permissão para atribuir estas linhas de serviço ao usuário" 
+              });
+            }
           }
         }
 
-        // Verificar Serviços
+        // Verificar Serviços - só validar se o gestor tem restrições E o usuário está tentando atribuir algo
         if (userData.serviceIds && Array.isArray(userData.serviceIds) && userData.serviceIds.length > 0) {
-          const invalidServices = userData.serviceIds.filter((id: number) => 
-            currentUserServiceIds.length > 0 && !currentUserServiceIds.includes(id)
-          );
-          if (invalidServices.length > 0) {
-            return res.status(403).json({ 
-              message: "Você não tem permissão para atribuir estes serviços ao usuário" 
-            });
+          // Se o gestor tem restrições de serviços, validar
+          if (currentUserServiceIds.length > 0) {
+            const invalidServices = userData.serviceIds.filter((id: number) => 
+              !currentUserServiceIds.includes(id)
+            );
+            if (invalidServices.length > 0) {
+              return res.status(403).json({ 
+                message: "Você não tem permissão para atribuir estes serviços ao usuário" 
+              });
+            }
           }
         }
       }

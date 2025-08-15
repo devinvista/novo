@@ -200,11 +200,13 @@ export default function UsersPage() {
   const selectedServiceLineIds = form.watch("serviceLineIds") || [];
 
   // Linhas de serviço filtradas pelas soluções selecionadas
+  // Se nenhuma solução selecionada = mostrar todas as linhas disponíveis
   const filteredServiceLines = selectedSolutionIds.length > 0
     ? availableServiceLines.filter(serviceLine => selectedSolutionIds.includes(serviceLine.solutionId))
     : availableServiceLines;
 
   // Serviços filtrados pelas linhas de serviço selecionadas
+  // Se nenhuma linha selecionada = mostrar todos os serviços disponíveis
   const filteredServices = selectedServiceLineIds.length > 0
     ? availableServices.filter(service => selectedServiceLineIds.includes(service.serviceLineId))
     : availableServices;
@@ -655,6 +657,7 @@ export default function UsersPage() {
                               <h3 className="font-medium text-sm">Permissões Organizacionais</h3>
                               <p className="text-xs text-muted-foreground">
                                 Defina as Soluções, Linhas de Serviço e Serviços que este usuário pode acessar. 
+                                Deixe vazio para liberar acesso a todos os itens disponíveis.
                                 {currentUser?.role === "gestor" && " Limitado às suas próprias permissões."}
                               </p>
 
@@ -720,9 +723,12 @@ export default function UsersPage() {
                                   <FormItem>
                                     <FormLabel>Linhas de Serviço</FormLabel>
                                     <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-2">
-                                      {filteredServiceLines.length === 0 && selectedSolutionIds.length > 0 ? (
+                                      {filteredServiceLines.length === 0 ? (
                                         <div className="col-span-2 text-sm text-muted-foreground text-center py-2">
-                                          Nenhuma linha de serviço disponível para as soluções selecionadas
+                                          {selectedSolutionIds.length > 0 
+                                            ? "Nenhuma linha de serviço disponível para as soluções selecionadas"
+                                            : "Nenhuma linha de serviço disponível"
+                                          }
                                         </div>
                                       ) : (
                                         filteredServiceLines.map((serviceLine) => (
@@ -772,13 +778,12 @@ export default function UsersPage() {
                                   <FormItem>
                                     <FormLabel>Serviços</FormLabel>
                                     <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-2">
-                                      {filteredServices.length === 0 && selectedServiceLineIds.length > 0 ? (
+                                      {filteredServices.length === 0 ? (
                                         <div className="col-span-2 text-sm text-muted-foreground text-center py-2">
-                                          Nenhum serviço disponível para as linhas de serviço selecionadas
-                                        </div>
-                                      ) : selectedServiceLineIds.length === 0 && selectedSolutionIds.length > 0 ? (
-                                        <div className="col-span-2 text-sm text-muted-foreground text-center py-2">
-                                          Selecione uma linha de serviço primeiro
+                                          {selectedServiceLineIds.length > 0 
+                                            ? "Nenhum serviço disponível para as linhas de serviço selecionadas"
+                                            : "Nenhum serviço disponível"
+                                          }
                                         </div>
                                       ) : (
                                         filteredServices.map((service) => (
