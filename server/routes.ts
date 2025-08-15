@@ -21,7 +21,7 @@ const upload = multer({
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Tipo de arquivo inválido. Apenas arquivos Excel são permitidos.'), false);
+      cb(new Error('Tipo de arquivo inválido. Apenas arquivos Excel são permitidos.'));
     }
   }
 });
@@ -306,7 +306,7 @@ export function registerRoutes(app: Express): Server {
         if (validation.regionId && userRegionIds.length > 0 && !userRegionIds.includes(validation.regionId)) {
           return res.status(403).json({ message: "Sem permissão para criar objetivo nesta região" });
         }
-        if (validation.subRegionId && userSubRegionIds.length > 0 && !userSubRegionIds.includes(validation.subRegionId)) {
+        if (validation.subRegionIds && userSubRegionIds.length > 0 && !validation.subRegionIds.some(id => userSubRegionIds.includes(id))) {
           return res.status(403).json({ message: "Sem permissão para criar objetivo nesta subregião" });
         }
       }
@@ -345,7 +345,7 @@ export function registerRoutes(app: Express): Server {
       console.log(`💾 Objetivo atualizado:`, JSON.stringify(objective, null, 2));
       res.json(objective);
     } catch (error) {
-      console.error(`❌ Erro ao atualizar objetivo ${id}:`, error);
+      console.error(`❌ Erro ao atualizar objetivo ${req.params.id}:`, error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }

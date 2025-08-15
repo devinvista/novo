@@ -91,7 +91,11 @@ export default function Objectives() {
         </div>
         
         <div className="flex-1 overflow-y-auto p-6">
-          <ObjectivesTable objectives={objectives || []} isLoading={isLoading} />
+          <ObjectivesTable 
+            objectives={objectives || []} 
+            isLoading={isLoading} 
+            showActions={canManageObjectives}
+          />
         </div>
       
     </div>
