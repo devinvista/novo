@@ -1167,10 +1167,60 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/users", requireAuth, requireRole(["admin", "gestor"]), async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
+      const currentUser = req.user;
       
       // Gestores só podem criar usuários operacionais
-      if (req.user?.role === "gestor" && userData.role !== "operacional") {
+      if (currentUser?.role === "gestor" && userData.role !== "operacional") {
         return res.status(403).json({ message: "Gestores só podem criar usuários operacionais" });
+      }
+
+      // Validação hierárquica de permissões organizacionais
+      if (currentUser?.role === "gestor") {
+        // Gestores só podem atribuir permissões dentro do seu escopo
+        const currentUserSolutionIds = Array.isArray(currentUser.solutionIds) ? currentUser.solutionIds : [];
+        const currentUserServiceLineIds = Array.isArray(currentUser.serviceLineIds) ? currentUser.serviceLineIds : [];
+        const currentUserServiceIds = Array.isArray(currentUser.serviceIds) ? currentUser.serviceIds : [];
+
+        // Verificar Soluções
+        if (userData.solutionIds && Array.isArray(userData.solutionIds) && userData.solutionIds.length > 0) {
+          const invalidSolutions = userData.solutionIds.filter((id: number) => 
+            currentUserSolutionIds.length > 0 && !currentUserSolutionIds.includes(id)
+          );
+          if (invalidSolutions.length > 0) {
+            return res.status(403).json({ 
+              message: "Você não tem permissão para atribuir estas soluções ao usuário" 
+            });
+          }
+        }
+
+        // Verificar Linhas de Serviço
+        if (userData.serviceLineIds && Array.isArray(userData.serviceLineIds) && userData.serviceLineIds.length > 0) {
+          const invalidServiceLines = userData.serviceLineIds.filter((id: number) => 
+            currentUserServiceLineIds.length > 0 && !currentUserServiceLineIds.includes(id)
+          );
+          if (invalidServiceLines.length > 0) {
+            return res.status(403).json({ 
+              message: "Você não tem permissão para atribuir estas linhas de serviço ao usuário" 
+            });
+          }
+        }
+
+        // Verificar Serviços
+        if (userData.serviceIds && Array.isArray(userData.serviceIds) && userData.serviceIds.length > 0) {
+          const invalidServices = userData.serviceIds.filter((id: number) => 
+            currentUserServiceIds.length > 0 && !currentUserServiceIds.includes(id)
+          );
+          if (invalidServices.length > 0) {
+            return res.status(403).json({ 
+              message: "Você não tem permissão para atribuir estes serviços ao usuário" 
+            });
+          }
+        }
+
+        // Definir gestorId para usuários operacionais criados por gestores
+        if (userData.role === "operacional") {
+          (userData as any).gestorId = currentUser.id;
+        }
       }
 
       // Hash password
@@ -1201,10 +1251,54 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
-      // Gestores só podem editar usuários operacionais
-      if (req.user?.role === "gestor" && targetUser.role !== "operacional") {
-        console.log(`User ${req.user.id} (${req.user.role}) trying to edit user ${id} (${targetUser.role})`);
-        return res.status(403).json({ message: "Sem permissão para editar este usuário" });
+      // Gestores só podem editar usuários operacionais de seu time
+      if (req.user?.role === "gestor") {
+        if (targetUser.role !== "operacional" || targetUser.gestorId !== req.user.id) {
+          console.log(`User ${req.user.id} (${req.user.role}) trying to edit user ${id} (${targetUser.role})`);
+          return res.status(403).json({ message: "Sem permissão para editar este usuário" });
+        }
+
+        // Validação hierárquica de permissões organizacionais para gestores
+        const currentUser = req.user;
+        const currentUserSolutionIds = Array.isArray(currentUser.solutionIds) ? currentUser.solutionIds : [];
+        const currentUserServiceLineIds = Array.isArray(currentUser.serviceLineIds) ? currentUser.serviceLineIds : [];
+        const currentUserServiceIds = Array.isArray(currentUser.serviceIds) ? currentUser.serviceIds : [];
+
+        // Verificar Soluções
+        if (userData.solutionIds && Array.isArray(userData.solutionIds) && userData.solutionIds.length > 0) {
+          const invalidSolutions = userData.solutionIds.filter((id: number) => 
+            currentUserSolutionIds.length > 0 && !currentUserSolutionIds.includes(id)
+          );
+          if (invalidSolutions.length > 0) {
+            return res.status(403).json({ 
+              message: "Você não tem permissão para atribuir estas soluções ao usuário" 
+            });
+          }
+        }
+
+        // Verificar Linhas de Serviço
+        if (userData.serviceLineIds && Array.isArray(userData.serviceLineIds) && userData.serviceLineIds.length > 0) {
+          const invalidServiceLines = userData.serviceLineIds.filter((id: number) => 
+            currentUserServiceLineIds.length > 0 && !currentUserServiceLineIds.includes(id)
+          );
+          if (invalidServiceLines.length > 0) {
+            return res.status(403).json({ 
+              message: "Você não tem permissão para atribuir estas linhas de serviço ao usuário" 
+            });
+          }
+        }
+
+        // Verificar Serviços
+        if (userData.serviceIds && Array.isArray(userData.serviceIds) && userData.serviceIds.length > 0) {
+          const invalidServices = userData.serviceIds.filter((id: number) => 
+            currentUserServiceIds.length > 0 && !currentUserServiceIds.includes(id)
+          );
+          if (invalidServices.length > 0) {
+            return res.status(403).json({ 
+              message: "Você não tem permissão para atribuir estes serviços ao usuário" 
+            });
+          }
+        }
       }
 
       // Hash password se fornecida

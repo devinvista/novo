@@ -614,6 +614,126 @@ export default function UsersPage() {
                               </FormItem>
                             )}
                           />
+
+                          {/* Permissões Organizacionais - só mostrar se não for admin */}
+                          {form.watch("role") !== "admin" && (
+                            <div className="space-y-4 border-t pt-4">
+                              <h3 className="font-medium text-sm">Permissões Organizacionais</h3>
+                              <p className="text-xs text-muted-foreground">
+                                Defina as Soluções, Linhas de Serviço e Serviços que este usuário pode acessar. 
+                                {currentUser?.role === "gestor" && " Limitado às suas próprias permissões."}
+                              </p>
+
+                              {/* Soluções */}
+                              <FormField
+                                control={form.control}
+                                name="solutionIds"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Soluções</FormLabel>
+                                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-2">
+                                      {availableSolutions.map((solution) => (
+                                        <div key={solution.id} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`solution-${solution.id}`}
+                                            checked={field.value?.includes(solution.id) || false}
+                                            onCheckedChange={(checked) => {
+                                              const currentValues = field.value || [];
+                                              if (checked) {
+                                                field.onChange([...currentValues, solution.id]);
+                                              } else {
+                                                field.onChange(currentValues.filter(id => id !== solution.id));
+                                              }
+                                            }}
+                                          />
+                                          <label 
+                                            htmlFor={`solution-${solution.id}`} 
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                          >
+                                            {solution.name}
+                                          </label>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              {/* Linhas de Serviço */}
+                              <FormField
+                                control={form.control}
+                                name="serviceLineIds"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Linhas de Serviço</FormLabel>
+                                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-2">
+                                      {availableServiceLines.map((serviceLine) => (
+                                        <div key={serviceLine.id} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`serviceLine-${serviceLine.id}`}
+                                            checked={field.value?.includes(serviceLine.id) || false}
+                                            onCheckedChange={(checked) => {
+                                              const currentValues = field.value || [];
+                                              if (checked) {
+                                                field.onChange([...currentValues, serviceLine.id]);
+                                              } else {
+                                                field.onChange(currentValues.filter(id => id !== serviceLine.id));
+                                              }
+                                            }}
+                                          />
+                                          <label 
+                                            htmlFor={`serviceLine-${serviceLine.id}`} 
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                          >
+                                            {serviceLine.name}
+                                          </label>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              {/* Serviços */}
+                              <FormField
+                                control={form.control}
+                                name="serviceIds"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Serviços</FormLabel>
+                                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded p-2">
+                                      {availableServices.map((service) => (
+                                        <div key={service.id} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`service-${service.id}`}
+                                            checked={field.value?.includes(service.id) || false}
+                                            onCheckedChange={(checked) => {
+                                              const currentValues = field.value || [];
+                                              if (checked) {
+                                                field.onChange([...currentValues, service.id]);
+                                              } else {
+                                                field.onChange(currentValues.filter(id => id !== service.id));
+                                              }
+                                            }}
+                                          />
+                                          <label 
+                                            htmlFor={`service-${service.id}`} 
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                          >
+                                            {service.name}
+                                          </label>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+
                           <DialogFooter>
                             <Button 
                               type="submit" 
@@ -642,6 +762,7 @@ export default function UsersPage() {
                       <TableHead>Nome</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Função</TableHead>
+                      <TableHead>Permissões Organizacionais</TableHead>
                       <TableHead>Status</TableHead>
                       {(currentUser?.role === "admin" || currentUser?.role === "gestor") && (
                         <TableHead>Ações</TableHead>
@@ -662,6 +783,63 @@ export default function UsersPage() {
                           <Badge variant={getRoleBadgeVariant(user.role)}>
                             {user.role}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {/* Soluções */}
+                            {user.solutionIds && user.solutionIds.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                <span className="text-xs text-muted-foreground">Soluções:</span>
+                                {user.solutionIds.map(id => {
+                                  const solution = solutions.find(s => s.id === id);
+                                  return solution && (
+                                    <Badge key={id} variant="outline" className="text-xs px-1 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                                      {solution.name}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {/* Linhas de Serviço */}
+                            {user.serviceLineIds && user.serviceLineIds.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                <span className="text-xs text-muted-foreground">Linhas:</span>
+                                {user.serviceLineIds.map(id => {
+                                  const serviceLine = serviceLines.find(sl => sl.id === id);
+                                  return serviceLine && (
+                                    <Badge key={id} variant="outline" className="text-xs px-1 py-0 bg-green-50 text-green-700 border-green-200">
+                                      {serviceLine.name}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {/* Serviços */}
+                            {user.serviceIds && user.serviceIds.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                <span className="text-xs text-muted-foreground">Serviços:</span>
+                                {user.serviceIds.map(id => {
+                                  const service = services.find(s => s.id === id);
+                                  return service && (
+                                    <Badge key={id} variant="outline" className="text-xs px-1 py-0 bg-purple-50 text-purple-700 border-purple-200">
+                                      {service.name}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {/* Mostrar "Todas" se for admin ou se não tem restrições */}
+                            {user.role === "admin" && (
+                              <Badge variant="default" className="text-xs px-1 py-0 bg-red-50 text-red-700 border-red-200">
+                                Acesso Total
+                              </Badge>
+                            )}
+                            {user.role !== "admin" && (!user.solutionIds || user.solutionIds.length === 0) && 
+                             (!user.serviceLineIds || user.serviceLineIds.length === 0) && 
+                             (!user.serviceIds || user.serviceIds.length === 0) && (
+                              <span className="text-xs text-muted-foreground">Sem restrições específicas</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant={user.active ? "default" : "secondary"}>
