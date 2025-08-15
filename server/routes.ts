@@ -311,7 +311,57 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
-      const objective = await storage.createObjective(validation);
+      // LÓGICA DE RESPONSABILIDADE AUTOMÁTICA:
+      // O responsável pelo objetivo é o gestor da sub-região ou região
+      // Se há múltiplos gestores, o responsável é o gestor da região que criou o objetivo
+      
+      let responsibleId = validation.ownerId;
+      
+      if (currentUser.role === 'gestor') {
+        // Se é um gestor criando, ele automaticamente se torna o responsável
+        responsibleId = currentUser.id;
+      } else if (currentUser.role === 'admin') {
+        // Se é admin, buscar o gestor apropriado para a região/sub-região
+        try {
+          const managers = await storage.getManagers();
+          
+          // Priorizar gestores das sub-regiões específicas
+          if (validation.subRegionIds && validation.subRegionIds.length > 0) {
+            const subRegionManager = managers.find(manager => 
+              manager.subRegionIds && validation.subRegionIds.some(subRegionId => 
+                manager.subRegionIds.includes(subRegionId)
+              )
+            );
+            if (subRegionManager) {
+              responsibleId = subRegionManager.id;
+            }
+          }
+          
+          // Se não encontrou por sub-região, buscar por região
+          if (!responsibleId && validation.regionId) {
+            const regionManager = managers.find(manager => 
+              manager.regionIds && manager.regionIds.includes(validation.regionId)
+            );
+            if (regionManager) {
+              responsibleId = regionManager.id;
+            }
+          }
+          
+          console.log(`🔍 Responsável definido automaticamente: ${responsibleId} para região ${validation.regionId}, sub-regiões: ${validation.subRegionIds}`);
+        } catch (error) {
+          console.error('Erro ao buscar gestores para definir responsável:', error);
+          // Em caso de erro, manter o criador como responsável
+          responsibleId = currentUser.id;
+        }
+      }
+      
+      // Atualizar o objeto com o responsável correto
+      const objectiveData = {
+        ...validation,
+        ownerId: responsibleId
+      };
+      
+      const objective = await storage.createObjective(objectiveData);
       res.status(201).json(objective);
     } catch (error) {
       console.error('Error creating objective:', error);

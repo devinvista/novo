@@ -241,7 +241,23 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
             />
           )}
 
-
+          {/* Informação sobre responsabilidade automática */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <div className="w-5 h-5 text-blue-600 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-blue-900 mb-1">Responsabilidade Automática</h4>
+                <p className="text-sm text-blue-700">
+                  O responsável pelo objetivo será definido automaticamente como o gestor da região ou sub-região selecionada. 
+                  Se você é um gestor, será automaticamente definido como responsável.
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <FormField
