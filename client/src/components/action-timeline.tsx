@@ -37,9 +37,10 @@ interface ActionTimelineProps {
     subRegionId?: number;
     serviceLineId?: number;
   };
+  onCreateAction?: () => void;
 }
 
-export default function ActionTimeline({ keyResultId, showAll = false, selectedQuarter, filters }: ActionTimelineProps) {
+export default function ActionTimeline({ keyResultId, showAll = false, selectedQuarter, filters, onCreateAction }: ActionTimelineProps) {
   const [editingAction, setEditingAction] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const [deleteActionId, setDeleteActionId] = useState<number | null>(null);
@@ -194,8 +195,12 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
           size="sm"
           className="mt-2"
           onClick={() => {
-            setEditingAction(null);
-            setShowForm(true);
+            if (onCreateAction) {
+              onCreateAction();
+            } else {
+              setEditingAction(null);
+              setShowForm(true);
+            }
           }}
         >
           Criar primeira ação

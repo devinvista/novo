@@ -121,10 +121,11 @@ export default function Actions() {
         <div className="flex-1 overflow-y-auto p-6">
           <Card className="p-6">
             <ActionTimeline 
-              keyResultId={keyResultFilter ? parseInt(keyResultFilter) : undefined} 
+              keyResultId={keyResultFilter && keyResultFilter !== "all" ? parseInt(keyResultFilter) : undefined} 
               showAll={true}
               selectedQuarter={selectedQuarter}
               filters={filters}
+              onCreateAction={() => setShowForm(true)}
             />
           </Card>
         </div>
