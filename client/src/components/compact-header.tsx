@@ -4,6 +4,7 @@ import {
   Filter, 
   ChevronDown,
   User,
+  Users,
   Settings,
   LogOut,
   X
@@ -28,6 +29,7 @@ import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { useFilters } from "@/hooks/use-filters";
 import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
 import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 import darkLogoImage from "@assets/e03da512-3870-4e22-a75b-b15313a7ad9b_1754514316144.png";
 
@@ -267,6 +269,14 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                   <User className="mr-2 h-4 w-4" />
                   Perfil
                 </DropdownMenuItem>
+                {(user?.role === "admin" || user?.role === "gestor") && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/users" className="flex items-center w-full">
+                      <Users className="mr-2 h-4 w-4" />
+                      Meu Time
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
                   Configurações
