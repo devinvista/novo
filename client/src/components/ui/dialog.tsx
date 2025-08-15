@@ -5,8 +5,31 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { forceModalCleanup } from "@/lib/modal-cleanup"
 
-const Dialog = DialogPrimitive.Root
+// Enhanced Dialog with automatic cleanup
+const Dialog = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>
+>(({ onOpenChange, ...props }, ref) => {
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    if (!open) {
+      // Cleanup when dialog closes
+      setTimeout(() => {
+        forceModalCleanup();
+      }, 50);
+    }
+    onOpenChange?.(open);
+  }, [onOpenChange]);
+
+  return (
+    <DialogPrimitive.Root
+      {...props}
+      onOpenChange={handleOpenChange}
+    />
+  );
+})
+Dialog.displayName = DialogPrimitive.Root.displayName
 
 const DialogTrigger = DialogPrimitive.Trigger
 
@@ -44,19 +67,28 @@ const DialogContent = React.forwardRef<
         className
       )}
       onEscapeKeyDown={(e) => {
-        e.preventDefault();
-        // Force cleanup of any overlay elements that might be stuck
+        // Allow default behavior but ensure cleanup
         setTimeout(() => {
-          const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
-          overlays.forEach(overlay => overlay.remove());
-        }, 100);
+          forceModalCleanup();
+        }, 50);
       }}
       onPointerDownOutside={(e) => {
-        // Ensure proper cleanup when clicking outside
+        // Allow default behavior but ensure cleanup
         setTimeout(() => {
-          const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
-          overlays.forEach(overlay => overlay.remove());
+          forceModalCleanup();
+        }, 50);
+      }}
+      onCloseAutoFocus={() => {
+        // Additional cleanup when focus returns
+        setTimeout(() => {
+          forceModalCleanup();
         }, 100);
+      }}
+      onInteractOutside={() => {
+        // Cleanup on any outside interaction
+        setTimeout(() => {
+          forceModalCleanup();
+        }, 50);
       }}
       {...props}
     >

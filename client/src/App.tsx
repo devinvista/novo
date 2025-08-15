@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Router, Route, Switch } from 'wouter';
 import { cleanupOnDialogClose } from '@/lib/modal-cleanup';
+import { setupEmergencyCleanup } from '@/lib/emergency-cleanup';
 
 // Import pages
 import AuthPage from '@/pages/auth-page';
@@ -25,6 +26,7 @@ function AppContent() {
   // Global cleanup on mount to handle any leftover modals
   useEffect(() => {
     cleanupOnDialogClose();
+    setupEmergencyCleanup();
     
     // Set up global keyboard shortcut to force cleanup if needed (Dev only)
     const handleKeyDown = (e: KeyboardEvent) => {
