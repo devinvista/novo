@@ -333,7 +333,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 sm:space-y-6">
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="keyResultId">Resultado-Chave *</Label>
@@ -384,7 +384,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
             </div>
 
             {/* Service Line and Service Selection */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Service Line Selection */}
               <div>
                 <Label htmlFor="serviceLineId">Linha de Serviço</Label>
@@ -446,7 +446,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="priority">Prioridade</Label>
                 <Select 
@@ -483,7 +483,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="responsibleId">Responsável</Label>
                 <Select 
@@ -604,15 +604,16 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
             </div>
           )}
 
-          <div className="flex justify-end space-x-2 mt-6">
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 mt-4 sm:mt-6 pt-4 border-t">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
               {mutation.isPending ? "Salvando..." : action ? "Atualizar" : "Criar"}
             </Button>
           </div>

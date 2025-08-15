@@ -128,7 +128,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
 
 
   return (
-    <div>
+    <div className="w-full">
       <DialogHeader>
         <DialogTitle>
           {objective ? "Editar Objetivo" : "Criar Novo Objetivo"}
@@ -136,7 +136,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
       </DialogHeader>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
           <FormField
             control={form.control}
             name="title"
@@ -212,7 +212,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sub-Regiões (Opcional - Múltipla Escolha)</FormLabel>
-                  <div className="grid grid-cols-2 gap-2 p-4 border rounded-lg">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 sm:p-4 border rounded-lg">
                     {filteredSubRegions.map((subRegion: any) => (
                       <div key={subRegion.id} className="flex items-center space-x-2">
                         <input
@@ -259,7 +259,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="startDate"
@@ -289,11 +289,11 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
             />
           </div>
 
-          <div className="flex justify-end space-x-3 pt-6 border-t">
-            <Button type="button" variant="outline" onClick={onSuccess}>
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4 sm:pt-6 border-t">
+            <Button type="button" variant="outline" onClick={onSuccess} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
               {mutation.isPending 
                 ? "Salvando..." 
                 : objective 

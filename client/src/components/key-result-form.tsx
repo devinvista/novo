@@ -235,7 +235,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
             <FormField
               control={form.control}
               name="objectiveId"
@@ -300,7 +300,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="initialValue"
@@ -354,7 +354,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="frequency"
@@ -518,7 +518,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="startDate"
@@ -548,11 +548,11 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
               />
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                 Cancelar
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
+              <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
                 {mutation.isPending ? "Salvando..." : keyResult ? "Atualizar" : "Criar"}
               </Button>
             </div>
