@@ -14,10 +14,10 @@ const Dialog = React.forwardRef<
 >(({ onOpenChange, ...props }, ref) => {
   const handleOpenChange = React.useCallback((open: boolean) => {
     if (!open) {
-      // Cleanup when dialog closes
+      // Cleanup when dialog closes - with delay to avoid React conflicts
       setTimeout(() => {
         forceModalCleanup();
-      }, 50);
+      }, 200);
     }
     onOpenChange?.(open);
   }, [onOpenChange]);
@@ -70,25 +70,19 @@ const DialogContent = React.forwardRef<
         // Allow default behavior but ensure cleanup
         setTimeout(() => {
           forceModalCleanup();
-        }, 50);
+        }, 250);
       }}
       onPointerDownOutside={(e) => {
         // Allow default behavior but ensure cleanup
         setTimeout(() => {
           forceModalCleanup();
-        }, 50);
+        }, 250);
       }}
       onCloseAutoFocus={() => {
         // Additional cleanup when focus returns
         setTimeout(() => {
           forceModalCleanup();
-        }, 100);
-      }}
-      onInteractOutside={() => {
-        // Cleanup on any outside interaction
-        setTimeout(() => {
-          forceModalCleanup();
-        }, 50);
+        }, 300);
       }}
       {...props}
     >

@@ -7,123 +7,106 @@ export function forceModalCleanup() {
   console.log('🧹 Executando limpeza forçada de modais...');
   
   try {
-    // 1. Remove all dialog-related overlays and portals
-    const overlaySelectors = [
-      '[data-radix-dialog-overlay]',
-      '[data-radix-dialog-portal]',
-      '[data-radix-sheet-overlay]',
-      '[data-radix-drawer-overlay]',
-      '.fixed.inset-0.z-50', // Common overlay pattern
-    ];
-    
-    overlaySelectors.forEach(selector => {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach(el => {
-        if (el.parentNode && !el.querySelector('[data-state="open"]')) {
-          el.remove();
+    // 1. Safely remove dialog-related overlays - only orphaned ones
+    const orphanedOverlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+    orphanedOverlays.forEach(overlay => {
+      try {
+        // Only remove if no open dialog is found AND it's actually orphaned
+        const hasOpenDialog = overlay.closest('[data-state="open"]') || 
+                             overlay.querySelector('[data-state="open"]') ||
+                             document.querySelector('[data-state="open"]');
+        
+        if (!hasOpenDialog && overlay.parentNode && overlay.isConnected) {
+          overlay.remove();
         }
-      });
-    });
-    
-    // 2. Remove elements that are closed but still in DOM
-    const closedElements = document.querySelectorAll('[data-state="closed"]');
-    closedElements.forEach(el => {
-      if (el.parentNode) {
-        el.remove();
+      } catch (error) {
+        // Ignore removal errors
       }
     });
     
-    // 3. Remove problematic fixed elements with high z-index
-    const allElements = document.querySelectorAll('*');
-    allElements.forEach(el => {
+    // 2. Remove closed dialog elements that are stuck
+    const closedElements = document.querySelectorAll('[data-state="closed"]');
+    closedElements.forEach(el => {
       try {
-        const style = window.getComputedStyle(el);
-        const zIndex = parseInt(style.zIndex) || 0;
-        const rect = el.getBoundingClientRect();
-        
-        // Check if element is a suspicious overlay
-        if (style.position === 'fixed' && 
-            zIndex >= 40 && 
-            rect.width >= window.innerWidth - 100 && 
-            rect.height >= window.innerHeight - 100 &&
-            el.parentNode &&
-            !el.querySelector('[data-state="open"]') &&
-            !el.closest('[data-state="open"]')) {
+        if (el.parentNode && el.isConnected) {
+          // Check if it's actually a modal/dialog element
+          const isModal = el.hasAttribute('data-radix-dialog-content') ||
+                         el.hasAttribute('data-radix-dialog-overlay') ||
+                         el.hasAttribute('data-radix-dialog-portal');
           
-          // Additional checks to avoid removing legitimate elements
-          const isLegitimate = el.tagName === 'HTML' || 
-                              el.tagName === 'BODY' || 
-                              el.id === 'root' ||
-                              el.hasAttribute('data-keep') ||
-                              el.querySelector('main') ||
-                              el.querySelector('nav');
-                              
-          if (!isLegitimate) {
-            console.log('🗑️ Removendo elemento suspeito:', el.className, zIndex);
+          if (isModal) {
             el.remove();
           }
         }
       } catch (error) {
-        // Ignore errors for elements that might have been removed
+        // Ignore removal errors
       }
     });
     
-    // 4. Reset document and body styles that may be blocking interactions
+    // 3. Reset document and body styles that may be blocking interactions
     const resetStyles = () => {
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
       document.body.style.pointerEvents = '';
       document.documentElement.style.overflow = '';
       document.documentElement.style.pointerEvents = '';
-      
-      // Remove any potential pointer-events blocking
-      const allElems = document.querySelectorAll('*');
-      allElems.forEach(elem => {
-        const computed = window.getComputedStyle(elem);
-        if (computed.pointerEvents === 'none' && 
-            computed.position === 'fixed' && 
-            elem.parentNode &&
-            elem instanceof HTMLElement) {
-          elem.style.pointerEvents = '';
-        }
-      });
     };
     
     resetStyles();
     
-    // 5. Remove any modal-related classes from body
-    const bodyClasses = document.body.className.split(' ');
-    const filteredClasses = bodyClasses.filter(cls => 
-      !cls.includes('modal') && 
-      !cls.includes('dialog') && 
-      !cls.includes('overlay') &&
-      !cls.includes('scroll-locked') &&
-      !cls.includes('no-scroll')
-    );
-    document.body.className = filteredClasses.join(' ');
+    // 4. Remove any modal-related classes from body
+    try {
+      const bodyClasses = document.body.className.split(' ');
+      const filteredClasses = bodyClasses.filter(cls => 
+        !cls.includes('modal') && 
+        !cls.includes('dialog') && 
+        !cls.includes('overlay') &&
+        !cls.includes('scroll-locked') &&
+        !cls.includes('no-scroll')
+      );
+      document.body.className = filteredClasses.join(' ');
+    } catch (error) {
+      // Ignore class manipulation errors
+    }
     
-    // 6. Force re-enable interactions
+    // 5. Final check for click-blocking elements (more conservative)
     setTimeout(() => {
-      resetStyles();
-      
-      // Check if any elements are still blocking clicks
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
-      
-      elementsAtCenter.forEach((el, index) => {
-        if (index === 0) return; // Skip the topmost element
+      try {
+        resetStyles();
         
-        const style = window.getComputedStyle(el);
-        if (style.position === 'fixed' && 
-            parseInt(style.zIndex || '0') > 10 &&
-            !el.closest('[data-state="open"]') &&
-            el.parentNode) {
-          console.log('🎯 Removendo elemento bloqueador de cliques:', el.className);
-          el.remove();
-        }
-      });
-    }, 200);
+        // Only target very specific problematic elements
+        const suspiciousElements = document.querySelectorAll('div[style*="position: fixed"][style*="z-index"]');
+        suspiciousElements.forEach(el => {
+          try {
+            const style = window.getComputedStyle(el);
+            const zIndex = parseInt(style.zIndex) || 0;
+            const rect = el.getBoundingClientRect();
+            
+            // Very specific criteria for removal
+            if (style.position === 'fixed' && 
+                zIndex >= 50 && 
+                rect.width >= window.innerWidth - 50 && 
+                rect.height >= window.innerHeight - 50 &&
+                el.parentNode && 
+                el.isConnected &&
+                !el.closest('[data-state="open"]') &&
+                !el.querySelector('[data-state="open"]') &&
+                !el.querySelector('main, nav, header, footer') &&
+                el.tagName !== 'HTML' &&
+                el.tagName !== 'BODY' &&
+                el.id !== 'root') {
+              
+              console.log('🎯 Removendo elemento bloqueador específico:', el.className);
+              el.remove();
+            }
+          } catch (error) {
+            // Ignore individual element errors
+          }
+        });
+      } catch (error) {
+        // Ignore timeout errors
+      }
+    }, 100);
     
   } catch (error) {
     console.error('❌ Erro durante limpeza de modais:', error);
