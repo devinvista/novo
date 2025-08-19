@@ -8,6 +8,7 @@ import { z } from "zod";
 import { formatDecimalBR, formatNumberBR, convertBRToDatabase, formatBrazilianNumber } from "./formatters";
 import * as XLSX from "xlsx";
 import multer from "multer";
+import { connection } from "./mysql-db";
 
 // Configure multer for file uploads
 const upload = multer({ 
