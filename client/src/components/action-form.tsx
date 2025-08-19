@@ -39,6 +39,8 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [completionComment, setCompletionComment] = useState("");
+  const [showCompletionComment, setShowCompletionComment] = useState(false);
   
   // // Hook para limpeza de modais órfãos
   // useModalCleanup(open);
@@ -117,6 +119,19 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       dueDate: action?.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
     },
   });
+
+  // Watch for status changes to show/hide completion comment field
+  const watchedStatus = form.watch("status");
+  const finalStatuses = ['completed', 'cancelled', 'blocked'];
+  const currentStatusIsFinal = action ? finalStatuses.includes(action.status) : false;
+  const newStatusIsFinal = finalStatuses.includes(watchedStatus);
+  
+  useEffect(() => {
+    setShowCompletionComment(!currentStatusIsFinal && newStatusIsFinal);
+    if (currentStatusIsFinal || !newStatusIsFinal) {
+      setCompletionComment("");
+    }
+  }, [watchedStatus, currentStatusIsFinal, newStatusIsFinal]);
 
   // Reset form when action or currentUser changes
   useEffect(() => {
@@ -229,6 +244,11 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         dueDate: data.dueDate || undefined,
       };
       
+      // Add completion comment if provided
+      if (completionComment.trim()) {
+        payload.completionComment = completionComment.trim();
+      }
+      
       if (action) {
         await apiRequest("PUT", `/api/actions/${action.id}`, payload);
       } else {
@@ -241,6 +261,8 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         description: action ? "A ação foi atualizada com sucesso." : "A ação foi criada com sucesso.",
       });
       onSuccess();
+      setCompletionComment("");
+      setShowCompletionComment(false);
       
       // Invalidate after dialog close
       setTimeout(() => {
@@ -248,9 +270,16 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       }, 200);
     },
     onError: (error: any) => {
+      const requiresComment = error?.response?.data?.requiresCompletionComment;
+      const errorMessage = error?.response?.data?.message || error.message || "Erro ao processar ação.";
+      
+      if (requiresComment) {
+        setShowCompletionComment(true);
+      }
+      
       toast({
         title: "Erro",
-        description: error.message || "Erro ao processar ação.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -478,10 +507,31 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     <SelectItem value="in_progress">Em Andamento</SelectItem>
                     <SelectItem value="completed">Concluída</SelectItem>
                     <SelectItem value="cancelled">Cancelada</SelectItem>
+                    <SelectItem value="blocked">Bloqueada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
+
+            {/* Commentário de Conclusão - obrigatório para status finais */}
+            {showCompletionComment && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <Label htmlFor="completionComment" className="text-orange-800 font-medium">
+                  Commentário de Conclusão *
+                </Label>
+                <p className="text-sm text-orange-600 mb-2">
+                  Obrigatório ao alterar para status final. Descreva o resultado final da ação.
+                </p>
+                <Textarea
+                  id="completionComment"
+                  value={completionComment}
+                  onChange={(e) => setCompletionComment(e.target.value)}
+                  placeholder="Ex: Ação concluída com sucesso, todos objetivos atingidos..."
+                  rows={3}
+                  className="w-full border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -576,21 +626,71 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               {/* Lista de comentários existentes */}
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {comments && comments.length > 0 ? (
-                  comments.map((comment: any) => (
-                    <div key={comment.id} className="bg-gray-50 p-3 rounded-lg border">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <User className="h-4 w-4" />
-                          <span className="font-medium">{comment.user?.username || 'Usuário'}</span>
+                  (() => {
+                    // Ordenar comentários: status final primeiro, depois sistema, depois normais
+                    const sortedComments = [...comments].sort((a, b) => {
+                      const aIsFinal = a.comment.startsWith('🏁 STATUS FINAL');
+                      const bIsFinal = b.comment.startsWith('🏁 STATUS FINAL');
+                      const aIsSystem = a.comment.startsWith('🤖 SISTEMA');
+                      const bIsSystem = b.comment.startsWith('🤖 SISTEMA');
+                      
+                      if (aIsFinal && !bIsFinal) return -1;
+                      if (!aIsFinal && bIsFinal) return 1;
+                      if (aIsSystem && !bIsSystem && !bIsFinal) return -1;
+                      if (!aIsSystem && bIsSystem && !aIsFinal) return 1;
+                      
+                      // Ordenar por data (mais recente primeiro)
+                      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    });
+                    
+                    return sortedComments.map((comment: any) => {
+                      const isFinalStatus = comment.comment.startsWith('🏁 STATUS FINAL');
+                      const isSystem = comment.comment.startsWith('🤖 SISTEMA');
+                      
+                      return (
+                        <div 
+                          key={comment.id} 
+                          className={`p-3 rounded-lg border ${
+                            isFinalStatus 
+                              ? 'bg-green-50 border-green-200' 
+                              : isSystem 
+                                ? 'bg-blue-50 border-blue-200' 
+                                : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <User className="h-4 w-4" />
+                              <span className="font-medium">{comment.user?.username || 'Usuário'}</span>
+                              {isFinalStatus && (
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                                  STATUS FINAL
+                                </span>
+                              )}
+                              {isSystem && !isFinalStatus && (
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                  SISTEMA
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(comment.createdAt).toLocaleString('pt-BR')}
+                            </div>
+                          </div>
+                          <p className={`text-sm leading-relaxed ${
+                            isFinalStatus 
+                              ? 'text-green-900 font-medium' 
+                              : isSystem 
+                                ? 'text-blue-800' 
+                                : 'text-gray-800'
+                          }`}>
+                            {comment.comment}
+                          </p>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(comment.createdAt).toLocaleString('pt-BR')}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-800 leading-relaxed">{comment.comment}</p>
-                    </div>
-                  ))
+                      );
+                    });
+                  })()
                 ) : (
                   <div className="text-center text-gray-500 py-4">
                     <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />

@@ -675,10 +675,41 @@ export function registerRoutes(app: Express): Server {
       if (requestData.responsibleId === null) requestData.responsibleId = undefined;
       if (requestData.dueDate === null || requestData.dueDate === "") requestData.dueDate = undefined;
       
+      // Check for final status and require completion comment
+      const finalStatuses = ['completed', 'cancelled', 'blocked'];
+      const currentStatusIsFinal = finalStatuses.includes(existingAction.status);
+      const newStatusIsFinal = requestData.status && finalStatuses.includes(requestData.status);
+      
+      // If changing from non-final to final status, require completion comment
+      if (!currentStatusIsFinal && newStatusIsFinal && !requestData.completionComment?.trim()) {
+        return res.status(400).json({ 
+          message: "Comentário de conclusão é obrigatório ao alterar para status final",
+          requiresCompletionComment: true
+        });
+      }
+      
       const validation = insertActionSchema.partial().parse(requestData);
       console.log("Updating action with data:", validation);
       
       const updatedAction = await storage.updateAction(id, validation);
+      
+      // If there's a completion comment, add it as a special comment
+      if (requestData.completionComment?.trim()) {
+        const statusLabels = {
+          completed: 'CONCLUÍDA',
+          cancelled: 'CANCELADA', 
+          blocked: 'BLOQUEADA'
+        };
+        
+        const statusLabel = statusLabels[requestData.status] || requestData.status.toUpperCase();
+        
+        await storage.createActionComment({
+          actionId: id,
+          userId: req.user.id,
+          comment: `🏁 STATUS FINAL - ${statusLabel}: ${requestData.completionComment}`,
+        });
+      }
+      
       console.log("Updated action:", updatedAction);
       
       res.json(updatedAction);
