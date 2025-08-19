@@ -1303,7 +1303,24 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   async deleteAction(id: number): Promise<void> {
-    await db.delete(actions).where(eq(actions.id, id));
+    try {
+      const startTime = MySQLPerformanceMonitor.startQuery('deleteAction');
+      
+      // First delete all related comments to avoid foreign key constraint error
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(actionComments).where(eq(actionComments.actionId, id));
+      });
+      
+      // Then delete the action
+      await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.delete(actions).where(eq(actions.id, id));
+      });
+      
+      MySQLPerformanceMonitor.endQuery('deleteAction', startTime);
+    } catch (error) {
+      console.error(`Error deleting action ${id}:`, error);
+      throw error;
+    }
   }
 
   async getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<any[]> {

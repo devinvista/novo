@@ -8,11 +8,12 @@ Estilo de comunicação preferido: Linguagem simples e cotidiana.
 Idioma do projeto: Português brasileiro - Toda interface, documentação e textos convertidos para português brasileiro.
 
 ## Recent Changes
-- **2025-08-19**: ✅ REMOÇÃO COMPLETA DO STATUS "BLOQUEADA" + OTIMIZAÇÃO DE ORDENAÇÃO DE COMENTÁRIOS
+- **2025-08-19**: ✅ REMOÇÃO COMPLETA DO STATUS "BLOQUEADA" + OTIMIZAÇÃO DE ORDENAÇÃO DE COMENTÁRIOS + CORREÇÃO DE EXCLUSÃO EM CASCATA
   - Status "bloqueada" removido de todas as interfaces e lógica do sistema
   - Simplificação da lista de status finais: apenas "concluída" e "cancelada"
   - Nova ordenação de comentários: status finais no topo, outros por data cronológica
   - Manutenção das cores diferenciadas para comentários automáticos do sistema
+  - Correção da função deleteAction para exclusão em cascata dos comentários
   - Correções de tipos TypeScript relacionadas à remoção do status
 - **2025-08-15**: ✅ MIGRAÇÃO COMPLETA PARA REPLIT FINALIZADA COM SUCESSO + CORREÇÃO CRÍTICA DE MODAIS
   - Sistema de limpeza automática de modais implementado para evitar bloqueio da interface
