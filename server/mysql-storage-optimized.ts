@@ -1213,11 +1213,11 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   // Helper function to create system comments for action events
-  private async createSystemComment(actionId: number, message: string): Promise<void> {
+  private async createSystemComment(actionId: number, message: string, userId: number): Promise<void> {
     try {
       await db.insert(actionComments).values({
         actionId,
-        userId: 1, // Sistema user ID
+        userId,
         comment: `🤖 SISTEMA: ${message}`,
         createdAt: new Date(),
       });
@@ -1232,10 +1232,14 @@ export class MySQLStorageOptimized implements IStorage {
     const newAction = await db.select().from(actions).where(eq(actions.id, Number(insertId))).limit(1);
     
     // Add system comment for action creation
-    await this.createSystemComment(
-      Number(insertId),
-      `Ação criada com prioridade "${action.priority}" e prazo ${new Date(action.dueDate).toLocaleDateString('pt-BR')}`
-    );
+    if (insertId && action.responsibleId) {
+      const dueDateStr = action.dueDate ? new Date(action.dueDate).toLocaleDateString('pt-BR') : 'não definido';
+      await this.createSystemComment(
+        Number(insertId),
+        `Ação criada com prioridade "${action.priority}" e prazo ${dueDateStr}`,
+        action.responsibleId
+      );
+    }
     
     return newAction[0];
   }
@@ -1257,7 +1261,7 @@ export class MySQLStorageOptimized implements IStorage {
     const changes = [];
     
     if (action.status && action.status !== current.status) {
-      const statusNames = {
+      const statusNames: Record<string, string> = {
         'pending': 'Pendente',
         'in_progress': 'Em Progresso', 
         'completed': 'Concluída',
@@ -1268,16 +1272,16 @@ export class MySQLStorageOptimized implements IStorage {
     }
     
     if (action.priority && action.priority !== current.priority) {
-      const priorityNames = {
+      const priorityNames: Record<string, string> = {
         'baixa': 'Baixa',
-        'media': 'Média',
+        'media': 'Média', 
         'alta': 'Alta',
         'critica': 'Crítica'
       };
       changes.push(`Prioridade alterada de "${priorityNames[current.priority] || current.priority}" para "${priorityNames[action.priority] || action.priority}"`);
     }
     
-    if (action.dueDate && action.dueDate !== current.dueDate) {
+    if (action.dueDate && action.dueDate !== current.dueDate && current.dueDate) {
       const oldDate = new Date(current.dueDate).toLocaleDateString('pt-BR');
       const newDate = new Date(action.dueDate).toLocaleDateString('pt-BR');
       changes.push(`Prazo alterado de ${oldDate} para ${newDate}`);
@@ -1293,7 +1297,7 @@ export class MySQLStorageOptimized implements IStorage {
     
     // Create system comment for each change
     for (const change of changes) {
-      await this.createSystemComment(id, change);
+      await this.createSystemComment(id, change, current.responsibleId || 1);
     }
     
     return updated[0];
