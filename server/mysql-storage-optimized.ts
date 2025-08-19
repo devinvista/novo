@@ -1655,12 +1655,12 @@ export class MySQLStorageOptimized implements IStorage {
     const startTime = MySQLPerformanceMonitor.startQuery('createSubRegion');
     try {
       const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
-        return await db.insert(subRegions).values(data);
+        return await db.insert(subRegionsTable).values(data);
       });
       
       const insertId = result[0]?.insertId;
-      const newSubRegion = await db.select().from(subRegions)
-        .where(eq(subRegions.id, Number(insertId))).limit(1);
+      const newSubRegion = await db.select().from(subRegionsTable)
+        .where(eq(subRegionsTable.id, Number(insertId))).limit(1);
       
       MySQLPerformanceMonitor.endQuery('createSubRegion', startTime);
       return newSubRegion[0];
@@ -1675,11 +1675,11 @@ export class MySQLStorageOptimized implements IStorage {
     const startTime = MySQLPerformanceMonitor.startQuery('updateSubRegion');
     try {
       await MySQLConnectionOptimizer.executeWithLimit(async () => {
-        return await db.update(subRegions).set(data).where(eq(subRegions.id, id));
+        return await db.update(subRegionsTable).set(data).where(eq(subRegionsTable.id, id));
       });
       
-      const updatedSubRegion = await db.select().from(subRegions)
-        .where(eq(subRegions.id, id)).limit(1);
+      const updatedSubRegion = await db.select().from(subRegionsTable)
+        .where(eq(subRegionsTable.id, id)).limit(1);
       
       MySQLPerformanceMonitor.endQuery('updateSubRegion', startTime);
       return updatedSubRegion[0];
@@ -1694,7 +1694,7 @@ export class MySQLStorageOptimized implements IStorage {
     const startTime = MySQLPerformanceMonitor.startQuery('deleteSubRegion');
     try {
       await MySQLConnectionOptimizer.executeWithLimit(async () => {
-        return await db.delete(subRegions).where(eq(subRegions.id, id));
+        return await db.delete(subRegionsTable).where(eq(subRegionsTable.id, id));
       });
       
       MySQLPerformanceMonitor.endQuery('deleteSubRegion', startTime);
