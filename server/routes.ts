@@ -1787,13 +1787,17 @@ export function registerRoutes(app: Express): Server {
   // Solutions Management
   app.post("/api/admin/solutions", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
-      const { name, description } = req.body;
+      const { name, code, description } = req.body;
       
       if (!name || name.trim() === "") {
         return res.status(400).json({ message: "Nome é obrigatório" });
       }
       
-      const solution = await storage.createSolution({ name, description });
+      if (!code || code.trim() === "") {
+        return res.status(400).json({ message: "Código é obrigatório" });
+      }
+      
+      const solution = await storage.createSolution({ name, code, description });
       res.json(solution);
     } catch (error) {
       console.error("Error creating solution:", error);
@@ -1804,13 +1808,17 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/admin/solutions/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { name, description } = req.body;
+      const { name, code, description } = req.body;
       
       if (!name || name.trim() === "") {
         return res.status(400).json({ message: "Nome é obrigatório" });
       }
       
-      const solution = await storage.updateSolution(id, { name, description });
+      if (!code || code.trim() === "") {
+        return res.status(400).json({ message: "Código é obrigatório" });
+      }
+      
+      const solution = await storage.updateSolution(id, { name, code, description });
       res.json(solution);
     } catch (error) {
       console.error("Error updating solution:", error);
@@ -1843,13 +1851,17 @@ export function registerRoutes(app: Express): Server {
   // Service Lines Management
   app.post("/api/admin/service-lines", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
-      const { name, description, solutionId } = req.body;
+      const { name, code, description, solutionId } = req.body;
       
       if (!name || name.trim() === "" || !solutionId) {
         return res.status(400).json({ message: "Nome e solução são obrigatórios" });
       }
       
-      const serviceLine = await storage.createServiceLine({ name, description, solutionId });
+      if (!code || code.trim() === "") {
+        return res.status(400).json({ message: "Código é obrigatório" });
+      }
+      
+      const serviceLine = await storage.createServiceLine({ name, code, description, solutionId });
       res.json(serviceLine);
     } catch (error) {
       console.error("Error creating service line:", error);
@@ -1860,13 +1872,17 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/admin/service-lines/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { name, description, solutionId } = req.body;
+      const { name, code, description, solutionId } = req.body;
       
       if (!name || name.trim() === "" || !solutionId) {
         return res.status(400).json({ message: "Nome e solução são obrigatórios" });
       }
       
-      const serviceLine = await storage.updateServiceLine(id, { name, description, solutionId });
+      if (!code || code.trim() === "") {
+        return res.status(400).json({ message: "Código é obrigatório" });
+      }
+      
+      const serviceLine = await storage.updateServiceLine(id, { name, code, description, solutionId });
       res.json(serviceLine);
     } catch (error) {
       console.error("Error updating service line:", error);
@@ -1904,13 +1920,17 @@ export function registerRoutes(app: Express): Server {
   // Services Management
   app.post("/api/admin/services", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
-      const { name, description, serviceLineId } = req.body;
+      const { name, code, description, serviceLineId } = req.body;
       
       if (!name || name.trim() === "" || !serviceLineId) {
         return res.status(400).json({ message: "Nome e linha de serviço são obrigatórios" });
       }
       
-      const service = await storage.createService({ name, description, serviceLineId });
+      if (!code || code.trim() === "") {
+        return res.status(400).json({ message: "Código é obrigatório" });
+      }
+      
+      const service = await storage.createService({ name, code, description, serviceLineId });
       res.json(service);
     } catch (error) {
       console.error("Error creating service:", error);
@@ -1921,13 +1941,17 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/admin/services/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { name, description, serviceLineId } = req.body;
+      const { name, code, description, serviceLineId } = req.body;
       
       if (!name || name.trim() === "" || !serviceLineId) {
         return res.status(400).json({ message: "Nome e linha de serviço são obrigatórios" });
       }
       
-      const service = await storage.updateService(id, { name, description, serviceLineId });
+      if (!code || code.trim() === "") {
+        return res.status(400).json({ message: "Código é obrigatório" });
+      }
+      
+      const service = await storage.updateService(id, { name, code, description, serviceLineId });
       res.json(service);
     } catch (error) {
       console.error("Error updating service:", error);

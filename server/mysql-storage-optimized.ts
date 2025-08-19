@@ -103,16 +103,16 @@ export interface IStorage {
   updateSubRegion(id: number, data: { name: string; code: string; regionId: number }): Promise<SubRegion>;
   deleteSubRegion(id: number): Promise<void>;
   
-  createSolution(data: { name: string; description?: string }): Promise<Solution>;
-  updateSolution(id: number, data: { name: string; description?: string }): Promise<Solution>;
+  createSolution(data: { name: string; code: string; description?: string }): Promise<Solution>;
+  updateSolution(id: number, data: { name: string; code: string; description?: string }): Promise<Solution>;
   deleteSolution(id: number): Promise<void>;
   
-  createServiceLine(data: { name: string; description?: string; solutionId: number }): Promise<ServiceLine>;
-  updateServiceLine(id: number, data: { name: string; description?: string; solutionId: number }): Promise<ServiceLine>;
+  createServiceLine(data: { name: string; code: string; description?: string; solutionId: number }): Promise<ServiceLine>;
+  updateServiceLine(id: number, data: { name: string; code: string; description?: string; solutionId: number }): Promise<ServiceLine>;
   deleteServiceLine(id: number): Promise<void>;
   
-  createService(data: { name: string; description?: string; serviceLineId: number }): Promise<Service>;
-  updateService(id: number, data: { name: string; description?: string; serviceLineId: number }): Promise<Service>;
+  createService(data: { name: string; code: string; description?: string; serviceLineId: number }): Promise<Service>;
+  updateService(id: number, data: { name: string; code: string; description?: string; serviceLineId: number }): Promise<Service>;
   deleteService(id: number): Promise<void>;
 }
 
@@ -1794,7 +1794,7 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async createSolution(data: { name: string; description?: string }): Promise<Solution> {
+  async createSolution(data: { name: string; code: string; description?: string }): Promise<Solution> {
     const startTime = MySQLPerformanceMonitor.startQuery('createSolution');
     try {
       const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
@@ -1814,7 +1814,7 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async updateSolution(id: number, data: { name: string; description?: string }): Promise<Solution> {
+  async updateSolution(id: number, data: { name: string; code: string; description?: string }): Promise<Solution> {
     const startTime = MySQLPerformanceMonitor.startQuery('updateSolution');
     try {
       await MySQLConnectionOptimizer.executeWithLimit(async () => {
@@ -1848,7 +1848,7 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async createServiceLine(data: { name: string; description?: string; solutionId: number }): Promise<ServiceLine> {
+  async createServiceLine(data: { name: string; code: string; description?: string; solutionId: number }): Promise<ServiceLine> {
     const startTime = MySQLPerformanceMonitor.startQuery('createServiceLine');
     try {
       const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
@@ -1868,7 +1868,7 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async updateServiceLine(id: number, data: { name: string; description?: string; solutionId: number }): Promise<ServiceLine> {
+  async updateServiceLine(id: number, data: { name: string; code: string; description?: string; solutionId: number }): Promise<ServiceLine> {
     const startTime = MySQLPerformanceMonitor.startQuery('updateServiceLine');
     try {
       await MySQLConnectionOptimizer.executeWithLimit(async () => {
@@ -1902,7 +1902,7 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async createService(data: { name: string; description?: string; serviceLineId: number }): Promise<Service> {
+  async createService(data: { name: string; code: string; description?: string; serviceLineId: number }): Promise<Service> {
     const startTime = MySQLPerformanceMonitor.startQuery('createService');
     try {
       const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
@@ -1922,7 +1922,7 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async updateService(id: number, data: { name: string; description?: string; serviceLineId: number }): Promise<Service> {
+  async updateService(id: number, data: { name: string; code: string; description?: string; serviceLineId: number }): Promise<Service> {
     const startTime = MySQLPerformanceMonitor.startQuery('updateService');
     try {
       await MySQLConnectionOptimizer.executeWithLimit(async () => {

@@ -3,6 +3,8 @@
 ## Overview
 This project is a comprehensive OKR (Objectives and Key Results) management system designed to track organizational objectives, key results, actions, and milestones across various regions and service lines. Its primary purpose is to provide an intuitive platform for strategic management, improving organizational alignment and performance, enabling real-time progress tracking and extensive reporting.
 
+**Recent Updates (January 2025)**: Successfully implemented code field functionality across all configuration entities with full CRUD operations and database migration.
+
 ## User Preferences
 Estilo de comunicação preferido: Linguagem simples e cotidiana.
 Idioma do projeto: Português brasileiro - Toda interface, documentação e textos convertidos para português brasileiro.
@@ -35,6 +37,7 @@ Idioma do projeto: Português brasileiro - Toda interface, documentação e text
     - **Quarterly Period Management**: Automatic date-based filtering and reporting across quarters.
     - **Date Validation**: Comprehensive validation ensuring Key Result dates are within Objective ranges and Action due dates are before Key Result end dates.
     - **User Management**: Hierarchical user approval, automatic inheritance of permissions, and secure user deletion with cascading functionality.
+    - **Configuration Management**: Full CRUD operations for all system configurations (Solutions, Service Lines, Services, Strategic Indicators, Regions, Sub-regions) with mandatory code fields for improved organization and reference.
 
 ### Database Architecture
 - **Database**: MySQL.
