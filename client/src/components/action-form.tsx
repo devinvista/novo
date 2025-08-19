@@ -352,7 +352,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[900px] lg:max-w-[700px] max-h-[95vh] h-auto overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>
             {action ? "Editar Ação" : "Nova Ação"}
@@ -362,8 +362,8 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-3 sm:space-y-4 lg:space-y-6">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             <div>
               <Label htmlFor="keyResultId">Resultado-Chave *</Label>
               <Select 
@@ -409,11 +409,12 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                 {...form.register("description")}
                 placeholder="Descreva a ação em detalhes"
                 rows={3}
+                className="text-sm"
               />
             </div>
 
             {/* Service Line and Service Selection */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {/* Service Line Selection */}
               <div>
                 <Label htmlFor="serviceLineId">Linha de Serviço</Label>
@@ -475,7 +476,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <Label htmlFor="priority">Prioridade</Label>
                 <Select 
@@ -514,11 +515,11 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
             {/* Commentário de Conclusão - obrigatório para status finais */}
             {showCompletionComment && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <Label htmlFor="completionComment" className="text-orange-800 font-medium">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
+                <Label htmlFor="completionComment" className="text-orange-800 font-medium text-sm">
                   Commentário de Conclusão *
                 </Label>
-                <p className="text-sm text-orange-600 mb-2">
+                <p className="text-xs sm:text-sm text-orange-600 mb-2">
                   Obrigatório ao alterar para status final. Descreva o resultado final da ação.
                 </p>
                 <Textarea
@@ -527,12 +528,12 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                   onChange={(e) => setCompletionComment(e.target.value)}
                   placeholder="Ex: Ação concluída com sucesso, todos objetivos atingidos..."
                   rows={3}
-                  className="w-full border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                  className="w-full border-orange-300 focus:border-orange-500 focus:ring-orange-500 text-sm"
                 />
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <Label htmlFor="responsibleId">Responsável</Label>
                 <Select 
@@ -557,7 +558,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                 <Label htmlFor="dueDate">Data de Vencimento</Label>
                 {form.watch("keyResultId") && keyResults && (
                   <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-sm text-yellow-800">
+                    <p className="text-xs sm:text-sm text-yellow-800">
                       <strong>⏰ Limite:</strong> {
                         (() => {
                           const selectedKR = keyResults.find((kr: any) => kr.id === form.watch("keyResultId"));
@@ -586,16 +587,16 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
           {/* Seção de Comentários de Progresso - apenas para ações existentes */}
           {action?.id && (
-            <div className="mt-6 border-t pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MessageSquare className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">
+            <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                   Acompanhamento de Progresso
                 </h3>
               </div>
               
               {/* Formulário para novo comentário */}
-              <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <Label htmlFor="newComment" className="text-sm font-medium text-gray-700">
                   Adicionar comentário de progresso:
                 </Label>
@@ -606,7 +607,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     rows={3}
-                    className="w-full"
+                    className="w-full text-sm"
                   />
                   <div className="flex justify-end">
                     <Button
@@ -614,7 +615,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                       onClick={submitComment}
                       disabled={!newComment.trim() || isSubmittingComment}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm"
                     >
                       {isSubmittingComment ? "Enviando..." : "Adicionar Comentário"}
                     </Button>
@@ -623,7 +624,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               </div>
 
               {/* Lista de comentários existentes */}
-              <div className="space-y-3 max-h-60 overflow-y-auto">
+              <div className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto">
                 {comments && comments.length > 0 ? (
                   (() => {
                     // Ordenar comentários: status final primeiro, outros por data de atualização
@@ -646,7 +647,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                       return (
                         <div 
                           key={comment.id} 
-                          className={`p-3 rounded-lg border ${
+                          className={`p-2 sm:p-3 rounded-lg border ${
                             isFinalStatus 
                               ? 'bg-green-50 border-green-200' 
                               : isSystem 
@@ -654,27 +655,35 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                                 : 'bg-gray-50 border-gray-200'
                           }`}
                         >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <User className="h-4 w-4" />
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-1 sm:gap-2">
+                            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                              <User className="h-3 w-3 sm:h-4 sm:w-4" />
                               <span className="font-medium">{comment.user?.username || 'Usuário'}</span>
                               {isFinalStatus && (
-                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                                <span className="bg-green-100 text-green-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium">
                                   STATUS FINAL
                                 </span>
                               )}
                               {isSystem && !isFinalStatus && (
-                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                <span className="bg-blue-100 text-blue-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium">
                                   SISTEMA
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
                               <Calendar className="h-3 w-3" />
-                              {new Date(comment.createdAt).toLocaleString('pt-BR')}
+                              <span className="whitespace-nowrap">
+                                {new Date(comment.createdAt).toLocaleString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
                             </div>
                           </div>
-                          <p className={`text-sm leading-relaxed ${
+                          <p className={`text-xs sm:text-sm leading-relaxed ${
                             isFinalStatus 
                               ? 'text-green-900 font-medium' 
                               : isSystem 
@@ -688,9 +697,9 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     });
                   })()
                 ) : (
-                  <div className="text-center text-gray-500 py-4">
-                    <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">Nenhum comentário de progresso ainda.</p>
+                  <div className="text-center text-gray-500 py-3 sm:py-4">
+                    <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-xs sm:text-sm">Nenhum comentário de progresso ainda.</p>
                     <p className="text-xs text-gray-400 mt-1">
                       Adicione comentários para acompanhar o andamento desta ação.
                     </p>
@@ -700,16 +709,22 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 mt-4 sm:mt-6 pt-4 border-t">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-3 sm:mt-4 lg:mt-6 pt-3 sm:pt-4 border-t">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => onOpenChange(false)}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto text-sm"
+              size="sm"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
+            <Button 
+              type="submit" 
+              disabled={mutation.isPending} 
+              className="w-full sm:w-auto text-sm"
+              size="sm"
+            >
               {mutation.isPending ? "Salvando..." : action ? "Atualizar" : "Criar"}
             </Button>
           </div>
