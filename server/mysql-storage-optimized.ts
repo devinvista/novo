@@ -1502,7 +1502,7 @@ export class MySQLStorageOptimized implements IStorage {
       
       console.log(`🔍 Found ${results.length} comments for action ${actionId}:`, results);
       
-      MySQLPerformanceMonitor.endQuery(startTime, 'getActionComments', results.length);
+      MySQLPerformanceMonitor.endQuery(startTime, 'getActionComments');
       
       const mappedResults = results.map(row => ({
         id: row.action_comments.id,
@@ -1517,7 +1517,7 @@ export class MySQLStorageOptimized implements IStorage {
       return mappedResults;
     } catch (error) {
       console.error(`❌ Error getting comments for action ${actionId}:`, error);
-      MySQLPerformanceMonitor.endQuery(startTime, 'getActionComments', 0);
+      MySQLPerformanceMonitor.endQuery(startTime, 'getActionComments');
       throw error;
     }
   }
