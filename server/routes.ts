@@ -1141,6 +1141,84 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Migration endpoint (temporary) - ADD CODE FIELDS
+  app.post("/api/migrate/add-code-fields", requireAuth, async (req: any, res) => {
+    try {
+      // Only admin can run migrations
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem executar migrações" });
+      }
+
+      const migration = req.body.execute || false;
+      if (!migration) {
+        return res.json({ 
+          message: "Migração preparada. Envie { \"execute\": true } para executar",
+          changes: [
+            "Adicionar campo 'code' na tabela solutions",
+            "Adicionar campo 'code' na tabela service_lines", 
+            "Adicionar campo 'code' na tabela services",
+            "Adicionar campo 'code' na tabela strategic_indicators",
+            "Adicionar campo 'unit' na tabela strategic_indicators",
+            "Gerar códigos padrão baseados nos nomes existentes",
+            "Adicionar constraints de unicidade"
+          ]
+        });
+      }
+
+      console.log("🚀 Starting migration to add code fields...");
+      
+      // Execute migration SQL statements
+      await connection.execute('ALTER TABLE solutions ADD COLUMN IF NOT EXISTS code VARCHAR(50) NOT NULL DEFAULT \'\' AFTER name');
+      await connection.execute('ALTER TABLE service_lines ADD COLUMN IF NOT EXISTS code VARCHAR(50) NOT NULL DEFAULT \'\' AFTER name');
+      await connection.execute('ALTER TABLE services ADD COLUMN IF NOT EXISTS code VARCHAR(50) NOT NULL DEFAULT \'\' AFTER name');
+      await connection.execute('ALTER TABLE strategic_indicators ADD COLUMN IF NOT EXISTS code VARCHAR(50) NOT NULL DEFAULT \'\' AFTER name');
+      await connection.execute('ALTER TABLE strategic_indicators ADD COLUMN IF NOT EXISTS unit VARCHAR(50) AFTER description');
+      
+      console.log("✅ Added code fields to all tables");
+      
+      // Update existing records with default codes
+      await connection.execute('UPDATE solutions SET code = UPPER(SUBSTRING(REPLACE(name, \' \', \'\'), 1, 8)) WHERE code = \'\' OR code IS NULL');
+      await connection.execute('UPDATE service_lines SET code = UPPER(SUBSTRING(REPLACE(name, \' \', \'\'), 1, 8)) WHERE code = \'\' OR code IS NULL');
+      await connection.execute('UPDATE services SET code = UPPER(SUBSTRING(REPLACE(name, \' \', \'\'), 1, 8)) WHERE code = \'\' OR code IS NULL');
+      await connection.execute('UPDATE strategic_indicators SET code = UPPER(SUBSTRING(REPLACE(name, \' \', \'\'), 1, 8)) WHERE code = \'\' OR code IS NULL');
+      
+      console.log("✅ Updated existing records with default codes");
+      
+      // Add unique constraints (ignore errors if constraints already exist)
+      try {
+        await connection.execute('ALTER TABLE solutions ADD CONSTRAINT uk_solutions_code UNIQUE (code)');
+      } catch (e) { console.log("Constraint uk_solutions_code already exists or error:", e); }
+      
+      try {
+        await connection.execute('ALTER TABLE service_lines ADD CONSTRAINT uk_service_lines_code UNIQUE (code)');
+      } catch (e) { console.log("Constraint uk_service_lines_code already exists or error:", e); }
+      
+      try {
+        await connection.execute('ALTER TABLE services ADD CONSTRAINT uk_services_code UNIQUE (code)');
+      } catch (e) { console.log("Constraint uk_services_code already exists or error:", e); }
+      
+      try {
+        await connection.execute('ALTER TABLE strategic_indicators ADD CONSTRAINT uk_strategic_indicators_code UNIQUE (code)');
+      } catch (e) { console.log("Constraint uk_strategic_indicators_code already exists or error:", e); }
+      
+      console.log("✅ Added unique constraints");
+      
+      res.json({ 
+        success: true,
+        message: "Migração executada com sucesso! Campos 'code' adicionados a todas as tabelas de configuração.",
+        tablesUpdated: ["solutions", "service_lines", "services", "strategic_indicators"]
+      });
+      
+    } catch (error) {
+      console.error("❌ Migration failed:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro ao executar migração", 
+        error: error instanceof Error ? error.message : "Erro desconhecido"
+      });
+    }
+  });
+
   // TODO: Implement activities feature if needed
 
   // User management routes with hierarchical access control

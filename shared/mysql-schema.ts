@@ -129,12 +129,14 @@ export const subRegions = mysqlTable("sub_regions", {
 export const solutions = mysqlTable("solutions", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
 });
 
 export const serviceLines = mysqlTable("service_lines", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
   solutionId: int("solution_id").notNull().references(() => solutions.id),
 });
@@ -142,6 +144,7 @@ export const serviceLines = mysqlTable("service_lines", {
 export const services = mysqlTable("services", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
   serviceLineId: int("service_line_id").notNull().references(() => serviceLines.id),
 });
@@ -149,7 +152,9 @@ export const services = mysqlTable("services", {
 export const strategicIndicators = mysqlTable("strategic_indicators", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
+  unit: varchar("unit", { length: 50 }),
 });
 
 export const activities = mysqlTable("activities", {
