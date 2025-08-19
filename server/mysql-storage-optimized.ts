@@ -1215,16 +1215,14 @@ export class MySQLStorageOptimized implements IStorage {
   // Helper function to create system comments for action events
   private async createSystemComment(actionId: number, message: string, userId: number): Promise<void> {
     try {
-      console.log('🤖 Creating system comment:', { actionId, message, userId });
-      const result = await db.insert(actionComments).values({
+      await db.insert(actionComments).values({
         actionId,
         userId,
         comment: `🤖 SISTEMA: ${message}`,
         createdAt: new Date(),
       });
-      console.log('🤖 System comment created successfully:', result);
     } catch (error) {
-      console.error('🤖 Error creating system comment:', error);
+      console.error('Error creating system comment:', error);
     }
   }
 
@@ -1234,17 +1232,13 @@ export class MySQLStorageOptimized implements IStorage {
     const newAction = await db.select().from(actions).where(eq(actions.id, Number(insertId))).limit(1);
     
     // Add system comment for action creation
-    console.log('🤖 Checking system comment creation:', { insertId, responsibleId: action.responsibleId });
     if (insertId && action.responsibleId) {
       const dueDateStr = action.dueDate ? new Date(action.dueDate).toLocaleDateString('pt-BR') : 'não definido';
-      console.log('🤖 About to create system comment for new action');
       await this.createSystemComment(
         Number(insertId),
         `Ação criada com prioridade "${action.priority}" e prazo ${dueDateStr}`,
         action.responsibleId
       );
-    } else {
-      console.log('🤖 System comment NOT created:', { insertId, responsibleId: action.responsibleId });
     }
     
     return newAction[0];
