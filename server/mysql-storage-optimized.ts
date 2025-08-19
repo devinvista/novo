@@ -1487,8 +1487,31 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async getActionComments(actionId: number): Promise<any[]> {
-    return [];
+  async getActionComments(actionId: number): Promise<(ActionComment & { user: User })[]> {
+    const startTime = MySQLPerformanceMonitor.startQuery('getActionComments');
+    try {
+      const results = await MySQLConnectionOptimizer.executeWithLimit(async () => {
+        return await db.select()
+          .from(actionComments)
+          .leftJoin(users, eq(actionComments.userId, users.id))
+          .where(eq(actionComments.actionId, actionId))
+          .orderBy(desc(actionComments.createdAt));
+      });
+      
+      MySQLPerformanceMonitor.endQuery(startTime, 'getActionComments', results.length);
+      
+      return results.map(row => ({
+        id: row.action_comments.id,
+        actionId: row.action_comments.actionId,
+        userId: row.action_comments.userId,
+        comment: row.action_comments.comment,
+        createdAt: row.action_comments.createdAt,
+        user: row.users!,
+      }));
+    } catch (error) {
+      MySQLPerformanceMonitor.endQuery(startTime, 'getActionComments', 0);
+      throw error;
+    }
   }
 
   async createActionComment(comment: InsertActionComment): Promise<ActionComment> {
