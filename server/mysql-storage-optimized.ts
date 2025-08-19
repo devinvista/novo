@@ -1212,16 +1212,90 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
+  // Helper function to create system comments for action events
+  private async createSystemComment(actionId: number, message: string): Promise<void> {
+    try {
+      await db.insert(actionComments).values({
+        actionId,
+        userId: 1, // Sistema user ID
+        comment: `🤖 SISTEMA: ${message}`,
+        createdAt: new Date(),
+      });
+    } catch (error) {
+      console.error('Error creating system comment:', error);
+    }
+  }
+
   async createAction(action: InsertAction): Promise<Action> {
     const result = await db.insert(actions).values(action);
     const insertId = result[0]?.insertId;
     const newAction = await db.select().from(actions).where(eq(actions.id, Number(insertId))).limit(1);
+    
+    // Add system comment for action creation
+    await this.createSystemComment(
+      Number(insertId),
+      `Ação criada com prioridade "${action.priority}" e prazo ${new Date(action.dueDate).toLocaleDateString('pt-BR')}`
+    );
+    
     return newAction[0];
   }
 
   async updateAction(id: number, action: Partial<InsertAction>): Promise<Action> {
+    // Get current action to compare changes
+    const currentAction = await db.select().from(actions).where(eq(actions.id, id)).limit(1);
+    const current = currentAction[0];
+    
+    if (!current) {
+      throw new Error('Action not found');
+    }
+    
+    // Update the action
     await db.update(actions).set(action).where(eq(actions.id, id));
     const updated = await db.select().from(actions).where(eq(actions.id, id)).limit(1);
+    
+    // Check for important changes and log them
+    const changes = [];
+    
+    if (action.status && action.status !== current.status) {
+      const statusNames = {
+        'pending': 'Pendente',
+        'in_progress': 'Em Progresso', 
+        'completed': 'Concluída',
+        'cancelled': 'Cancelada',
+        'blocked': 'Bloqueada'
+      };
+      changes.push(`Status alterado de "${statusNames[current.status] || current.status}" para "${statusNames[action.status] || action.status}"`);
+    }
+    
+    if (action.priority && action.priority !== current.priority) {
+      const priorityNames = {
+        'baixa': 'Baixa',
+        'media': 'Média',
+        'alta': 'Alta',
+        'critica': 'Crítica'
+      };
+      changes.push(`Prioridade alterada de "${priorityNames[current.priority] || current.priority}" para "${priorityNames[action.priority] || action.priority}"`);
+    }
+    
+    if (action.dueDate && action.dueDate !== current.dueDate) {
+      const oldDate = new Date(current.dueDate).toLocaleDateString('pt-BR');
+      const newDate = new Date(action.dueDate).toLocaleDateString('pt-BR');
+      changes.push(`Prazo alterado de ${oldDate} para ${newDate}`);
+    }
+    
+    if (action.title && action.title !== current.title) {
+      changes.push(`Título alterado de "${current.title}" para "${action.title}"`);
+    }
+    
+    if (action.description && action.description !== current.description) {
+      changes.push('Descrição da ação foi atualizada');
+    }
+    
+    // Create system comment for each change
+    for (const change of changes) {
+      await this.createSystemComment(id, change);
+    }
+    
     return updated[0];
   }
 
