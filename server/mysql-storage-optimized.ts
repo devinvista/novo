@@ -1490,6 +1490,8 @@ export class MySQLStorageOptimized implements IStorage {
   async getActionComments(actionId: number): Promise<(ActionComment & { user: User })[]> {
     const startTime = MySQLPerformanceMonitor.startQuery('getActionComments');
     try {
+      console.log(`🔍 Getting comments for action ${actionId}`);
+      
       const results = await MySQLConnectionOptimizer.executeWithLimit(async () => {
         return await db.select()
           .from(actionComments)
@@ -1498,9 +1500,11 @@ export class MySQLStorageOptimized implements IStorage {
           .orderBy(desc(actionComments.createdAt));
       });
       
+      console.log(`🔍 Found ${results.length} comments for action ${actionId}:`, results);
+      
       MySQLPerformanceMonitor.endQuery(startTime, 'getActionComments', results.length);
       
-      return results.map(row => ({
+      const mappedResults = results.map(row => ({
         id: row.action_comments.id,
         actionId: row.action_comments.actionId,
         userId: row.action_comments.userId,
@@ -1508,16 +1512,33 @@ export class MySQLStorageOptimized implements IStorage {
         createdAt: row.action_comments.createdAt,
         user: row.users!,
       }));
+      
+      console.log(`🔍 Mapped results:`, mappedResults);
+      return mappedResults;
     } catch (error) {
+      console.error(`❌ Error getting comments for action ${actionId}:`, error);
       MySQLPerformanceMonitor.endQuery(startTime, 'getActionComments', 0);
       throw error;
     }
   }
 
   async createActionComment(comment: InsertActionComment): Promise<ActionComment> {
-    const result = await db.insert(actionComments).values(comment);
+    console.log(`💬 Creating comment for action ${comment.actionId}:`, comment);
+    
+    const commentWithTimestamp = {
+      ...comment,
+      createdAt: new Date(),
+    };
+    
+    const result = await db.insert(actionComments).values(commentWithTimestamp);
     const insertId = result[0]?.insertId;
+    
+    console.log(`💬 Comment created with ID: ${insertId}`);
+    
     const newComment = await db.select().from(actionComments).where(eq(actionComments.id, Number(insertId))).limit(1);
+    
+    console.log(`💬 Retrieved new comment:`, newComment[0]);
+    
     return newComment[0];
   }
 
