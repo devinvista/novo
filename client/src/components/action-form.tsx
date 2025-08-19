@@ -626,19 +626,16 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {comments && comments.length > 0 ? (
                   (() => {
-                    // Ordenar comentários: status final primeiro, depois sistema, depois normais
+                    // Ordenar comentários: status final primeiro, outros por data de atualização
                     const sortedComments = [...comments].sort((a, b) => {
                       const aIsFinal = a.comment.startsWith('🏁 STATUS FINAL');
                       const bIsFinal = b.comment.startsWith('🏁 STATUS FINAL');
-                      const aIsSystem = a.comment.startsWith('🤖 SISTEMA');
-                      const bIsSystem = b.comment.startsWith('🤖 SISTEMA');
                       
+                      // Status finais sempre no topo
                       if (aIsFinal && !bIsFinal) return -1;
                       if (!aIsFinal && bIsFinal) return 1;
-                      if (aIsSystem && !bIsSystem && !bIsFinal) return -1;
-                      if (!aIsSystem && bIsSystem && !aIsFinal) return 1;
                       
-                      // Ordenar por data (mais recente primeiro)
+                      // Todos os outros comentários (sistema e normais) ordenados por data (mais recente primeiro)
                       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                     });
                     
