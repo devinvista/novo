@@ -1603,13 +1603,17 @@ export function registerRoutes(app: Express): Server {
   // Strategic Indicators Management
   app.post("/api/admin/strategic-indicators", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
-      const { name, description, unit } = req.body;
+      const { name, code, description, unit } = req.body;
       
       if (!name || name.trim() === "") {
         return res.status(400).json({ message: "Nome é obrigatório" });
       }
       
-      const indicator = await storage.createStrategicIndicator({ name, description, unit });
+      if (!code || code.trim() === "") {
+        return res.status(400).json({ message: "Código é obrigatório" });
+      }
+      
+      const indicator = await storage.createStrategicIndicator({ name, code, description, unit });
       res.json(indicator);
     } catch (error) {
       console.error("Error creating strategic indicator:", error);
@@ -1620,13 +1624,17 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/admin/strategic-indicators/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { name, description, unit } = req.body;
+      const { name, code, description, unit } = req.body;
       
       if (!name || name.trim() === "") {
         return res.status(400).json({ message: "Nome é obrigatório" });
       }
       
-      const indicator = await storage.updateStrategicIndicator(id, { name, description, unit });
+      if (!code || code.trim() === "") {
+        return res.status(400).json({ message: "Código é obrigatório" });
+      }
+      
+      const indicator = await storage.updateStrategicIndicator(id, { name, code, description, unit });
       res.json(indicator);
     } catch (error) {
       console.error("Error updating strategic indicator:", error);

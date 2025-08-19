@@ -91,8 +91,8 @@ export interface IStorage {
   createActionComment(comment: InsertActionComment): Promise<ActionComment>;
 
   // Admin CRUD methods for configuration management
-  createStrategicIndicator(data: { name: string; description?: string; unit?: string }): Promise<StrategicIndicator>;
-  updateStrategicIndicator(id: number, data: { name: string; description?: string; unit?: string }): Promise<StrategicIndicator>;
+  createStrategicIndicator(data: { name: string; code: string; description?: string; unit?: string }): Promise<StrategicIndicator>;
+  updateStrategicIndicator(id: number, data: { name: string; code: string; description?: string; unit?: string }): Promise<StrategicIndicator>;
   deleteStrategicIndicator(id: number): Promise<void>;
   
   createRegion(data: { name: string; code: string }): Promise<Region>;
@@ -1632,7 +1632,7 @@ export class MySQLStorageOptimized implements IStorage {
   }
 
   // Admin CRUD methods implementations
-  async createStrategicIndicator(data: { name: string; description?: string; unit?: string }): Promise<StrategicIndicator> {
+  async createStrategicIndicator(data: { name: string; code: string; description?: string; unit?: string }): Promise<StrategicIndicator> {
     const startTime = MySQLPerformanceMonitor.startQuery('createStrategicIndicator');
     try {
       const result = await MySQLConnectionOptimizer.executeWithLimit(async () => {
@@ -1652,7 +1652,7 @@ export class MySQLStorageOptimized implements IStorage {
     }
   }
 
-  async updateStrategicIndicator(id: number, data: { name: string; description?: string; unit?: string }): Promise<StrategicIndicator> {
+  async updateStrategicIndicator(id: number, data: { name: string; code: string; description?: string; unit?: string }): Promise<StrategicIndicator> {
     const startTime = MySQLPerformanceMonitor.startQuery('updateStrategicIndicator');
     try {
       await MySQLConnectionOptimizer.executeWithLimit(async () => {
