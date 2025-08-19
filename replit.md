@@ -17,7 +17,7 @@ Idioma do projeto: Português brasileiro - Toda interface, documentação e text
 - **Form Handling**: React Hook Form with Zod validation.
 - **UI/UX Decisions**:
     - **Color Scheme**: Uses a palette based on FIERGS institutional colors (FIERGS Blue, SESI Green, IEL Green, SENAI Orange, CIERGS Blue).
-    - **Component Design**: Responsive sidebar navigation, KPI card dashboards, data tables with sorting/filtering/searching, modal forms for CRUD operations, progress charts, activity feeds, and a fully responsive design for all screen sizes (e.g., optimized action dialog, adaptive layout with breakpoints).
+    - **Component Design**: Responsive sidebar navigation, KPI card dashboards, data tables with sorting/filtering/searching, modal forms for CRUD operations, progress charts, activity feeds, and a fully responsive design for all screen sizes (e.g., optimized action dialog with adaptive layout, breakpoints, and intelligent text wrapping for comments).
     - **Language**: All UI elements are in Brazilian Portuguese.
     - **Number Formatting**: Uses Brazilian decimal formatting (comma as decimal separator) with client-side and server-side converters.
     - **Modal Management**: Automatic modal cleanup to prevent UI blockage.
