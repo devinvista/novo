@@ -1233,10 +1233,17 @@ export class MySQLStorageOptimized implements IStorage {
     
     // Add system comment for action creation
     if (insertId && action.responsibleId) {
+      const priorityNames: Record<string, string> = {
+        'low': 'Baixa',
+        'medium': 'Média', 
+        'high': 'Alta',
+        'critical': 'Crítica'
+      };
       const dueDateStr = action.dueDate ? new Date(action.dueDate).toLocaleDateString('pt-BR') : 'não definido';
+      const priorityLabel = priorityNames[action.priority || 'medium'] || action.priority || 'Média';
       await this.createSystemComment(
         Number(insertId),
-        `Ação criada com prioridade "${action.priority}" e prazo ${dueDateStr}`,
+        `Ação criada com prioridade "${priorityLabel}" e prazo ${dueDateStr}`,
         action.responsibleId
       );
     }
@@ -1272,12 +1279,14 @@ export class MySQLStorageOptimized implements IStorage {
     
     if (action.priority && action.priority !== current.priority) {
       const priorityNames: Record<string, string> = {
-        'baixa': 'Baixa',
-        'media': 'Média', 
-        'alta': 'Alta',
-        'critica': 'Crítica'
+        'low': 'Baixa',
+        'medium': 'Média', 
+        'high': 'Alta',
+        'critical': 'Crítica'
       };
-      changes.push(`Prioridade alterada de "${priorityNames[current.priority] || current.priority}" para "${priorityNames[action.priority] || action.priority}"`);
+      const oldPriority = priorityNames[current.priority] || current.priority;
+      const newPriority = priorityNames[action.priority] || action.priority;
+      changes.push(`Prioridade alterada de "${oldPriority}" para "${newPriority}"`);
     }
     
     if (action.dueDate && action.dueDate !== current.dueDate && current.dueDate) {
