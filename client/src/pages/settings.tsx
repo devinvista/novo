@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Plus, Settings as SettingsIcon, MapPin, Target, Layers, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CompactHeader from "@/components/compact-header";
+import { cleanupOnDialogClose } from "@/lib/modal-cleanup";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -698,12 +699,20 @@ function RegionsTab() {
   const handleDeleteRegion = (id: number) => {
     if (window.confirm("Tem certeza que deseja excluir esta região?")) {
       deleteRegionMutation.mutate(id);
+      // Cleanup modals after confirmation
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 300);
     }
   };
 
   const handleDeleteSubRegion = (id: number) => {
     if (window.confirm("Tem certeza que deseja excluir esta sub-região?")) {
       deleteSubRegionMutation.mutate(id);
+      // Cleanup modals after confirmation
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 300);
     }
   };
 
@@ -1130,6 +1139,10 @@ function SolutionsTab() {
   const handleDelete = (id: number) => {
     if (window.confirm("Tem certeza que deseja excluir esta solução?")) {
       deleteMutation.mutate(id);
+      // Cleanup modals after confirmation
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 300);
     }
   };
 
@@ -1427,6 +1440,10 @@ function ServiceLinesTab() {
   const handleDelete = (id: number) => {
     if (window.confirm("Tem certeza que deseja excluir esta linha de serviço?")) {
       deleteMutation.mutate(id);
+      // Cleanup modals after confirmation
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 300);
     }
   };
 
@@ -1762,6 +1779,10 @@ function ServicesTab() {
   const handleDelete = (id: number) => {
     if (window.confirm("Tem certeza que deseja excluir este serviço?")) {
       deleteMutation.mutate(id);
+      // Cleanup modals after confirmation
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 300);
     }
   };
 

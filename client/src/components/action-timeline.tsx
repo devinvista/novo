@@ -11,6 +11,7 @@ import { useState } from "react";
 import ActionForm from "./action-form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { cleanupOnDialogClose } from "@/lib/modal-cleanup";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +57,11 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
       });
       queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
       setDeleteActionId(null);
+      
+      // Cleanup modals to prevent interface freezing
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 200);
     },
     onError: (error: any) => {
       toast({
@@ -63,6 +69,12 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
         description: error.message || "Erro ao deletar ação",
         variant: "destructive",
       });
+      setDeleteActionId(null);
+      
+      // Cleanup modals even on error
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 200);
     },
   });
 

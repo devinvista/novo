@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ObjectiveForm from "./objective-form";
+import { cleanupOnDialogClose } from "@/lib/modal-cleanup";
 
 interface ObjectivesTableProps {
   objectives?: any[];
@@ -39,6 +40,11 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
         title: "Objetivo excluído",
         description: "O objetivo foi excluído com sucesso.",
       });
+      
+      // Cleanup modals to prevent interface freezing
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 200);
     },
     onError: () => {
       toast({
@@ -46,6 +52,11 @@ export default function ObjectivesTable({ objectives, isLoading, showActions = f
         description: "Erro ao excluir objetivo.",
         variant: "destructive",
       });
+      
+      // Cleanup modals even on error
+      setTimeout(() => {
+        cleanupOnDialogClose();
+      }, 200);
     },
   });
 
