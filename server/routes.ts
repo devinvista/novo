@@ -676,7 +676,7 @@ export function registerRoutes(app: Express): Server {
       if (requestData.dueDate === null || requestData.dueDate === "") requestData.dueDate = undefined;
       
       // Check for final status and require completion comment
-      const finalStatuses = ['completed', 'cancelled', 'blocked'];
+      const finalStatuses = ['completed', 'cancelled'];
       const currentStatusIsFinal = finalStatuses.includes(existingAction.status);
       const newStatusIsFinal = requestData.status && finalStatuses.includes(requestData.status);
       
@@ -697,11 +697,10 @@ export function registerRoutes(app: Express): Server {
       if (requestData.completionComment?.trim()) {
         const statusLabels = {
           completed: 'CONCLUÍDA',
-          cancelled: 'CANCELADA', 
-          blocked: 'BLOQUEADA'
+          cancelled: 'CANCELADA'
         };
         
-        const statusLabel = statusLabels[requestData.status] || requestData.status.toUpperCase();
+        const statusLabel = statusLabels[requestData.status as keyof typeof statusLabels] || requestData.status?.toUpperCase() || 'DESCONHECIDO';
         
         await storage.createActionComment({
           actionId: id,

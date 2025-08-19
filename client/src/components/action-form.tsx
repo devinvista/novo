@@ -122,9 +122,9 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
   // Watch for status changes to show/hide completion comment field
   const watchedStatus = form.watch("status");
-  const finalStatuses = ['completed', 'cancelled', 'blocked'];
-  const currentStatusIsFinal = action ? finalStatuses.includes(action.status) : false;
-  const newStatusIsFinal = finalStatuses.includes(watchedStatus);
+  const finalStatuses = ['completed', 'cancelled'];
+  const currentStatusIsFinal = action ? finalStatuses.includes(action.status || '') : false;
+  const newStatusIsFinal = finalStatuses.includes(watchedStatus || '');
   
   useEffect(() => {
     setShowCompletionComment(!currentStatusIsFinal && newStatusIsFinal);
@@ -239,7 +239,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
   const mutation = useMutation({
     mutationFn: async (data: ActionFormData) => {
-      const payload = {
+      const payload: any = {
         ...data,
         dueDate: data.dueDate || undefined,
       };
@@ -507,7 +507,6 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                     <SelectItem value="in_progress">Em Andamento</SelectItem>
                     <SelectItem value="completed">Concluída</SelectItem>
                     <SelectItem value="cancelled">Cancelada</SelectItem>
-                    <SelectItem value="blocked">Bloqueada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

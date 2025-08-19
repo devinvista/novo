@@ -1265,8 +1265,7 @@ export class MySQLStorageOptimized implements IStorage {
         'pending': 'Pendente',
         'in_progress': 'Em Progresso', 
         'completed': 'Concluída',
-        'cancelled': 'Cancelada',
-        'blocked': 'Bloqueada'
+        'cancelled': 'Cancelada'
       };
       changes.push(`Status alterado de "${statusNames[current.status] || current.status}" para "${statusNames[action.status] || action.status}"`);
     }
