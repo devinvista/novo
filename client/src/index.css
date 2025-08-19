@@ -158,4 +158,12 @@
     background-color: hsl(var(--fiergs-green-sesi));
     color: hsl(var(--fiergs-white));
   }
+
+  /* Força quebra de palavras longas em comentários */
+  .force-break-words {
+    word-break: break-all !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+  }
 }

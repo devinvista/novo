@@ -242,7 +242,7 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
                     <div>
                       <h4 className="font-medium">{action.title}</h4>
                       {action.description && (
-                        <p className="text-sm text-gray-600 mt-1 break-words whitespace-pre-wrap">{action.description}</p>
+                        <p className="text-sm text-gray-600 mt-1 force-break-words">{action.description}</p>
                       )}
                       <div className="flex items-center gap-4 mt-2">
                         {action.keyResult && action.keyResult.title ? (

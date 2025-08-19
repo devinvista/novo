@@ -683,7 +683,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                               </span>
                             </div>
                           </div>
-                          <p className={`text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap ${
+                          <p className={`text-xs sm:text-sm leading-relaxed force-break-words ${
                             isFinalStatus 
                               ? 'text-green-900 font-medium' 
                               : isSystem 
