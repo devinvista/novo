@@ -1,8 +1,6 @@
 // Configure timezone for Brazil (UTC-3)
 process.env.TZ = 'America/Sao_Paulo';
 
-// Enable MySQL performance monitoring
-import './performance-dashboard';
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";

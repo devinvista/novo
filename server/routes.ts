@@ -8,7 +8,8 @@ import { z } from "zod";
 import { formatDecimalBR, formatNumberBR, convertBRToDatabase, formatBrazilianNumber } from "./formatters";
 import * as XLSX from "xlsx";
 import multer from "multer";
-import { connection } from "./mysql-db";
+import { db } from "./pg-db";
+import { sql as pgSql } from "drizzle-orm";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -1168,41 +1169,17 @@ export function registerRoutes(app: Express): Server {
 
       console.log("🚀 Starting migration to add code fields...");
       
-      // Execute migration SQL statements
-      await connection.execute('ALTER TABLE solutions ADD COLUMN IF NOT EXISTS code VARCHAR(50) NOT NULL DEFAULT \'\' AFTER name');
-      await connection.execute('ALTER TABLE service_lines ADD COLUMN IF NOT EXISTS code VARCHAR(50) NOT NULL DEFAULT \'\' AFTER name');
-      await connection.execute('ALTER TABLE services ADD COLUMN IF NOT EXISTS code VARCHAR(50) NOT NULL DEFAULT \'\' AFTER name');
-      await connection.execute('ALTER TABLE strategic_indicators ADD COLUMN IF NOT EXISTS code VARCHAR(50) NOT NULL DEFAULT \'\' AFTER name');
-      await connection.execute('ALTER TABLE strategic_indicators ADD COLUMN IF NOT EXISTS unit VARCHAR(50) AFTER description');
+      // Schema is managed by drizzle-kit push - code fields already exist in pg-schema
+      console.log("✅ Code fields already part of PostgreSQL schema");
       
-      console.log("✅ Added code fields to all tables");
-      
-      // Update existing records with default codes
-      await connection.execute('UPDATE solutions SET code = UPPER(SUBSTRING(REPLACE(name, \' \', \'\'), 1, 8)) WHERE code = \'\' OR code IS NULL');
-      await connection.execute('UPDATE service_lines SET code = UPPER(SUBSTRING(REPLACE(name, \' \', \'\'), 1, 8)) WHERE code = \'\' OR code IS NULL');
-      await connection.execute('UPDATE services SET code = UPPER(SUBSTRING(REPLACE(name, \' \', \'\'), 1, 8)) WHERE code = \'\' OR code IS NULL');
-      await connection.execute('UPDATE strategic_indicators SET code = UPPER(SUBSTRING(REPLACE(name, \' \', \'\'), 1, 8)) WHERE code = \'\' OR code IS NULL');
+      // Update existing records with default codes if empty
+      await db.execute(pgSql`UPDATE solutions SET code = UPPER(SUBSTRING(REPLACE(name, ' ', ''), 1, 8)) WHERE code = '' OR code IS NULL`);
+      await db.execute(pgSql`UPDATE service_lines SET code = UPPER(SUBSTRING(REPLACE(name, ' ', ''), 1, 8)) WHERE code = '' OR code IS NULL`);
+      await db.execute(pgSql`UPDATE services SET code = UPPER(SUBSTRING(REPLACE(name, ' ', ''), 1, 8)) WHERE code = '' OR code IS NULL`);
+      await db.execute(pgSql`UPDATE strategic_indicators SET code = UPPER(SUBSTRING(REPLACE(name, ' ', ''), 1, 8)) WHERE code = '' OR code IS NULL`);
       
       console.log("✅ Updated existing records with default codes");
-      
-      // Add unique constraints (ignore errors if constraints already exist)
-      try {
-        await connection.execute('ALTER TABLE solutions ADD CONSTRAINT uk_solutions_code UNIQUE (code)');
-      } catch (e) { console.log("Constraint uk_solutions_code already exists or error:", e); }
-      
-      try {
-        await connection.execute('ALTER TABLE service_lines ADD CONSTRAINT uk_service_lines_code UNIQUE (code)');
-      } catch (e) { console.log("Constraint uk_service_lines_code already exists or error:", e); }
-      
-      try {
-        await connection.execute('ALTER TABLE services ADD CONSTRAINT uk_services_code UNIQUE (code)');
-      } catch (e) { console.log("Constraint uk_services_code already exists or error:", e); }
-      
-      try {
-        await connection.execute('ALTER TABLE strategic_indicators ADD CONSTRAINT uk_strategic_indicators_code UNIQUE (code)');
-      } catch (e) { console.log("Constraint uk_strategic_indicators_code already exists or error:", e); }
-      
-      console.log("✅ Added unique constraints");
+      console.log("✅ Unique constraints already handled by schema");
       
       res.json({ 
         success: true,
