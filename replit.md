@@ -27,7 +27,7 @@ Idioma do projeto: Português brasileiro - Toda interface, documentação e text
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js (TypeScript, ES modules).
-- **Authentication**: Passport.js with local strategy and session-based authentication (session stored in MySQL). Node.js crypto module for password hashing (scrypt).
+- **Authentication**: Passport.js with local strategy and session-based authentication (session stored in memory). Node.js crypto module for password hashing (scrypt).
 - **Core Functionality**:
     - **Authentication System**: Session-based with secure password hashing, role-based access control (admin, manager, operational), protected routes.
     - **OKR Management**: Objectives, Key Results (with strategic indicators), Actions (with priority and status - "concluída" and "cancelada" are final), and Milestones (progress updates).
