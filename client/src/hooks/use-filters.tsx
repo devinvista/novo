@@ -18,7 +18,6 @@ export function FiltersProvider({ children }: { children: ReactNode }) {
   const [filters, setFilters] = useState<Filters>({});
 
   const clearFilters = useCallback(() => {
-    console.log('🔄 Clearing filters');
     setFilters({});
   }, []);
 

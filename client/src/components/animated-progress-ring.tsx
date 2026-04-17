@@ -91,7 +91,6 @@ export default function AnimatedProgressRing({
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('AnimatedProgressRing clicked!', { status, progress, period });
         onClick?.();
       }}
       whileHover={{ scale: 1.05 }}

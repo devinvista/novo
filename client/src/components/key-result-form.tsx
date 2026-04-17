@@ -54,15 +54,6 @@ const createKeyResultValidationSchema = (objectives: any[] = []) => {
     const startDateValid = krStartDate >= objectiveStartDate;
     const endDateValid = krEndDate <= objectiveEndDate;
     
-    console.log('Date validation:', {
-      objectiveStartDate,
-      objectiveEndDate,
-      krStartDate,
-      krEndDate,
-      startDateValid,
-      endDateValid
-    });
-    
     return startDateValid && endDateValid;
   }, {
     message: "As datas do resultado-chave devem estar dentro do período do objetivo",
@@ -210,7 +201,6 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       unit: data.unit || "",
     };
     
-    console.log("Sending data:", processedData);
     mutation.mutate(processedData);
   };
 

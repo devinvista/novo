@@ -118,12 +118,10 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
         return [];
       }
     },
-    staleTime: 0,
   });
 
   // Force invalidation when filters change
   useEffect(() => {
-    console.log('🔄 ActionTimeline: Filters changed, invalidating queries:', filters);
     queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
   }, [filters, queryClient]);
 

@@ -24,8 +24,6 @@ export default function Objectives() {
   const { data: objectives, isLoading } = useQuery({
     queryKey: ["/api/objectives", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
-      console.log('📡 Fetching objectives with filters:', { selectedQuarter, filters });
-      
       if (selectedQuarter && selectedQuarter !== "all") {
         const params = new URLSearchParams();
         if (filters?.regionId) params.append('regionId', filters.regionId.toString());
@@ -33,7 +31,6 @@ export default function Objectives() {
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
-        console.log('📡 Quarterly URL:', url);
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar objetivos trimestrais");
         const data = await response.json();
@@ -45,18 +42,15 @@ export default function Objectives() {
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/objectives${params.toString() ? `?${params}` : ''}`;
-        console.log('📡 Objectives URL:', url);
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar objetivos");
         return response.json();
       }
     },
-    staleTime: 0,
   });
 
   // Force invalidation when filters change
   useEffect(() => {
-    console.log('🔄 Objectives: Filters changed, invalidating queries:', filters);
     queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
   }, [filters, queryClient]);
 

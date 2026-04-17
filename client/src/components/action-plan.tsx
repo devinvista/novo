@@ -77,12 +77,10 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
       if (!response.ok) throw new Error("Erro ao carregar ações");
       return response.json();
     },
-    staleTime: 0,
   });
 
   // Force invalidation when filters change
   useEffect(() => {
-    console.log('🔄 ActionPlan filters changed, invalidating queries:', filters);
     queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
     queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
     queryClient.invalidateQueries({ queryKey: ["/api/actions"] });
@@ -251,7 +249,7 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
                                     }
                                   }
                                 } catch (e) {
-                                  console.log('Error parsing strategic indicators:', e);
+                                  console.error('Error parsing strategic indicators:', e);
                                   indicatorIds = [];
                                 }
 

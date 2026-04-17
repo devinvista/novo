@@ -30,8 +30,6 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
-      console.log('📡 IndicatorsDashboard: Fetching key results with filters:', { selectedQuarter, filters });
-      
       if (selectedQuarter && selectedQuarter !== "all") {
         const params = new URLSearchParams();
         if (filters?.regionId) params.append('regionId', filters.regionId.toString());
@@ -39,7 +37,6 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
-        console.log('📡 KR Quarterly URL:', url);
         
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar resultados-chave trimestrais");
@@ -52,7 +49,6 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
-        console.log('📡 KR URL:', url);
         
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
@@ -60,12 +56,10 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
       }
     },
     refetchOnWindowFocus: false,
-    staleTime: 0, // Sempre refetch quando os filtros mudarem
   });
 
   // Force invalidation when filters change
   useEffect(() => {
-    console.log('🔄 Filters changed, invalidating queries:', filters);
     queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
   }, [filters, queryClient]);
 

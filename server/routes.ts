@@ -169,7 +169,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/strategic-indicators", async (req, res) => {
+  app.get("/api/strategic-indicators", requireAuth, async (req, res) => {
     try {
       const indicators = await storage.getStrategicIndicators();
       res.json(indicators);
@@ -1087,7 +1087,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/managers", async (req, res) => {
+  app.get("/api/managers", requireAuth, async (req, res) => {
     try {
       const managers = await storage.getManagers();
       res.json(managers);
@@ -1334,7 +1334,6 @@ export function registerRoutes(app: Express): Server {
         serviceIds
       } = req.body; // ID do usuário + Permissões específicas que o gestor pode definir
 
-      console.log(`Approving user ${id} by ${req.user?.id}`);
 
       // Verificar se o usuário pode aprovar este usuário
       const targetUser = await storage.getUser(id);

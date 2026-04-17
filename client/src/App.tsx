@@ -27,7 +27,8 @@ function AppContent() {
   // Global cleanup on mount to handle any leftover modals
   useEffect(() => {
     cleanupOnDialogClose();
-    setupEmergencyCleanup();
+    const removeEmergencyCleanup = setupEmergencyCleanup();
+    return removeEmergencyCleanup;
   }, []);
 
   if (!user) {

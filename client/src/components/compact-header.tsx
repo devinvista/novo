@@ -95,7 +95,6 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
       newFilters.subRegionId = undefined;
     }
     
-    console.log('🔧 Filter change:', { key, value, newFilters });
     setFilters(newFilters);
   };
 

@@ -337,7 +337,6 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       dueDate: data.dueDate || undefined,
     };
     
-    console.log("Submitting action data:", cleanedData);
     mutation.mutate(cleanedData);
   };
 

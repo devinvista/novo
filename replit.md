@@ -26,6 +26,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
   pages/              # Páginas (Dashboard, Objetivos, KRs, Ações, Checkpoints, Indicadores, Usuários, Relatórios, Configurações)
   hooks/              # Custom hooks (useAuth, useFilters, useSidebarToggle, useQuarterlyFilter)
   lib/                # Utilitários (queryClient, formatters, checkpoint-utils, frequency-translations, modal-cleanup, emergency-cleanup)
+                      # Nota: protected-route.tsx e use-modal-cleanup.ts foram removidos (não utilizados)
   providers/          # Provedores de contexto (AppProviders)
 /server/              # Backend Express
   index.ts            # Entry point (porta 5000)
@@ -83,7 +84,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | GET | `/api/dashboard/kpis` | KPIs do dashboard |
 | GET | `/api/executive-summary` | Resumo executivo |
 | GET | `/api/users` | Usuários (filtrado por role) |
-| GET | `/api/managers` | Lista de gestores (público) |
+| GET | `/api/managers` | Lista de gestores (requer autenticação) |
 | GET | `/api/pending-users` | Usuários pendentes de aprovação |
 | POST | `/api/users` | Criar usuário |
 | PATCH | `/api/users/:id` | Atualizar usuário |
@@ -95,7 +96,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | GET | `/api/solutions` | Soluções |
 | GET | `/api/service-lines` | Linhas de serviço |
 | GET | `/api/services` | Serviços |
-| GET | `/api/strategic-indicators` | Indicadores estratégicos |
+| GET | `/api/strategic-indicators` | Indicadores estratégicos (requer autenticação) |
 | GET | `/api/quarters` | Períodos trimestrais disponíveis |
 | GET | `/api/quarters/stats` | Estatísticas por trimestre |
 | GET | `/api/quarters/:quarter/data` | Dados de um trimestre específico |

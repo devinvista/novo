@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-export function setupEmergencyCleanup() {
+export function setupEmergencyCleanup(): () => void {
   window.emergencyCleanup = () => {
     for (let i = 0; i < 3; i++) {
       setTimeout(() => {
@@ -39,10 +39,16 @@ export function setupEmergencyCleanup() {
     }
   };
 
-  document.addEventListener('keydown', (e) => {
+  const handleKeydown = (e: KeyboardEvent) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'C') {
       e.preventDefault();
       window.emergencyCleanup();
     }
-  });
+  };
+
+  document.addEventListener('keydown', handleKeydown);
+
+  return () => {
+    document.removeEventListener('keydown', handleKeydown);
+  };
 }

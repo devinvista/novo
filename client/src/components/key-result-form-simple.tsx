@@ -157,8 +157,6 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
       const endpoint = keyResult ? `/api/key-results/${keyResult.id}` : "/api/key-results";
       const method = keyResult ? "PUT" : "POST";
       
-      console.log("Sending data:", data);
-      
       const response = await fetch(endpoint, {
         method,
         headers: {

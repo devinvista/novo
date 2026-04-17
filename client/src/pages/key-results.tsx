@@ -61,8 +61,6 @@ export default function KeyResults() {
   const { data: keyResults, isLoading, error } = useQuery({
     queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
-      console.log('📡 Fetching key results with filters:', { selectedQuarter, filters });
-      
       if (selectedQuarter && selectedQuarter !== "all") {
         const params = new URLSearchParams();
         if (filters?.regionId) params.append('regionId', filters.regionId.toString());
@@ -70,7 +68,6 @@ export default function KeyResults() {
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
-        console.log('📡 KR Quarterly URL:', url);
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -85,7 +82,6 @@ export default function KeyResults() {
         if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
         
         const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
-        console.log('📡 KR URL:', url);
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -96,7 +92,6 @@ export default function KeyResults() {
     },
     retry: 1,
     refetchOnWindowFocus: false,
-    staleTime: 0,
   });
 
   // Remove automatic invalidation - let queries handle their own cache
@@ -263,7 +258,6 @@ export default function KeyResults() {
             <div className="grid gap-6">
               {keyResults && keyResults.length > 0 ? keyResults.map((kr: any, index: number) => {
                 const progress = typeof kr.progress === 'number' ? kr.progress : parseDecimalBR(kr.progress || '0');
-                console.log(`🔍 KR "${kr.title}" - progress field:`, kr.progress, 'type:', typeof kr.progress, 'parsed:', progress);
                 const statusBadge = getStatusBadge(kr.status || 'active');
                 
                 return (
