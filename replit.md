@@ -1,7 +1,7 @@
 # Sistema de Gestão Estratégica - OKRs FIERGS/SESI/SENAI
 
 ## Visão Geral
-Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreamento de objetivos organizacionais, resultados-chave, ações e checkpoints de progresso. Suporta estrutura multi-regional com controle de acesso hierárquico.
+Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreamento de objetivos organizacionais, resultados-chave, ações e checkpoints de progresso. Suporta estrutura multi-regional com controle de acesso hierárquico (admin / gestor / operacional).
 
 ## Preferências do Usuário
 - Estilo de comunicação: Linguagem simples e cotidiana
@@ -21,32 +21,33 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 
 ### Estrutura de Arquivos
 ```
-/client/src/          # Frontend React
-  components/         # Componentes reutilizáveis
-  pages/              # Páginas (Dashboard, Objetivos, KRs, Ações, Checkpoints, Indicadores, Usuários, Relatórios, Configurações)
-  hooks/              # Custom hooks (useAuth, useFilters, useSidebarToggle, useQuarterlyFilter)
-  lib/                # Utilitários (queryClient, formatters, checkpoint-utils, frequency-translations, modal-cleanup, emergency-cleanup)
-                      # Nota: protected-route.tsx e use-modal-cleanup.ts foram removidos (não utilizados)
+/client/src/
+  components/         # Componentes reutilizáveis (sidebar, header, formulários, tabelas, etc.)
+  components/ui/      # Componentes Shadcn/ui
+  pages/              # Páginas: Dashboard, Objetivos, KRs, Ações, Checkpoints, Indicadores, Usuários, Relatórios, Configurações
+  hooks/              # Custom hooks: useAuth, useFilters, useSidebarToggle, useQuarterlyFilter, useMobile, useToast
+  lib/                # Utilitários: queryClient, formatters, checkpoint-utils, frequency-translations, modal-cleanup, emergency-cleanup
   providers/          # Provedores de contexto (AppProviders)
-/server/              # Backend Express
-  index.ts            # Entry point (porta 5000)
-  routes.ts           # Todas as rotas API (~2100 linhas)
-  auth.ts             # Autenticação e autorização (Passport.js + bcrypt)
-  pg-storage.ts       # Implementação de acesso ao banco (PostgreSQL + Drizzle)
-  pg-db.ts            # Conexão com PostgreSQL (Neon serverless)
+/server/
+  index.ts            # Entry point (porta 5000, timezone America/Sao_Paulo)
+  routes.ts           # Todas as rotas da API (~1945 linhas)
+  auth.ts             # Autenticação e autorização (Passport.js + scrypt)
+  pg-storage.ts       # Implementação de acesso ao banco (PostgreSQL + Drizzle) + interface IStorage
+  pg-db.ts            # Conexão com PostgreSQL (DATABASE_URL env var)
   storage.ts          # Re-exporta pg-storage (abstração)
   quarterly-periods.ts # Utilitários de cálculo de períodos trimestrais
-  formatters.ts       # Formatação de números no padrão brasileiro ABNT
+  formatters.ts       # Formatação de números no padrão brasileiro ABNT (server-side)
   vite.ts             # Setup do servidor Vite em desenvolvimento
 /shared/
-  pg-schema.ts        # Schema Drizzle (PostgreSQL) + tipos + schemas Zod
+  pg-schema.ts        # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod
   schema.ts           # Re-exporta pg-schema
+/migrations/          # Migrations históricas (referência apenas; usar db:push para sincronizar)
 ```
 
 ### Banco de Dados - Tabelas Principais
 | Tabela | Descrição |
 |--------|-----------|
-| `users` | Usuários com roles (admin/gestor/operacional) e permissões por arrays JSON |
+| `users` | Usuários com roles (admin/gestor/operacional) e arrays JSON de permissões |
 | `objectives` | Objetivos estratégicos com dono, região, sub-regiões e período |
 | `key_results` | Resultados-chave vinculados a objetivos com metas e progresso |
 | `actions` | Ações vinculadas a key results com responsável, prazo e status |
@@ -66,37 +67,37 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 |--------|------|-----------|
 | POST | `/api/login` | Autenticação |
 | POST | `/api/logout` | Encerrar sessão |
-| POST | `/api/register` | Registro público (aguarda aprovação) |
-| GET | `/api/user` | Usuário atual |
-| GET/POST | `/api/objectives` | Objetivos |
+| POST | `/api/register` | Registro público (aguarda aprovação do gestor) |
+| GET | `/api/user` | Usuário atual autenticado |
+| GET/POST | `/api/objectives` | Listar / criar objetivos |
 | GET/PUT/DELETE | `/api/objectives/:id` | Objetivo específico |
-| GET/POST | `/api/key-results` | Resultados-chave |
+| GET/POST | `/api/key-results` | Listar / criar resultados-chave |
 | GET/PUT/DELETE | `/api/key-results/:id` | KR específico |
-| POST | `/api/key-results/:id/recreate-checkpoints` | Recriar checkpoints |
-| GET/POST | `/api/actions` | Ações |
+| POST | `/api/key-results/:id/recreate-checkpoints` | Recriar checkpoints de um KR |
+| GET/POST | `/api/actions` | Listar / criar ações |
 | GET/PUT/DELETE | `/api/actions/:id` | Ação específica |
 | GET/POST | `/api/actions/:id/comments` | Comentários de ação |
-| GET | `/api/checkpoints` | Checkpoints |
+| GET | `/api/checkpoints` | Listar checkpoints |
 | GET | `/api/checkpoints/:id` | Checkpoint específico |
-| PUT | `/api/checkpoints/:id` | Atualizar checkpoint |
+| PUT | `/api/checkpoints/:id` | Atualizar checkpoint completo |
 | POST | `/api/checkpoints/:id/update` | Atualização simplificada de checkpoint |
 | DELETE | `/api/checkpoints/:id` | Excluir checkpoint |
 | GET | `/api/dashboard/kpis` | KPIs do dashboard |
 | GET | `/api/executive-summary` | Resumo executivo |
-| GET | `/api/users` | Usuários (filtrado por role) |
-| GET | `/api/managers` | Lista de gestores (requer autenticação) |
+| GET | `/api/users` | Usuários (filtrado por role do solicitante) |
+| GET | `/api/managers` | Lista de gestores |
 | GET | `/api/pending-users` | Usuários pendentes de aprovação |
-| POST | `/api/users` | Criar usuário |
+| POST | `/api/users` | Criar usuário (admin/gestor) |
 | PATCH | `/api/users/:id` | Atualizar usuário |
 | DELETE | `/api/users/:id` | Excluir usuário |
 | PATCH | `/api/users/:id/status` | Alterar status ativo/inativo |
 | POST | `/api/users/approve` | Aprovar usuário com permissões |
-| GET | `/api/regions` | Regiões |
-| GET | `/api/sub-regions` | Sub-regiões |
-| GET | `/api/solutions` | Soluções |
-| GET | `/api/service-lines` | Linhas de serviço |
-| GET | `/api/services` | Serviços |
-| GET | `/api/strategic-indicators` | Indicadores estratégicos (requer autenticação) |
+| GET | `/api/regions` | Listar regiões |
+| GET | `/api/sub-regions` | Listar sub-regiões |
+| GET | `/api/solutions` | Listar soluções |
+| GET | `/api/service-lines` | Listar linhas de serviço |
+| GET | `/api/services` | Listar serviços |
+| GET | `/api/strategic-indicators` | Listar indicadores estratégicos |
 | GET | `/api/quarters` | Períodos trimestrais disponíveis |
 | GET | `/api/quarters/stats` | Estatísticas por trimestre |
 | GET | `/api/quarters/:quarter/data` | Dados de um trimestre específico |
@@ -108,12 +109,11 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | POST/PUT/DELETE | `/api/admin/services/:id` | CRUD de serviços (admin) |
 | GET | `/api/admin/export-template` | Download de template Excel |
 | POST | `/api/admin/import-data` | Importação de dados via Excel |
-| POST | `/api/migrate/add-code-fields` | Migração de campos code (admin) |
 
 ### Controle de Acesso por Role
 | Role | Permissões |
 |------|-----------|
-| `admin` | Acesso total a todos os dados e configurações |
+| `admin` | Acesso total a todos os dados, usuários e configurações |
 | `gestor` | Criar/editar objetivos e KRs, gerenciar usuários operacionais de seu time |
 | `operacional` | Visualizar dados do seu escopo, atualizar checkpoints e ações |
 
@@ -131,26 +131,27 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | `/settings` | Configurações | Admin |
 
 ### Formatação de Números
-- O sistema usa formatação brasileira ABNT (vírgula como separador decimal, ponto como separador de milhar)
-- Conversão client-side: `formatBrazilianNumber()`, `parseDecimalBR()` em `client/src/lib/formatters.ts`
-- Conversão server-side: `formatBrazilianNumber()`, `convertBRToDatabase()` em `server/formatters.ts`
+- Padrão brasileiro ABNT (vírgula como separador decimal, ponto como separador de milhar)
+- Client-side: `formatBrazilianNumber()`, `parseDecimalBR()` em `client/src/lib/formatters.ts`
+- Server-side: `formatBrazilianNumber()`, `convertBRToDatabase()` em `server/formatters.ts`
+- A API converte automaticamente valores do formato BR para banco (e vice-versa) nos endpoints de KR e Checkpoint
 
 ### Gerenciamento de Modais
-- Sistema de limpeza automática de modais em `client/src/lib/modal-cleanup.ts`
-- Cleanup de emergência em `client/src/lib/emergency-cleanup.ts`
-- Atalho `Ctrl+Shift+C` para limpeza manual
+- Limpeza automática de overlays Radix UI travados em `client/src/lib/modal-cleanup.ts`
+- Cleanup de emergência disponível em `client/src/lib/emergency-cleanup.ts`
+- Atalho de teclado `Ctrl+Shift+C` para limpeza manual de emergência
 
 ### Checkpoints
 - Gerados automaticamente ao criar um Key Result com base na frequência (semanal, quinzenal, mensal, trimestral)
-- Endpoint `/api/key-results/:id/recreate-checkpoints` para recriar checkpoints
-- Ao marcar um checkpoint como concluído, o `currentValue` do KR é automaticamente atualizado com o valor mais recente
+- Endpoint `/api/key-results/:id/recreate-checkpoints` permite recriar checkpoints
+- Ao concluir um checkpoint, o `currentValue` e `progress` do KR pai são atualizados automaticamente
 
 ## Configuração do Ambiente
 
 ### Variáveis de Ambiente
 | Variável | Descrição | Obrigatória |
 |----------|-----------|-------------|
-| `DATABASE_URL` | URL de conexão PostgreSQL (Neon) | Sim |
+| `DATABASE_URL` | URL de conexão PostgreSQL | Sim |
 | `SESSION_SECRET` | Segredo para sessões (padrão inseguro em dev) | Recomendada |
 
 ### Usuário Padrão
@@ -160,17 +161,18 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 
 ### Executar o Projeto
 ```bash
-npm run dev         # Desenvolvimento (tsx + Vite HMR)
-npm run build       # Build de produção
-npm run start       # Produção (requer build)
-npm run db:push     # Sincronizar schema com banco de dados
+npm run dev         # Desenvolvimento (tsx + Vite HMR) — porta 5000
+npm run build       # Build de produção (frontend Vite + backend esbuild)
+npm run start       # Produção (requer build prévio)
+npm run db:push     # Sincronizar schema Drizzle com banco de dados
 ```
 
 ## Workflow de Desenvolvimento
-O projeto usa um único workflow "Start application" que executa `NODE_ENV=development tsx server/index.ts`. O servidor Express na porta 5000 serve tanto a API quanto o frontend React (via Vite em dev / estático em prod).
+O projeto usa um único workflow "Start application" que executa `npm run dev` → `tsx server/index.ts`. O servidor Express na porta 5000 serve tanto a API REST quanto o frontend React (via Vite HMR em dev / arquivos estáticos em prod).
 
 ## Notas de Manutenção
-- O schema do banco é gerenciado pelo Drizzle ORM via `npm run db:push` (sem migrations manuais)
-- Arquivos de migration em `/migrations/` são referência histórica apenas
-- O sistema de autenticação usa scrypt com salt para hash de senhas (formato `hash.salt`)
-- Comentários automáticos são criados pelo sistema ao criar/alterar ações
+- Schema gerenciado pelo Drizzle ORM via `npm run db:push` (sem migrations manuais)
+- Arquivos em `/migrations/` são referência histórica apenas
+- Autenticação usa scrypt com salt para hash de senhas (formato `hash.salt`)
+- Comentários automáticos do sistema são criados ao alterar ações para status final
+- O timezone do servidor é `America/Sao_Paulo` (UTC-3), configurado no entry point

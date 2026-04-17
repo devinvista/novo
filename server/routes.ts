@@ -43,7 +43,7 @@ function requireRole(roles: string[]) {
   };
 }
 
-export function registerRoutes(app: Express): Server {
+export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
 
@@ -1099,7 +1099,6 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/pending-users", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
-      const currentUserId = req.user?.id;
       const pendingUsers = await storage.getPendingUsers();
       res.json(pendingUsers);
     } catch (error) {
