@@ -305,10 +305,11 @@ export function registerRoutes(app: Express): Server {
         const userRegionIds = currentUser.regionIds || [];
         const userSubRegionIds = currentUser.subRegionIds || [];
         
-        if (validation.regionId && userRegionIds.length > 0 && !userRegionIds.includes(validation.regionId)) {
+        if (validation.regionId && userRegionIds.length > 0 && !(userRegionIds as any[]).includes(validation.regionId)) {
           return res.status(403).json({ message: "Sem permissão para criar objetivo nesta região" });
         }
-        if (validation.subRegionIds && userSubRegionIds.length > 0 && !validation.subRegionIds.some(id => userSubRegionIds.includes(id))) {
+        const subRegionIdsArr = Array.isArray(validation.subRegionIds) ? validation.subRegionIds as any[] : [];
+        if (subRegionIdsArr.length > 0 && userSubRegionIds.length > 0 && !subRegionIdsArr.some((id: any) => (userSubRegionIds as any[]).includes(id))) {
           return res.status(403).json({ message: "Sem permissão para criar objetivo nesta subregião" });
         }
       }
@@ -328,12 +329,12 @@ export function registerRoutes(app: Express): Server {
           const managers = await storage.getManagers();
           
           // Priorizar gestores das sub-regiões específicas
-          if (validation.subRegionIds && validation.subRegionIds.length > 0) {
-            const subRegionManager = managers.find(manager => 
-              manager.subRegionIds && validation.subRegionIds.some(subRegionId => 
-                manager.subRegionIds.includes(subRegionId)
-              )
-            );
+          const valSubRegionIds = Array.isArray(validation.subRegionIds) ? validation.subRegionIds as any[] : [];
+          if (valSubRegionIds.length > 0) {
+            const subRegionManager = managers.find(manager => {
+              const mgrSubIds = Array.isArray(manager.subRegionIds) ? manager.subRegionIds as any[] : [];
+              return mgrSubIds.length > 0 && valSubRegionIds.some((subRegionId: any) => mgrSubIds.includes(subRegionId));
+            });
             if (subRegionManager) {
               responsibleId = subRegionManager.id;
             }
@@ -341,9 +342,10 @@ export function registerRoutes(app: Express): Server {
           
           // Se não encontrou por sub-região, buscar por região
           if (!responsibleId && validation.regionId) {
-            const regionManager = managers.find(manager => 
-              manager.regionIds && manager.regionIds.includes(validation.regionId)
-            );
+            const regionManager = managers.find(manager => {
+              const mgrRegIds = Array.isArray(manager.regionIds) ? manager.regionIds as any[] : [];
+              return mgrRegIds.includes(validation.regionId);
+            });
             if (regionManager) {
               responsibleId = regionManager.id;
             }
@@ -433,7 +435,7 @@ export function registerRoutes(app: Express): Server {
       };
       
       console.log("Fetching key results with filters:", filters);
-      const keyResults = await storage.getKeyResults(undefined, filters);
+      const keyResults = await storage.getKeyResults(filters);
       console.log("Key results found:", keyResults.length);
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do banco para formato brasileiro
@@ -1025,9 +1027,9 @@ export function registerRoutes(app: Express): Server {
       
       // Get all objectives, key results, actions, and checkpoints with real data
       const objectives = await storage.getObjectives(currentUserId ? { currentUserId } : {});
-      const keyResults = await storage.getKeyResults(undefined, currentUserId ? { currentUserId } : {});
+      const keyResults = await storage.getKeyResults(currentUserId ? { currentUserId } : {});
       const actions = await storage.getActions(currentUserId ? { currentUserId } : {});
-      const checkpoints = await storage.getCheckpoints(currentUserId ? { currentUserId } : {});
+      const checkpoints = await storage.getCheckpoints(undefined, currentUserId);
       
       // Calculate overall metrics
       const totalObjectives = objectives.length;
@@ -1624,7 +1626,7 @@ export function registerRoutes(app: Express): Server {
       const id = parseInt(req.params.id);
       
       // Check if indicator is being used
-      const keyResults = await storage.getKeyResults(undefined, {});
+      const keyResults = await storage.getKeyResults({});
       const isUsed = keyResults.some(kr => {
         const indicators = Array.isArray(kr.strategicIndicatorIds) 
           ? kr.strategicIndicatorIds 
@@ -1874,7 +1876,7 @@ export function registerRoutes(app: Express): Server {
       // Check if service line is being used
       const services = await storage.getServices();
       const objectives = await storage.getObjectives({});
-      const keyResults = await storage.getKeyResults(undefined, {});
+      const keyResults = await storage.getKeyResults({});
       
       const hasServices = services.some(s => s.serviceLineId === id);
       const isUsedInObjectives = objectives.some(obj => obj.serviceLineId === id);
@@ -1941,7 +1943,7 @@ export function registerRoutes(app: Express): Server {
       const id = parseInt(req.params.id);
       
       // Check if service is being used
-      const keyResults = await storage.getKeyResults(undefined, {});
+      const keyResults = await storage.getKeyResults({});
       const isUsed = keyResults.some(kr => kr.serviceId === id);
       
       if (isUsed) {
@@ -2033,7 +2035,7 @@ export function registerRoutes(app: Express): Server {
                 endDate: row[3],
                 status: row[4] || "active",
                 regionId: parseInt(row[5]) || null,
-                ownerId: parseInt(row[6]) || req.user.id
+                ownerId: parseInt(row[6]) || req.user!.id
               };
               
               await storage.createObjective(objectiveData);
@@ -2058,11 +2060,12 @@ export function registerRoutes(app: Express): Server {
               const keyResultData = {
                 title: row[0],
                 description: row[1] || "",
-                currentValue: convertBRToDatabase(row[2]?.toString() || "0"),
-                targetValue: convertBRToDatabase(row[3]?.toString() || "100"),
+                currentValue: convertBRToDatabase(row[2]?.toString() || "0").toString(),
+                targetValue: convertBRToDatabase(row[3]?.toString() || "100").toString(),
                 unit: row[4] || "",
                 startDate: row[5],
                 endDate: row[6],
+                frequency: row[9] || "monthly",
                 objectiveId: parseInt(row[7]),
                 strategicIndicatorIds: row[8] || "[]"
               };
@@ -2093,7 +2096,7 @@ export function registerRoutes(app: Express): Server {
                 priority: row[3] || "medium",
                 status: row[4] || "pending",
                 keyResultId: parseInt(row[5]),
-                ownerId: parseInt(row[6]) || req.user.id
+                responsibleId: parseInt(row[6]) || req.user!.id
               };
               
               await storage.createAction(actionData);
