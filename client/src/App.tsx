@@ -28,17 +28,6 @@ function AppContent() {
   useEffect(() => {
     cleanupOnDialogClose();
     setupEmergencyCleanup();
-    
-    // Set up global keyboard shortcut to force cleanup if needed (Dev only)
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && e.ctrlKey && e.shiftKey) {
-        console.log('🔧 Manual modal cleanup triggered');
-        cleanupOnDialogClose();
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   if (!user) {

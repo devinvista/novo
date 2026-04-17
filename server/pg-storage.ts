@@ -48,9 +48,9 @@ export interface IStorage {
   getStrategicIndicators(): Promise<StrategicIndicator[]>;
 
   getAvailableQuarters(): Promise<any[]>;
-  getQuarterlyData(quarter?: string, currentUserId?: number): Promise<any>;
+  getQuarterlyData(quarter?: string, currentUserId?: number, filters?: any): Promise<any>;
   getQuarterlyStats(): Promise<any[]>;
-  getDashboardKPIs(currentUserId?: number): Promise<any>;
+  getDashboardKPIs(currentUserId?: number, filters?: any): Promise<any>;
 
   getObjectives(filters?: any): Promise<any[]>;
   getObjective(id: number, currentUserId?: number): Promise<any | undefined>;
@@ -493,6 +493,10 @@ export class PgStorage implements IStorage {
   }
 
   async deleteObjective(id: number): Promise<void> {
+    const objectiveKeyResults = await db.select({ id: keyResults.id }).from(keyResults).where(eq(keyResults.objectiveId, id));
+    for (const kr of objectiveKeyResults) {
+      await this.deleteKeyResult(kr.id);
+    }
     await db.delete(objectives).where(eq(objectives.id, id));
   }
 
@@ -608,6 +612,12 @@ export class PgStorage implements IStorage {
   }
 
   async deleteKeyResult(id: number): Promise<void> {
+    const krActions = await db.select({ id: actions.id }).from(actions).where(eq(actions.keyResultId, id));
+    for (const action of krActions) {
+      await db.delete(actionComments).where(eq(actionComments.actionId, action.id));
+    }
+    await db.delete(actions).where(eq(actions.keyResultId, id));
+    await db.delete(checkpoints).where(eq(checkpoints.keyResultId, id));
     await db.delete(keyResults).where(eq(keyResults.id, id));
   }
 

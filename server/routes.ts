@@ -8,8 +8,6 @@ import { z } from "zod";
 import { formatDecimalBR, formatNumberBR, convertBRToDatabase, formatBrazilianNumber } from "./formatters";
 import * as XLSX from "xlsx";
 import multer from "multer";
-import { db } from "./pg-db";
-import { sql as pgSql } from "drizzle-orm";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -78,16 +76,11 @@ export function registerRoutes(app: Express): Server {
       let regions = await storage.getRegions();
       
       if (user) {
-        console.log(`Found ${regions.length} regions for user ${user.username} (role: ${user.role})`);
-        
-        // Aplicar filtro regional para usuários não-admin
         if (user.role !== 'admin') {
-        const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
-        if (userRegionIds.length > 0) {
-          // Filtrar apenas as regiões que o usuário tem acesso
-          regions = regions.filter(region => userRegionIds.includes(region.id));
-          console.log(`Filtered to ${regions.length} regions for non-admin user`);
-        }
+          const userRegionIds = Array.isArray(user.regionIds) ? user.regionIds : [];
+          if (userRegionIds.length > 0) {
+            regions = regions.filter(region => userRegionIds.includes(region.id));
+          }
         }
       }
       
@@ -350,7 +343,6 @@ export function registerRoutes(app: Express): Server {
             }
           }
           
-          console.log(`🔍 Responsável definido automaticamente: ${responsibleId} para região ${validation.regionId}, sub-regiões: ${validation.subRegionIds}`);
         } catch (error) {
           console.error('Erro ao buscar gestores para definir responsável:', error);
           // Em caso de erro, manter o criador como responsável
@@ -378,19 +370,13 @@ export function registerRoutes(app: Express): Server {
   app.put("/api/objectives/:id", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      console.log(`🔍 Atualizando objetivo ${id} - Dados recebidos:`, JSON.stringify(req.body, null, 2));
-      
       const validation = insertObjectiveSchema.partial().parse(req.body);
-      console.log(`✅ Dados validados:`, JSON.stringify(validation, null, 2));
-      
-      
       const existingObjective = await storage.getObjective(id, req.user.id);
       if (!existingObjective) {
         return res.status(404).json({ message: "Objetivo não encontrado ou sem acesso" });
       }
       
       const objective = await storage.updateObjective(id, validation);
-      console.log(`💾 Objetivo atualizado:`, JSON.stringify(objective, null, 2));
       res.json(objective);
     } catch (error) {
       console.error(`❌ Erro ao atualizar objetivo ${req.params.id}:`, error);
@@ -428,9 +414,7 @@ export function registerRoutes(app: Express): Server {
         currentUserId: req.user.id, // Adicionar controle de acesso
       };
       
-      console.log("Fetching key results with filters:", filters);
       const keyResults = await storage.getKeyResults(filters);
-      console.log("Key results found:", keyResults.length);
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores do banco para formato brasileiro
       // Usar formatação inteligente (sem decimais desnecessários)
@@ -440,17 +424,6 @@ export function registerRoutes(app: Express): Server {
         targetValue: formatBrazilianNumber(kr.targetValue || "0"),
         progress: kr.progress !== null && kr.progress !== undefined ? parseFloat(kr.progress.toString()) : 0
       }));
-      
-      // Debug the specific Key Result Teste
-      const testKR = keyResultsBR.find(kr => kr.title === 'Key Result Teste');
-      if (testKR) {
-        console.log('🔍 API Response - Key Result Teste (Formato BR):', {
-          progress: testKR.progress,
-          progressType: typeof testKR.progress,
-          currentValue: testKR.currentValue,
-          targetValue: testKR.targetValue
-        });
-      }
       
       // Disable cache to force fresh data
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -506,9 +479,6 @@ export function registerRoutes(app: Express): Server {
       } else if (today > endDate && 0 < parseFloat(validation.targetValue.toString())) {
         status = 'delayed';
       }
-      
-      console.log('Validation data:', validation);
-      console.log('Processing key result with status:', status);
       
       const keyResult = await storage.createKeyResult({
         ...validation,
@@ -612,7 +582,6 @@ export function registerRoutes(app: Express): Server {
         currentUserId: req.user?.id
       };
       
-      console.log(`Found ${req.user ? 'logged in user' : 'no user'} for actions query`);
       const actions = await storage.getActions(filters);
       res.json(actions);
     } catch (error) {
@@ -622,35 +591,23 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/actions", requireAuth, async (req: any, res) => {
-    console.log("Action creation request:", {
-      authenticated: req.isAuthenticated(),
-      userId: req.user?.id,
-      body: req.body
-    });
-    
     try {
-      // Clean up null values
       const requestData = { ...req.body };
       if (requestData.responsibleId === null) requestData.responsibleId = undefined;
       if (requestData.dueDate === null || requestData.dueDate === "") requestData.dueDate = undefined;
       
       const validation = insertActionSchema.parse(requestData);
-      console.log("Validated action data:", validation);
       
-      // Verificar se o usuário tem acesso ao key result
       const keyResult = await storage.getKeyResult(validation.keyResultId, req.user.id);
       if (!keyResult) {
         return res.status(403).json({ message: "Sem permissão para criar ação neste resultado-chave" });
       }
       
       const action = await storage.createAction(validation);
-      console.log("Created action:", action);
-      
       res.status(201).json(action);
     } catch (error) {
       console.error("Error creating action:", error);
       if (error instanceof z.ZodError) {
-        console.log("Validation errors:", error.errors);
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
       res.status(500).json({ message: "Erro ao criar ação" });
@@ -687,8 +644,6 @@ export function registerRoutes(app: Express): Server {
       }
       
       const validation = insertActionSchema.partial().parse(requestData);
-      console.log("Updating action with data:", validation);
-      
       const updatedAction = await storage.updateAction(id, validation);
       
       // If there's a completion comment, add it as a special comment
@@ -707,13 +662,10 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      console.log("Updated action:", updatedAction);
-      
       res.json(updatedAction);
     } catch (error) {
       console.error("Error updating action:", error);
       if (error instanceof z.ZodError) {
-        console.log("Validation errors:", error.errors);
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
       res.status(500).json({ message: "Erro ao atualizar ação" });
@@ -792,10 +744,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/checkpoints", requireAuth, async (req: any, res) => {
     try {
       const keyResultId = req.query.keyResultId ? parseInt(req.query.keyResultId as string) : undefined;
-      console.log(`Fetching checkpoints for keyResultId: ${keyResultId}`);
-      // Use currentUserId for hierarchical access control
       const checkpoints = await storage.getCheckpoints(keyResultId, req.user.id);
-      console.log(`Found ${checkpoints.length} checkpoints`);
       
       // CONVERSÃO PADRÃO BRASILEIRO: Converter valores para formato brasileiro
       // Usar formatação inteligente (sem decimais desnecessários)
@@ -869,15 +818,10 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/checkpoints/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      console.log(`🔍 GET /api/checkpoints/${id} called by user ${req.user.id}`);
-      
       const checkpoint = await storage.getCheckpoint(id, req.user.id);
       if (!checkpoint) {
-        console.log(`❌ Checkpoint ${id} not found for user ${req.user.id}`);
         return res.status(404).json({ message: "Checkpoint não encontrado ou sem acesso" });
       }
-      
-      console.log(`✅ Found checkpoint ${id} for keyResultId: ${checkpoint.keyResultId}`);
       res.json(checkpoint);
     } catch (error) {
       console.error(`Error fetching checkpoint ${req.params.id}:`, error);
@@ -890,17 +834,12 @@ export function registerRoutes(app: Express): Server {
       const id = parseInt(req.params.id);
       const { actualValue, notes, status, completedDate, completedAt } = req.body;
       
-      console.log(`🚀 PUT /api/checkpoints/${id} called with:`, { actualValue, notes, status, completedDate, completedAt });
-      
       const existingCheckpoint = await storage.getCheckpoint(id, req.user.id);
       if (!existingCheckpoint) {
-        console.log(`❌ Checkpoint ${id} not found for user ${req.user.id}`);
         return res.status(404).json({ message: "Checkpoint não encontrado ou sem acesso" });
       }
       
-      console.log(`✅ Found checkpoint ${id} for keyResultId: ${existingCheckpoint.keyResultId}`);
-      
-      // Calculate progress - CORREÇÃO: usar convertBRToDatabase para conversão adequada
+      // Calculate progress
       const targetValue = convertBRToDatabase(existingCheckpoint.targetValue);
       const actual = convertBRToDatabase(actualValue);
       const progress = targetValue > 0 ? (actual / targetValue) * 100 : 0;
@@ -928,63 +867,36 @@ export function registerRoutes(app: Express): Server {
       // Update Key Result currentValue with the latest completed checkpoint value
       if (status === 'completed' || !status) {
         try {
-          console.log(`🔄 Updating Key Result currentValue for keyResultId: ${existingCheckpoint.keyResultId}`);
-          
-          // Get all checkpoints for this key result
           const allCheckpoints = await storage.getCheckpoints(
             existingCheckpoint.keyResultId,
-            req.user.id 
+            req.user.id
           );
-          
-          console.log(`📊 Found ${allCheckpoints.length} total checkpoints for KR ${existingCheckpoint.keyResultId}`);
-          
-          // Filter only completed checkpoints and sort by due date (most recent first)
+
           const completedCheckpoints = allCheckpoints
             .filter((cp: any) => {
-              // The checkpoint data is directly in cp, not nested
               const isCompleted = cp.status === 'completed';
-              const actualValue = cp.actualValue;
-              const numValue = actualValue ? convertBRToDatabase(actualValue) : 0;
-              
-              console.log(`🔍 Checkpoint ${cp.id}: status=${cp.status}, actualValue=${actualValue}, numValue=${numValue}`);
-              
-              return isCompleted && actualValue && numValue > 0;
+              const cpActualValue = cp.actualValue;
+              const numValue = cpActualValue ? convertBRToDatabase(cpActualValue) : 0;
+              return isCompleted && cpActualValue && numValue > 0;
             })
             .sort((a: any, b: any) => {
-              const dateA = new Date(a.dueDate).getTime();
-              const dateB = new Date(b.dueDate).getTime();
-              return dateB - dateA; // Most recent first
+              return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
             });
-          
-          console.log(`✅ Found ${completedCheckpoints.length} completed checkpoints with values`);
-          
-          // Update Key Result with the most recent completed checkpoint value
+
           if (completedCheckpoints.length > 0) {
-            const latestCheckpoint = completedCheckpoints[0];
-            const latestValue = latestCheckpoint.actualValue;
-            
-            console.log(`🎯 Updating KR ${existingCheckpoint.keyResultId} currentValue to: ${latestValue}`);
-            
-            // Get current key result to calculate new progress
+            const latestValue = completedCheckpoints[0].actualValue;
             const currentKR = await storage.getKeyResult(existingCheckpoint.keyResultId);
-            const targetValue = convertBRToDatabase(currentKR.targetValue || '0');
+            const krTargetValue = convertBRToDatabase(currentKR.targetValue || '0');
             const currentValueNum = convertBRToDatabase(latestValue || '0');
-            const newProgress = targetValue > 0 ? (currentValueNum / targetValue) * 100 : 0;
-            
-            console.log(`📊 Calculating progress: ${currentValueNum}/${targetValue} = ${newProgress}%`);
-            
+            const newProgress = krTargetValue > 0 ? (currentValueNum / krTargetValue) * 100 : 0;
+
             await storage.updateKeyResult(existingCheckpoint.keyResultId, {
               currentValue: latestValue.toString(),
               progress: newProgress.toString()
             });
-            
-            console.log(`✅ Successfully updated Key Result ${existingCheckpoint.keyResultId} currentValue to ${latestValue} and progress to ${newProgress}%`);
-          } else {
-            console.log(`⚠️ No completed checkpoints with values found for KR ${existingCheckpoint.keyResultId}`);
           }
         } catch (updateError) {
-          console.error('❌ Error updating Key Result currentValue:', updateError);
-          // Don't fail the checkpoint update if KR update fails
+          console.error('Error updating Key Result currentValue:', updateError);
         }
       }
       
@@ -1114,7 +1026,11 @@ export function registerRoutes(app: Express): Server {
         },
         distribution: {
           objectivesByRegion,
-          activeQuarter: "2025-T3"
+          activeQuarter: (() => {
+            const now = new Date();
+            const q = Math.floor(now.getMonth() / 3) + 1;
+            return `${now.getFullYear()}-T${q}`;
+          })()
         },
         trends: {
           objectivesCreatedThisQuarter: objectives.filter(obj => {
@@ -1136,60 +1052,6 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error generating executive summary:", error);
       res.status(500).json({ message: "Erro ao gerar resumo executivo" });
-    }
-  });
-
-  // Migration endpoint (temporary) - ADD CODE FIELDS
-  app.post("/api/migrate/add-code-fields", requireAuth, async (req: any, res) => {
-    try {
-      // Only admin can run migrations
-      if (req.user?.role !== 'admin') {
-        return res.status(403).json({ message: "Apenas administradores podem executar migrações" });
-      }
-
-      const migration = req.body.execute || false;
-      if (!migration) {
-        return res.json({ 
-          message: "Migração preparada. Envie { \"execute\": true } para executar",
-          changes: [
-            "Adicionar campo 'code' na tabela solutions",
-            "Adicionar campo 'code' na tabela service_lines", 
-            "Adicionar campo 'code' na tabela services",
-            "Adicionar campo 'code' na tabela strategic_indicators",
-            "Adicionar campo 'unit' na tabela strategic_indicators",
-            "Gerar códigos padrão baseados nos nomes existentes",
-            "Adicionar constraints de unicidade"
-          ]
-        });
-      }
-
-      console.log("🚀 Starting migration to add code fields...");
-      
-      // Schema is managed by drizzle-kit push - code fields already exist in pg-schema
-      console.log("✅ Code fields already part of PostgreSQL schema");
-      
-      // Update existing records with default codes if empty
-      await db.execute(pgSql`UPDATE solutions SET code = UPPER(SUBSTRING(REPLACE(name, ' ', ''), 1, 8)) WHERE code = '' OR code IS NULL`);
-      await db.execute(pgSql`UPDATE service_lines SET code = UPPER(SUBSTRING(REPLACE(name, ' ', ''), 1, 8)) WHERE code = '' OR code IS NULL`);
-      await db.execute(pgSql`UPDATE services SET code = UPPER(SUBSTRING(REPLACE(name, ' ', ''), 1, 8)) WHERE code = '' OR code IS NULL`);
-      await db.execute(pgSql`UPDATE strategic_indicators SET code = UPPER(SUBSTRING(REPLACE(name, ' ', ''), 1, 8)) WHERE code = '' OR code IS NULL`);
-      
-      console.log("✅ Updated existing records with default codes");
-      console.log("✅ Unique constraints already handled by schema");
-      
-      res.json({ 
-        success: true,
-        message: "Migração executada com sucesso! Campos 'code' adicionados a todas as tabelas de configuração.",
-        tablesUpdated: ["solutions", "service_lines", "services", "strategic_indicators"]
-      });
-      
-    } catch (error) {
-      console.error("❌ Migration failed:", error);
-      res.status(500).json({ 
-        success: false,
-        message: "Erro ao executar migração", 
-        error: error instanceof Error ? error.message : "Erro desconhecido"
-      });
     }
   });
 
@@ -1333,19 +1195,13 @@ export function registerRoutes(app: Express): Server {
       const id = parseInt(req.params.id);
       const userData = req.body;
       
-      console.log(`Updating user ${id} with data:`, userData);
-
-      // Verificar se o usuário pode editar este usuário
       const targetUser = await storage.getUser(id);
       if (!targetUser) {
-        console.log(`User ${id} not found`);
         return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
-      // Gestores só podem editar usuários operacionais de seu time
       if (req.user?.role === "gestor") {
         if (targetUser.role !== "operacional" || targetUser.gestorId !== req.user.id) {
-          console.log(`User ${req.user.id} (${req.user.role}) trying to edit user ${id} (${targetUser.role})`);
           return res.status(403).json({ message: "Sem permissão para editar este usuário" });
         }
 
@@ -1401,18 +1257,13 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
-      // Hash password se fornecida
       if (userData.password && userData.password.trim() !== "") {
-        console.log("Hashing new password");
         userData.password = await hashPassword(userData.password);
       } else {
-        console.log("No password provided, removing from update data");
-        delete userData.password; // Não atualizar senha se não fornecida
+        delete userData.password;
       }
 
-      console.log("Final update data:", { ...userData, password: userData.password ? "[HIDDEN]" : undefined });
       const user = await storage.updateUser(id, userData);
-      console.log("User updated successfully");
       res.json(user);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -1541,7 +1392,6 @@ export function registerRoutes(app: Express): Server {
 
       // Aprovar usuário com permissões herdadas/configuradas
       const user = await storage.approveUserWithPermissions(id, req.user!.id, finalPermissions);
-      console.log("User approved successfully with inherited permissions", finalPermissions);
       res.json(user);
     } catch (error) {
       console.error("Error approving user:", error);
