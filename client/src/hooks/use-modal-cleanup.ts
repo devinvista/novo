@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { forceRemoveAllOverlays } from '@/lib/modal-debug';
 
 /**
  * Hook para limpeza forçada de overlays modais que ficam "presos" na DOM
@@ -71,7 +70,6 @@ export function useModalCleanup(isOpen: boolean) {
       // Executa a limpeza mais robusta após um delay
       const delayedCleanup = setTimeout(() => {
         immediateCleanup();
-        forceRemoveAllOverlays();
       }, 100);
       
       return () => clearTimeout(delayedCleanup);

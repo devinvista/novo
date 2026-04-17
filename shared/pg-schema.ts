@@ -21,8 +21,6 @@ export const users = pgTable("users", {
   approved: boolean("approved").notNull().default(false),
   approvedAt: timestamp("approved_at"),
   approvedBy: integer("approved_by"),
-  approvedAttimestamp: timestamp("approvedAt"),
-  approvedByInt: integer("approvedBy"),
 });
 
 export const objectives = pgTable("objectives", {
@@ -200,8 +198,6 @@ export const userFormSchema = insertUserSchema.omit({
   createdAt: true,
   approvedAt: true,
   approvedBy: true,
-  approvedAttimestamp: true,
-  approvedByInt: true
 });
 
 export const objectiveFormSchema = insertObjectiveSchema.omit({

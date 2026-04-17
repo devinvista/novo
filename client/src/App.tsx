@@ -10,6 +10,7 @@ import Objectives from '@/pages/objectives';
 import KeyResults from '@/pages/key-results';
 import Actions from '@/pages/actions';
 import Checkpoints from '@/pages/checkpoints';
+import Indicators from '@/pages/indicators';
 import Users from '@/pages/users';
 import Reports from '@/pages/reports';
 import Settings from '@/pages/settings';
@@ -54,6 +55,7 @@ function AppContent() {
           <Route path="/key-results" component={KeyResults} />
           <Route path="/actions" component={Actions} />
           <Route path="/checkpoints" component={Checkpoints} />
+          <Route path="/indicators" component={Indicators} />
           <Route path="/users" component={Users} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />

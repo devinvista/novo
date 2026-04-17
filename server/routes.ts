@@ -231,7 +231,6 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/quarters/stats", requireAuth, async (req: any, res) => {
     try {
-      const period = req.query.period as string || 'all';
       const stats = await storage.getQuarterlyStats();
       res.json(stats);
     } catch (error) {
@@ -384,11 +383,6 @@ export function registerRoutes(app: Express): Server {
       const validation = insertObjectiveSchema.partial().parse(req.body);
       console.log(`✅ Dados validados:`, JSON.stringify(validation, null, 2));
       
-      // Verificar se subRegionIds foi enviado e migrar para sub_region_ids
-      if (validation.subRegionIds && Array.isArray(validation.subRegionIds) && validation.subRegionIds.length > 0) {
-        console.log(`🔄 Migrando subRegionIds para sub_region_ids:`, validation.subRegionIds);
-        validation.subRegionIds = validation.subRegionIds;
-      }
       
       const existingObjective = await storage.getObjective(id, req.user.id);
       if (!existingObjective) {
@@ -1552,29 +1546,6 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error approving user:", error);
       res.status(500).json({ message: "Erro ao aprovar usuário", error: error instanceof Error ? error.message : 'Erro desconhecido' });
-    }
-  });
-
-  // TEST ENDPOINT - for debugging KR progress calculation
-  app.post("/api/test-kr-progress/:keyResultId", requireAuth, async (req, res) => {
-    try {
-      const keyResultId = parseInt(req.params.keyResultId);
-      console.log(`Testing KR progress calculation for KR ${keyResultId}`);
-      
-      // Force update progress calculation
-      await (storage as any).updateKeyResultProgressFromCheckpoints(keyResultId);
-      
-      // Get updated KR
-      const keyResult = await storage.getKeyResult(keyResultId);
-      
-      res.json({
-        success: true,
-        keyResult,
-        message: `Progress recalculated for KR ${keyResultId}`
-      });
-    } catch (error) {
-      console.error("Test error:", error);
-      res.status(500).json({ message: "Erro no teste", error: error instanceof Error ? error.message : 'Erro desconhecido' });
     }
   });
 

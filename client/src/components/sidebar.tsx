@@ -2,7 +2,6 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { 
-  Target, 
   BarChart3, 
   Goal, 
   Key, 
@@ -12,7 +11,8 @@ import {
   Users, 
   Settings, 
   LogOut,
-  User
+  User,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -30,10 +30,13 @@ export default function Sidebar() {
     { href: "/key-results", icon: Key, label: "Resultados-Chave" },
     { href: "/actions", icon: CheckSquare, label: "Ações" },
     { href: "/checkpoints", icon: Flag, label: "Checkpoints" },
+    { href: "/indicators", icon: TrendingUp, label: "Indicadores" },
     { href: "/reports", icon: Activity, label: "Relatórios" },
   ];
 
-  const adminItems = [];
+  const adminGestorItems = [
+    { href: "/users", icon: Users, label: "Usuários" },
+  ];
 
   const superAdminItems = [
     { href: "/settings", icon: Settings, label: "Configurações" },
@@ -99,14 +102,30 @@ export default function Sidebar() {
           );
         })}
 
-        {user?.role === "admin" && (
+        {(user?.role === "admin" || user?.role === "gestor") && (
           <div className="pt-4 border-t border-sidebar-border mt-4">
-            {/* Configurações - apenas para administradores */}
-            {superAdminItems.map((item) => {
+            {adminGestorItems.map((item) => {
               const Icon = item.icon;
               return (
-                <Link 
-                  key={item.href} 
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center px-4 py-3 rounded-lg font-medium transition-colors ${
+                    isActive(item.href)
+                      ? "text-sidebar-primary bg-sidebar-primary/10"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }`}
+                >
+                  <Icon className="mr-3 h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+            {user?.role === "admin" && superAdminItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
                   href={item.href}
                   className={`flex items-center px-4 py-3 rounded-lg font-medium transition-colors ${
                     isActive(item.href)
