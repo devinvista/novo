@@ -22,23 +22,23 @@ import CheckpointUpdater from "./checkpoint-updater";
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function EnhancedDashboard() {
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery<any>({
     queryKey: ["/api/dashboard/kpis"],
   });
 
-  const { data: objectives } = useQuery({
+  const { data: objectives } = useQuery<any[]>({
     queryKey: ["/api/objectives"],
   });
 
-  const { data: keyResults } = useQuery({
+  const { data: keyResults } = useQuery<any[]>({
     queryKey: ["/api/key-results"],
   });
 
-  const { data: actions } = useQuery({
+  const { data: actions } = useQuery<any[]>({
     queryKey: ["/api/actions"],
   });
 
-  const { data: checkpoints } = useQuery({
+  const { data: checkpoints } = useQuery<any[]>({
     queryKey: ["/api/checkpoints"],
   });
 

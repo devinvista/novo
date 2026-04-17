@@ -1,85 +1,128 @@
-# replit.md
+# Sistema de Gestão Estratégica - OKRs FIERGS/SESI/SENAI
 
-## Overview
-This project is a comprehensive OKR (Objectives and Key Results) management system designed to track organizational objectives, key results, actions, and milestones across various regions and service lines. Its primary purpose is to provide an intuitive platform for strategic management, improving organizational alignment and performance, enabling real-time progress tracking and extensive reporting.
+## Visão Geral
+Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreamento de objetivos organizacionais, resultados-chave, ações e checkpoints de progresso. Suporta estrutura multi-regional com controle de acesso hierárquico.
 
-**Recent Updates (January 2025)**: Successfully implemented code field functionality across all configuration entities with full CRUD operations and database migration.
+## Preferências do Usuário
+- Estilo de comunicação: Linguagem simples e cotidiana
+- Idioma: Português brasileiro (toda interface, documentação e textos)
 
-## User Preferences
-Estilo de comunicação preferido: Linguagem simples e cotidiana.
-Idioma do projeto: Português brasileiro - Toda interface, documentação e textos convertidos para português brasileiro.
+## Arquitetura do Sistema
 
-## System Architecture
+### Stack Tecnológico
+- **Frontend**: React 18 + TypeScript, Vite, Tailwind CSS, Shadcn/ui (Radix UI)
+- **Backend**: Node.js + Express.js (TypeScript, ES modules)
+- **Banco de Dados**: PostgreSQL via Neon (serverless)
+- **ORM**: Drizzle ORM com drizzle-zod para validação
+- **Autenticação**: Passport.js (estratégia local) + express-session + MemoryStore
+- **Estado**: TanStack Query v5 para estado do servidor
+- **Roteamento**: Wouter (frontend)
+- **Formulários**: React Hook Form + Zod
 
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript, built with Vite.
-- **UI Framework**: Shadcn/ui (based on Radix UI) with Tailwind CSS.
-- **State Management**: TanStack Query (React Query) for server state.
-- **Routing**: Wouter.
-- **Form Handling**: React Hook Form with Zod validation.
-- **UI/UX Decisions**:
-    - **Color Scheme**: Uses a palette based on FIERGS institutional colors (FIERGS Blue, SESI Green, IEL Green, SENAI Orange, CIERGS Blue).
-    - **Component Design**: Responsive sidebar navigation, KPI card dashboards, data tables with sorting/filtering/searching, modal forms for CRUD operations, progress charts, activity feeds, and a fully responsive design for all screen sizes (e.g., optimized action dialog with adaptive layout, breakpoints, and intelligent text wrapping for comments).
-    - **Language**: All UI elements are in Brazilian Portuguese.
-    - **Number Formatting**: Uses Brazilian decimal formatting (comma as decimal separator) with client-side and server-side converters.
-    - **Modal Management**: Automatic modal cleanup to prevent UI blockage.
-    - **Visual Enhancements**: Improved visual representation for checkpoints with circular progress indicators and subtle timeline designs.
-
-### Backend Architecture
-- **Runtime**: Node.js with Express.js (TypeScript, ES modules).
-- **Authentication**: Passport.js with local strategy and session-based authentication (session stored in memory). Node.js crypto module for password hashing (scrypt).
-- **Core Functionality**:
-    - **Authentication System**: Session-based with secure password hashing, role-based access control (admin, manager, operational), protected routes.
-    - **OKR Management**: Objectives, Key Results (with strategic indicators), Actions (with priority and status - "concluída" and "cancelada" are final), and Milestones (progress updates).
-    - **Organizational Structure**: Supports Solutions, Service Lines, Services, Regions (10 predefined), and Sub-regions (21 specific).
-    - **Data Flow**: Authenticated API requests, Express middleware, Drizzle ORM for type-safe database queries, and React Query for caching.
-    - **Role-Based Access Control**: Granular permissions based on user roles and regional/hierarchical assignments.
-    - **Quarterly Period Management**: Automatic date-based filtering and reporting across quarters.
-    - **Date Validation**: Comprehensive validation ensuring Key Result dates are within Objective ranges and Action due dates are before Key Result end dates.
-    - **User Management**: Hierarchical user approval, automatic inheritance of permissions, and secure user deletion with cascading functionality.
-    - **Configuration Management**: Full CRUD operations for all system configurations (Solutions, Service Lines, Services, Strategic Indicators, Regions, Sub-regions) with mandatory code fields for improved organization and reference.
-
-### Database Architecture
-- **Database**: MySQL.
-- **ORM**: Drizzle ORM for type-safe queries.
-- **Schema Management**: MySQL schema with appropriate relationships and constraints, using snake_case for most fields and camelCase for JSON fields.
-- **Connection**: MySQL2 connection pool with secure authentication.
-- **Optimization**: LRU cache implemented for frequent queries, connection pool optimizer, and query monitoring.
-
-## External Dependencies
-
-### Backend/Server
-- **express**: Web framework for Node.js.
-- **drizzle-orm**: Type-safe ORM for MySQL.
-- **drizzle-zod**: Drizzle integration with Zod for validation.
-- **mysql2**: MySQL client for Node.js.
-- **passport**: Authentication middleware with local strategy.
-- **express-session**: HTTP session management.
-- **express-mysql-session**: MySQL session store.
-- **zod**: Schema validation and runtime type checking.
-- **multer**: Middleware for file uploads.
-- **xlsx**: Reading and writing Excel files.
-- **lru-cache**: LRU cache for performance optimization.
-- **ws**: WebSocket for real-time communication.
-
-### Frontend/Client
-- **react**: JavaScript library for user interfaces.
-- **@tanstack/react-query**: Server state management.
-- **react-hook-form**: Form handling and validation.
-- **wouter**: Minimalist router for React.
-- **date-fns**: Date utility library.
-- **clsx**: Utility for conditional CSS classes.
-- **tailwind-merge**: Merging Tailwind CSS classes.
-- **class-variance-authority**: Component variant management.
-- **@radix-ui/*****: Accessible UI primitives.
-- **lucide-react**: SVG icon library.
-- **react-icons**: Additional icons.
-- **recharts**: Charting and data visualization library.
-- **framer-motion**: Animations and transitions.
-- **embla-carousel-react**: Carousel component.
-- **react-day-picker**: Date picker.
-- **input-otp**: OTP input component.
-- **vaul**: Responsive drawer/modal.
-- **react-resizable-panels**: Resizable panels.
-- **next-themes**: Light/dark theme management.
+### Estrutura de Arquivos
 ```
+/client/src/          # Frontend React
+  components/         # Componentes reutilizáveis
+  pages/              # Páginas (Dashboard, Objetivos, KRs, Ações, Checkpoints, Usuários, Relatórios, Configurações)
+  hooks/              # Custom hooks (useAuth, useFilters, etc.)
+  lib/                # Utilitários (queryClient, formatters, etc.)
+  providers/          # Provedores de contexto
+/server/              # Backend Express
+  index.ts            # Entry point (porta 5000)
+  routes.ts           # Todas as rotas API
+  auth.ts             # Autenticação e autorização
+  pg-storage.ts       # Implementação de acesso ao banco (PostgreSQL)
+  pg-db.ts            # Conexão com PostgreSQL
+  storage.ts          # Re-exporta pg-storage (abstração)
+  quarterly-periods.ts # Utilitários de cálculo de períodos trimestrais
+  formatters.ts       # Formatação de números no padrão brasileiro
+  vite.ts             # Setup do servidor Vite em desenvolvimento
+/shared/
+  pg-schema.ts        # Schema Drizzle (PostgreSQL) + tipos + schemas Zod
+  schema.ts           # Re-exporta pg-schema
+```
+
+### Banco de Dados - Tabelas Principais
+| Tabela | Descrição |
+|--------|-----------|
+| `users` | Usuários com roles (admin/gestor/operacional) e permissões por arrays JSON |
+| `objectives` | Objetivos estratégicos com dono, região, sub-regiões e período |
+| `key_results` | Resultados-chave vinculados a objetivos com metas e progresso |
+| `actions` | Ações vinculadas a key results com responsável, prazo e status |
+| `checkpoints` | Marcos de progresso gerados automaticamente por frequência do KR |
+| `action_comments` | Comentários em ações |
+| `regions` | Regiões organizacionais |
+| `sub_regions` | Sub-regiões vinculadas a regiões |
+| `solutions` | Soluções FIERGS (SESI, SENAI, IEL, etc.) |
+| `service_lines` | Linhas de serviço por solução |
+| `services` | Serviços por linha de serviço |
+| `strategic_indicators` | Indicadores estratégicos globais |
+| `quarterly_periods` | Períodos trimestrais de controle |
+| `activities` | Log de atividades do sistema |
+
+### API - Rotas Principais
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/api/login` | Autenticação |
+| POST | `/api/logout` | Encerrar sessão |
+| GET | `/api/user` | Usuário atual |
+| GET/POST | `/api/objectives` | Objetivos |
+| GET/PUT/DELETE | `/api/objectives/:id` | Objetivo específico |
+| GET/POST | `/api/key-results` | Resultados-chave |
+| GET/PUT/DELETE | `/api/key-results/:id` | KR específico |
+| GET/POST | `/api/actions` | Ações |
+| GET/PUT/DELETE | `/api/actions/:id` | Ação específica |
+| GET | `/api/checkpoints` | Checkpoints |
+| PUT | `/api/checkpoints/:id` | Atualizar checkpoint |
+| GET | `/api/dashboard/kpis` | KPIs do dashboard |
+| GET | `/api/executive-summary` | Resumo executivo |
+| GET | `/api/users` | Usuários |
+| GET | `/api/managers` | Lista de gestores |
+| GET | `/api/regions` | Regiões |
+| GET | `/api/sub-regions` | Sub-regiões |
+| GET | `/api/solutions` | Soluções |
+| GET | `/api/service-lines` | Linhas de serviço |
+| GET | `/api/services` | Serviços |
+| GET | `/api/strategic-indicators` | Indicadores estratégicos |
+| GET | `/api/quarters` | Períodos trimestrais disponíveis |
+
+### Controle de Acesso por Role
+| Role | Permissões |
+|------|-----------|
+| `admin` | Acesso total a todos os dados e configurações |
+| `gestor` | Criar/editar objetivos e KRs, gerenciar usuários operacionais de seu time |
+| `operacional` | Visualizar dados do seu escopo, atualizar checkpoints e ações |
+
+### Formatação de Números
+- O sistema usa formatação brasileira (vírgula como separador decimal)
+- Conversão client-side: `formatBrazilianNumber()`, `parseDecimalBR()` em `client/src/lib/formatters.ts`
+- Conversão server-side: `formatDecimalBR()`, `convertBRToDatabase()` em `server/formatters.ts`
+
+### Gerenciamento de Modais
+- Sistema de limpeza automática de modais em `client/src/lib/modal-cleanup.ts`
+- Cleanup de emergência em `client/src/lib/emergency-cleanup.ts`
+- Atalho `Ctrl+Shift+C` para limpeza manual (modo dev)
+
+## Configuração do Ambiente
+
+### Variáveis de Ambiente
+| Variável | Descrição | Obrigatória |
+|----------|-----------|-------------|
+| `DATABASE_URL` | URL de conexão PostgreSQL (Neon) | Sim |
+| `SESSION_SECRET` | Segredo para sessões (padrão inseguro em dev) | Recomendada |
+
+### Usuário Padrão
+- **Username**: `admin`
+- **Senha**: `admin123`
+- **Role**: admin
+
+### Executar o Projeto
+```bash
+npm run dev         # Desenvolvimento (tsx + Vite HMR)
+npm run build       # Build de produção
+npm run start       # Produção (requer build)
+npm run db:push     # Sincronizar schema com banco de dados
+```
+
+## Workflow de Desenvolvimento
+O projeto usa um único workflow "Start application" que executa `NODE_ENV=development npx tsx server/index.ts`. O servidor Express na porta 5000 serve tanto a API quanto o frontend React (via Vite em dev / estático em prod).

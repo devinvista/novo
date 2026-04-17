@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 export default function ExecutiveSummary() {
-  const { data: summaryData, isLoading } = useQuery({
+  const { data: summaryData, isLoading } = useQuery<any>({
     queryKey: ["/api/executive-summary"],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
