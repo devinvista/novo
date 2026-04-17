@@ -1,0 +1,117 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K3:47:51 PM [express] serving on port 5000
+3:48:01 PM [express] GET /api/user 401 in 2ms
+3:48:01 PM [express] GET /api/managers 200 in 85ms :: []
+3:48:03 PM [express] GET /api/managers 304 in 3ms :: []
+3:49:32 PM [express] GET /api/user 401 in 1ms
+3:49:32 PM [express] GET /api/managers 304 in 5ms :: []
+3:49:50 PM [express] GET /api/managers 304 in 3ms :: []
+3:50:10 PM [express] GET /api/managers 304 in 3ms :: []
+3:50:50 PM [express] GET /api/managers 304 in 4ms :: []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m3:51:28 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/hooks/use-auth.tsx, /src/index.css?v=8zMiw2krRDvLfcASyGxSR[22m
+[2m3:51:29 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/hooks/use-auth.tsx[22m Could not Fast Refresh ("AuthContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m3:51:29 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx?v=8zMiw2krRDvLfcASyGxSR, /src/index.css?v=8zMiw2krRDvLfcASyGxSR, /src/pages/dashboard.tsx, /src/pages/objectives.tsx, /src/pages/auth-page.tsx, /src/pages/key-results.tsx, /src/pages/actions.tsx, /src/pages/reports.tsx, /src/pages/users.tsx, /src/providers/app-providers.tsx, /src/components/sidebar.tsx, /src/pages/settings.tsx, /src/components/compact-header.tsx, /src/components/objective-form.tsx[22m
+3:51:32 PM [express] GET /api/user 401 in 1ms
+3:51:32 PM [express] GET /api/managers 304 in 2ms :: []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m3:51:36 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx?v=8zMiw2krRDvLfcASyGxSR, /src/index.css?v=8zMiw2krRDvLfcASyGxSR[22m
+3:51:36 PM [express] GET /api/managers 304 in 3ms :: []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m3:51:50 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx?v=8zMiw2krRDvLfcASyGxSR, /src/index.css?v=8zMiw2krRDvLfcASyGxSR, /src/pages/settings.tsx, /src/components/objectives-table.tsx, /src/components/action-timeline.tsx, /src/components/ui/dialog.tsx, /src/components/action-form.tsx, /src/components/checkpoint-update-dialog.tsx[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m3:52:01 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx?v=8zMiw2krRDvLfcASyGxSR, /src/index.css?v=8zMiw2krRDvLfcASyGxSR[22m
+3:52:15 PM [express] GET /api/managers 304 in 2ms :: []
+3:52:38 PM [express] GET /api/managers 304 in 2ms :: []
+3:54:05 PM [express] GET /api/managers 304 in 2ms :: []

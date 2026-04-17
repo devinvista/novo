@@ -46,3 +46,4 @@ vite.config.ts.*
 /.local/secondary_skills/insurance-optimizer/SKILL.md
 /.local/secondary_skills/interview-prep/.fingerprint
 /.local/secondary_skills/interview-prep/SKILL.md
+/.local/secondary_skills/invoice-generator/.fingerprint
