@@ -12,7 +12,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 ### Stack Tecnológico
 - **Frontend**: React 18 + TypeScript, Vite, Tailwind CSS, Shadcn/ui (Radix UI)
 - **Backend**: Node.js + Express.js (TypeScript, ES modules)
-- **Banco de Dados**: PostgreSQL via Neon (serverless)
+- **Banco de Dados**: PostgreSQL (conexão via `DATABASE_URL` usando o pacote `postgres`)
 - **ORM**: Drizzle ORM com drizzle-zod para validação
 - **Autenticação**: Passport.js (estratégia local) + express-session + MemoryStore
 - **Estado**: TanStack Query v5 para estado do servidor
@@ -33,7 +33,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
   routes.ts           # Todas as rotas da API (~1945 linhas)
   auth.ts             # Autenticação e autorização (Passport.js + scrypt)
   pg-storage.ts       # Implementação de acesso ao banco (PostgreSQL + Drizzle) + interface IStorage
-  pg-db.ts            # Conexão com PostgreSQL (DATABASE_URL env var)
+  pg-db.ts            # Conexão com PostgreSQL via pacote `postgres` (DATABASE_URL env var)
   storage.ts          # Re-exporta pg-storage (abstração)
   quarterly-periods.ts # Utilitários de cálculo de períodos trimestrais
   formatters.ts       # Formatação de números no padrão brasileiro ABNT (server-side)
@@ -161,14 +161,14 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 
 ### Executar o Projeto
 ```bash
-npm run dev         # Desenvolvimento (tsx + Vite HMR) — porta 5000
+npm run dev         # Desenvolvimento (npx tsx + Vite HMR) — porta 5000
 npm run build       # Build de produção (frontend Vite + backend esbuild)
 npm run start       # Produção (requer build prévio)
 npm run db:push     # Sincronizar schema Drizzle com banco de dados
 ```
 
 ## Workflow de Desenvolvimento
-O projeto usa um único workflow "Start application" que executa `npm run dev` → `tsx server/index.ts`. O servidor Express na porta 5000 serve tanto a API REST quanto o frontend React (via Vite HMR em dev / arquivos estáticos em prod).
+O projeto usa um único workflow "Start application" que executa `npm run dev` → `npx tsx server/index.ts`. O servidor Express na porta 5000 serve tanto a API REST quanto o frontend React (via Vite HMR em dev / arquivos estáticos em prod).
 
 ## Notas de Manutenção
 - Schema gerenciado pelo Drizzle ORM via `npm run db:push` (sem migrations manuais)
@@ -176,3 +176,5 @@ O projeto usa um único workflow "Start application" que executa `npm run dev` �
 - Autenticação usa scrypt com salt para hash de senhas (formato `hash.salt`)
 - Comentários automáticos do sistema são criados ao alterar ações para status final
 - O timezone do servidor é `America/Sao_Paulo` (UTC-3), configurado no entry point
+- A conexão com o banco usa o pacote `postgres` diretamente (não `@neondatabase/serverless`)
+- Dependências listadas em `package.json` mas não utilizadas ativamente: `@neondatabase/serverless`, `mysql2`, `express-mysql-session`, `better-sqlite3` (legado de migrações anteriores, não remover sem testar o build)

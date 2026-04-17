@@ -786,7 +786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...updated,
         actualValue: formatBrazilianNumber(updated.actualValue || "0"),
         targetValue: formatBrazilianNumber(updated.targetValue || "0"),
-        progress: updated.progress ? parseFloat(updated.progress).toFixed(2) : "0,00"
+        progress: updated.progress ? parseFloat(updated.progress).toFixed(2) : "0.00"
       };
       
       res.json(updatedBR);

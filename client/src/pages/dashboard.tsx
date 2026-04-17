@@ -1,11 +1,9 @@
 
 import SimpleDashboard from "@/components/simple-dashboard";
 import CompactHeader from "@/components/compact-header";
-import { useAuth } from "@/hooks/use-auth";
 import { useFilters } from "@/hooks/use-filters";
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const { filters } = useFilters();
   
   return (

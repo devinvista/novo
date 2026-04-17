@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Target, Calendar, TrendingUp, Settings, Users, Briefcase, CheckCircle2 } from "lucide-react";
 import { formatDateBR, parseDecimalBR } from "@/lib/formatters";
-// import { useModalCleanup } from "@/hooks/use-modal-cleanup";
 
 interface KeyResultFormProps {
   keyResult?: any;
@@ -25,9 +24,6 @@ interface KeyResultFormProps {
 export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange }: KeyResultFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // // Hook para limpeza de modais órfãos
-  // useModalCleanup(open);
   
   const [formData, setFormData] = useState({
     objectiveId: "",

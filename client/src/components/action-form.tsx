@@ -42,9 +42,6 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   const [completionComment, setCompletionComment] = useState("");
   const [showCompletionComment, setShowCompletionComment] = useState(false);
   
-  // // Hook para limpeza de modais órfãos
-  // useModalCleanup(open);
-
   const { data: keyResults } = useQuery({
     queryKey: ["/api/key-results"],
     queryFn: async () => {
