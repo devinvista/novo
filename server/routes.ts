@@ -1055,8 +1055,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TODO: Implement activities feature if needed
-
   // User management routes with hierarchical access control
   app.get("/api/users", requireAuth, async (req: any, res) => {
     try {

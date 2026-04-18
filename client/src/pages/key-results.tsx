@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Eye, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-react";
+import { Plus, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
 import CompactHeader from "@/components/compact-header";
 import KeyResultForm from "@/components/key-result-form-simple";
