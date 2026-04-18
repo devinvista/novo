@@ -52,9 +52,12 @@ export default function CheckpointUpdateDialog({
         title: "Checkpoint atualizado",
         description: "As informações do checkpoint foram atualizadas com sucesso.",
       });
-      // Invalidate all checkpoint queries and key results to refresh the data
+      // Invalidate all related queries so progress updates everywhere
       queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
       queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quarters"] });
       onClose();
     },
     onError: (error: any) => {

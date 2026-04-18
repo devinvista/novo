@@ -546,7 +546,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const keyResult = await storage.updateKeyResult(id, updateData);
-      
+
+      // Recalculate objective progress after KR update
+      const objectiveId = keyResult.objectiveId || existingKeyResult.objectiveId;
+      if (objectiveId) {
+        try {
+          const objectiveKRs = await storage.getKeyResults({ objectiveId });
+          if (objectiveKRs.length > 0) {
+            const totalProgress = objectiveKRs.reduce((sum: number, kr: any) => {
+              const current = parseFloat(kr.currentValue || '0');
+              const target = parseFloat(kr.targetValue || '1');
+              const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+              return sum + progress;
+            }, 0);
+            const avgProgress = totalProgress / objectiveKRs.length;
+            await storage.updateObjective(objectiveId, { progress: avgProgress.toFixed(2) });
+          }
+        } catch (objError) {
+          console.error('Error updating objective progress from KR update:', objError);
+        }
+      }
+
       res.json(keyResult);
     } catch (error) {
       console.error('Error updating key result:', error);
@@ -888,12 +908,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const currentKR = await storage.getKeyResult(existingCheckpoint.keyResultId);
             const krTargetValue = convertBRToDatabase(currentKR.targetValue || '0');
             const currentValueNum = convertBRToDatabase(latestValue || '0');
-            const newProgress = krTargetValue > 0 ? (currentValueNum / krTargetValue) * 100 : 0;
+            const newKRProgress = krTargetValue > 0 ? (currentValueNum / krTargetValue) * 100 : 0;
 
             await storage.updateKeyResult(existingCheckpoint.keyResultId, {
-              currentValue: latestValue.toString(),
-              progress: newProgress.toString()
+              currentValue: currentValueNum.toString(),
+              progress: newKRProgress.toString()
             });
+
+            // Recalculate and update objective progress based on all its key results
+            if (currentKR.objectiveId) {
+              try {
+                const objectiveKRs = await storage.getKeyResults({ objectiveId: currentKR.objectiveId });
+                if (objectiveKRs.length > 0) {
+                  const totalProgress = objectiveKRs.reduce((sum: number, kr: any) => {
+                    // Use the just-updated value for the current KR
+                    if (kr.id === existingCheckpoint.keyResultId) {
+                      return sum + Math.min(newKRProgress, 100);
+                    }
+                    const current = parseFloat(kr.currentValue || '0');
+                    const target = parseFloat(kr.targetValue || '1');
+                    const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+                    return sum + progress;
+                  }, 0);
+                  const avgProgress = totalProgress / objectiveKRs.length;
+                  await storage.updateObjective(currentKR.objectiveId, {
+                    progress: avgProgress.toFixed(2)
+                  });
+                }
+              } catch (objError) {
+                console.error('Error updating objective progress:', objError);
+              }
+            }
           }
         } catch (updateError) {
           console.error('Error updating Key Result currentValue:', updateError);
