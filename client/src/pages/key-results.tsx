@@ -4,6 +4,7 @@ import { Plus, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-r
 import { useLocation } from "wouter";
 import CompactHeader from "@/components/compact-header";
 import KeyResultForm from "@/components/key-result-form-simple";
+import KrProgressChart from "@/components/kr-progress-chart";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useAuth } from "@/hooks/use-auth";
 import { useFilters } from "@/hooks/use-filters";
@@ -353,6 +354,8 @@ export default function KeyResults() {
                             <span>Indicador: {kr.strategicIndicator.name}</span>
                           )}
                         </div>
+
+                        <KrProgressChart keyResultId={kr.id} />
                         
                         <div className="flex items-center space-x-2 pt-3 border-t">
                           <Button 
