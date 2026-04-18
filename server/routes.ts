@@ -1085,7 +1085,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/managers", requireAuth, async (req, res) => {
+  app.get("/api/managers", async (req, res) => {
     try {
       const managers = await storage.getManagers();
       res.json(managers);
