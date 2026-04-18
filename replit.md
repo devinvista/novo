@@ -80,6 +80,11 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | `quarterly_periods` | Períodos trimestrais de controle |
 | `activities` | Log de atividades do sistema |
 
+### Segurança
+- **Senhas nunca expostas**: `sanitizeUser()` / `sanitizeUsers()` em `server/routes.ts` remove o campo `password` de todas as respostas de usuário
+- **`/api/managers` protegido por auth**: requer autenticação; formulário de registro usa `/api/managers/public` (apenas `id` e `name`)
+- **Scrypt com salt**: senhas armazenadas como `hash.salt` (64 bytes)
+
 ### API - Rotas Principais
 | Método | Rota | Descrição |
 |--------|------|-----------|
@@ -87,6 +92,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | POST | `/api/logout` | Encerrar sessão |
 | POST | `/api/register` | Registro público (aguarda aprovação do gestor) |
 | GET | `/api/user` | Usuário atual autenticado |
+| GET | `/api/managers/public` | Gestores para formulário de registro (sem auth, apenas id/name) |
 | GET/POST | `/api/objectives` | Listar / criar objetivos |
 | GET/PUT/DELETE | `/api/objectives/:id` | Objetivo específico |
 | GET/POST | `/api/key-results` | Listar / criar resultados-chave |
@@ -103,7 +109,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | GET | `/api/dashboard/kpis` | KPIs do dashboard |
 | GET | `/api/executive-summary` | Resumo executivo |
 | GET | `/api/users` | Usuários (filtrado por role do solicitante) |
-| GET | `/api/managers` | Lista de gestores |
+| GET | `/api/managers` | Lista de gestores (requer auth) |
 | GET | `/api/pending-users` | Usuários pendentes de aprovação |
 | POST | `/api/users` | Criar usuário (admin/gestor) |
 | PATCH | `/api/users/:id` | Atualizar usuário |

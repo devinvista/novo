@@ -65,7 +65,7 @@ export default function Actions() {
         }
       } catch (error) {
         console.error('Error fetching key results:', error);
-        return [];
+        throw error;
       }
     },
   });

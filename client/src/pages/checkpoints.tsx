@@ -39,10 +39,11 @@ export default function Checkpoints() {
 
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
     queryKey: ["/api/key-results"],
-    queryFn: () => {
-      return fetch("/api/key-results", { credentials: "include" }).then(r => r.json()).then(data =>
-        Array.isArray(data) ? data : []
-      ).catch(() => []);
+    queryFn: async () => {
+      const r = await fetch("/api/key-results", { credentials: "include" });
+      if (!r.ok) throw new Error("Erro ao carregar resultados-chave");
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,
@@ -50,13 +51,14 @@ export default function Checkpoints() {
 
   const { data: checkpoints, isLoading: checkpointsLoading } = useQuery({
     queryKey: ["/api/checkpoints", selectedKeyResultId],
-    queryFn: () => {
+    queryFn: async () => {
       const url = selectedKeyResultId 
         ? `/api/checkpoints?keyResultId=${selectedKeyResultId}` 
         : "/api/checkpoints";
-      return fetch(url, { credentials: "include" }).then(r => r.json()).then(data =>
-        Array.isArray(data) ? data : []
-      ).catch(() => []);
+      const r = await fetch(url, { credentials: "include" });
+      if (!r.ok) throw new Error("Erro ao carregar checkpoints");
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,

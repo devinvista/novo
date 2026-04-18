@@ -34,6 +34,17 @@ function requireAuth(req: any, res: any, next: any) {
   next();
 }
 
+// Remove password from user object before sending to client
+function sanitizeUser(user: any) {
+  if (!user) return user;
+  const { password, ...safeUser } = user;
+  return safeUser;
+}
+
+function sanitizeUsers(users: any[]) {
+  return users.map(sanitizeUser);
+}
+
 function requireRole(roles: string[]) {
   return (req: any, res: any, next: any) => {
     if (!req.user || !roles.includes(req.user.role)) {
@@ -1043,7 +1054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: obj.title,
           description: obj.description,
           status: obj.status,
-          progress: obj.keyResults ? 
+          progress: obj.keyResults && obj.keyResults.length > 0 ? 
             obj.keyResults.reduce((sum: number, kr: any) => sum + (kr.progress || 0), 0) / obj.keyResults.length : 0,
           keyResultsCount: obj.keyResults?.length || 0,
           actionsCount: obj.actions?.length || 0
@@ -1123,17 +1134,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         users = users.filter(user => user.id === currentUserId);
       }
       
-      res.json(users);
+      res.json(sanitizeUsers(users));
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Erro ao buscar usuários" });
     }
   });
 
-  app.get("/api/managers", async (req, res) => {
+  // Public slim endpoint used by registration form (only exposes id and name)
+  app.get("/api/managers/public", async (req, res) => {
     try {
       const managers = await storage.getManagers();
-      res.json(managers);
+      res.json(managers.map((m: any) => ({ id: m.id, name: m.name })));
+    } catch (error) {
+      console.error("Error fetching public managers:", error);
+      res.status(500).json({ message: "Erro ao buscar gestores" });
+    }
+  });
+
+  app.get("/api/managers", requireAuth, async (req, res) => {
+    try {
+      const managers = await storage.getManagers();
+      res.json(sanitizeUsers(managers));
     } catch (error) {
       console.error("Error fetching managers:", error);
       res.status(500).json({ message: "Erro ao buscar gestores" });
@@ -1143,7 +1165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pending-users", requireAuth, requireRole(["admin", "gestor"]), async (req: any, res) => {
     try {
       const pendingUsers = await storage.getPendingUsers();
-      res.json(pendingUsers);
+      res.json(sanitizeUsers(pendingUsers));
     } catch (error) {
       console.error("Error fetching pending users:", error);
       res.status(500).json({ message: "Erro ao buscar usuários pendentes" });
@@ -1225,7 +1247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (userData as any).approved = true;
 
       const user = await storage.createUser(userData);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error creating user:", error);
       res.status(500).json({ message: "Erro ao criar usuário" });
@@ -1306,7 +1328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.updateUser(id, userData);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error updating user:", error);
       res.status(500).json({ message: "Erro ao atualizar usuário", error: error instanceof Error ? error.message : 'Erro desconhecido' });
@@ -1358,7 +1380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.updateUser(id, { active });
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error updating user status:", error);
       res.status(500).json({ message: "Erro ao alterar status do usuário" });
@@ -1433,7 +1455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Aprovar usuário com permissões herdadas/configuradas
       const user = await storage.approveUserWithPermissions(id, req.user!.id, finalPermissions);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error approving user:", error);
       res.status(500).json({ message: "Erro ao aprovar usuário", error: error instanceof Error ? error.message : 'Erro desconhecido' });

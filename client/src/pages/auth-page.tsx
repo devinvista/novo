@@ -24,11 +24,11 @@ export default function AuthPage() {
     gestorId: "",
   });
 
-  // Load managers for registration
+  // Load managers for registration (uses public endpoint - only id and name)
   const { data: managers } = useQuery({
-    queryKey: ["/api/managers"],
+    queryKey: ["/api/managers/public"],
     queryFn: async () => {
-      const response = await fetch('/api/managers', { credentials: 'include' });
+      const response = await fetch('/api/managers/public');
       if (!response.ok) return [];
       return response.json();
     },
@@ -97,6 +97,7 @@ export default function AuthPage() {
                       <Input
                         id="login-username"
                         type="text"
+                        autoComplete="username"
                         value={loginForm.username}
                         onChange={(e) =>
                           setLoginForm({ ...loginForm, username: e.target.value })
@@ -111,6 +112,7 @@ export default function AuthPage() {
                       <Input
                         id="login-password"
                         type="password"
+                        autoComplete="current-password"
                         value={loginForm.password}
                         onChange={(e) =>
                           setLoginForm({ ...loginForm, password: e.target.value })
@@ -199,6 +201,7 @@ export default function AuthPage() {
                       <Input
                         id="register-password"
                         type="password"
+                        autoComplete="new-password"
                         value={registerForm.password}
                         onChange={(e) =>
                           setRegisterForm({ ...registerForm, password: e.target.value })

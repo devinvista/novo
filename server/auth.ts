@@ -160,7 +160,8 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+    const { password, ...safeUser } = req.user as any;
+    res.status(200).json(safeUser);
   });
 
   app.post("/api/logout", (req, res, next) => {
@@ -172,6 +173,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    const { password, ...safeUser } = req.user as any;
+    res.json(safeUser);
   });
 }

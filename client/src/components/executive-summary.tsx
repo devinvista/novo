@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   TrendingUp, 
   Users, 
@@ -16,14 +17,25 @@ import {
   BarChart3,
   Flag,
   CheckSquare,
-  Goal
+  Goal,
+  Printer,
+  RefreshCw
 } from "lucide-react";
 
 export default function ExecutiveSummary() {
-  const { data: summaryData, isLoading } = useQuery<any>({
+  const queryClient = useQueryClient();
+  const { data: summaryData, isLoading, isFetching } = useQuery<any>({
     queryKey: ["/api/executive-summary"],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/executive-summary"] });
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (isLoading) {
     return (
@@ -54,11 +66,23 @@ export default function ExecutiveSummary() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">Resumo Executivo - Sistema OKRs</h2>
-        <p className="text-muted-foreground">
-          Análise dos resultados e performance atual da implementação de OKRs na organização
-        </p>
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold text-foreground">Resumo Executivo - Sistema OKRs</h2>
+          <p className="text-muted-foreground">
+            Análise dos resultados e performance atual da implementação de OKRs na organização
+          </p>
+        </div>
+        <div className="flex gap-2 print:hidden">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimir
+          </Button>
+        </div>
       </div>
 
       {/* Overview Cards */}

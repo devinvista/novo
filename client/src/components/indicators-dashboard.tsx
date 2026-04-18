@@ -21,6 +21,30 @@ interface IndicatorsDashboardProps {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
+const INDICATOR_ICONS = [
+  <TrendingUp className="h-5 w-5" />,
+  <DollarSign className="h-5 w-5" />,
+  <GraduationCap className="h-5 w-5" />,
+  <Building2 className="h-5 w-5" />,
+  <Users className="h-5 w-5" />,
+  <Clock className="h-5 w-5" />,
+  <Calculator className="h-5 w-5" />,
+  <BarChart3 className="h-5 w-5" />,
+  <Target className="h-5 w-5" />,
+];
+
+const INDICATOR_COLORS = [
+  "text-green-600 bg-green-100",
+  "text-blue-600 bg-blue-100",
+  "text-purple-600 bg-purple-100",
+  "text-orange-600 bg-orange-100",
+  "text-indigo-600 bg-indigo-100",
+  "text-pink-600 bg-pink-100",
+  "text-red-600 bg-red-100",
+  "text-teal-600 bg-teal-100",
+  "text-yellow-600 bg-yellow-100",
+];
+
 export default function IndicatorsDashboard({ selectedQuarter, filters }: IndicatorsDashboardProps) {
   const queryClient = useQueryClient();
   const { data: indicators, isLoading: indicatorsLoading } = useQuery({
@@ -63,46 +87,12 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
     queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
   }, [filters, queryClient]);
 
-  const getIndicatorIcon = (name: string) => {
-    switch (name) {
-      case "Sustentabilidade Operacional":
-        return <TrendingUp className="h-5 w-5" />;
-      case "Receita de Serviços":
-        return <DollarSign className="h-5 w-5" />;
-      case "Matrículas em Educação":
-        return <GraduationCap className="h-5 w-5" />;
-      case "Indústrias Atendidas em Saúde":
-        return <Building2 className="h-5 w-5" />;
-      case "Trabalhadores da Indústria Atendidos em Saúde":
-        return <Users className="h-5 w-5" />;
-      case "Matrículas Presenciais com Mais de 4 Horas":
-        return <Clock className="h-5 w-5" />;
-      case "Custo Hora Aluno":
-        return <Calculator className="h-5 w-5" />;
-      default:
-        return <Target className="h-5 w-5" />;
-    }
+  const getIndicatorIcon = (_name: string, index: number) => {
+    return INDICATOR_ICONS[index % INDICATOR_ICONS.length];
   };
 
-  const getIndicatorColor = (name: string) => {
-    switch (name) {
-      case "Sustentabilidade Operacional":
-        return "text-green-600 bg-green-100";
-      case "Receita de Serviços":
-        return "text-blue-600 bg-blue-100";
-      case "Matrículas em Educação":
-        return "text-purple-600 bg-purple-100";
-      case "Indústrias Atendidas em Saúde":
-        return "text-orange-600 bg-orange-100";
-      case "Trabalhadores da Indústria Atendidos em Saúde":
-        return "text-indigo-600 bg-indigo-100";
-      case "Matrículas Presenciais com Mais de 4 Horas":
-        return "text-pink-600 bg-pink-100";
-      case "Custo Hora Aluno":
-        return "text-red-600 bg-red-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
+  const getIndicatorColor = (_name: string, index: number) => {
+    return INDICATOR_COLORS[index % INDICATOR_COLORS.length];
   };
 
   const getIndicatorStats = (indicatorId: number) => {
@@ -274,9 +264,9 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
             </Card>
           ))
         ) : (
-          Array.isArray(indicators) ? indicators.map((indicator: any) => {
+          Array.isArray(indicators) ? indicators.map((indicator: any, idx: number) => {
             const stats = getIndicatorStats(indicator.id);
-            const colorClass = getIndicatorColor(indicator.name);
+            const colorClass = getIndicatorColor(indicator.name, idx);
             
             return (
               <Card key={indicator.id} className="hover:shadow-md transition-shadow">
@@ -284,7 +274,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${colorClass}`}>
-                        {getIndicatorIcon(indicator.name)}
+                        {getIndicatorIcon(indicator.name, idx)}
                       </div>
                       <div>
                         <CardTitle className="text-base line-clamp-2">{indicator.name}</CardTitle>
