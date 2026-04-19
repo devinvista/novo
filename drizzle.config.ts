@@ -1,14 +1,16 @@
 import { defineConfig } from "drizzle-kit";
 
-if (!process.env.DATABASE_URL) {
+const connectionUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!connectionUrl) {
   throw new Error("DATABASE_URL, ensure the database is provisioned");
 }
 
 export default defineConfig({
   out: "./migrations",
-  schema: "./shared/schema.ts",
+  schema: "./shared/pg-schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: connectionUrl,
   },
 });

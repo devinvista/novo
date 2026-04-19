@@ -2,12 +2,14 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '@shared/pg-schema';
 
-if (!process.env.DATABASE_URL) {
+const connectionUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!connectionUrl) {
   throw new Error('DATABASE_URL environment variable is required');
 }
 
-const client = postgres(process.env.DATABASE_URL, {
-  ssl: process.env.DATABASE_URL.includes('sslmode=require') ? 'require' : undefined,
+const client = postgres(connectionUrl, {
+  ssl: connectionUrl.includes('sslmode=require') ? 'require' : undefined,
   max: 10,
 });
 

@@ -41,3 +41,8 @@ waitForPort = 5000
 
 [agent]
 expertMode = true
+
+[userenv]
+
+[userenv.development]
+NEON_DATABASE_URL = "postgresql://neondb_owner:npg_QqoTzSpN1wr9@ep-delicate-wave-acdednnh-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
