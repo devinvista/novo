@@ -14,6 +14,7 @@ import Indicators from '@/pages/indicators';
 import Users from '@/pages/users';
 import Reports from '@/pages/reports';
 import Settings from '@/pages/settings';
+import AlignmentTree from '@/pages/alignment-tree';
 import NotFound from '@/pages/not-found';
 
 // Import components and providers
@@ -49,6 +50,7 @@ function AppContent() {
           <Route path="/users" component={Users} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
+          <Route path="/alignment" component={AlignmentTree} />
           <Route component={NotFound} />
         </Switch>
       </div>
