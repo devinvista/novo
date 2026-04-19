@@ -541,13 +541,18 @@ export class PgStorage implements IStorage {
       }
     }
 
-    let query = db.select().from(keyResults) as any;
+    let query = db.select({
+      keyResults: keyResults,
+      objectives: objectives,
+    }).from(keyResults).leftJoin(objectives, eq(keyResults.objectiveId, objectives.id)) as any;
     if (whereConditions.length > 0) {
       query = query.where(and(...whereConditions));
     }
     const result = await query.orderBy(desc(keyResults.createdAt));
 
-    return result.map((kr: any) => {
+    return result.map((row: any) => {
+      const kr = row.keyResults ?? row;
+      const objective = row.objectives ?? null;
       let calculatedProgress = 0;
       if (kr.currentValue && kr.targetValue) {
         const current = parseFloat(kr.currentValue.toString());
@@ -561,7 +566,7 @@ export class PgStorage implements IStorage {
         : (kr.progress !== null && kr.progress !== undefined)
           ? parseFloat(kr.progress.toString())
           : 0;
-      return { ...kr, progress: finalProgress };
+      return { ...kr, progress: finalProgress, objective };
     });
   }
 
