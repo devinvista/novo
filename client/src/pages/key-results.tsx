@@ -355,7 +355,7 @@ export default function KeyResults() {
                           )}
                         </div>
 
-                        <KrProgressChart keyResultId={kr.id} />
+                        <KrProgressChart keyResultId={kr.id} unit={kr.unit} targetValue={kr.targetValue} />
                         
                         <div className="flex items-center space-x-2 pt-3 border-t">
                           <Button 

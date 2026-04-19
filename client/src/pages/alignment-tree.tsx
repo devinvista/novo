@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import KrProgressChart from "@/components/kr-progress-chart";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useFilters } from "@/hooks/use-filters";
 
@@ -226,6 +227,11 @@ function KRNode({
           </div>
         </div>
       </button>
+
+      {/* Mini sparkline – always visible */}
+      <div className="ml-8 pr-3 -mt-1 mb-1">
+        <KrProgressChart keyResultId={kr.id} unit={kr.unit} mode="mini" />
+      </div>
 
       {/* KR Actions */}
       {open && (
