@@ -316,17 +316,17 @@ export default function ActionTimeline({ keyResultId, showAll = false, selectedQ
                     <div className="mt-2 flex items-center gap-2">
                       <Clock className="h-3 w-3 text-gray-400" />
                       <span className={`text-xs ${isOverdue ? "text-red-600 font-medium" : "text-gray-500"}`}>
-                        {isOverdue ? (
-                          `Atrasada por ${Math.abs(daysUntilDue)} dias`
+                        {action.status === "completed" || action.status === "cancelled" ? (
+                          `Prazo: ${format(new Date(action.dueDate), "dd 'de' MMMM", { locale: ptBR })}`
+                        ) : isOverdue ? (
+                          `Atrasada por ${Math.abs(daysUntilDue!)} dias - ${format(new Date(action.dueDate), "dd 'de' MMMM", { locale: ptBR })}`
                         ) : daysUntilDue === 0 ? (
-                          "Vence hoje"
+                          `Vence hoje - ${format(new Date(action.dueDate), "dd 'de' MMMM", { locale: ptBR })}`
                         ) : daysUntilDue === 1 ? (
-                          "Vence amanhã"
+                          `Vence amanhã - ${format(new Date(action.dueDate), "dd 'de' MMMM", { locale: ptBR })}`
                         ) : (
-                          `Vence em ${daysUntilDue} dias`
+                          `Vence em ${daysUntilDue} dias - ${format(new Date(action.dueDate), "dd 'de' MMMM", { locale: ptBR })}`
                         )}
-                        {" - "}
-                        {format(new Date(action.dueDate), "dd 'de' MMMM", { locale: ptBR })}
                       </span>
                     </div>
                   )}
