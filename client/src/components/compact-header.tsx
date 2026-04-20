@@ -169,103 +169,93 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                 </div>
 
                 {/* Filtro de Trimestre */}
-                <div className="flex flex-col items-start gap-0">
-                  <span className="text-[9px] text-white/50 font-medium uppercase tracking-wide leading-none mb-0.5 pl-0.5">Período</span>
-                  <Select value={selectedQuarter || "all"} onValueChange={setSelectedQuarter}>
-                    <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${selectedQuarter && selectedQuarter !== 'all' ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      {availableQuarters.map((quarter: any) => {
-                        const quarterValue = typeof quarter === 'string' ? quarter : quarter.id;
-                        const quarterDisplay = typeof quarter === 'string' && quarter.includes('-T')
-                          ? (() => {
-                              const [year, q] = quarter.split('-T');
-                              const quarterNames = ['1º Tri', '2º Tri', '3º Tri', '4º Tri'];
-                              return `${quarterNames[parseInt(q) - 1]} ${year}`;
-                            })()
-                          : (quarter?.name || quarterValue || quarter);
-                        
-                        return (
-                          <SelectItem key={quarterValue} value={quarterValue}>
-                            {quarterDisplay}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select
+                  value={selectedQuarter && selectedQuarter !== 'all' ? selectedQuarter : ''}
+                  onValueChange={(v) => setSelectedQuarter(v || 'all')}
+                >
+                  <SelectTrigger className={`w-24 h-7 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 data-[placeholder]:!text-white/60 ${selectedQuarter && selectedQuarter !== 'all' ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
+                    <SelectValue placeholder="Período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {availableQuarters.map((quarter: any) => {
+                      const quarterValue = typeof quarter === 'string' ? quarter : quarter.id;
+                      const quarterDisplay = typeof quarter === 'string' && quarter.includes('-T')
+                        ? (() => {
+                            const [year, q] = quarter.split('-T');
+                            const quarterNames = ['1º Tri', '2º Tri', '3º Tri', '4º Tri'];
+                            return `${quarterNames[parseInt(q) - 1]} ${year}`;
+                          })()
+                        : (quarter?.name || quarterValue || quarter);
+                      return (
+                        <SelectItem key={quarterValue} value={quarterValue}>
+                          {quarterDisplay}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
 
-                <div className="w-px h-6 bg-white/15 mx-0.5" />
+                <div className="w-px h-5 bg-white/15" />
 
                 {/* Filtro de Região */}
-                <div className="flex flex-col items-start gap-0">
-                  <span className="text-[9px] text-white/50 font-medium uppercase tracking-wide leading-none mb-0.5 pl-0.5">Região</span>
-                  <Select 
-                    value={filters.regionId?.toString() || "all"} 
-                    onValueChange={(value) => handleFilterChange('regionId', value)}
-                  >
-                    <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${filters.regionId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      {regions.map((region: any) => (
-                        <SelectItem key={region.id} value={region.id.toString()}>
-                          {region.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select
+                  value={filters.regionId?.toString() || ''}
+                  onValueChange={(value) => handleFilterChange('regionId', value || 'all')}
+                >
+                  <SelectTrigger className={`w-24 h-7 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 data-[placeholder]:!text-white/60 ${filters.regionId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
+                    <SelectValue placeholder="Região" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {regions.map((region: any) => (
+                      <SelectItem key={region.id} value={region.id.toString()}>
+                        {region.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                <div className="w-px h-6 bg-white/15 mx-0.5" />
+                <div className="w-px h-5 bg-white/15" />
 
                 {/* Filtro de Sub-região */}
-                <div className="flex flex-col items-start gap-0">
-                  <span className={`text-[9px] font-medium uppercase tracking-wide leading-none mb-0.5 pl-0.5 ${!filters.regionId ? 'text-white/30' : 'text-white/50'}`}>Sub-região</span>
-                  <Select 
-                    value={filters.subRegionId?.toString() || "all"} 
-                    onValueChange={(value) => handleFilterChange('subRegionId', value)}
-                    disabled={!filters.regionId}
-                  >
-                    <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 disabled:opacity-40 disabled:cursor-not-allowed ${filters.subRegionId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      {filteredSubRegions.map((subRegion: any) => (
-                        <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
-                          {subRegion.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select
+                  value={filters.subRegionId?.toString() || ''}
+                  onValueChange={(value) => handleFilterChange('subRegionId', value || 'all')}
+                  disabled={!filters.regionId}
+                >
+                  <SelectTrigger className={`w-24 h-7 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 data-[placeholder]:!text-white/60 disabled:opacity-40 disabled:cursor-not-allowed ${filters.subRegionId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
+                    <SelectValue placeholder="Sub-região" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {filteredSubRegions.map((subRegion: any) => (
+                      <SelectItem key={subRegion.id} value={subRegion.id.toString()}>
+                        {subRegion.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                <div className="w-px h-6 bg-white/15 mx-0.5" />
+                <div className="w-px h-5 bg-white/15" />
 
                 {/* Filtro de Linha de Serviço */}
-                <div className="flex flex-col items-start gap-0">
-                  <span className="text-[9px] text-white/50 font-medium uppercase tracking-wide leading-none mb-0.5 pl-0.5">Linha</span>
-                  <Select 
-                    value={filters.serviceLineId?.toString() || "all"} 
-                    onValueChange={(value) => handleFilterChange('serviceLineId', value)}
-                  >
-                    <SelectTrigger className={`w-32 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${filters.serviceLineId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      {serviceLines.map((line: any) => (
-                        <SelectItem key={line.id} value={line.id.toString()}>
-                          {line.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select
+                  value={filters.serviceLineId?.toString() || ''}
+                  onValueChange={(value) => handleFilterChange('serviceLineId', value || 'all')}
+                >
+                  <SelectTrigger className={`w-28 h-7 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 data-[placeholder]:!text-white/60 ${filters.serviceLineId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
+                    <SelectValue placeholder="Linha" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {serviceLines.map((line: any) => (
+                      <SelectItem key={line.id} value={line.id.toString()}>
+                        {line.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {/* Botão limpar filtros */}
                 {hasActiveFilters && (
