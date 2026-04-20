@@ -23,43 +23,71 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 ```
 /client/src/
   components/
-    action-form.tsx               # Formulário de criação/edição de ações (com comentários)
+    action-form.tsx               # Formulário de criação/edição de ações
     action-plan.tsx               # Plano de ação (exibido na aba Relatórios)
     action-timeline.tsx           # Timeline visual de ações
-    animated-progress-ring.tsx    # Anel de progresso animado (usado em checkpoint-progress-grid)
+    animated-progress-ring.tsx    # Anel de progresso animado (checkpoint-progress-grid)
     checkpoint-progress-grid.tsx  # Grade de progresso de checkpoints
     checkpoint-timeline-header.tsx # Cabeçalho com timeline de checkpoints
+    checkpoint-timeline.tsx       # Timeline de checkpoints por KR
     checkpoint-update-dialog.tsx  # Diálogo de atualização de checkpoint
-    compact-header.tsx            # Cabeçalho usado em todas as páginas
+    checkpoint-updater.tsx        # Componente de atualização inline de checkpoint
+    compact-header.tsx            # Cabeçalho global com filtros (região/sub-região/linha/trimestre)
     executive-summary.tsx         # Resumo executivo
-    filters.tsx                   # Barra de filtros
     indicators-dashboard.tsx      # Painel de indicadores estratégicos
     key-result-form-simple.tsx    # Formulário de KR (único formulário ativo)
+    kr-progress-chart.tsx         # Gráfico de progresso de KR
     next-checkpoints-overview.tsx # Visão geral dos próximos checkpoints
     objective-form.tsx            # Formulário de objetivo
     objectives-table.tsx          # Tabela de objetivos
     quarterly-filter.tsx          # Filtro de período trimestral
     sidebar.tsx                   # Barra lateral de navegação
-    simple-dashboard.tsx          # Componente principal do dashboard
+    simple-dashboard.tsx          # Componente principal do dashboard (Alinhamento)
   components/ui/      # Componentes Shadcn/ui
-  pages/              # Páginas: Dashboard, Objetivos, KRs, Ações, Checkpoints, Indicadores, Usuários, Relatórios, Configurações
-  hooks/              # Custom hooks: useAuth, useFilters, useSidebarToggle, useQuarterlyFilter, useMobile, useToast
-  lib/                # Utilitários: queryClient, formatters, checkpoint-utils, frequency-translations, modal-cleanup, emergency-cleanup
-  providers/          # Provedores de contexto (AppProviders)
+  pages/
+    alignment-tree.tsx            # / — Árvore de alinhamento (dashboard principal)
+    objectives.tsx                # /objectives — Objetivos
+    key-results.tsx               # /key-results — Resultados-Chave
+    actions.tsx                   # /actions — Ações
+    checkpoints.tsx               # /checkpoints — Checkpoints
+    indicators.tsx                # /indicators — Indicadores (rota disponível, fora do menu)
+    reports.tsx                   # /reports — Relatórios (indicadores + resumo + plano de ação)
+    users.tsx                     # /users — Usuários (admin/gestor)
+    settings.tsx                  # /settings — Configurações (admin)
+    auth-page.tsx                 # Página de login/registro
+    not-found.tsx                 # 404
+  hooks/
+    use-auth.ts                   # Autenticação
+    use-filters.ts                # Filtros globais (região, sub-região, linha de serviço)
+    use-quarterly-filter.ts       # Filtro de período trimestral global
+    use-sidebar-toggle.ts         # Estado de abertura/fechamento do sidebar
+    use-mobile.ts                 # Detecção de dispositivo móvel
+    use-toast.ts                  # Toast notifications
+  lib/
+    queryClient.ts                # TanStack Query client + apiRequest helper
+    formatters.ts                 # Formatação de números (padrão BR: vírgula decimal)
+    checkpoint-utils.ts           # Utilitários de progresso/badge de checkpoints
+    frequency-translations.ts     # Tradução de frequências (en → pt-BR)
+    modal-cleanup.ts              # Limpeza de overlays Radix UI travados
+    emergency-cleanup.ts          # Limpeza de emergência (Ctrl+Shift+C)
+  providers/
+    app-providers.tsx             # Provedores de contexto (AuthProvider, FiltersProvider, QueryClientProvider)
 /server/
-  index.ts            # Entry point (porta 5000, timezone America/Sao_Paulo)
-  routes.ts           # Todas as rotas da API (~1940 linhas)
-  auth.ts             # Autenticação e autorização (Passport.js + scrypt)
-  pg-storage.ts       # Implementação de acesso ao banco (PostgreSQL + Drizzle) + interface IStorage
-  pg-db.ts            # Conexão com PostgreSQL via pacote `postgres` (DATABASE_URL env var)
-  storage.ts          # Re-exporta pg-storage (abstração)
-  quarterly-periods.ts # Utilitários de cálculo de períodos trimestrais
-  formatters.ts       # Formatação de números no padrão brasileiro ABNT (server-side)
-  vite.ts             # Setup do servidor Vite em desenvolvimento
+  index.ts                        # Entry point (porta 5000, timezone America/Sao_Paulo)
+  routes.ts                       # Todas as rotas da API (~2010 linhas)
+  auth.ts                         # Autenticação e autorização (Passport.js + scrypt)
+  pg-storage.ts                   # Implementação de acesso ao banco (PostgreSQL + Drizzle) + interface IStorage
+  pg-db.ts                        # Conexão com PostgreSQL via pacote `postgres` (DATABASE_URL env var)
+  storage.ts                      # Re-exporta pg-storage (abstração)
+  quarterly-periods.ts            # Utilitários de cálculo de períodos trimestrais
+  formatters.ts                   # Formatação de números no padrão BR (server-side)
+  vite.ts                         # Setup do servidor Vite em desenvolvimento
+  seed.ts                         # Script de seed de dados (desenvolvimento)
+  seed-okrs.ts                    # Script de seed de OKRs de exemplo (desenvolvimento)
 /shared/
-  pg-schema.ts        # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod
-  schema.ts           # Re-exporta pg-schema
-/migrations/          # Migrations históricas (referência apenas; usar db:push para sincronizar)
+  pg-schema.ts                    # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod
+  schema.ts                       # Re-exporta pg-schema
+/migrations/                      # Migrations históricas (referência apenas; usar db:push)
 ```
 
 ### Banco de Dados - Tabelas Principais
@@ -78,7 +106,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | `services` | Serviços por linha de serviço |
 | `strategic_indicators` | Indicadores estratégicos globais |
 | `quarterly_periods` | Períodos trimestrais de controle |
-| `activities` | Log de atividades do sistema |
+| `activities` | Log de atividades do sistema (disponível para uso futuro) |
 
 ### Segurança
 - **Senhas nunca expostas**: `sanitizeUser()` / `sanitizeUsers()` em `server/routes.ts` remove o campo `password` de todas as respostas de usuário
@@ -101,7 +129,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | GET/POST | `/api/actions` | Listar / criar ações |
 | GET/PUT/DELETE | `/api/actions/:id` | Ação específica |
 | GET/POST | `/api/actions/:id/comments` | Comentários de ação |
-| GET | `/api/checkpoints` | Listar checkpoints |
+| GET | `/api/checkpoints` | Listar checkpoints (suporta `?keyResultId=`) |
 | GET | `/api/checkpoints/:id` | Checkpoint específico |
 | PUT | `/api/checkpoints/:id` | Atualizar checkpoint completo |
 | POST | `/api/checkpoints/:id/update` | Atualização simplificada de checkpoint |
@@ -142,17 +170,22 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | `operacional` | Visualizar dados do seu escopo, atualizar checkpoints e ações |
 
 ### Rotas do Frontend (Wouter)
-| Rota | Página | Visibilidade |
+| Rota | Página | Visibilidade no Menu |
 |------|--------|-------------|
-| `/` | Dashboard | Todos |
+| `/` | Alinhamento (árvore de objetivos) | Todos |
 | `/objectives` | Objetivos | Todos |
 | `/key-results` | Resultados-Chave | Todos |
 | `/actions` | Ações | Todos |
 | `/checkpoints` | Checkpoints | Todos |
-| `/indicators` | Indicadores Estratégicos | Todos |
-| `/reports` | Relatórios | Todos |
+| `/reports` | Relatórios (indicadores + resumo executivo + plano de ação) | Todos |
 | `/users` | Usuários | Admin e Gestor |
 | `/settings` | Configurações | Admin |
+| `/indicators` | Indicadores Estratégicos | Rota disponível, fora do menu |
+
+### Filtros Globais
+- Gerenciados pelo `FiltersProvider` em `app-providers.tsx`
+- Hooks: `useFilters()` (região/sub-região/linha de serviço) e `useQuarterlyFilter()` (trimestre)
+- Renderizados via `CompactHeader` com `showFilters={true}` em cada página
 
 ### Formatação de Números
 - Padrão brasileiro ABNT (vírgula como separador decimal, ponto como separador de milhar)
@@ -169,6 +202,9 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 - Gerados automaticamente ao criar um Key Result com base na frequência (semanal, quinzenal, mensal, trimestral)
 - Endpoint `/api/key-results/:id/recreate-checkpoints` permite recriar checkpoints
 - Ao concluir um checkpoint, o `currentValue` e `progress` do KR pai são atualizados automaticamente
+
+### Performance
+- Página Resultados-Chave: busca ações e checkpoints **uma vez** (sem filtro por KR), agrupa client-side — evita N+1 requests
 
 ## Configuração do Ambiente
 
@@ -203,4 +239,4 @@ O projeto usa um único workflow "Start application" que executa `npm run dev` �
 - A conexão com o banco usa o pacote `postgres` diretamente (não `@neondatabase/serverless`)
 - Dependências em `package.json` não utilizadas ativamente: `@neondatabase/serverless`, `mysql2`, `express-mysql-session`, `better-sqlite3` (legado; não remover sem testar o build)
 - A tabela `activities` existe no schema (`pg-schema.ts`) e no banco, mas não possui rotas nem métodos de storage implementados — está disponível para uso futuro
-- Componentes excluídos por não estarem em uso: `key-result-form.tsx` (substituído por `key-result-form-simple.tsx`), `header.tsx` (substituído por `compact-header.tsx`), `checkpoint-timeline.tsx`, `checkpoint-updater.tsx`
+- Arquivos excluídos por obsolescência: `key-result-form.tsx`, `header.tsx` (→ `compact-header.tsx`), `filters.tsx` (→ filtros em `compact-header.tsx`), `dashboard.tsx` (página órfã, sem rota registrada)

@@ -313,12 +313,12 @@ export default function KrProgressChart({
 }: KrProgressChartProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const { data: checkpoints, isLoading } = useQuery({
-    queryKey: ["/api/checkpoints", keyResultId, "chart"],
+  // Busca todos os checkpoints de uma vez (compartilhado entre todos os KrProgressChart)
+  // e filtra client-side pelo keyResultId — evita N+1 requests
+  const { data: allCheckpoints, isLoading } = useQuery({
+    queryKey: ["/api/checkpoints"],
     queryFn: async () => {
-      const r = await fetch(`/api/checkpoints?keyResultId=${keyResultId}`, {
-        credentials: "include",
-      });
+      const r = await fetch("/api/checkpoints", { credentials: "include" });
       if (!r.ok) return [];
       const data = await r.json();
       return Array.isArray(data) ? data : [];
@@ -327,8 +327,13 @@ export default function KrProgressChart({
     refetchOnWindowFocus: false,
   });
 
+  const checkpoints = useMemo(
+    () => (allCheckpoints || []).filter((cp: any) => cp.keyResultId === keyResultId),
+    [allCheckpoints, keyResultId]
+  );
+
   const chartData: ChartPoint[] = useMemo(() => {
-    return (checkpoints || [])
+    return checkpoints
       .filter((cp: any) => {
         const actual = parseDecimalBR(cp.actualValue || "0");
         return cp.status === "completed" || actual > 0;

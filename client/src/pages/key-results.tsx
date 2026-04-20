@@ -95,40 +95,26 @@ export default function KeyResults() {
     refetchOnWindowFocus: false,
   });
 
-  // Remove automatic invalidation - let queries handle their own cache
-  // useEffect(() => {
-  //   console.log('🔄 KeyResults: Filters changed, invalidating queries:', filters);
-  //   const timer = setTimeout(() => {
-  //     queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
-  //   }, 300);
-  //   return () => clearTimeout(timer);
-  // }, [filters, queryClient]);
-
-  // Fetch actions and checkpoints counts for each key result
+  // Busca todas as ações de uma vez e agrupa por KR (evita N+1 requests)
   const { data: actionsCounts } = useQuery({
-    queryKey: ["/api/actions-counts", keyResults?.map((kr: any) => kr.id)],
+    queryKey: ["/api/actions-counts", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       if (!keyResults || keyResults.length === 0) return {};
-      
+      const params = new URLSearchParams();
+      if (filters?.regionId) params.append("regionId", filters.regionId.toString());
+      if (filters?.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
+      if (filters?.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
+      const response = await fetch(`/api/actions${params.toString() ? `?${params}` : ""}`, { credentials: "include" });
+      if (!response.ok) return {};
+      const actions = await response.json();
       const counts: Record<number, number> = {};
-      
-      // Fetch actions count for each key result
-      await Promise.all(
-        keyResults.map(async (kr: any) => {
-          try {
-            const response = await fetch(`/api/actions?keyResultId=${kr.id}`, { credentials: "include" });
-            if (response.ok) {
-              const actions = await response.json();
-              counts[kr.id] = Array.isArray(actions) ? actions.length : 0;
-            } else {
-              counts[kr.id] = 0;
-            }
-          } catch {
-            counts[kr.id] = 0;
+      if (Array.isArray(actions)) {
+        actions.forEach((action: any) => {
+          if (action.keyResultId) {
+            counts[action.keyResultId] = (counts[action.keyResultId] || 0) + 1;
           }
-        })
-      );
-      
+        });
+      }
       return counts;
     },
     enabled: !!keyResults && keyResults.length > 0,
@@ -136,36 +122,24 @@ export default function KeyResults() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch checkpoints counts and status for each key result
+  // Busca todos os checkpoints de uma vez e agrupa por KR (evita N+1 requests)
   const { data: checkpointsCounts } = useQuery({
-    queryKey: ["/api/checkpoints-counts", keyResults?.map((kr: any) => kr.id)],
+    queryKey: ["/api/checkpoints-counts", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       if (!keyResults || keyResults.length === 0) return {};
-      
+      const response = await fetch("/api/checkpoints", { credentials: "include" });
+      if (!response.ok) return {};
+      const checkpoints = await response.json();
       const counts: Record<number, { completed: number; total: number }> = {};
-      
-      // Fetch checkpoints data for each key result
-      await Promise.all(
-        keyResults.map(async (kr: any) => {
-          try {
-            const response = await fetch(`/api/checkpoints?keyResultId=${kr.id}`, { credentials: "include" });
-            if (response.ok) {
-              const checkpoints = await response.json();
-              if (Array.isArray(checkpoints)) {
-                const completed = checkpoints.filter((cp: any) => cp.status === "completed").length;
-                counts[kr.id] = { completed, total: checkpoints.length };
-              } else {
-                counts[kr.id] = { completed: 0, total: 0 };
-              }
-            } else {
-              counts[kr.id] = { completed: 0, total: 0 };
-            }
-          } catch {
-            counts[kr.id] = { completed: 0, total: 0 };
+      if (Array.isArray(checkpoints)) {
+        checkpoints.forEach((cp: any) => {
+          if (cp.keyResultId) {
+            if (!counts[cp.keyResultId]) counts[cp.keyResultId] = { completed: 0, total: 0 };
+            counts[cp.keyResultId].total++;
+            if (cp.status === "completed") counts[cp.keyResultId].completed++;
           }
-        })
-      );
-      
+        });
+      }
       return counts;
     },
     enabled: !!keyResults && keyResults.length > 0,
