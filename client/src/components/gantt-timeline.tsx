@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useRef, useEffect } from "react";
-import { format, startOfMonth, endOfMonth, addMonths, subMonths, differenceInDays, isToday, isBefore, isAfter, parseISO, startOfDay } from "date-fns";
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  format, startOfMonth, endOfMonth, addMonths, subMonths,
+  differenceInDays, isBefore, isAfter, parseISO, startOfDay
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock, Circle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,42 +43,13 @@ interface TooltipState {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: any }> = {
-  completed: {
-    label: "Concluída",
-    color: "text-green-700",
-    bg: "bg-green-500",
-    border: "border-green-600",
-    icon: CheckCircle,
-  },
-  in_progress: {
-    label: "Em Progresso",
-    color: "text-blue-700",
-    bg: "bg-blue-500",
-    border: "border-blue-600",
-    icon: Clock,
-  },
-  cancelled: {
-    label: "Cancelada",
-    color: "text-gray-500",
-    bg: "bg-gray-400",
-    border: "border-gray-500",
-    icon: AlertCircle,
-  },
-  pending: {
-    label: "Pendente",
-    color: "text-orange-700",
-    bg: "bg-orange-400",
-    border: "border-orange-500",
-    icon: Circle,
-  },
+  completed: { label: "Concluída", color: "text-green-700", bg: "bg-green-500", border: "border-green-600", icon: CheckCircle },
+  in_progress: { label: "Em Progresso", color: "text-blue-700", bg: "bg-blue-500", border: "border-blue-600", icon: Clock },
+  cancelled: { label: "Cancelada", color: "text-gray-500", bg: "bg-gray-400", border: "border-gray-500", icon: AlertCircle },
+  pending: { label: "Pendente", color: "text-orange-700", bg: "bg-orange-400", border: "border-orange-500", icon: Circle },
 };
 
-const PRIORITY_LABELS: Record<string, string> = {
-  high: "Alta",
-  medium: "Média",
-  low: "Baixa",
-};
-
+const PRIORITY_LABELS: Record<string, string> = { high: "Alta", medium: "Média", low: "Baixa" };
 const PRIORITY_COLORS: Record<string, string> = {
   high: "bg-red-100 text-red-700 border-red-200",
   medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -84,7 +58,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 const ROW_HEIGHT = 44;
 const LABEL_WIDTH = 220;
-const MONTH_MIN_WIDTH = 120;
+const MIN_DAY_PX = 5; // minimum pixels per day to ensure readability
 
 export default function GanttTimeline({ keyResultId, selectedQuarter, filters, onCreateAction }: GanttTimelineProps) {
   const [viewStart, setViewStart] = useState(() => startOfMonth(subMonths(new Date(), 1)));
@@ -92,7 +66,25 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [editingAction, setEditingAction] = useState<Action | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+
+  const outerRef = useRef<HTMLDivElement>(null);
+  const chartAreaRef = useRef<HTMLDivElement>(null);
+
+  // Measure chart area width and keep it in sync on resize
+  const measureWidth = useCallback(() => {
+    if (outerRef.current) {
+      const w = outerRef.current.getBoundingClientRect().width - LABEL_WIDTH;
+      setChartWidth(Math.max(w, 0));
+    }
+  }, []);
+
+  useEffect(() => {
+    measureWidth();
+    const ro = new ResizeObserver(measureWidth);
+    if (outerRef.current) ro.observe(outerRef.current);
+    return () => ro.disconnect();
+  }, [measureWidth]);
 
   const { data: actions, isLoading } = useQuery({
     queryKey: ["/api/actions", keyResultId, selectedQuarter, JSON.stringify(filters)],
@@ -128,15 +120,15 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
   useEffect(() => {
     if (!actions || actions.length === 0) return;
     const dates: Date[] = [];
-    actions.forEach((a: Action) => {
+    (actions as Action[]).forEach((a) => {
       if (a.createdAt) dates.push(new Date(a.createdAt));
       if (a.dueDate) dates.push(parseISO(a.dueDate));
     });
     if (dates.length === 0) return;
     const earliest = new Date(Math.min(...dates.map((d) => d.getTime())));
     const latest = new Date(Math.max(...dates.map((d) => d.getTime())));
-    const start = startOfMonth(subMonths(earliest, 0));
-    const end = endOfMonth(addMonths(latest, 0));
+    const start = startOfMonth(earliest);
+    const end = endOfMonth(latest);
     const monthCount = Math.max(3, Math.round(differenceInDays(end, start) / 30) + 1);
     setViewStart(start);
     setViewMonths(Math.min(monthCount, 12));
@@ -151,6 +143,13 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
 
   const viewEnd = endOfMonth(addMonths(viewStart, viewMonths - 1));
   const totalDays = differenceInDays(viewEnd, viewStart) + 1;
+
+  // Effective chart pixel width: at least MIN_DAY_PX * totalDays
+  const minChartPx = totalDays * MIN_DAY_PX;
+  const effectiveChartPx = Math.max(chartWidth, minChartPx);
+
+  // px per day — fixed, independent of screen width
+  const dayPx = chartWidth > 0 ? effectiveChartPx / totalDays : 0;
 
   // Build months array
   const months: Date[] = [];
@@ -171,12 +170,7 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     grouped[krKey].actions.push(action);
   });
 
-  // Flatten rows with group headers
-  interface Row {
-    type: "header" | "action";
-    krTitle?: string;
-    action?: Action;
-  }
+  interface Row { type: "header" | "action"; krTitle?: string; action?: Action; }
   const rows: Row[] = [];
   Object.values(grouped).forEach(({ krTitle, actions: krActions }) => {
     rows.push({ type: "header", krTitle });
@@ -188,44 +182,38 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
       .forEach((action) => rows.push({ type: "action", action }));
   });
 
-  const dayPct = (date: Date) => {
-    const clamped = Math.max(0, Math.min(totalDays, differenceInDays(date, viewStart)));
-    return (clamped / totalDays) * 100;
+  // Convert a date to pixel offset from viewStart
+  const dateToPx = (date: Date): number => {
+    const offset = differenceInDays(date, viewStart);
+    return Math.max(0, Math.min(effectiveChartPx, offset * dayPx));
   };
 
-  const todayPct = dayPct(new Date());
+  const todayPx = dateToPx(new Date());
   const showToday = isAfter(new Date(), viewStart) && isBefore(new Date(), viewEnd);
 
   const barConfig = (action: Action) => {
     const start = action.createdAt ? startOfDay(new Date(action.createdAt)) : null;
     const end = action.dueDate ? startOfDay(parseISO(action.dueDate)) : null;
-
     if (!start && !end) return null;
 
     const effectiveStart = start || end!;
     const effectiveEnd = end || start!;
 
-    const left = Math.max(0, dayPct(effectiveStart));
-    const right = Math.min(100, dayPct(effectiveEnd));
-    const width = Math.max(right - left, 0.3);
+    const leftPx = dateToPx(effectiveStart);
+    const rightPx = Math.min(effectiveChartPx, dateToPx(effectiveEnd));
+    const widthPx = Math.max(rightPx - leftPx, 4);
 
     const cfg = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
-    const isOverdue =
-      end &&
-      isBefore(end, new Date()) &&
-      action.status !== "completed" &&
-      action.status !== "cancelled";
+    const isOverdue = end && isBefore(end, new Date()) && action.status !== "completed" && action.status !== "cancelled";
     const isPoint = !start || Math.abs(differenceInDays(effectiveEnd, effectiveStart)) < 1;
 
-    return { left, width, cfg, isOverdue, isPoint, effectiveStart, effectiveEnd };
+    return { leftPx, widthPx, cfg, isOverdue, isPoint, effectiveStart, effectiveEnd };
   };
 
   if (isLoading) {
     return (
       <div className="space-y-3 p-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-10 w-full rounded" />
-        ))}
+        {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-10 w-full rounded" />)}
       </div>
     );
   }
@@ -250,35 +238,20 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
       {/* Controls */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setViewStart((v) => subMonths(v, 1))}
-          >
+          <Button variant="outline" size="sm" onClick={() => setViewStart((v) => subMonths(v, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium text-gray-700 min-w-[180px] text-center">
             {format(viewStart, "MMM yyyy", { locale: ptBR })} — {format(viewEnd, "MMM yyyy", { locale: ptBR })}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setViewStart((v) => addMonths(v, 1))}
-          >
+          <Button variant="outline" size="sm" onClick={() => setViewStart((v) => addMonths(v, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500">Zoom:</span>
           {[3, 5, 6, 9, 12].map((n) => (
-            <Button
-              key={n}
-              variant={viewMonths === n ? "default" : "outline"}
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => setViewMonths(n)}
-            >
+            <Button key={n} variant={viewMonths === n ? "default" : "outline"} size="sm" className="h-7 px-2 text-xs" onClick={() => setViewMonths(n)}>
               {n}m
             </Button>
           ))}
@@ -287,15 +260,12 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
 
       {/* Legend */}
       <div className="flex flex-wrap gap-3 mb-4">
-        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
-          const Icon = cfg.icon;
-          return (
-            <div key={key} className="flex items-center gap-1.5 text-xs text-gray-600">
-              <div className={`w-3 h-3 rounded-sm ${cfg.bg}`} />
-              <span>{cfg.label}</span>
-            </div>
-          );
-        })}
+        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+          <div key={key} className="flex items-center gap-1.5 text-xs text-gray-600">
+            <div className={`w-3 h-3 rounded-sm ${cfg.bg}`} />
+            <span>{cfg.label}</span>
+          </div>
+        ))}
         <div className="flex items-center gap-1.5 text-xs text-gray-600">
           <div className="w-3 h-3 rounded-sm bg-red-200 border border-red-400" />
           <span>Atrasada</span>
@@ -307,156 +277,141 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
       </div>
 
       {/* Gantt Chart */}
-      <div className="relative border rounded-lg overflow-hidden bg-white" ref={containerRef}>
-        {/* Header: Month labels */}
-        <div className="flex border-b bg-gray-50 sticky top-0 z-10" style={{ paddingLeft: LABEL_WIDTH }}>
-          {months.map((month, i) => {
-            const daysInMonth = differenceInDays(endOfMonth(month), month) + 1;
-            const widthPct = (daysInMonth / totalDays) * 100;
-            return (
-              <div
-                key={i}
-                className="border-l first:border-l-0 flex items-center justify-center py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide"
-                style={{ width: `${widthPct}%`, minWidth: MONTH_MIN_WIDTH }}
-              >
-                {format(month, "MMM yyyy", { locale: ptBR })}
-              </div>
-            );
-          })}
-        </div>
+      <div className="relative border rounded-lg overflow-hidden bg-white" ref={outerRef}>
+        {/* Scrollable wrapper so chart doesn't collapse on small screens */}
+        <div className="overflow-x-auto">
+          {/* Inner fixed-layout container */}
+          <div style={{ minWidth: LABEL_WIDTH + effectiveChartPx }}>
 
-        {/* Rows */}
-        <div className="relative overflow-x-auto">
-          {rows.map((row, rowIdx) => {
-            if (row.type === "header") {
-              return (
-                <div
-                  key={`header-${rowIdx}`}
-                  className="flex items-center bg-gray-50 border-b py-1.5"
-                  style={{ minHeight: 32 }}
-                >
-                  <div
-                    className="flex-shrink-0 px-3 text-xs font-semibold text-blue-800 truncate"
-                    style={{ width: LABEL_WIDTH }}
-                    title={row.krTitle}
-                  >
-                    📌 {row.krTitle}
-                  </div>
-                  <div className="flex-1 relative" style={{ minHeight: 32 }}>
-                    {/* Month dividers */}
-                    {months.map((month, i) => {
-                      const daysInMonth = differenceInDays(endOfMonth(month), month) + 1;
-                      const leftPct = dayPct(month);
-                      return (
+            {/* ── HEADER ── */}
+            <div className="flex border-b bg-gray-50 sticky top-0 z-10">
+              {/* Label placeholder — exactly same width as the label column */}
+              <div style={{ width: LABEL_WIDTH, flexShrink: 0 }} />
+
+              {/* Month cells — each uses pixel width derived from dayPx */}
+              <div className="relative flex" style={{ width: effectiveChartPx }}>
+                {months.map((month, i) => {
+                  const daysInMonth = differenceInDays(endOfMonth(month), month) + 1;
+                  const monthPx = daysInMonth * dayPx;
+                  return (
+                    <div
+                      key={i}
+                      className="border-l first:border-l-0 flex items-center justify-center py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide flex-shrink-0"
+                      style={{ width: monthPx }}
+                    >
+                      {format(month, "MMM yyyy", { locale: ptBR })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── ROWS ── */}
+            {rows.map((row, rowIdx) => {
+              if (row.type === "header") {
+                return (
+                  <div key={`header-${rowIdx}`} className="flex items-center bg-gray-50 border-b" style={{ minHeight: 32 }}>
+                    {/* KR title label */}
+                    <div
+                      className="flex-shrink-0 px-3 text-xs font-semibold text-blue-800 truncate"
+                      style={{ width: LABEL_WIDTH }}
+                      title={row.krTitle}
+                    >
+                      📌 {row.krTitle}
+                    </div>
+                    {/* Grid area */}
+                    <div className="relative flex-shrink-0" style={{ width: effectiveChartPx, minHeight: 32 }}>
+                      {months.map((month, i) => (
                         <div
                           key={i}
                           className="absolute top-0 bottom-0 border-l border-gray-200"
-                          style={{ left: `${leftPct}%` }}
+                          style={{ left: dateToPx(month) }}
                         />
-                      );
-                    })}
+                      ))}
+                      {showToday && (
+                        <div className="absolute top-0 bottom-0 w-px bg-red-400 opacity-60 z-10" style={{ left: todayPx }} />
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              const action = row.action!;
+              const bar = barConfig(action);
+              const cfg = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
+
+              return (
+                <div
+                  key={`action-${action.id}`}
+                  className="flex items-center border-b hover:bg-gray-50 transition-colors group"
+                  style={{ minHeight: ROW_HEIGHT }}
+                >
+                  {/* Action label */}
+                  <div
+                    className="flex-shrink-0 px-3 flex items-center gap-2 cursor-pointer"
+                    style={{ width: LABEL_WIDTH }}
+                    onClick={() => { setEditingAction(action); setShowForm(true); }}
+                    title={action.title}
+                  >
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.bg}`} />
+                    <span className="text-xs text-gray-700 truncate group-hover:text-blue-600 transition-colors">
+                      {action.title}
+                    </span>
+                    {bar?.isOverdue && <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />}
+                  </div>
+
+                  {/* Bar area — exact same pixel width as header chart area */}
+                  <div className="relative flex-shrink-0" style={{ width: effectiveChartPx, height: ROW_HEIGHT }}>
+                    {/* Month dividers */}
+                    {months.map((month, i) => (
+                      <div
+                        key={i}
+                        className="absolute top-0 bottom-0 border-l border-gray-100"
+                        style={{ left: dateToPx(month) }}
+                      />
+                    ))}
+
                     {/* Today line */}
                     {showToday && (
+                      <div className="absolute top-0 bottom-0 w-px bg-red-500 z-10" style={{ left: todayPx }} />
+                    )}
+
+                    {/* Bar */}
+                    {bar && (
                       <div
-                        className="absolute top-0 bottom-0 w-px bg-red-400 opacity-60 z-10"
-                        style={{ left: `${todayPct}%` }}
-                      />
+                        className={`absolute top-1/2 -translate-y-1/2 rounded cursor-pointer transition-opacity hover:opacity-80
+                          ${bar.isPoint ? "w-3 h-3 rounded-full border-2" : "h-6"}
+                          ${bar.isOverdue ? "bg-red-200 border border-red-400" : `${cfg.bg} border ${cfg.border}`}
+                        `}
+                        style={{
+                          left: bar.leftPx,
+                          width: bar.isPoint ? undefined : bar.widthPx,
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = (e.target as HTMLElement).getBoundingClientRect();
+                          setTooltip({ action, x: rect.left, y: rect.top });
+                        }}
+                      >
+                        {!bar.isPoint && bar.widthPx > 30 && (
+                          <span className="absolute inset-0 flex items-center px-1.5 text-white text-[10px] font-medium truncate leading-none">
+                            {action.title}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* No date indicator */}
+                    {!bar && (
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="text-[10px] text-gray-400 italic pl-2">sem data</span>
+                      </div>
                     )}
                   </div>
                 </div>
               );
-            }
-
-            const action = row.action!;
-            const bar = barConfig(action);
-            const isOverdue = bar?.isOverdue;
-            const cfg = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
-
-            return (
-              <div
-                key={`action-${action.id}`}
-                className={`flex items-center border-b hover:bg-gray-50 transition-colors group`}
-                style={{ minHeight: ROW_HEIGHT }}
-              >
-                {/* Action label */}
-                <div
-                  className="flex-shrink-0 px-3 flex items-center gap-2 cursor-pointer"
-                  style={{ width: LABEL_WIDTH }}
-                  onClick={() => {
-                    setEditingAction(action);
-                    setShowForm(true);
-                  }}
-                  title={action.title}
-                >
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.bg}`} />
-                  <span className="text-xs text-gray-700 truncate group-hover:text-blue-600 transition-colors">
-                    {action.title}
-                  </span>
-                  {isOverdue && (
-                    <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-                  )}
-                </div>
-
-                {/* Bar area */}
-                <div className="flex-1 relative" style={{ minHeight: ROW_HEIGHT }}>
-                  {/* Month dividers */}
-                  {months.map((month, i) => {
-                    const leftPct = dayPct(month);
-                    return (
-                      <div
-                        key={i}
-                        className="absolute top-0 bottom-0 border-l border-gray-100"
-                        style={{ left: `${leftPct}%` }}
-                      />
-                    );
-                  })}
-
-                  {/* Today line */}
-                  {showToday && (
-                    <div
-                      className="absolute top-0 bottom-0 w-px bg-red-500 z-10"
-                      style={{ left: `${todayPct}%` }}
-                    />
-                  )}
-
-                  {/* Bar */}
-                  {bar && (
-                    <div
-                      className={`absolute top-1/2 -translate-y-1/2 rounded cursor-pointer transition-opacity hover:opacity-80
-                        ${bar.isPoint ? "w-3 h-3 rounded-full border-2" : "h-6"}
-                        ${bar.isOverdue
-                          ? "bg-red-200 border border-red-400"
-                          : `${cfg.bg} border ${cfg.border}`
-                        }
-                      `}
-                      style={{
-                        left: `${bar.left}%`,
-                        width: bar.isPoint ? undefined : `${Math.max(bar.width, 0.5)}%`,
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const rect = (e.target as HTMLElement).getBoundingClientRect();
-                        setTooltip({ action, x: rect.left, y: rect.top });
-                      }}
-                    >
-                      {!bar.isPoint && (
-                        <span className="absolute inset-0 flex items-center px-1.5 text-white text-[10px] font-medium truncate leading-none">
-                          {action.title}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* No date indicator */}
-                  {!bar && (
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="text-[10px] text-gray-400 italic pl-2">sem data</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+            })}
+          </div>
         </div>
       </div>
 
@@ -466,10 +421,7 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
           const count = allActions.filter((a) => a.status === status).length;
           const Icon = cfg.icon;
           return (
-            <div
-              key={status}
-              className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border"
-            >
+            <div key={status} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border">
               <Icon className={`h-4 w-4 ${cfg.color}`} />
               <div>
                 <p className={`text-sm font-semibold ${cfg.color}`}>{count}</p>
@@ -494,15 +446,10 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
             <p className="text-xs text-gray-600 mb-2 line-clamp-2">{tooltip.action.description}</p>
           )}
           <div className="flex flex-wrap gap-1 mb-2">
-            <Badge
-              className={`text-[10px] px-1.5 py-0 border ${PRIORITY_COLORS[tooltip.action.priority] || "bg-gray-100 text-gray-600"}`}
-              variant="outline"
-            >
+            <Badge className={`text-[10px] px-1.5 py-0 border ${PRIORITY_COLORS[tooltip.action.priority] || "bg-gray-100 text-gray-600"}`} variant="outline">
               {PRIORITY_LABELS[tooltip.action.priority] || tooltip.action.priority}
             </Badge>
-            <Badge
-              className={`text-[10px] px-1.5 py-0 ${STATUS_CONFIG[tooltip.action.status]?.bg || "bg-gray-400"} text-white border-0`}
-            >
+            <Badge className={`text-[10px] px-1.5 py-0 ${STATUS_CONFIG[tooltip.action.status]?.bg || "bg-gray-400"} text-white border-0`}>
               {STATUS_CONFIG[tooltip.action.status]?.label || tooltip.action.status}
             </Badge>
           </div>
@@ -535,15 +482,9 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
       {/* Edit form */}
       <ActionForm
         action={editingAction}
-        onSuccess={() => {
-          setShowForm(false);
-          setEditingAction(null);
-        }}
+        onSuccess={() => { setShowForm(false); setEditingAction(null); }}
         open={showForm}
-        onOpenChange={(open) => {
-          setShowForm(open);
-          if (!open) setEditingAction(null);
-        }}
+        onOpenChange={(open) => { setShowForm(open); if (!open) setEditingAction(null); }}
       />
     </>
   );
