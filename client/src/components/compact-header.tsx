@@ -172,7 +172,7 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                 <div className="flex flex-col items-start gap-0">
                   <span className="text-[9px] text-white/50 font-medium uppercase tracking-wide leading-none mb-0.5 pl-0.5">Período</span>
                   <Select value={selectedQuarter || ""} onValueChange={setSelectedQuarter}>
-                    <SelectTrigger className="w-28 h-6 bg-white/15 border-white/20 text-white text-xs hover:bg-white/25 transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40">
+                    <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${selectedQuarter && selectedQuarter !== 'all' ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
@@ -206,7 +206,7 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                     value={filters.regionId?.toString() || "all"} 
                     onValueChange={(value) => handleFilterChange('regionId', value)}
                   >
-                    <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${filters.regionId ? 'bg-white/25 border-white/35' : 'bg-white/15 hover:bg-white/25'}`}>
+                    <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${filters.regionId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -230,7 +230,7 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                     onValueChange={(value) => handleFilterChange('subRegionId', value)}
                     disabled={!filters.regionId}
                   >
-                    <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 disabled:opacity-40 disabled:cursor-not-allowed ${filters.subRegionId ? 'bg-white/25 border-white/35' : 'bg-white/15 hover:bg-white/25'}`}>
+                    <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 disabled:opacity-40 disabled:cursor-not-allowed ${filters.subRegionId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -253,7 +253,7 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                     value={filters.serviceLineId?.toString() || "all"} 
                     onValueChange={(value) => handleFilterChange('serviceLineId', value)}
                   >
-                    <SelectTrigger className={`w-32 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${filters.serviceLineId ? 'bg-white/25 border-white/35' : 'bg-white/15 hover:bg-white/25'}`}>
+                    <SelectTrigger className={`w-32 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${filters.serviceLineId ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
