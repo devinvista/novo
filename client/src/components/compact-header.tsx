@@ -171,9 +171,9 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
                 {/* Filtro de Trimestre */}
                 <div className="flex flex-col items-start gap-0">
                   <span className="text-[9px] text-white/50 font-medium uppercase tracking-wide leading-none mb-0.5 pl-0.5">Período</span>
-                  <Select value={selectedQuarter || ""} onValueChange={setSelectedQuarter}>
+                  <Select value={selectedQuarter || "all"} onValueChange={setSelectedQuarter}>
                     <SelectTrigger className={`w-28 h-6 border-white/20 text-white text-xs transition-colors focus:ring-0 focus:ring-offset-0 focus:border-white/40 ${selectedQuarter && selectedQuarter !== 'all' ? '!bg-white/25 border-white/35' : '!bg-white/15 hover:!bg-white/25'}`}>
-                      <SelectValue placeholder="Todos" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
