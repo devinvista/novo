@@ -12,7 +12,6 @@ import {
   Settings, 
   LogOut,
   User,
-  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -30,7 +29,6 @@ export default function Sidebar() {
     { href: "/key-results", icon: Key, label: "Resultados-Chave" },
     { href: "/actions", icon: CheckSquare, label: "Ações" },
     { href: "/checkpoints", icon: Flag, label: "Checkpoints" },
-    { href: "/indicators", icon: TrendingUp, label: "Indicadores" },
     { href: "/reports", icon: Activity, label: "Relatórios" },
   ];
 
