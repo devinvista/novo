@@ -5,7 +5,7 @@ import { setupEmergencyCleanup } from '@/lib/emergency-cleanup';
 
 // Import pages
 import AuthPage from '@/pages/auth-page';
-import Dashboard from '@/pages/dashboard';
+import AlignmentTree from '@/pages/alignment-tree';
 import Objectives from '@/pages/objectives';
 import KeyResults from '@/pages/key-results';
 import Actions from '@/pages/actions';
@@ -14,7 +14,6 @@ import Indicators from '@/pages/indicators';
 import Users from '@/pages/users';
 import Reports from '@/pages/reports';
 import Settings from '@/pages/settings';
-import AlignmentTree from '@/pages/alignment-tree';
 import NotFound from '@/pages/not-found';
 
 // Import components and providers
@@ -25,7 +24,6 @@ import { AppProviders } from '@/providers/app-providers';
 function AppContent() {
   const { user } = useAuth();
   
-  // Global cleanup on mount to handle any leftover modals
   useEffect(() => {
     cleanupOnDialogClose();
     const removeEmergencyCleanup = setupEmergencyCleanup();
@@ -41,7 +39,7 @@ function AppContent() {
       <Sidebar />
       <div className="flex-1 overflow-auto">
         <Switch>
-          <Route path="/" component={Dashboard} />
+          <Route path="/" component={AlignmentTree} />
           <Route path="/objectives" component={Objectives} />
           <Route path="/key-results" component={KeyResults} />
           <Route path="/actions" component={Actions} />
@@ -50,7 +48,6 @@ function AppContent() {
           <Route path="/users" component={Users} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
-          <Route path="/alignment" component={AlignmentTree} />
           <Route component={NotFound} />
         </Switch>
       </div>

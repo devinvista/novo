@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import { 
-  BarChart3, 
+  Network,
   Goal, 
   Key, 
   CheckSquare, 
@@ -12,8 +12,7 @@ import {
   Settings, 
   LogOut,
   User,
-  TrendingUp,
-  Network
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -26,11 +25,10 @@ export default function Sidebar() {
   const { isOpen } = useSidebarToggle();
 
   const navigationItems = [
-    { href: "/", icon: BarChart3, label: "Dashboard" },
+    { href: "/", icon: Network, label: "Alinhamento" },
     { href: "/objectives", icon: Goal, label: "Objetivos" },
     { href: "/key-results", icon: Key, label: "Resultados-Chave" },
     { href: "/actions", icon: CheckSquare, label: "Ações" },
-    { href: "/alignment", icon: Network, label: "Alinhamento" },
     { href: "/checkpoints", icon: Flag, label: "Checkpoints" },
     { href: "/indicators", icon: TrendingUp, label: "Indicadores" },
     { href: "/reports", icon: Activity, label: "Relatórios" },
