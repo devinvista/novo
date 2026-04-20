@@ -1,12 +1,11 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   TrendingUp, DollarSign, GraduationCap, Building2, 
-  Users, Clock, Calculator, BarChart3, Target 
+  Users, Clock, Calculator, BarChart3, Target, CheckCircle2, Circle, AlertCircle
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
@@ -46,34 +45,29 @@ const INDICATOR_COLORS = [
 ];
 
 export default function IndicatorsDashboard({ selectedQuarter, filters }: IndicatorsDashboardProps) {
-  const queryClient = useQueryClient();
   const { data: indicators, isLoading: indicatorsLoading } = useQuery({
     queryKey: ["/api/strategic-indicators"],
   });
 
-  const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
-    queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
+  const { data: keyResults, isLoading: keyResultsLoading } = useQuery<any[]>({
+    queryKey: ["/api/key-results", selectedQuarter, filters?.regionId, filters?.subRegionId, filters?.serviceLineId],
     queryFn: async () => {
       if (selectedQuarter && selectedQuarter !== "all") {
         const params = new URLSearchParams();
-        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
-        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
-        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
-        
-        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
-        
+        if (filters?.regionId) params.append("regionId", filters.regionId.toString());
+        if (filters?.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ""}`;
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar resultados-chave trimestrais");
         const data = await response.json();
         return data.keyResults || [];
       } else {
         const params = new URLSearchParams();
-        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
-        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
-        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
-        
-        const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
-        
+        if (filters?.regionId) params.append("regionId", filters.regionId.toString());
+        if (filters?.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
+        const url = `/api/key-results${params.toString() ? `?${params}` : ""}`;
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao carregar resultados-chave");
         return response.json();
@@ -82,56 +76,82 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
     refetchOnWindowFocus: false,
   });
 
-  // Force invalidation when filters change
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
-  }, [filters, queryClient]);
+  const { data: checkpoints, isLoading: checkpointsLoading } = useQuery<any[]>({
+    queryKey: ["/api/checkpoints"],
+    queryFn: async () => {
+      const response = await fetch("/api/checkpoints", { credentials: "include" });
+      if (!response.ok) throw new Error("Erro ao carregar acompanhamentos");
+      return response.json();
+    },
+    refetchOnWindowFocus: false,
+  });
 
-  const getIndicatorIcon = (_name: string, index: number) => {
-    return INDICATOR_ICONS[index % INDICATOR_ICONS.length];
-  };
+  const getIndicatorIcon = (_name: string, index: number) => INDICATOR_ICONS[index % INDICATOR_ICONS.length];
+  const getIndicatorColor = (_name: string, index: number) => INDICATOR_COLORS[index % INDICATOR_COLORS.length];
 
-  const getIndicatorColor = (_name: string, index: number) => {
-    return INDICATOR_COLORS[index % INDICATOR_COLORS.length];
+  const getKRsForIndicator = (indicatorId: number): any[] => {
+    if (!Array.isArray(keyResults)) return [];
+    return keyResults.filter((kr: any) => {
+      const ids = Array.isArray(kr.strategicIndicatorIds) ? kr.strategicIndicatorIds : [];
+      return ids.includes(indicatorId);
+    });
   };
 
   const getIndicatorStats = (indicatorId: number) => {
-    if (!Array.isArray(keyResults)) return { count: 0, avgProgress: 0, inProgress: 0, completed: 0 };
-    
-    const relatedKRs = keyResults.filter((kr: any) => kr.strategicIndicatorId === indicatorId);
-    const avgProgress = relatedKRs.length > 0 
-      ? relatedKRs.reduce((sum: number, kr: any) => sum + parseFloat(kr.progress || "0"), 0) / relatedKRs.length
-      : 0;
-    
+    const relatedKRs = getKRsForIndicator(indicatorId);
+    if (relatedKRs.length === 0) return { count: 0, avgProgress: 0, inProgress: 0, completed: 0, delayed: 0 };
+
+    const avgProgress = relatedKRs.reduce((sum: number, kr: any) => sum + parseFloat(kr.progress || "0"), 0) / relatedKRs.length;
     const inProgress = relatedKRs.filter((kr: any) => kr.status === "active").length;
     const completed = relatedKRs.filter((kr: any) => kr.status === "completed").length;
-    
+    const delayed = relatedKRs.filter((kr: any) => kr.status === "delayed").length;
+
+    return { count: relatedKRs.length, avgProgress, inProgress, completed, delayed };
+  };
+
+  const getCheckpointsForIndicator = (indicatorId: number) => {
+    const relatedKRs = getKRsForIndicator(indicatorId);
+    const krIds = relatedKRs.map((kr: any) => kr.id);
+    if (!Array.isArray(checkpoints)) return { total: 0, completed: 0, pending: 0, inProgress: 0 };
+
+    const related = checkpoints.filter((cp: any) => krIds.includes(cp.keyResultId));
     return {
-      count: relatedKRs.length,
-      avgProgress: avgProgress,
-      inProgress,
-      completed
+      total: related.length,
+      completed: related.filter((cp: any) => cp.status === "completed").length,
+      pending: related.filter((cp: any) => cp.status === "pending").length,
+      inProgress: related.filter((cp: any) => cp.status === "in_progress").length,
     };
   };
 
   const getIndicatorChartData = () => {
     if (!Array.isArray(indicators) || !Array.isArray(keyResults)) return [];
-    
     return indicators.map((indicator: any, index: number) => {
       const stats = getIndicatorStats(indicator.id);
       return {
         name: indicator.name.length > 20 ? indicator.name.substring(0, 20) + "..." : indicator.name,
         fullName: indicator.name,
         value: stats.count,
-        progress: stats.avgProgress,
-        color: COLORS[index % COLORS.length]
+        progress: parseFloat(stats.avgProgress.toFixed(1)),
+        color: COLORS[index % COLORS.length],
       };
     });
   };
 
-  const isLoading = indicatorsLoading || keyResultsLoading;
+  const isLoading = indicatorsLoading || keyResultsLoading || checkpointsLoading;
   const chartData = getIndicatorChartData();
   const totalKRs = Array.isArray(keyResults) ? keyResults.length : 0;
+  const totalCheckpoints = Array.isArray(checkpoints) ? checkpoints.length : 0;
+  const completedCheckpoints = Array.isArray(checkpoints)
+    ? checkpoints.filter((cp: any) => cp.status === "completed").length
+    : 0;
+  const avgProgress =
+    totalKRs > 0 && Array.isArray(keyResults)
+      ? keyResults.reduce((sum: number, kr: any) => sum + parseFloat(kr.progress || "0"), 0) / totalKRs
+      : 0;
+  const completionRate =
+    totalKRs > 0 && Array.isArray(keyResults)
+      ? (keyResults.filter((kr: any) => kr.status === "completed").length / totalKRs) * 100
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -165,27 +185,25 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {Array.isArray(keyResults) && keyResults.length > 0
-                ? (keyResults.reduce((sum: number, kr: any) => sum + parseFloat(kr.progress || "0"), 0) / keyResults.length).toFixed(1)
-                : "0"}%
-            </div>
+            <div className="text-2xl font-bold">{avgProgress.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">Entre todos os KRs</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conclusão</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Acompanhamentos</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Array.isArray(keyResults) && keyResults.length > 0
-                ? ((keyResults.filter((kr: any) => kr.status === "completed").length / keyResults.length) * 100).toFixed(0)
-                : "0"}%
+              {completedCheckpoints}/{totalCheckpoints}
             </div>
-            <p className="text-xs text-muted-foreground">KRs concluídos</p>
+            <p className="text-xs text-muted-foreground">
+              {totalCheckpoints > 0
+                ? `${((completedCheckpoints / totalCheckpoints) * 100).toFixed(0)}% concluídos`
+                : "Nenhum acompanhamento"}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -197,29 +215,29 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
             <CardTitle>Distribuição por Indicador</CardTitle>
           </CardHeader>
           <CardContent>
-            {chartData.length > 0 ? (
+            {chartData.some((d) => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={chartData}
+                    data={chartData.filter((d) => d.value > 0)}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ value }) => value > 0 ? value : ""}
+                    label={({ value }) => (value > 0 ? value : "")}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {chartData.map((entry: any, index: number) => (
+                    {chartData.filter((d) => d.value > 0).map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value, name, props) => [value, props.payload.fullName]} />
+                  <Tooltip formatter={(value, _name, props) => [value, props.payload.fullName]} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                Nenhum dado disponível
+                Nenhum KR vinculado a indicadores
               </div>
             )}
           </CardContent>
@@ -230,14 +248,14 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
             <CardTitle>Progresso por Indicador</CardTitle>
           </CardHeader>
           <CardContent>
-            {chartData.length > 0 ? (
+            {chartData.some((d) => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
+                <BarChart data={chartData.filter((d) => d.value > 0)}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis domain={[0, 100]} />
-                  <Tooltip formatter={(value, name, props) => [`${value}%`, props.payload.fullName]} />
-                  <Bar dataKey="progress" fill="#0088FE" />
+                  <Tooltip formatter={(value, _name, props) => [`${value}%`, props.payload.fullName]} />
+                  <Bar dataKey="progress" fill="#0088FE" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -251,74 +269,128 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
 
       {/* Indicator Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {isLoading ? (
-          Array.from({ length: 7 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-2/3" />
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          Array.isArray(indicators) ? indicators.map((indicator: any, idx: number) => {
-            const stats = getIndicatorStats(indicator.id);
-            const colorClass = getIndicatorColor(indicator.name, idx);
-            
-            return (
-              <Card key={indicator.id} className="hover:shadow-md transition-shadow">
+        {isLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${colorClass}`}>
+                  <Skeleton className="h-6 w-3/4" />
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardContent>
+              </Card>
+            ))
+          : Array.isArray(indicators) &&
+            indicators.map((indicator: any, idx: number) => {
+              const stats = getIndicatorStats(indicator.id);
+              const cpStats = getCheckpointsForIndicator(indicator.id);
+              const colorClass = getIndicatorColor(indicator.name, idx);
+
+              return (
+                <Card key={indicator.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg flex-shrink-0 ${colorClass}`}>
                         {getIndicatorIcon(indicator.name, idx)}
                       </div>
-                      <div>
-                        <CardTitle className="text-base line-clamp-2">{indicator.name}</CardTitle>
+                      <div className="min-w-0">
+                        <CardTitle className="text-sm font-semibold line-clamp-2 leading-snug">
+                          {indicator.name}
+                        </CardTitle>
                         {indicator.unit && (
-                          <p className="text-xs text-muted-foreground mt-1">Unidade: {indicator.unit}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Unidade: {indicator.unit}</p>
                         )}
                       </div>
                     </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="space-y-3">
+                  </CardHeader>
+
+                  <CardContent className="space-y-3">
+                    {/* KR Stats */}
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">KRs Associados:</span>
-                      <span className="font-medium">{stats.count}</span>
+                      <span className="text-muted-foreground">KRs associados:</span>
+                      <span className="font-semibold">{stats.count}</span>
                     </div>
-                    
-                    {stats.count > 0 && (
+
+                    {stats.count > 0 ? (
                       <>
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Progresso:</span>
-                            <span className="font-medium">{stats.avgProgress.toFixed(1)}%</span>
+                            <span className="text-muted-foreground">Progresso médio:</span>
+                            <span className="font-semibold">{stats.avgProgress.toFixed(1)}%</span>
                           </div>
-                          <Progress value={stats.avgProgress} className="h-2" />
+                          <Progress value={stats.avgProgress} className="h-1.5" />
                         </div>
-                        
-                        <div className="flex gap-2 text-xs">
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                            {stats.inProgress} em progresso
-                          </Badge>
-                          <Badge variant="secondary" className="bg-green-100 text-green-700">
-                            {stats.completed} concluídos
-                          </Badge>
+
+                        <div className="flex flex-wrap gap-1.5 text-xs">
+                          {stats.inProgress > 0 && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0">
+                              {stats.inProgress} em progresso
+                            </Badge>
+                          )}
+                          {stats.completed > 0 && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-700 border-0">
+                              {stats.completed} concluídos
+                            </Badge>
+                          )}
+                          {stats.delayed > 0 && (
+                            <Badge variant="secondary" className="bg-red-100 text-red-700 border-0">
+                              {stats.delayed} atrasados
+                            </Badge>
+                          )}
                         </div>
+
+                        {/* Checkpoints / Acompanhamentos */}
+                        {cpStats.total > 0 && (
+                          <div className="border-t pt-2 mt-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-1.5">Acompanhamentos</p>
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">
+                                {cpStats.completed}/{cpStats.total} realizados
+                              </span>
+                              <span className="font-medium">
+                                {cpStats.total > 0
+                                  ? ((cpStats.completed / cpStats.total) * 100).toFixed(0)
+                                  : 0}%
+                              </span>
+                            </div>
+                            <Progress
+                              value={cpStats.total > 0 ? (cpStats.completed / cpStats.total) * 100 : 0}
+                              className="h-1 bg-gray-100"
+                            />
+                            <div className="flex gap-2 mt-1.5 flex-wrap">
+                              {cpStats.completed > 0 && (
+                                <span className="flex items-center gap-1 text-xs text-green-600">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  {cpStats.completed} ok
+                                </span>
+                              )}
+                              {cpStats.inProgress > 0 && (
+                                <span className="flex items-center gap-1 text-xs text-blue-600">
+                                  <Circle className="h-3 w-3" />
+                                  {cpStats.inProgress} em andamento
+                                </span>
+                              )}
+                              {cpStats.pending > 0 && (
+                                <span className="flex items-center gap-1 text-xs text-gray-500">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {cpStats.pending} pendentes
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">
+                        Nenhum KR vinculado a este indicador
+                      </p>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          }) : []
-        )}
+                  </CardContent>
+                </Card>
+              );
+            })}
       </div>
     </div>
   );
