@@ -11,12 +11,25 @@ import {
 import { db } from "./pg-db";
 import { eq, and, desc, sql, asc, inArray, count } from "drizzle-orm";
 import session from "express-session";
-// @ts-ignore
-import MemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 import { getQuarterlyPeriods } from "./quarterly-periods";
 
-const sessionStore = new (MemoryStore(session))({
-  checkPeriod: 86400000
+const PgSession = connectPgSimple(session);
+
+const sessionPool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes("sslmode=require")
+    ? { rejectUnauthorized: false }
+    : undefined,
+  max: 5,
+});
+
+const sessionStore = new PgSession({
+  pool: sessionPool,
+  tableName: "session",
+  createTableIfMissing: true,
+  pruneSessionInterval: 60 * 15,
 });
 
 export interface IStorage {

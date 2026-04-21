@@ -14,7 +14,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 - **Backend**: Node.js + Express.js (TypeScript, ES modules)
 - **Banco de Dados**: PostgreSQL (conexão via `DATABASE_URL` usando o pacote `postgres`)
 - **ORM**: Drizzle ORM com drizzle-zod para validação
-- **Autenticação**: Passport.js (estratégia local) + express-session + MemoryStore
+- **Autenticação**: Passport.js (estratégia local) + express-session + connect-pg-simple (sessões PostgreSQL)
 - **Estado**: TanStack Query v5 para estado do servidor
 - **Roteamento**: Wouter (frontend)
 - **Formulários**: React Hook Form + Zod
@@ -73,15 +73,16 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
   providers/
     app-providers.tsx             # Provedores de contexto (AuthProvider, FiltersProvider, QueryClientProvider)
 /server/
-  index.ts                        # Entry point (porta 5000, timezone America/Sao_Paulo)
+  index.ts                        # Entry point (porta 5000/PORT env, timezone America/Sao_Paulo, helmet, rate-limit, healthcheck)
   routes.ts                       # Todas as rotas da API (~2010 linhas)
-  auth.ts                         # Autenticação e autorização (Passport.js + scrypt)
-  pg-storage.ts                   # Implementação de acesso ao banco (PostgreSQL + Drizzle) + interface IStorage
-  pg-db.ts                        # Conexão com PostgreSQL via pacote `postgres` (DATABASE_URL env var)
+  auth.ts                         # Autenticação e autorização (Passport.js + scrypt, cookies env-aware)
+  pg-storage.ts                   # Implementação de acesso ao banco (PostgreSQL + Drizzle) + interface IStorage + session store
+  pg-db.ts                        # Conexão com PostgreSQL via pacote `postgres` (DATABASE_URL env var, pool production-grade)
   storage.ts                      # Re-exporta pg-storage (abstração)
+  logger.ts                       # Logging centralizado (morgan HTTP logger, produção JSON / dev texto)
   quarterly-periods.ts            # Utilitários de cálculo de períodos trimestrais
   formatters.ts                   # Formatação de números no padrão BR (server-side)
-  vite.ts                         # Setup do servidor Vite em desenvolvimento
+  vite.ts                         # Setup do servidor Vite em dev / static files em prod (path resolution correta)
   seed.ts                         # Script de seed de dados (desenvolvimento)
   seed-okrs.ts                    # Script de seed de OKRs de exemplo (desenvolvimento)
 /shared/
@@ -108,10 +109,15 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | `quarterly_periods` | Períodos trimestrais de controle |
 | `activities` | Log de atividades do sistema (disponível para uso futuro) |
 
-### Segurança
+### Segurança e Produção
 - **Senhas nunca expostas**: `sanitizeUser()` / `sanitizeUsers()` em `server/routes.ts` remove o campo `password` de todas as respostas de usuário
 - **`/api/managers` protegido por auth**: requer autenticação; formulário de registro usa `/api/managers/public` (apenas `id` e `name`)
 - **Scrypt com salt**: senhas armazenadas como `hash.salt` (64 bytes)
+- **Helmet**: headers de segurança HTTP em todas as respostas
+- **Rate limiting**: `/api/login` e `/api/register` limitados a 30 req / 15 min por IP
+- **Sessões PostgreSQL**: `connect-pg-simple` persiste sessões na tabela `session` (auto-criada) — sem perda de sessão em restart
+- **Cookies env-aware**: `secure: true` e `sameSite: "none"` apenas em produção; em dev usa `sameSite: "lax"`
+- **Healthcheck**: `GET /health` retorna status do servidor e conectividade com banco (usado pelo Hostinger para monitoramento)
 
 ### API - Rotas Principais
 | Método | Rota | Descrição |
@@ -211,8 +217,30 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 ### Variáveis de Ambiente
 | Variável | Descrição | Obrigatória |
 |----------|-----------|-------------|
-| `DATABASE_URL` | URL de conexão PostgreSQL | Sim |
-| `SESSION_SECRET` | Segredo para sessões (padrão inseguro em dev) | Recomendada |
+| `DATABASE_URL` | URL de conexão PostgreSQL (suporte a `sslmode=require`) | Sim |
+| `SESSION_SECRET` | Segredo para sessões — **obrigatório em produção** (string longa e aleatória) | Sim (prod) |
+| `PORT` | Porta do servidor (padrão: 5000) — Hostinger define automaticamente | Não |
+| `NODE_ENV` | `production` ativa: cookies seguros, logs JSON, pool maior, sem Vite HMR | Sim (prod) |
+
+### Deploy no Hostinger (Node.js)
+Compatível com Node.js 20.x / 22.x (recomendado), Express + React + Vite.
+
+**Configuração no painel Hostinger:**
+| Campo | Valor |
+|-------|-------|
+| Build command | `npm install && npm run build` |
+| Start command | `node dist/index.js` |
+| Node version | 22.x (ou 20.x) |
+| Port | automático (definido por `PORT`) |
+
+**Variáveis de ambiente a configurar:**
+```
+DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
+SESSION_SECRET=<string-aleatoria-longa-e-unica>
+NODE_ENV=production
+```
+
+**Endpoint de healthcheck:** `GET /health` — retorna `{"status":"ok",...}`
 
 ### Usuário Padrão
 - **Username**: `admin`
@@ -237,6 +265,8 @@ O projeto usa um único workflow "Start application" que executa `npm run dev` �
 - Comentários automáticos do sistema são criados ao alterar ações para status final
 - O timezone do servidor é `America/Sao_Paulo` (UTC-3), configurado no entry point
 - A conexão com o banco usa o pacote `postgres` diretamente (não `@neondatabase/serverless`)
+- Sessões persistidas na tabela `session` (PostgreSQL) via `connect-pg-simple`; tabela criada automaticamente ao iniciar
+- Logger HTTP centralizado em `server/logger.ts`: em dev mostra apenas rotas `/api`; em prod loga JSON estruturado para cada request
 - Dependências em `package.json` não utilizadas ativamente: `@neondatabase/serverless`, `mysql2`, `express-mysql-session`, `better-sqlite3` (legado; não remover sem testar o build)
 - A tabela `activities` existe no schema (`pg-schema.ts`) e no banco, mas não possui rotas nem métodos de storage implementados — está disponível para uso futuro
 - Arquivos excluídos por obsolescência: `key-result-form.tsx`, `header.tsx` (→ `compact-header.tsx`), `filters.tsx` (→ filtros em `compact-header.tsx`), `dashboard.tsx` (página órfã, sem rota registrada)
