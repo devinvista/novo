@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, TrendingUp, Target, RotateCcw } from "lucide-react";
 import AnimatedProgressRing from "./animated-progress-ring";
-import { parseDecimalBR } from "@/lib/formatters";
+import { parseDecimalBR, formatDateBR } from "@/lib/formatters";
 
 interface CheckpointProgressGridProps {
   checkpoints: any[];
@@ -113,7 +113,7 @@ export default function CheckpointProgressGrid({
                       targetValue={targetValue}
                       actualValue={actualValue}
                       status={checkpoint.status}
-                      period={checkpoint.period}
+                      period={formatDateBR(checkpoint.period)}
                       dueDate={checkpoint.dueDate}
                       size={140}
                       strokeWidth={10}

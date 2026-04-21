@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { parseDecimalBR } from "@/lib/formatters";
+import { parseDecimalBR, formatDateBR } from "@/lib/formatters";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -343,7 +343,7 @@ export default function KrProgressChart({
         const target = parseDecimalBR(cp.targetValue || "0");
         const progress = target > 0 ? Math.min((actual / target) * 100, 150) : 0;
         return {
-          period: cp.period || cp.title || "—",
+          period: cp.period ? formatDateBR(cp.period) : (cp.title || "—"),
           actualValue: actual,
           targetValue: target,
           progress: parseFloat(progress.toFixed(1)),

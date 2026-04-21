@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatDateBR } from "@/lib/formatters";
 import CompactHeader from "@/components/compact-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -331,7 +332,7 @@ function ObjectiveNode({
             </div>
             <span className="text-sm font-bold text-blue-700 flex-shrink-0">{pct.toFixed(0)}%</span>
             <span className="text-xs text-gray-500 hidden sm:block flex-shrink-0">
-              {objective.startDate} → {objective.endDate}
+              {formatDateBR(objective.startDate)} → {formatDateBR(objective.endDate)}
             </span>
           </div>
         </div>

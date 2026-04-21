@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar, TrendingUp, TrendingDown, Minus, CheckCircle2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatDateBR } from "@/lib/formatters";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,7 +174,7 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
                                   status === "overdue" ? "text-red-600" : "text-gray-400"
                                 }`} />
                                 <div>
-                                  <p className="font-medium text-sm">{checkpoint.period}</p>
+                                  <p className="font-medium text-sm">{formatDateBR(checkpoint.period)}</p>
                                   <p className="text-xs text-gray-500">
                                     Meta: {checkpoint.targetValue} {group.keyResult.unit}
                                   </p>
@@ -227,7 +228,7 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
                                     progress >= 85 ? 'text-yellow-600' : 'text-red-600'
                                   }`} />
                                   <div>
-                                    <p className="font-medium text-sm">{checkpoint.period}</p>
+                                    <p className="font-medium text-sm">{formatDateBR(checkpoint.period)}</p>
                                     <p className="text-xs text-gray-500">
                                       Concluído em {format(new Date(checkpoint.completedAt), "dd/MM/yyyy")}
                                     </p>
@@ -278,7 +279,7 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
           <DialogHeader>
             <DialogTitle>Atualizar Checkpoint</DialogTitle>
             <DialogDescription>
-              Registre o progresso para o período {selectedCheckpoint?.period}
+              Registre o progresso para o período {selectedCheckpoint?.period ? formatDateBR(selectedCheckpoint.period) : ""}
             </DialogDescription>
           </DialogHeader>
 

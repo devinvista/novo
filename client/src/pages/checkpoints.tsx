@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { formatDateBR } from "@/lib/formatters";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -316,7 +317,7 @@ export default function Checkpoints() {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <h4 className="font-medium text-gray-900">{checkpoint.title}</h4>
-                                  <p className="text-sm text-gray-600">{checkpoint.period}</p>
+                                  <p className="text-sm text-gray-600">{formatDateBR(checkpoint.period)}</p>
                                 </div>
                                 <div className="text-right">
                                   <div className="text-sm font-medium">
