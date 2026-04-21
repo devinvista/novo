@@ -722,6 +722,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all action comment counts (bulk, for indicators)
+  app.get('/api/action-comment-counts', requireAuth, async (req: any, res) => {
+    try {
+      const actions = await storage.getActions({ currentUserId: req.user?.id });
+      const counts: Record<number, number> = {};
+      await Promise.all(
+        actions.map(async (action: any) => {
+          const comments = await storage.getActionComments(action.id);
+          counts[action.id] = comments.length;
+        })
+      );
+      res.json(counts);
+    } catch (error) {
+      console.error('Error fetching comment counts:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Get action comments
   app.get('/api/actions/:actionId/comments', requireAuth, async (req, res) => {
     try {

@@ -138,10 +138,23 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'completed': return 'success';
-      case 'active': return 'info';
-      case 'paused': return 'warning';
+      case 'active':    return 'info';
+      case 'in_progress': return 'info';
+      case 'paused':    return 'warning';
       case 'cancelled': return 'error';
       default: return 'secondary';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed':   return 'Concluída';
+      case 'in_progress': return 'Em Progresso';
+      case 'pending':     return 'Pendente';
+      case 'cancelled':   return 'Cancelada';
+      case 'active':      return 'Em andamento';
+      case 'paused':      return 'Pausada';
+      default:            return 'Pendente';
     }
   };
 
@@ -281,13 +294,22 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant={
-                                (kr.progress || 0) >= 75 ? 'success' : 
-                                (kr.progress || 0) >= 50 ? 'warning' : 'error'
-                              }>
+                            <div className="space-y-1 min-w-[110px]">
+                              <span className={`text-xs font-semibold ${
+                                (kr.progress || 0) >= 75 ? 'text-green-700' :
+                                (kr.progress || 0) >= 50 ? 'text-yellow-700' : 'text-red-600'
+                              }`}>
                                 {kr.progress || 0}%
-                              </Badge>
+                              </span>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full transition-all ${
+                                    (kr.progress || 0) >= 75 ? 'bg-green-500' :
+                                    (kr.progress || 0) >= 50 ? 'bg-yellow-400' : 'bg-red-500'
+                                  }`}
+                                  style={{ width: `${Math.min(kr.progress || 0, 100)}%` }}
+                                />
+                              </div>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -351,7 +373,7 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
                             <div className="flex items-center space-x-2">
                               <User className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm">
-                                {action.ownerName || action.ownerUsername || "Não atribuído"}
+                                {action.responsible?.name || action.ownerName || action.ownerUsername || "Não atribuído"}
                               </span>
                             </div>
                           </TableCell>
@@ -371,11 +393,8 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusVariant(action.status)} className="capitalize">
-                              {action.status === 'completed' ? 'Concluída' :
-                               action.status === 'active' ? 'Em andamento' :
-                               action.status === 'paused' ? 'Pausada' :
-                               action.status === 'cancelled' ? 'Cancelada' : 'Pendente'}
+                            <Badge variant={getStatusVariant(action.status)}>
+                              {getStatusLabel(action.status)}
                             </Badge>
                           </TableCell>
                         </TableRow>
