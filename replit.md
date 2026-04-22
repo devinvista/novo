@@ -111,7 +111,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 /tests/                           # Testes Vitest + Supertest
 /.github/workflows/ci.yml         # Pipeline CI (lint, format, typecheck, test, build)
 /shared/
-  pg-schema.ts                    # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod
+  pg-schema.ts                    # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod + índices em FKs e colunas de filtro
   schema.ts                       # Re-exporta pg-schema
 /migrations/                      # Migrations históricas (referência apenas; usar db:push)
 ```

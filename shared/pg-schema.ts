@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, integer, timestamp, numeric, json, boolean, serial } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, integer, timestamp, numeric, json, boolean, serial, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -21,7 +21,12 @@ export const users = pgTable("users", {
   approved: boolean("approved").notNull().default(false),
   approvedAt: timestamp("approved_at"),
   approvedBy: integer("approved_by"),
-});
+}, (t) => [
+  // Listagens em /api/managers e filtros por papel/aprovação
+  index("idx_users_role").on(t.role),
+  index("idx_users_approved").on(t.approved),
+  index("idx_users_gestor_id").on(t.gestorId),
+]);
 
 export const objectives = pgTable("objectives", {
   id: serial("id").primaryKey(),
@@ -38,7 +43,14 @@ export const objectives = pgTable("objectives", {
   serviceLineId: integer("service_line_id").references(() => serviceLines.id),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+}, (t) => [
+  // FKs / colunas usadas em quase todo filtro de objetivo
+  index("idx_objectives_owner_id").on(t.ownerId),
+  index("idx_objectives_region_id").on(t.regionId),
+  index("idx_objectives_service_line_id").on(t.serviceLineId),
+  index("idx_objectives_status").on(t.status),
+  index("idx_objectives_period").on(t.period),
+]);
 
 export const keyResults = pgTable("key_results", {
   id: serial("id").primaryKey(),
@@ -59,7 +71,13 @@ export const keyResults = pgTable("key_results", {
   progress: numeric("progress", { precision: 5, scale: 2 }).default("0.00"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+}, (t) => [
+  // objective_id é o filtro mais frequente (toda listagem de KR de um objetivo)
+  index("idx_key_results_objective_id").on(t.objectiveId),
+  index("idx_key_results_service_line_id").on(t.serviceLineId),
+  index("idx_key_results_service_id").on(t.serviceId),
+  index("idx_key_results_status").on(t.status),
+]);
 
 export const actions = pgTable("actions", {
   id: serial("id").primaryKey(),
@@ -76,7 +94,14 @@ export const actions = pgTable("actions", {
   priority: varchar("priority", { length: 50 }).notNull().default("medium"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+}, (t) => [
+  index("idx_actions_key_result_id").on(t.keyResultId),
+  index("idx_actions_responsible_id").on(t.responsibleId),
+  index("idx_actions_strategic_indicator_id").on(t.strategicIndicatorId),
+  index("idx_actions_service_line_id").on(t.serviceLineId),
+  index("idx_actions_service_id").on(t.serviceId),
+  index("idx_actions_status").on(t.status),
+]);
 
 export const checkpoints = pgTable("checkpoints", {
   id: serial("id").primaryKey(),
@@ -93,7 +118,13 @@ export const checkpoints = pgTable("checkpoints", {
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+}, (t) => [
+  // Toda listagem de checkpoints de um KR e filtros por status/período
+  index("idx_checkpoints_key_result_id").on(t.keyResultId),
+  index("idx_checkpoints_status").on(t.status),
+  index("idx_checkpoints_period").on(t.period),
+  index("idx_checkpoints_due_date").on(t.dueDate),
+]);
 
 export const actionComments = pgTable("action_comments", {
   id: serial("id").primaryKey(),
@@ -101,7 +132,10 @@ export const actionComments = pgTable("action_comments", {
   userId: integer("userId").notNull().references(() => users.id),
   comment: text("comment").notNull(),
   createdAt: timestamp("createdAt").default(sql`CURRENT_TIMESTAMP`),
-});
+}, (t) => [
+  index("idx_action_comments_action_id").on(t.actionId),
+  index("idx_action_comments_user_id").on(t.userId),
+]);
 
 export const regions = pgTable("regions", {
   id: serial("id").primaryKey(),
@@ -114,7 +148,9 @@ export const subRegions = pgTable("sub_regions", {
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }).notNull().unique(),
   regionId: integer("region_id").notNull().references(() => regions.id),
-});
+}, (t) => [
+  index("idx_sub_regions_region_id").on(t.regionId),
+]);
 
 export const solutions = pgTable("solutions", {
   id: serial("id").primaryKey(),
@@ -129,7 +165,9 @@ export const serviceLines = pgTable("service_lines", {
   code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
   solutionId: integer("solution_id").notNull().references(() => solutions.id),
-});
+}, (t) => [
+  index("idx_service_lines_solution_id").on(t.solutionId),
+]);
 
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
@@ -137,7 +175,9 @@ export const services = pgTable("services", {
   code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
   serviceLineId: integer("service_line_id").notNull().references(() => serviceLines.id),
-});
+}, (t) => [
+  index("idx_services_service_line_id").on(t.serviceLineId),
+]);
 
 export const strategicIndicators = pgTable("strategic_indicators", {
   id: serial("id").primaryKey(),
@@ -155,7 +195,11 @@ export const activities = pgTable("activities", {
   entityId: integer("entityId").notNull(),
   details: text("details"),
   createdAt: timestamp("createdAt").default(sql`CURRENT_TIMESTAMP`),
-});
+}, (t) => [
+  index("idx_activities_user_id").on(t.userId),
+  // Lookup composto típico de audit trail: "todas as atividades da entidade X#42"
+  index("idx_activities_entity").on(t.entityType, t.entityId),
+]);
 
 export const quarterlyPeriods = pgTable("quarterly_periods", {
   id: serial("id").primaryKey(),
