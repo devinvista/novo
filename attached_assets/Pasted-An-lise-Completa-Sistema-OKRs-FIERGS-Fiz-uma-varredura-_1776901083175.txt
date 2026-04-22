@@ -1,0 +1,83 @@
+Análise Completa — Sistema OKRs FIERGS
+Fiz uma varredura do código, dependências, segurança e arquitetura. Abaixo está o diagnóstico estruturado por severidade. Não apliquei nenhuma alteração de código ainda — algumas são triviais, outras são quebras de versão maior que precisam da sua decisão.
+
+1. Vulnerabilidades e segurança (alta prioridade)
+#	Problema	Risco	Ação sugerida
+1	npm audit reporta 18 vulnerabilidades (9 alta, 8 moderada, 1 baixa), a maioria via drizzle-kit@0.30.6 (esbuild antigo) e xlsx (sem patch upstream).	Médio (drizzle-kit é dev-only) / Alto (xlsx em prod)	Atualizar drizzle-kit p/ 0.31.x; substituir xlsx por exceljs (mantido, sem CVE).
+2	SESSION_SECRET tem fallback "default-session-secret-change-in-production" em server/auth.ts.	Alto — se a env não for setada em prod, sessões viram forjáveis.	Falhar o boot quando NODE_ENV=production e SESSION_SECRET ausente.
+3	Hash de senha legado (sem salt, salt hardcoded 'salt') ainda aceito em comparePasswords.	Médio	Migrar usuários no próximo login para o formato hash.salt e remover o branch legado em uma data combinada.
+4	helmet está com contentSecurityPolicy: false.	Médio	Habilitar CSP estrita em produção (script-src nonce/self), manter desabilitada só em dev por causa do Vite HMR.
+5	Rate-limit é só em /api/login e /api/register (30 req/15 min). Nada protege /api/users, /api/checkpoints, etc.	Médio	Adicionar limiter global mais permissivo (ex.: 300 req/min por IP).
+6	ssl: { rejectUnauthorized: false } para Postgres.	Médio	Se o provedor permitir, usar CA cert e verify-full.
+2. Arquitetura e escalabilidade
+#	Problema	Impacto	Sugestão
+7	server/routes.ts com 2.034 linhas e tudo plano.	Manutenção ruim, conflitos de merge, difícil de testar.	Quebrar em routers por domínio: routes/auth.ts, routes/objectives.ts, routes/key-results.ts, routes/checkpoints.ts, routes/admin.ts etc., usando express.Router().
+8	server/pg-storage.ts com 1.090 linhas implementando uma interface monolítica IStorage.	Quebra o princípio de responsabilidade única; cada mudança recompila tudo.	Dividir em repositórios por agregado (UserRepo, ObjectiveRepo, KeyResultRepo...).
+9	Sem testes automatizados (nenhum *.test.ts / *.spec.ts).	Alto risco em refactors e upgrades.	Adicionar Vitest + supertest (rotas) e cobertura mínima nos repositórios.
+10	Sem camada de validação centralizada nas rotas — Zod é usado pontualmente.	Inconsistência, bugs silenciosos.	Middleware validate(schema) reutilizável que retorna 400 com zod-validation-error.
+11	Sem tratamento de erros tipado (asyncHandler/next(err) espalhado).	Erros engolidos, stack traces sumindo.	Wrapper asyncHandler + classes de erro (AppError, NotFoundError, ForbiddenError).
+12	Logs de produção são JSON via morgan, mas sem correlação (request id).	Difícil debug em escala.	Adicionar pino + pino-http com requestId (substitui morgan e o logger.ts).
+13	Sem cache. Endpoints como /api/regions, /api/solutions, /api/strategic-indicators mudam pouco mas são chamados em toda página.	Latência e carga no DB.	lru-cache (já está nas deps!) com TTL de 5–10 min para look-ups.
+14	Sessões em PostgreSQL via connect-pg-simple — escalável até dezenas de instâncias, ok. Mas se for crescer para multi-pod, considerar Redis.	Baixo agora	Documentar como upgrade futuro.
+15	Frontend não tem code-splitting por rota. Todo client/src/pages/* vira um bundle só.	Tempo de carga inicial alto.	Trocar imports estáticos por lazy() + Suspense no App.tsx.
+16	recharts@2.15.4 é o maior peso do bundle e renderiza no main thread.	Performance	Avaliar import dinâmico só nas páginas de gráfico (reports.tsx, indicators.tsx).
+3. Dependências desatualizadas
+Patches/minors seguros (aplico quando autorizar):
+
+Toda a família @radix-ui/* → versões mais recentes (compatíveis)
+@tanstack/react-query 5.99.0 → 5.99.2
+react-hook-form 7.72.1 → 7.73.1
+@types/node 20.16.11 → 20.19.39
+@jridgewell/trace-mapping, bufferutil, @types/multer, @types/ws, @types/express-session
+Majors (precisam decisão — quebram código):
+
+Pacote	Atual	Latest	Esforço
+React	18.3	19.2	Médio — compat boa, mas testes obrigatórios
+Express	4.22	5.2	Médio — mudanças em error handling, query parser
+Tailwind	3.4	4.2	Alto — config nova (@tailwindcss/vite já instalado), mas exige reescrita de tailwind.config.ts para CSS-first
+Vite	5.4	8.0	Médio — alguns plugins precisam atualizar
+Zod	3.25	4.3	Médio — API muda em alguns helpers
+Drizzle ORM	0.39	0.45	Baixo–Médio
+Drizzle Kit	0.30	0.31	Baixo (resolve CVEs)
+Tailwind-merge	2.6	3.5	Baixo
+lucide-react	0.453	1.8	Baixo (reorg de ícones)
+framer-motion	11	12	Baixo
+date-fns	3.6	4.1	Baixo–Médio
+react-day-picker	8	9	Médio (API mudou)
+recharts	2.15	3.8	Alto — API mudou bastante
+4. DX / Build
+#	Item	Sugestão
+17	Sem .nvmrc / engines em package.json.	Fixar engines.node: ">=18 <25" para reforçar a regra de compatibilidade Hostinger.
+18	Sem ESLint/Prettier.	Adicionar eslint + @typescript-eslint + prettier + lint-staged + husky.
+19	tsc (npm run check) não roda no CI.	Adicionar GitHub Action / pipeline que roda tsc, lint e testes.
+20	Build do backend usa esbuild --packages=external (correto), mas não há sourcemap.	Adicionar --sourcemap para diagnóstico em prod.
+21	dist/index.js (ESM) — deploy_config_tool foi setado para index.cjs.	Padronizar para dist/index.js em ESM.
+5. Banco e dados
+#	Item	Sugestão
+22	Sem migrations versionadas — só db:push.	Em produção, usar drizzle-kit generate + migrate para histórico auditável.
+23	Tabela activities existe mas não é populada.	Decidir: implementar audit trail ou remover.
+24	pool max: 20 em prod pode estourar conexões compartilhadas (Hostinger normalmente limita).	Validar limite do plano e ajustar.
+Recomendação de execução faseada
+Fase 1 — Hoje, sem risco (posso fazer agora):
+
+Patches/minors (todas as deps menores)
+Atualizar drizzle-kit p/ 0.31 (resolve 11 CVEs de dev)
+engines no package.json
+Falhar boot sem SESSION_SECRET em prod
+Rate-limit global
+Documentar tudo no replit.md
+Fase 2 — Próximo sprint:
+
+Quebrar routes.ts em routers por domínio
+Adicionar Vitest + supertest com smoke tests
+Code-splitting de páginas no frontend
+Cache LRU para look-ups
+ESLint + Prettier
+Fase 3 — Planejada:
+
+Express 5, Vite 8, Drizzle 0.45
+Substituir xlsx por exceljs
+Fase 4 — Estratégica:
+
+React 19, Tailwind 4, Zod 4, Recharts 3 (cada uma exige QA dedicado)
+
