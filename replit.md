@@ -77,9 +77,11 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
   index.ts                        # Entry point (porta 5000/PORT env, timezone America/Sao_Paulo, helmet, rate-limit, healthcheck)
   routes.ts                       # Apenas montagem dos routers modulares (~50 linhas)
   auth.ts                         # Autenticação e autorização (Passport.js + scrypt, cookies env-aware)
-  pg-storage.ts                   # Implementação de acesso ao banco (PostgreSQL + Drizzle) + interface IStorage + session store
+  pg-storage.ts                   # Facade fina IStorage que compõe os repositórios (server/repositories/*) — delega chamadas
   pg-db.ts                        # Conexão com PostgreSQL via pacote `postgres` (DATABASE_URL env var, pool production-grade)
   storage.ts                      # Re-exporta pg-storage (abstração)
+  repositories/                   # Repositórios por agregado (UserRepo, LookupRepo, ObjectiveRepo, KeyResultRepo, ActionRepo, CheckpointRepo, DashboardRepo) + sessionStore
+                                   # Cada repositório encapsula queries Drizzle do seu domínio. Novo código deve importar o repo específico em vez do facade.
   cache.ts                        # LRU cache para look-ups (regions/solutions/strategic-indicators etc.)
   config/env.ts                   # Validação Zod de variáveis de ambiente no boot
   errors/app-error.ts             # Classes de erro tipadas (AppError, NotFoundError, ForbiddenError, ValidationError)
