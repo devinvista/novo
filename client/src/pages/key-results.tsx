@@ -4,7 +4,7 @@ import { Plus, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-r
 import { useLocation } from "wouter";
 import CompactHeader from "@/components/compact-header";
 import KeyResultForm from "@/components/key-result-form-simple";
-import KrProgressChart from "@/components/kr-progress-chart";
+import KrProgressChart from "@/components/kr-progress-chart-lazy";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useAuth } from "@/hooks/use-auth";
 import { useFilters } from "@/hooks/use-filters";

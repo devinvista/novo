@@ -1,4 +1,4 @@
-import IndicatorsDashboard from "@/components/indicators-dashboard";
+import { lazy, Suspense } from "react";
 import ExecutiveSummary from "@/components/executive-summary";
 import CompactHeader from "@/components/compact-header";
 import { useFilters } from "@/hooks/use-filters";
@@ -6,6 +6,20 @@ import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, FileText, CheckSquare } from "lucide-react";
 import ActionPlan from "@/components/action-plan";
+
+// Lazy-load chart-heavy component (isolates `recharts` in its own chunk)
+const IndicatorsDashboard = lazy(() => import("@/components/indicators-dashboard"));
+
+function ChartFallback() {
+  return (
+    <div
+      className="flex h-64 w-full items-center justify-center text-sm text-muted-foreground"
+      data-testid="status-chart-loading"
+    >
+      Carregando gráficos...
+    </div>
+  );
+}
 
 export default function Reports() {
   const { selectedQuarter } = useQuarterlyFilter();
@@ -39,7 +53,9 @@ export default function Reports() {
                 Acompanhe os indicadores estratégicos da organização em tempo real
               </p>
             </div>
-            <IndicatorsDashboard selectedQuarter={selectedQuarter} filters={filters} />
+            <Suspense fallback={<ChartFallback />}>
+              <IndicatorsDashboard selectedQuarter={selectedQuarter} filters={filters} />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="executive" className="space-y-6">

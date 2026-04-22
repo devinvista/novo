@@ -1,7 +1,10 @@
+import { lazy, Suspense } from "react";
 import CompactHeader from "@/components/compact-header";
-import IndicatorsDashboard from "@/components/indicators-dashboard";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useFilters } from "@/hooks/use-filters";
+
+// Lazy-load chart-heavy component (isolates `recharts` in its own chunk)
+const IndicatorsDashboard = lazy(() => import("@/components/indicators-dashboard"));
 
 export default function Indicators() {
   const { selectedQuarter } = useQuarterlyFilter();
@@ -20,7 +23,18 @@ export default function Indicators() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          <IndicatorsDashboard selectedQuarter={selectedQuarter} filters={filters} />
+          <Suspense
+            fallback={
+              <div
+                className="flex h-64 w-full items-center justify-center text-sm text-muted-foreground"
+                data-testid="status-chart-loading"
+              >
+                Carregando gráficos...
+              </div>
+            }
+          >
+            <IndicatorsDashboard selectedQuarter={selectedQuarter} filters={filters} />
+          </Suspense>
         </div>
       </main>
     </div>

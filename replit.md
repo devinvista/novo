@@ -36,7 +36,8 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
     executive-summary.tsx         # Resumo executivo
     indicators-dashboard.tsx      # Painel de indicadores estratégicos
     key-result-form-simple.tsx    # Formulário de KR (único formulário ativo)
-    kr-progress-chart.tsx         # Gráfico de progresso de KR
+    kr-progress-chart.tsx         # Gráfico de progresso de KR (recharts)
+    kr-progress-chart-lazy.tsx    # Wrapper com Suspense que faz lazy-load do gráfico (isola recharts em chunk próprio)
     gantt-timeline.tsx            # Timeline Gantt de ações (página Ações)
     next-checkpoints-overview.tsx # Visão geral dos próximos checkpoints
     objective-form.tsx            # Formulário de objetivo
