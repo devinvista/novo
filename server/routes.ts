@@ -916,17 +916,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update Key Result currentValue with the latest completed checkpoint value
       if (status === 'completed' || !status) {
         try {
+          // IMPORTANTE: não passar req.user.id aqui — o acesso já foi verificado acima
+          // via existingCheckpoint. Reaplicar o filtro de acesso aqui faria com que
+          // usuários operacionais/gestores sem regionIds não recalculem o KR.
           const allCheckpoints = await storage.getCheckpoints(
-            existingCheckpoint.keyResultId,
-            req.user.id
+            existingCheckpoint.keyResultId
           );
 
           const completedCheckpoints = allCheckpoints
             .filter((cp: any) => {
               const isCompleted = cp.status === 'completed';
               const cpActualValue = cp.actualValue;
-              const numValue = cpActualValue ? convertBRToDatabase(cpActualValue) : 0;
-              return isCompleted && cpActualValue && numValue > 0;
+              return isCompleted && cpActualValue !== null && cpActualValue !== undefined && cpActualValue !== '';
             })
             .sort((a: any, b: any) => {
               return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
