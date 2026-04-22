@@ -7,7 +7,7 @@ import { hashPassword } from "./auth";
 import { cached, invalidateLookupCache } from "./cache";
 import { z } from "zod";
 import { formatDecimalBR, formatNumberBR, convertBRToDatabase, formatBrazilianNumber } from "./formatters";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import multer from "multer";
 
 // Configure multer for file uploads
@@ -1887,48 +1887,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper: convert ExcelJS row values to a 0-indexed array (ExcelJS uses 1-indexed)
+  const rowToArray = (row: ExcelJS.Row): unknown[] => {
+    const values = row.values as unknown[];
+    if (!Array.isArray(values)) return [];
+    // ExcelJS row.values has a leading undefined at index 0 — strip it
+    return values.slice(1);
+  };
+
+  // Helper: extract plain string from ExcelJS cell (handles formulas, rich text, dates)
+  const cellToString = (v: unknown): string => {
+    if (v === null || v === undefined) return "";
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    if (typeof v === "object" && v !== null) {
+      const o = v as Record<string, unknown>;
+      if (typeof o.text === "string") return o.text;
+      if (typeof o.result !== "undefined") return String(o.result);
+      if (Array.isArray(o.richText)) {
+        return (o.richText as Array<{ text: string }>).map((r) => r.text).join("");
+      }
+    }
+    return String(v);
+  };
+
   // Import/Export Routes
   app.get("/api/admin/export-template", requireAuth, requireRole(["admin"]), async (req, res) => {
     try {
-      // Create a new workbook
-      const workbook = XLSX.utils.book_new();
-      
-      // Get reference data for examples
+      const workbook = new ExcelJS.Workbook();
+
       const regions = await storage.getRegions();
       const users = await storage.getUsers();
-      const indicators = await storage.getStrategicIndicators();
-      
-      // Create worksheets for operational data
-      const objectivesData = [
-        ['titulo', 'descricao', 'data_inicio', 'data_fim', 'status', 'regiao_id', 'responsavel_id'],
-        ['Exemplo Objetivo', 'Descrição do objetivo exemplo', '2025-01-01', '2025-12-31', 'active', regions[0]?.id || 1, users[0]?.id || 1]
-      ];
-      
-      const keyResultsData = [
-        ['titulo', 'descricao', 'valor_atual', 'valor_meta', 'unidade', 'data_inicio', 'data_fim', 'objetivo_id', 'indicadores_estrategicos'],
-        ['Exemplo Resultado-Chave', 'Descrição do resultado-chave exemplo', '0', '100', '%', '2025-01-01', '2025-12-31', 1, indicators[0]?.id ? `[${indicators[0].id}]` : '[]']
-      ];
-      
-      const actionsData = [
-        ['titulo', 'descricao', 'data_vencimento', 'prioridade', 'status', 'resultado_chave_id', 'responsavel_id'],
-        ['Exemplo Ação', 'Descrição da ação exemplo', '2025-06-30', 'high', 'pending', 1, users[0]?.id || 1]
-      ];
-      
-      // Add worksheets to workbook
-      const objectivesWS = XLSX.utils.aoa_to_sheet(objectivesData);
-      const keyResultsWS = XLSX.utils.aoa_to_sheet(keyResultsData);
-      const actionsWS = XLSX.utils.aoa_to_sheet(actionsData);
-      
-      XLSX.utils.book_append_sheet(workbook, objectivesWS, "Objetivos");
-      XLSX.utils.book_append_sheet(workbook, keyResultsWS, "Resultados-Chave");
-      XLSX.utils.book_append_sheet(workbook, actionsWS, "Ações");
-      
-      // Generate buffer
-      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-      
-      res.setHeader('Content-Disposition', 'attachment; filename=modelo_okr_dados.xlsx');
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.send(buffer);
+      const indicators = await cached("strategic-indicators:all", () =>
+        storage.getStrategicIndicators()
+      );
+
+      const objectivesWS = workbook.addWorksheet("Objetivos");
+      objectivesWS.addRows([
+        ["titulo", "descricao", "data_inicio", "data_fim", "status", "regiao_id", "responsavel_id"],
+        [
+          "Exemplo Objetivo",
+          "Descrição do objetivo exemplo",
+          "2025-01-01",
+          "2025-12-31",
+          "active",
+          regions[0]?.id || 1,
+          users[0]?.id || 1,
+        ],
+      ]);
+
+      const keyResultsWS = workbook.addWorksheet("Resultados-Chave");
+      keyResultsWS.addRows([
+        [
+          "titulo",
+          "descricao",
+          "valor_atual",
+          "valor_meta",
+          "unidade",
+          "data_inicio",
+          "data_fim",
+          "objetivo_id",
+          "indicadores_estrategicos",
+        ],
+        [
+          "Exemplo Resultado-Chave",
+          "Descrição do resultado-chave exemplo",
+          "0",
+          "100",
+          "%",
+          "2025-01-01",
+          "2025-12-31",
+          1,
+          indicators[0]?.id ? `[${indicators[0].id}]` : "[]",
+        ],
+      ]);
+
+      const actionsWS = workbook.addWorksheet("Ações");
+      actionsWS.addRows([
+        ["titulo", "descricao", "data_vencimento", "prioridade", "status", "resultado_chave_id", "responsavel_id"],
+        [
+          "Exemplo Ação",
+          "Descrição da ação exemplo",
+          "2025-06-30",
+          "high",
+          "pending",
+          1,
+          users[0]?.id || 1,
+        ],
+      ]);
+
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      res.setHeader("Content-Disposition", "attachment; filename=modelo_okr_dados.xlsx");
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      res.send(Buffer.from(buffer as ArrayBuffer) as any);
     } catch (error) {
       console.error("Error generating template:", error);
       res.status(500).json({ message: "Erro ao gerar modelo Excel" });
@@ -1940,97 +1995,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ message: "Nenhum arquivo fornecido" });
       }
-      
-      // Parse Excel file
-      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+
+      const workbook = new ExcelJS.Workbook();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await workbook.xlsx.load(req.file.buffer as any);
       let imported = 0;
       const errors: string[] = [];
-      
+
       // Import Objectives first
-      if (workbook.SheetNames.includes('Objetivos')) {
-        const sheet = workbook.Sheets['Objetivos'];
-        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        for (let i = 1; i < data.length; i++) { // Skip header row
-          const row = data[i] as any[];
-          if (row && row[0]) { // Must have title
+      const objectivesSheet = workbook.getWorksheet("Objetivos");
+      if (objectivesSheet) {
+        const lastRow = objectivesSheet.actualRowCount;
+        for (let i = 2; i <= lastRow; i++) {
+          const row = rowToArray(objectivesSheet.getRow(i));
+          const title = cellToString(row[0]);
+          if (title) {
             try {
               const objectiveData = {
-                title: row[0],
-                description: row[1] || "",
-                startDate: row[2],
-                endDate: row[3],
-                status: row[4] || "active",
-                regionId: parseInt(row[5]) || null,
-                ownerId: parseInt(row[6]) || req.user!.id
+                title,
+                description: cellToString(row[1]),
+                startDate: cellToString(row[2]),
+                endDate: cellToString(row[3]),
+                status: cellToString(row[4]) || "active",
+                regionId: parseInt(cellToString(row[5])) || null,
+                ownerId: parseInt(cellToString(row[6])) || req.user!.id,
               };
-              
               await storage.createObjective(objectiveData);
               imported++;
             } catch (error) {
-              errors.push(`Erro ao importar objetivo ${row[0]}: ${error}`);
-              console.log(`Error importing objective ${row[0]}:`, error);
+              errors.push(`Erro ao importar objetivo ${title}: ${error}`);
+              console.log(`Error importing objective ${title}:`, error);
             }
           }
         }
       }
-      
+
       // Import Key Results (after objectives)
-      if (workbook.SheetNames.includes('Resultados-Chave')) {
-        const sheet = workbook.Sheets['Resultados-Chave'];
-        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        for (let i = 1; i < data.length; i++) {
-          const row = data[i] as any[];
-          if (row && row[0] && row[7]) { // Must have title and objective_id
+      const krSheet = workbook.getWorksheet("Resultados-Chave");
+      if (krSheet) {
+        const lastRow = krSheet.actualRowCount;
+        for (let i = 2; i <= lastRow; i++) {
+          const row = rowToArray(krSheet.getRow(i));
+          const title = cellToString(row[0]);
+          const objectiveIdStr = cellToString(row[7]);
+          if (title && objectiveIdStr) {
             try {
               const keyResultData = {
-                title: row[0],
-                description: row[1] || "",
-                currentValue: convertBRToDatabase(row[2]?.toString() || "0").toString(),
-                targetValue: convertBRToDatabase(row[3]?.toString() || "100").toString(),
-                unit: row[4] || "",
-                startDate: row[5],
-                endDate: row[6],
-                frequency: row[9] || "monthly",
-                objectiveId: parseInt(row[7]),
-                strategicIndicatorIds: row[8] || "[]"
+                title,
+                description: cellToString(row[1]),
+                currentValue: convertBRToDatabase(cellToString(row[2]) || "0").toString(),
+                targetValue: convertBRToDatabase(cellToString(row[3]) || "100").toString(),
+                unit: cellToString(row[4]),
+                startDate: cellToString(row[5]),
+                endDate: cellToString(row[6]),
+                frequency: cellToString(row[9]) || "monthly",
+                objectiveId: parseInt(objectiveIdStr),
+                strategicIndicatorIds: cellToString(row[8]) || "[]",
               };
-              
               await storage.createKeyResult(keyResultData);
               imported++;
             } catch (error) {
-              errors.push(`Erro ao importar resultado-chave ${row[0]}: ${error}`);
-              console.log(`Error importing key result ${row[0]}:`, error);
+              errors.push(`Erro ao importar resultado-chave ${title}: ${error}`);
+              console.log(`Error importing key result ${title}:`, error);
             }
           }
         }
       }
-      
+
       // Import Actions (after key results)
-      if (workbook.SheetNames.includes('Ações')) {
-        const sheet = workbook.Sheets['Ações'];
-        const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        for (let i = 1; i < data.length; i++) {
-          const row = data[i] as any[];
-          if (row && row[0] && row[5]) { // Must have title and key result id
+      const actionsSheet = workbook.getWorksheet("Ações");
+      if (actionsSheet) {
+        const lastRow = actionsSheet.actualRowCount;
+        for (let i = 2; i <= lastRow; i++) {
+          const row = rowToArray(actionsSheet.getRow(i));
+          const title = cellToString(row[0]);
+          const krIdStr = cellToString(row[5]);
+          if (title && krIdStr) {
             try {
               const actionData = {
-                title: row[0],
-                description: row[1] || "",
-                dueDate: row[2],
-                priority: row[3] || "medium",
-                status: row[4] || "pending",
-                keyResultId: parseInt(row[5]),
-                responsibleId: parseInt(row[6]) || req.user!.id
+                title,
+                description: cellToString(row[1]),
+                dueDate: cellToString(row[2]),
+                priority: cellToString(row[3]) || "medium",
+                status: cellToString(row[4]) || "pending",
+                keyResultId: parseInt(krIdStr),
+                responsibleId: parseInt(cellToString(row[6])) || req.user!.id,
               };
-              
               await storage.createAction(actionData);
               imported++;
             } catch (error) {
-              errors.push(`Erro ao importar ação ${row[0]}: ${error}`);
-              console.log(`Error importing action ${row[0]}:`, error);
+              errors.push(`Erro ao importar ação ${title}: ${error}`);
+              console.log(`Error importing action ${title}:`, error);
             }
           }
         }
