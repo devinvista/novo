@@ -1,4 +1,4 @@
-import { format as fnsFormat, parseISO as fnsParseISO } from "date-fns";
+import { format as fnsFormat, parseISO as fnsParseISO, type Locale } from "date-fns";
 import { formatInTimeZone, toZonedTime, fromZonedTime } from "date-fns-tz";
 
 export const APP_TZ = "America/Sao_Paulo";
