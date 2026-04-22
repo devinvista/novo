@@ -141,8 +141,12 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 - **`SESSION_SECRET` obrigatório em produção**: o servidor falha o boot se `NODE_ENV=production` e a env não for definida (ver `server/auth.ts`)
 - **Sessões PostgreSQL**: `connect-pg-simple` persiste sessões na tabela `session` (auto-criada) — sem perda de sessão em restart
 - **Cookies env-aware**: `secure: true` e `sameSite: "none"` apenas em produção; em dev usa `sameSite: "lax"`
-- **Healthcheck**: `GET /health` retorna status do servidor e conectividade com banco (usado pelo Hostinger para monitoramento)
+- **Liveness probe**: `GET /healthz` (alias `/health`) — verifica apenas que o processo está vivo (sem checagem de DB). Resposta rápida.
+- **Readiness probe**: `GET /readyz` — verifica conectividade com banco e estado de shutdown. Retorna 503 enquanto o servidor está drenando.
+- **Graceful shutdown**: SIGTERM/SIGINT acionam fechamento ordenado — `/readyz` passa a 503, requisições em andamento drenam, depois processo encerra. Timeout forçado de 10s. Importante para deploys autoscale sem cortar requests.
 - **Engines fixados**: `package.json` declara `engines.node: ">=18.0.0 <25.0.0"` para reforçar compatibilidade com a matriz Hostinger
+- **CSP estrita em produção**: Helmet aplica Content-Security-Policy com `default-src 'self'`, `object-src 'none'` etc. Em dev é desabilitada para permitir HMR do Vite.
+- **Hash de senha legado**: ainda aceito no login mas com auto-upgrade transparente para `hash.salt` no primeiro login bem-sucedido (ver `comparePasswords` em `server/auth.ts`). Plano: remover branch legado depois que todos os usuários ativos tiverem feito login.
 
 ### API - Rotas Principais
 | Método | Rota | Descrição |

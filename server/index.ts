@@ -69,22 +69,28 @@ const authLimiter = rateLimit({
 app.use("/api/login", authLimiter);
 app.use("/api/register", authLimiter);
 
-// Healthcheck endpoint
-app.get("/health", async (_req, res) => {
+let isShuttingDown = false;
+
+// Liveness — process is up. Cheap, no dependencies.
+app.get(["/health", "/healthz"], (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    env: process.env.NODE_ENV ?? "development",
+  });
+});
+
+// Readiness — process is ready to serve traffic (includes DB check).
+app.get("/readyz", async (_req, res) => {
+  if (isShuttingDown) {
+    return res.status(503).json({ status: "shutting_down" });
+  }
   try {
     await testConnection();
-    res.status(200).json({
-      status: "ok",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      env: process.env.NODE_ENV ?? "development",
-    });
+    res.status(200).json({ status: "ready" });
   } catch {
-    res.status(503).json({
-      status: "error",
-      timestamp: new Date().toISOString(),
-      message: "Database connection failed",
-    });
+    res.status(503).json({ status: "not_ready", message: "Database connection failed" });
   }
 });
 
@@ -112,4 +118,38 @@ app.get("/health", async (_req, res) => {
       log(`serving on port ${port}`);
     }
   );
+
+  // Graceful shutdown — drains in-flight requests then closes resources.
+  const shutdown = (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    logger.info({ signal }, "shutdown signal received, draining requests");
+
+    const forceExitTimer = setTimeout(() => {
+      logger.error("graceful shutdown timed out, forcing exit");
+      process.exit(1);
+    }, 10_000);
+    forceExitTimer.unref();
+
+    server.close((err) => {
+      if (err) {
+        logger.error({ err }, "error closing http server");
+        process.exit(1);
+      }
+      logger.info("http server closed, exiting");
+      clearTimeout(forceExitTimer);
+      process.exit(0);
+    });
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
+  process.on("unhandledRejection", (reason) => {
+    logger.error({ reason }, "unhandled promise rejection");
+  });
+  process.on("uncaughtException", (err) => {
+    logger.fatal({ err }, "uncaught exception, shutting down");
+    shutdown("uncaughtException");
+  });
 })();
