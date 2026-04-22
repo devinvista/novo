@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { nowSP } from "@/lib/timezone";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Target, TrendingUp } from "lucide-react";
@@ -37,7 +38,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
 
     const startDate = new Date(keyResult.startDate);
     const endDate = new Date(keyResult.endDate);
-    const now = new Date();
+    const now = nowSP();
     
     // Calculate progress percentage based on time elapsed
     const totalDuration = endDate.getTime() - startDate.getTime();

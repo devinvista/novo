@@ -4,8 +4,8 @@ import {
   CheckCircle, Circle, Clock, AlertCircle, Edit, Trash2,
   MoreHorizontal, Search, MessageSquare, ChevronDown, ChevronRight, X
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatSP, parseISOSP, nowSP } from "@/lib/timezone";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -167,7 +167,7 @@ export default function ActionTimeline({
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const getDaysUntilDue = (dueDate: string) => {
-    const diff = new Date(dueDate).getTime() - new Date().getTime();
+    const diff = parseISOSP(dueDate).getTime() - nowSP().getTime();
     return Math.ceil(diff / 86_400_000);
   };
 
@@ -181,7 +181,7 @@ export default function ActionTimeline({
   // ── Derived data ──────────────────────────────────────────────────────────
   const allActions: any[] = Array.isArray(actions) ? actions : [];
 
-  const today = new Date();
+  const today = nowSP();
   const kpis = useMemo(() => ({
     total:       allActions.length,
     completed:   allActions.filter((a) => a.status === "completed").length,
@@ -386,14 +386,14 @@ export default function ActionTimeline({
                                   <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-red-600 font-medium" : "text-gray-500"}`}>
                                     <Clock className="h-3 w-3" />
                                     {action.status === "completed" || action.status === "cancelled"
-                                      ? `Prazo: ${format(new Date(action.dueDate), "dd 'de' MMMM", { locale: ptBR })}`
+                                      ? `Prazo: ${formatSP(action.dueDate, "dd 'de' MMMM", { locale: ptBR })}`
                                       : isOverdue
-                                      ? `Atrasada ${Math.abs(daysUntilDue!)} dias — ${format(new Date(action.dueDate), "dd/MM", { locale: ptBR })}`
+                                      ? `Atrasada ${Math.abs(daysUntilDue!)} dias — ${formatSP(action.dueDate, "dd/MM", { locale: ptBR })}`
                                       : daysUntilDue === 0
                                       ? "Vence hoje"
                                       : daysUntilDue === 1
                                       ? "Vence amanhã"
-                                      : `Vence em ${daysUntilDue} dias — ${format(new Date(action.dueDate), "dd/MM")}`
+                                      : `Vence em ${daysUntilDue} dias — ${formatSP(action.dueDate, "dd/MM")}`
                                     }
                                   </span>
                                 )}

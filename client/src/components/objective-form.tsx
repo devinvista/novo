@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { formatSP } from "@/lib/timezone";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -40,8 +41,8 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
       ownerId: objective?.ownerId || user?.id,
       regionId: objective?.regionId || undefined,
       subRegionIds: objective?.subRegionIds || (objective?.subRegionId ? [objective.subRegionId] : []),
-      startDate: objective?.startDate ? new Date(objective.startDate).toISOString().split('T')[0] : "",
-      endDate: objective?.endDate ? new Date(objective.endDate).toISOString().split('T')[0] : "",
+      startDate: objective?.startDate ? formatSP(objective.startDate, "yyyy-MM-dd") : "",
+      endDate: objective?.endDate ? formatSP(objective.endDate, "yyyy-MM-dd") : "",
     },
   });
 

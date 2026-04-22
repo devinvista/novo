@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  format, startOfMonth, endOfMonth, addMonths, subMonths,
-  differenceInDays, isBefore, isAfter, parseISO, startOfDay
+  startOfMonth, endOfMonth, addMonths, subMonths,
+  differenceInDays, isBefore, isAfter, startOfDay
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatSP, parseISOSP, nowSP } from "@/lib/timezone";
 import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock, Circle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +62,7 @@ const LABEL_WIDTH = 220;
 const MIN_DAY_PX = 5; // minimum pixels per day to ensure readability
 
 export default function GanttTimeline({ keyResultId, selectedQuarter, filters, onCreateAction }: GanttTimelineProps) {
-  const [viewStart, setViewStart] = useState(() => startOfMonth(subMonths(new Date(), 1)));
+  const [viewStart, setViewStart] = useState(() => startOfMonth(subMonths(nowSP(), 1)));
   const [viewMonths, setViewMonths] = useState(5);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [editingAction, setEditingAction] = useState<Action | null>(null);
@@ -121,8 +122,8 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     if (!actions || actions.length === 0) return;
     const dates: Date[] = [];
     (actions as Action[]).forEach((a) => {
-      if (a.createdAt) dates.push(new Date(a.createdAt));
-      if (a.dueDate) dates.push(parseISO(a.dueDate));
+      if (a.createdAt) dates.push(parseISOSP(a.createdAt));
+      if (a.dueDate) dates.push(parseISOSP(a.dueDate));
     });
     if (dates.length === 0) return;
     const earliest = new Date(Math.min(...dates.map((d) => d.getTime())));
@@ -188,12 +189,13 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     return Math.max(0, Math.min(effectiveChartPx, offset * dayPx));
   };
 
-  const todayPx = dateToPx(new Date());
-  const showToday = isAfter(new Date(), viewStart) && isBefore(new Date(), viewEnd);
+  const today = nowSP();
+  const todayPx = dateToPx(today);
+  const showToday = isAfter(today, viewStart) && isBefore(today, viewEnd);
 
   const barConfig = (action: Action) => {
-    const start = action.createdAt ? startOfDay(new Date(action.createdAt)) : null;
-    const end = action.dueDate ? startOfDay(parseISO(action.dueDate)) : null;
+    const start = action.createdAt ? startOfDay(parseISOSP(action.createdAt)) : null;
+    const end = action.dueDate ? startOfDay(parseISOSP(action.dueDate)) : null;
     if (!start && !end) return null;
 
     const effectiveStart = start || end!;
@@ -204,7 +206,7 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     const widthPx = Math.max(rightPx - leftPx, 4);
 
     const cfg = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
-    const isOverdue = end && isBefore(end, new Date()) && action.status !== "completed" && action.status !== "cancelled";
+    const isOverdue = end && isBefore(end, today) && action.status !== "completed" && action.status !== "cancelled";
     const isPoint = !start || Math.abs(differenceInDays(effectiveEnd, effectiveStart)) < 1;
 
     return { leftPx, widthPx, cfg, isOverdue, isPoint, effectiveStart, effectiveEnd };
@@ -242,7 +244,7 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium text-gray-700 min-w-[180px] text-center">
-            {format(viewStart, "MMM yyyy", { locale: ptBR })} — {format(viewEnd, "MMM yyyy", { locale: ptBR })}
+            {formatSP(viewStart, "MMM yyyy", { locale: ptBR })} — {formatSP(viewEnd, "MMM yyyy", { locale: ptBR })}
           </span>
           <Button variant="outline" size="sm" onClick={() => setViewStart((v) => addMonths(v, 1))}>
             <ChevronRight className="h-4 w-4" />
@@ -299,7 +301,7 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
                       className="border-l first:border-l-0 flex items-center justify-center py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide flex-shrink-0"
                       style={{ width: monthPx }}
                     >
-                      {format(month, "MMM yyyy", { locale: ptBR })}
+                      {formatSP(month, "MMM yyyy", { locale: ptBR })}
                     </div>
                   );
                 })}
@@ -456,13 +458,13 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
           {tooltip.action.dueDate && (
             <p className="text-xs text-gray-500">
               <span className="font-medium">Prazo:</span>{" "}
-              {format(parseISO(tooltip.action.dueDate), "dd 'de' MMMM yyyy", { locale: ptBR })}
+              {formatSP(tooltip.action.dueDate, "dd 'de' MMMM yyyy", { locale: ptBR })}
             </p>
           )}
           {tooltip.action.createdAt && (
             <p className="text-xs text-gray-500">
               <span className="font-medium">Criada:</span>{" "}
-              {format(new Date(tooltip.action.createdAt), "dd 'de' MMMM yyyy", { locale: ptBR })}
+              {formatSP(tooltip.action.createdAt, "dd 'de' MMMM yyyy", { locale: ptBR })}
             </p>
           )}
           {tooltip.action.responsible && (

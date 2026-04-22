@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { parseISOSP, nowSP } from "@/lib/timezone";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { 
@@ -440,7 +441,7 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
                 <AlertCircle className="h-6 w-6 text-[#FFC107] mx-auto mb-1" />
                 <div className="text-lg font-bold text-[#FFC107]">
                   {objective.actions?.filter((a: any) => 
-                    a.dueDate && new Date(a.dueDate) < new Date() && a.status !== 'completed'
+                    a.dueDate && parseISOSP(a.dueDate) < nowSP() && a.status !== 'completed'
                   ).length || 0}
                 </div>
                 <div className="text-xs text-muted-foreground">Ações Atrasadas</div>

@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, Target, TrendingUp, FileText } from "lucide-react";
-import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatSP } from "@/lib/timezone";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { parseDecimalBR } from "@/lib/formatters";
@@ -149,7 +149,7 @@ export default function CheckpointUpdateDialog({
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Prazo:</span>
               <Badge variant="outline">
-                {format(new Date(checkpoint.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                {formatSP(checkpoint.dueDate, 'dd/MM/yyyy', { locale: ptBR })}
               </Badge>
             </div>
 

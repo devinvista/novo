@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Calendar, Target, TrendingUp, Clock, ChevronRight } from "lucide-react";
-import { format, isAfter, isBefore, addDays } from "date-fns";
+import { isAfter, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatSP, nowSP } from "@/lib/timezone";
 
 interface NextCheckpointsOverviewProps {
   checkpoints: any[];
@@ -23,7 +24,7 @@ export default function NextCheckpointsOverview({
   const checkpointData = useMemo(() => {
     if (!checkpoints || !keyResults) return { upcoming: [], overdue: [] };
 
-    const now = new Date();
+    const now = nowSP();
     const in7Days = addDays(now, 7);
     
     // Enrich checkpoints with key result data
@@ -66,8 +67,8 @@ export default function NextCheckpointsOverview({
   };
 
   const getUrgencyBadge = (checkpoint: any) => {
-    const isOverdue = isBefore(checkpoint.dueDate, new Date()) && checkpoint.status !== 'completed';
-    const daysUntilDue = Math.ceil((checkpoint.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const isOverdue = isBefore(checkpoint.dueDate, nowSP()) && checkpoint.status !== 'completed';
+    const daysUntilDue = Math.ceil((checkpoint.dueDate.getTime() - nowSP().getTime()) / (1000 * 60 * 60 * 24));
     
     if (isOverdue) {
       return <Badge variant="destructive">Atrasado</Badge>;
@@ -109,7 +110,7 @@ export default function NextCheckpointsOverview({
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            {format(checkpoint.dueDate, 'dd/MM/yyyy', { locale: ptBR })}
+            {formatSP(checkpoint.dueDate, 'dd/MM/yyyy', { locale: ptBR })}
           </div>
           
           <div className="flex items-center gap-1">

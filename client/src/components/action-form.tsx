@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insertActionSchema, type InsertAction, type ActionComment } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { formatSP, parseISOSP } from "@/lib/timezone";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,7 +114,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
       serviceLineId: action?.serviceLineId || null,
       serviceId: action?.serviceId || null,
       responsibleId: action?.responsibleId || (currentUser?.id || null),
-      dueDate: action?.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
+      dueDate: action?.dueDate ? formatSP(action.dueDate, "yyyy-MM-dd") : "",
     },
   });
 
@@ -142,7 +143,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
         serviceLineId: action.serviceLineId || null,
         serviceId: action.serviceId || null,
         responsibleId: action.responsibleId || null,
-        dueDate: action.dueDate ? new Date(action.dueDate).toISOString().split('T')[0] : "",
+        dueDate: action.dueDate ? formatSP(action.dueDate, "yyyy-MM-dd") : "",
       });
     } else {
       form.reset({
@@ -313,8 +314,8 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
     if (data.dueDate && data.keyResultId) {
       const selectedKeyResult = keyResults?.find((kr: any) => kr.id === data.keyResultId);
       if (selectedKeyResult) {
-        const actionDueDate = new Date(data.dueDate);
-        const krEndDate = new Date(selectedKeyResult.endDate);
+        const actionDueDate = parseISOSP(data.dueDate);
+        const krEndDate = parseISOSP(selectedKeyResult.endDate);
         
         if (actionDueDate > krEndDate) {
           toast({
@@ -633,7 +634,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                       if (!aIsFinal && bIsFinal) return 1;
                       
                       // Todos os outros comentários (sistema e normais) ordenados por data (mais recente primeiro)
-                      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                      return parseISOSP(b.createdAt).getTime() - parseISOSP(a.createdAt).getTime();
                     });
                     
                     return sortedComments.map((comment: any) => {
@@ -669,7 +670,8 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
                             <div className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
                               <Calendar className="h-3 w-3" />
                               <span className="whitespace-nowrap">
-                                {new Date(comment.createdAt).toLocaleString('pt-BR', {
+                                {parseISOSP(comment.createdAt).toLocaleString('pt-BR', {
+                                  timeZone: 'America/Sao_Paulo',
                                   day: '2-digit',
                                   month: '2-digit',
                                   year: '2-digit',

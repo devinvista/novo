@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { formatSP, parseISOSP } from "@/lib/timezone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,8 +69,8 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
           currentValue: keyResult.currentValue?.toString() || "0",
           unit: keyResult.unit || "",
           frequency: keyResult.frequency || "monthly",
-          startDate: keyResult.startDate ? new Date(keyResult.startDate).toISOString().split('T')[0] : "",
-          endDate: keyResult.endDate ? new Date(keyResult.endDate).toISOString().split('T')[0] : "",
+          startDate: keyResult.startDate ? formatSP(keyResult.startDate, "yyyy-MM-dd") : "",
+          endDate: keyResult.endDate ? formatSP(keyResult.endDate, "yyyy-MM-dd") : "",
           progress: keyResult.progress?.toString() || "0",
           status: keyResult.status || "active",
         });
@@ -206,7 +207,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     }
 
     // Validate date logic
-    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+    if (parseISOSP(formData.startDate) >= parseISOSP(formData.endDate)) {
       toast({
         title: "Erro",
         description: "A data de término deve ser posterior à data de início",
@@ -218,10 +219,10 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     // Validate Key Results dates are within Objective date range
     const selectedObjective = objectives?.find((obj: any) => obj.id === parseInt(formData.objectiveId));
     if (selectedObjective) {
-      const objectiveStartDate = new Date(selectedObjective.startDate);
-      const objectiveEndDate = new Date(selectedObjective.endDate);
-      const krStartDate = new Date(formData.startDate);
-      const krEndDate = new Date(formData.endDate);
+      const objectiveStartDate = parseISOSP(selectedObjective.startDate);
+      const objectiveEndDate = parseISOSP(selectedObjective.endDate);
+      const krStartDate = parseISOSP(formData.startDate);
+      const krEndDate = parseISOSP(formData.endDate);
       
       if (krStartDate < objectiveStartDate || krEndDate > objectiveEndDate) {
         toast({

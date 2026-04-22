@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarDays, TrendingUp, Target, RotateCcw } from "lucide-react";
 import AnimatedProgressRing from "./animated-progress-ring";
 import { parseDecimalBR, formatDateBR } from "@/lib/formatters";
+import { nowSP } from "@/lib/timezone";
 
 interface CheckpointProgressGridProps {
   checkpoints: any[];
@@ -84,7 +85,7 @@ export default function CheckpointProgressGrid({
                 const actualValue = parseDecimalBR(checkpoint.actualValue || "0");
                 
                 // Verificar se é checkpoint futuro
-                const today = new Date();
+                const today = nowSP();
                 const checkpointDate = new Date(checkpoint.dueDate);
                 const isFuture = checkpointDate > today;
                 

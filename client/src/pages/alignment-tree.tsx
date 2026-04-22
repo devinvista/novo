@@ -16,8 +16,8 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatSP, parseISOSP, nowSP } from "@/lib/timezone";
 import { formatDateBR } from "@/lib/formatters";
 import CompactHeader from "@/components/compact-header";
 import { Button } from "@/components/ui/button";
@@ -118,7 +118,7 @@ function ActionNode({ action, search }: { action: Action; search: string }) {
 
   const isOverdue =
     action.dueDate &&
-    new Date(action.dueDate) < new Date() &&
+    parseISOSP(action.dueDate) < nowSP() &&
     action.status !== "completed" &&
     action.status !== "cancelled";
 
@@ -152,7 +152,7 @@ function ActionNode({ action, search }: { action: Action; search: string }) {
           {action.dueDate && (
             <span className={`text-xs ${isOverdue ? "text-red-600 font-medium" : "text-gray-500"}`}>
               {isOverdue ? "⚠ " : ""}
-              Prazo: {format(parseISO(action.dueDate), "dd/MM/yyyy")}
+              Prazo: {formatSP(action.dueDate, "dd/MM/yyyy")}
             </span>
           )}
           {action.responsible && (
@@ -470,7 +470,7 @@ export default function AlignmentTree() {
     const overdueActions = (actions || []).filter(
       (a: any) =>
         a.dueDate &&
-        new Date(a.dueDate) < new Date() &&
+        parseISOSP(a.dueDate) < nowSP() &&
         a.status !== "completed" &&
         a.status !== "cancelled"
     ).length;

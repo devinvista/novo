@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar, TrendingUp, TrendingDown, Minus, CheckCircle2, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatSP, nowSP } from "@/lib/timezone";
 import { formatDateBR } from "@/lib/formatters";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,7 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
 
   const getCheckpointStatus = (checkpoint: any) => {
     if (checkpoint.status === "completed") return "completed";
-    const today = new Date();
+    const today = nowSP();
     const checkpointDate = new Date(checkpoint.period);
     if (today > checkpointDate) return "overdue";
     return "pending";
@@ -230,7 +230,7 @@ export default function CheckpointUpdater({ keyResultId }: CheckpointUpdaterProp
                                   <div>
                                     <p className="font-medium text-sm">{formatDateBR(checkpoint.period)}</p>
                                     <p className="text-xs text-gray-500">
-                                      Concluído em {format(new Date(checkpoint.completedAt), "dd/MM/yyyy")}
+                                      Concluído em {formatSP(checkpoint.completedAt, "dd/MM/yyyy")}
                                     </p>
                                   </div>
                                 </div>

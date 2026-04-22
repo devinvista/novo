@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Target, TrendingUp, Clock } from "lucide-react";
-import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatSP, nowSP } from "@/lib/timezone";
 
 interface CheckpointTimelineHeaderProps {
   keyResult: any;
@@ -22,7 +22,7 @@ export default function CheckpointTimelineHeader({
 
     const startDate = new Date(keyResult.startDate);
     const endDate = new Date(keyResult.endDate);
-    const now = new Date();
+    const now = nowSP();
     
     // Calculate progress percentage based on time elapsed
     const totalDuration = endDate.getTime() - startDate.getTime();
@@ -151,7 +151,7 @@ export default function CheckpointTimelineHeader({
                           {checkpoint.title}
                         </div>
                         <div className="text-gray-600 mb-2">
-                          📅 {format(new Date(checkpoint.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                          📅 {formatSP(checkpoint.dueDate, 'dd/MM/yyyy', { locale: ptBR })}
                         </div>
                         <div className="flex items-center justify-between mb-2">
                           <Badge 
@@ -177,11 +177,11 @@ export default function CheckpointTimelineHeader({
             {/* Timeline labels */}
             <div className="flex justify-between text-xs text-gray-500 mt-1">
               <div>
-                <div className="font-medium">{format(timelineData.startDate, 'dd/MM/yyyy', { locale: ptBR })}</div>
+                <div className="font-medium">{formatSP(timelineData.startDate, 'dd/MM/yyyy', { locale: ptBR })}</div>
                 <div className="text-gray-400">Início</div>
               </div>
               <div className="text-right">
-                <div className="font-medium">{format(timelineData.endDate, 'dd/MM/yyyy', { locale: ptBR })}</div>
+                <div className="font-medium">{formatSP(timelineData.endDate, 'dd/MM/yyyy', { locale: ptBR })}</div>
                 <div className="text-gray-400">Meta</div>
               </div>
             </div>
