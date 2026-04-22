@@ -289,7 +289,7 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
               <div style={{ width: LABEL_WIDTH, flexShrink: 0 }} />
 
               {/* Month cells — each uses pixel width derived from dayPx */}
-              <div className="relative flex" style={{ width: effectiveChartPx }}>
+              <div className="relative flex flex-shrink-0" style={{ width: effectiveChartPx }}>
                 {months.map((month, i) => {
                   const daysInMonth = differenceInDays(endOfMonth(month), month) + 1;
                   const monthPx = daysInMonth * dayPx;
