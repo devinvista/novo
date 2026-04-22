@@ -75,17 +75,38 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
     app-providers.tsx             # Provedores de contexto (AuthProvider, FiltersProvider, QueryClientProvider)
 /server/
   index.ts                        # Entry point (porta 5000/PORT env, timezone America/Sao_Paulo, helmet, rate-limit, healthcheck)
-  routes.ts                       # Todas as rotas da API (~2010 linhas)
+  routes.ts                       # Apenas montagem dos routers modulares (~50 linhas)
   auth.ts                         # Autenticação e autorização (Passport.js + scrypt, cookies env-aware)
   pg-storage.ts                   # Implementação de acesso ao banco (PostgreSQL + Drizzle) + interface IStorage + session store
   pg-db.ts                        # Conexão com PostgreSQL via pacote `postgres` (DATABASE_URL env var, pool production-grade)
   storage.ts                      # Re-exporta pg-storage (abstração)
-  logger.ts                       # Logging centralizado (morgan HTTP logger, produção JSON / dev texto)
+  cache.ts                        # LRU cache para look-ups (regions/solutions/strategic-indicators etc.)
+  config/env.ts                   # Validação Zod de variáveis de ambiente no boot
+  errors/app-error.ts             # Classes de erro tipadas (AppError, NotFoundError, ForbiddenError, ValidationError)
+  infra/logger.ts                 # Logger pino + correlação por requestId
+  middleware/                     # async-handler, auth (requireAuth/requireRole/sanitizeUser), validate (Zod), error-handler, request-id
+  modules/                        # Routers por domínio (ver abaixo)
+  domain/checkpoints/recalc.ts    # Recálculo de KR a partir de checkpoints
   quarterly-periods.ts            # Utilitários de cálculo de períodos trimestrais
   formatters.ts                   # Formatação de números no padrão BR (server-side)
   vite.ts                         # Setup do servidor Vite em dev / static files em prod (path resolution correta)
   seed.ts                         # Script de seed de dados (desenvolvimento)
   seed-okrs.ts                    # Script de seed de OKRs de exemplo (desenvolvimento)
+/server/modules/
+  objectives/                     # /api/objectives — CRUD de objetivos
+  key-results/                    # /api/key-results — CRUD de KRs
+  actions/                        # /api/actions — CRUD de ações
+  checkpoints/                    # /api/checkpoints — CRUD de checkpoints
+  action-comments/                # /api/actions/:id/comments
+  lookups/                        # /api/regions, /api/solutions, etc. (com cache)
+  admin-lookups/                  # /api/admin/* — CRUD administrativo de lookups
+  admin-import/                   # /api/admin/export-template, /api/admin/import-data (Excel)
+  dashboard/                      # /api/dashboard/kpis
+  quarters/                       # /api/quarters, /api/quarters/stats, /api/quarters/:q/data
+  executive-summary/              # /api/executive-summary
+  users/                          # /api/users, /api/managers, /api/pending-users, /api/users/approve, /api/managers/public
+/tests/                           # Testes Vitest + Supertest
+/.github/workflows/ci.yml         # Pipeline CI (lint, format, typecheck, test, build)
 /shared/
   pg-schema.ts                    # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod
   schema.ts                       # Re-exporta pg-schema
