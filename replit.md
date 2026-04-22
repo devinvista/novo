@@ -85,7 +85,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
   cache.ts                        # LRU cache para look-ups (regions/solutions/strategic-indicators etc.)
   config/env.ts                   # Validação Zod de variáveis de ambiente no boot
   errors/app-error.ts             # Classes de erro tipadas (AppError, NotFoundError, ForbiddenError, ValidationError)
-  infra/logger.ts                 # Logger pino + correlação por requestId
+  infra/logger.ts                 # Logger pino (único logger do projeto) + httpLogger pino-http + correlação por requestId. Inclui helper `log()` para chamadas legadas.
   middleware/                     # async-handler, auth (requireAuth/requireRole/sanitizeUser), validate (Zod), error-handler, request-id
   modules/                        # Routers por domínio (ver abaixo)
   domain/checkpoints/recalc.ts    # Recálculo de KR a partir de checkpoints
