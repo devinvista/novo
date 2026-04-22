@@ -7,7 +7,9 @@ import rateLimit from "express-rate-limit";
 import { env, isProd } from "./config/env";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
-import { log, httpLogger } from "./logger";
+import { log, httpLogger, logger } from "./infra/logger";
+import { requestId } from "./middleware/request-id";
+import { errorHandler } from "./middleware/error-handler";
 import { testConnection } from "./pg-db";
 
 const app = express();
@@ -39,7 +41,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// HTTP request logging
+// Request correlation id (must run before logger so it's included in logs)
+app.use(requestId);
+
+// HTTP request logging (pino)
 app.use(httpLogger);
 
 // Global rate limiter — protects all /api routes from abuse/scraping
@@ -86,14 +91,8 @@ app.get("/health", async (_req, res) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    log(`Error ${status}: ${message}`, "error");
-    if (!res.headersSent) {
-      res.status(status).json({ message });
-    }
-  });
+  // Centralized error handler (typed AppError, ZodError, fallback)
+  app.use(errorHandler);
 
   if (app.get("env") === "development") {
     await setupVite(app, server);

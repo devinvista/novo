@@ -7,6 +7,7 @@ import { hashPassword } from "./auth";
 import { cached, invalidateLookupCache } from "./cache";
 import { z } from "zod";
 import { formatDecimalBR, formatNumberBR, convertBRToDatabase, formatBrazilianNumber } from "./formatters";
+import { recalcKeyResultFromCheckpoints } from "./domain/checkpoints/recalc";
 import ExcelJS from "exceljs";
 import multer from "multer";
 
@@ -53,67 +54,6 @@ function requireRole(roles: string[]) {
     }
     next();
   };
-}
-
-/**
- * Recalcula currentValue/progress de um Key Result com base nos seus checkpoints.
- * Usa o checkpoint mais recente (por dueDate) que tenha actualValue preenchido,
- * independentemente de status. Atualiza também o progresso do objetivo pai.
- *
- * IMPORTANTE: chamar SEM passar userId — o controle de acesso já deve ter sido
- * verificado no endpoint chamador (acessar storage diretamente bypassa o filtro
- * por região, necessário para usuários operacionais/gestores sem regionIds).
- */
-async function recalcKeyResultFromCheckpoints(keyResultId: number): Promise<void> {
-  try {
-    const allCheckpoints = await storage.getCheckpoints(keyResultId);
-
-    const withValue = allCheckpoints
-      .filter((cp: any) => {
-        const v = cp.actualValue;
-        return v !== null && v !== undefined && v !== "";
-      })
-      .sort(
-        (a: any, b: any) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
-      );
-
-    const currentKR = await storage.getKeyResult(keyResultId);
-    if (!currentKR) return;
-
-    const krTargetValue = convertBRToDatabase(currentKR.targetValue || "0");
-    const latestValueRaw = withValue.length > 0 ? withValue[0].actualValue : "0";
-    const currentValueNum = convertBRToDatabase(latestValueRaw || "0");
-    const newKRProgress =
-      krTargetValue > 0 ? (currentValueNum / krTargetValue) * 100 : 0;
-
-    await storage.updateKeyResult(keyResultId, {
-      currentValue: currentValueNum.toString(),
-      progress: newKRProgress.toString(),
-    });
-
-    if (currentKR.objectiveId) {
-      const objectiveKRs = await storage.getKeyResults({
-        objectiveId: currentKR.objectiveId,
-      });
-      if (objectiveKRs.length > 0) {
-        const totalProgress = objectiveKRs.reduce((sum: number, kr: any) => {
-          if (kr.id === keyResultId) {
-            return sum + Math.min(newKRProgress, 100);
-          }
-          const current = parseFloat(kr.currentValue || "0");
-          const target = parseFloat(kr.targetValue || "1");
-          const p = target > 0 ? Math.min((current / target) * 100, 100) : 0;
-          return sum + p;
-        }, 0);
-        const avgProgress = totalProgress / objectiveKRs.length;
-        await storage.updateObjective(currentKR.objectiveId, {
-          progress: avgProgress.toFixed(2),
-        });
-      }
-    }
-  } catch (err) {
-    console.error("Error recalculating Key Result from checkpoints:", err);
-  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
