@@ -231,15 +231,26 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | `NODE_ENV` | `production` ativa: cookies seguros, logs JSON, pool maior, sem Vite HMR | Sim (prod) |
 
 ### Deploy no Hostinger (Node.js)
-Compatível com Node.js 20.x / 22.x (recomendado), Express + React + Vite.
+Stack atual (Express + React + Vite) está dentro da matriz de compatibilidade do Hostinger. Sempre que houver escolha, priorizamos a opção recomendada (em **negrito**).
+
+**Matriz de compatibilidade Hostinger:**
+| Categoria | Opções suportadas | Escolha do projeto |
+|-----------|-------------------|--------------------|
+| Frameworks frontend | Angular, Astro, Next.js, Nuxt, Parcel, **React**, React Router, Svelte, SvelteKit, **Vite**, Vue.js | **React + Vite** |
+| Frameworks backend | Astro, **Express**, Fastify, Hono, NestJS, Next.js, Nuxt, React Router, SvelteKit | **Express** |
+| Versões Node.js | 24.x, **22.x**, 20.x, 18.x | **22.x** (recomendado) — 20.x suportado |
+| Gerenciadores de pacotes | **npm** (padrão), yarn, pnpm | **npm** |
 
 **Configuração no painel Hostinger:**
 | Campo | Valor |
 |-------|-------|
 | Build command | `npm install && npm run build` |
 | Start command | `node dist/index.js` |
-| Node version | 22.x (ou 20.x) |
+| Node version | **22.x** (recomendado) ou 20.x |
+| Package manager | npm (padrão) |
 | Port | automático (definido por `PORT`) |
+
+> **Regra de compatibilidade máxima:** ao adicionar dependências, scripts ou ajustes de build, manter compatibilidade com Node.js 18.x → 24.x e com npm/yarn/pnpm. Evitar APIs específicas de uma única versão de Node ou recursos exclusivos de um único package manager (ex.: `pnpm`-only workspaces protocol). Em caso de escolha, priorizar a combinação **React + Vite + Express + Node 22.x + npm**.
 
 **Variáveis de ambiente a configurar:**
 ```
