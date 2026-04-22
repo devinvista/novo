@@ -54,9 +54,17 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSecret = process.env.SESSION_SECRET || "default-session-secret-change-in-production";
-  
   const isProd = process.env.NODE_ENV === "production";
+
+  if (isProd && !process.env.SESSION_SECRET) {
+    throw new Error(
+      "SESSION_SECRET environment variable is required in production. " +
+        "Generate a long random string and set it before starting the server."
+    );
+  }
+
+  const sessionSecret =
+    process.env.SESSION_SECRET || "dev-only-session-secret-do-not-use-in-production";
 
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,

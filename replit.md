@@ -115,10 +115,13 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 - **`/api/managers` protegido por auth**: requer autenticação; formulário de registro usa `/api/managers/public` (apenas `id` e `name`)
 - **Scrypt com salt**: senhas armazenadas como `hash.salt` (64 bytes)
 - **Helmet**: headers de segurança HTTP em todas as respostas
-- **Rate limiting**: `/api/login` e `/api/register` limitados a 30 req / 15 min por IP
+- **Rate limiting global**: todas as rotas `/api/*` limitadas a 300 req/min por IP
+- **Rate limiting auth**: `/api/login` e `/api/register` adicionalmente limitados a 30 req / 15 min por IP (anti brute-force)
+- **`SESSION_SECRET` obrigatório em produção**: o servidor falha o boot se `NODE_ENV=production` e a env não for definida (ver `server/auth.ts`)
 - **Sessões PostgreSQL**: `connect-pg-simple` persiste sessões na tabela `session` (auto-criada) — sem perda de sessão em restart
 - **Cookies env-aware**: `secure: true` e `sameSite: "none"` apenas em produção; em dev usa `sameSite: "lax"`
 - **Healthcheck**: `GET /health` retorna status do servidor e conectividade com banco (usado pelo Hostinger para monitoramento)
+- **Engines fixados**: `package.json` declara `engines.node: ">=18.0.0 <25.0.0"` para reforçar compatibilidade com a matriz Hostinger
 
 ### API - Rotas Principais
 | Método | Rota | Descrição |

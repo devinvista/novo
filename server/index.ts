@@ -25,7 +25,17 @@ app.use(express.urlencoded({ extended: false }));
 // HTTP request logging
 app.use(httpLogger);
 
-// Rate limiting for auth endpoints
+// Global rate limiter — protects all /api routes from abuse/scraping
+const globalApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Muitas requisições. Aguarde um instante e tente novamente." },
+});
+app.use("/api", globalApiLimiter);
+
+// Stricter rate limit for auth endpoints (brute-force protection)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
