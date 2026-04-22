@@ -4,6 +4,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertObjectiveSchema, insertKeyResultSchema, insertActionSchema, insertUserSchema } from "@shared/schema";
 import { hashPassword } from "./auth";
+import { cached, invalidateLookupCache } from "./cache";
 import { z } from "zod";
 import { formatDecimalBR, formatNumberBR, convertBRToDatabase, formatBrazilianNumber } from "./formatters";
 import * as XLSX from "xlsx";
@@ -119,13 +120,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
 
-  // Remover o endpoint duplicado - usar apenas o do auth.ts
+  // Auto-invalidate lookup caches after any successful admin mutation
+  app.use("/api/admin", (req, res, next) => {
+    if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return next();
+    res.on("finish", () => {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        invalidateLookupCache();
+      }
+    });
+    next();
+  });
 
   // Reference data routes
   app.get("/api/solutions", requireAuth, async (req, res) => {
     try {
       const user = req.user;
-      let solutions = await storage.getSolutions();
+      let solutions = await cached("solutions:all", () => storage.getSolutions());
       
       // Aplicar filtro de soluções para usuários não-admin
       if (user && user.role !== 'admin') {
@@ -145,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/regions", requireAuth, async (req, res) => {
     try {
       const user = req.user;
-      let regions = await storage.getRegions();
+      let regions = await cached("regions:all", () => storage.getRegions());
       
       if (user) {
         if (user.role !== 'admin') {
@@ -167,7 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user;
       const regionId = req.query.regionId ? parseInt(req.query.regionId as string) : undefined;
-      let subRegions = await storage.getSubRegions(regionId);
+      let subRegions = await cached(`sub-regions:${regionId ?? "all"}`, () =>
+        storage.getSubRegions(regionId)
+      );
       
       // Aplicar filtro hierárquico para usuários não-admin
       if (user && user.role !== 'admin') {
@@ -193,7 +205,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user;
       const solutionId = req.query.solutionId ? parseInt(req.query.solutionId as string) : undefined;
-      let serviceLines = await storage.getServiceLines(solutionId);
+      let serviceLines = await cached(`service-lines:${solutionId ?? "all"}`, () =>
+        storage.getServiceLines(solutionId)
+      );
       
       // Aplicar filtro hierárquico de linhas de serviço para usuários não-admin
       if (user && user.role !== 'admin') {
@@ -219,7 +233,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user;
       const serviceLineId = req.query.serviceLineId ? parseInt(req.query.serviceLineId as string) : undefined;
-      let services = await storage.getServices(serviceLineId);
+      let services = await cached(`services:${serviceLineId ?? "all"}`, () =>
+        storage.getServices(serviceLineId)
+      );
       
       // Aplicar filtro hierárquico de serviços para usuários não-admin
       if (user && user.role !== 'admin') {
@@ -243,7 +259,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/strategic-indicators", requireAuth, async (req, res) => {
     try {
-      const indicators = await storage.getStrategicIndicators();
+      const indicators = await cached("strategic-indicators:all", () =>
+        storage.getStrategicIndicators()
+      );
       res.json(indicators);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar indicadores estratégicos" });

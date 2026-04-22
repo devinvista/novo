@@ -222,6 +222,15 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 
 ### Performance
 - Página Resultados-Chave: busca ações e checkpoints **uma vez** (sem filtro por KR), agrupa client-side — evita N+1 requests
+- **Code-splitting de páginas**: `client/src/App.tsx` usa `React.lazy` + `Suspense` para todas as páginas autenticadas, reduzindo o bundle inicial. `AuthPage` e `NotFound` permanecem síncronos (caminho crítico)
+- **Cache LRU server-side** (`server/cache.ts`): endpoints de lookup (`/api/solutions`, `/api/regions`, `/api/sub-regions`, `/api/service-lines`, `/api/services`, `/api/strategic-indicators`) cacheados com TTL de 5 minutos. Filtros por usuário aplicados após o cache. Mutações em `/api/admin/*` invalidam o cache automaticamente via middleware
+
+### Qualidade de Código
+- **ESLint** (`eslint.config.js`): TypeScript + React Hooks + React Refresh, integrado com Prettier
+- **Prettier** (`.prettierrc.json`): 100 cols, double quotes, semi, trailing comma ES5
+- **Vitest** (`vitest.config.ts`): testes em `tests/*.test.ts`, cobertura via `@vitest/coverage-v8`. Suporte a aliases `@`, `@shared`, `@assets`
+- **Supertest**: testes de integração HTTP para Express
+- Scripts: `npm test`, `npm run test:watch`, `npm run test:coverage`, `npm run lint`, `npm run lint:fix`, `npm run format`
 
 ## Configuração do Ambiente
 
