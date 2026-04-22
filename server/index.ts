@@ -11,6 +11,7 @@ import { log, httpLogger, logger } from "./infra/logger";
 import { requestId } from "./middleware/request-id";
 import { errorHandler } from "./middleware/error-handler";
 import { testConnection } from "./pg-db";
+import { metricsMiddleware, metricsHandler } from "./infra/metrics";
 
 const app = express();
 
@@ -46,6 +47,12 @@ app.use(requestId);
 
 // HTTP request logging (pino)
 app.use(httpLogger);
+
+// Prometheus metrics — collect timing/counter for every HTTP request
+app.use(metricsMiddleware);
+
+// Prometheus scrape endpoint
+app.get("/metrics", metricsHandler);
 
 // Global rate limiter — protects all /api routes from abuse/scraping
 const globalApiLimiter = rateLimit({

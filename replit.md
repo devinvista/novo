@@ -147,6 +147,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 - **Engines fixados**: `package.json` declara `engines.node: ">=18.0.0 <25.0.0"` para reforçar compatibilidade com a matriz Hostinger
 - **CSP estrita em produção**: Helmet aplica Content-Security-Policy com `default-src 'self'`, `object-src 'none'` etc. Em dev é desabilitada para permitir HMR do Vite.
 - **Hash de senha legado**: ainda aceito no login mas com auto-upgrade transparente para `hash.salt` no primeiro login bem-sucedido (ver `comparePasswords` em `server/auth.ts`). Plano: remover branch legado depois que todos os usuários ativos tiverem feito login.
+- **Métricas Prometheus**: `GET /metrics` expõe métricas em formato `text/plain` (Prometheus): contadores por método/rota/status, histograma de latência (`http_request_duration_seconds`) e métricas default do Node (CPU, memória, GC, event loop). Implementação em `server/infra/metrics.ts`.
 
 ### API - Rotas Principais
 | Método | Rota | Descrição |
@@ -253,9 +254,10 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 ### Qualidade de Código
 - **ESLint** (`eslint.config.js`): TypeScript + React Hooks + React Refresh, integrado com Prettier
 - **Prettier** (`.prettierrc.json`): 100 cols, double quotes, semi, trailing comma ES5
-- **Vitest** (`vitest.config.ts`): testes em `tests/*.test.ts`, cobertura via `@vitest/coverage-v8`. Suporte a aliases `@`, `@shared`, `@assets`
-- **Supertest**: testes de integração HTTP para Express
-- Scripts: `npm test`, `npm run test:watch`, `npm run test:coverage`, `npm run lint`, `npm run lint:fix`, `npm run format`
+- **Vitest** (`vitest.config.ts`) + **Supertest**: testes em `tests/*.test.ts`, cobertura via `@vitest/coverage-v8`. Cobertura inicial: health, cache, auth (hashing), métricas
+- **Husky + lint-staged**: hook `.husky/pre-commit` aplica `eslint --fix` + `prettier --write` apenas nos arquivos staged (config em `.lintstagedrc.json`). Ativado automaticamente após `npm install` via `prepare` script
+- **CI** (`.github/workflows/ci.yml`): lint + format check + typecheck + testes + build em cada push/PR
+- Scripts: `npm test`, `npm run test:watch`, `npm run test:coverage`, `npm run lint`, `npm run lint:fix`, `npm run format`, `npm run format:check`
 
 ## Configuração do Ambiente
 
