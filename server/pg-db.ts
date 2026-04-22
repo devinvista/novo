@@ -1,19 +1,24 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '@shared/pg-schema';
+import { env, isProd } from './config/env';
 
-const connectionUrl = process.env.DATABASE_URL;
+const connectionUrl = env.DATABASE_URL;
+const wantsSsl = connectionUrl.includes('sslmode=');
 
-if (!connectionUrl) {
-  throw new Error('DATABASE_URL environment variable is required');
+function buildSslOptions() {
+  if (!wantsSsl) return undefined;
+  // Production: require validated SSL by default. Allow override via PG_SSL_REJECT_UNAUTHORIZED=false.
+  // Dev: allow self-signed cert chains by default.
+  const rejectUnauthorized = isProd ? env.PG_SSL_REJECT_UNAUTHORIZED : false;
+  return {
+    rejectUnauthorized,
+    ...(env.PG_SSL_CA ? { ca: env.PG_SSL_CA } : {}),
+  } as const;
 }
 
-const isProd = process.env.NODE_ENV === 'production';
-
 const client = postgres(connectionUrl, {
-  ssl: connectionUrl.includes('sslmode=require')
-    ? { rejectUnauthorized: false }
-    : undefined,
+  ssl: buildSslOptions(),
   max: isProd ? 20 : 10,
   idle_timeout: 30,
   connect_timeout: 10,

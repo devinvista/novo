@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { env, isProd } from "./config/env";
 
 declare global {
   namespace Express {
@@ -21,50 +22,36 @@ export async function hashPassword(password: string) {
   return `${buf.toString("hex")}.${salt}`;
 }
 
-async function comparePasswords(supplied: string, stored: string) {
+async function comparePasswords(
+  supplied: string,
+  stored: string
+): Promise<{ ok: boolean; legacy: boolean }> {
   try {
-    // Handle old format (just hex hash with hardcoded salt) for backward compatibility
+    // Legacy format (just hex hash with hardcoded salt) — accepted only to allow
+    // transparent migration to the new format on first successful login.
     if (!stored.includes(".")) {
-      const suppliedBuf = (await scryptAsync(supplied, 'salt', 32)) as Buffer; // Use 32 bytes to match stored hash
+      const suppliedBuf = (await scryptAsync(supplied, "salt", 32)) as Buffer;
       const storedBuf = Buffer.from(stored, "hex");
-      
-      // Ensure buffers are the same length for timingSafeEqual
-      if (suppliedBuf.length !== storedBuf.length) {
-        return false;
-      }
-      
-      return timingSafeEqual(suppliedBuf, storedBuf);
+      if (suppliedBuf.length !== storedBuf.length) return { ok: false, legacy: true };
+      return { ok: timingSafeEqual(suppliedBuf, storedBuf), legacy: true };
     }
-    
-    // Handle new format (hash.salt)
+
+    // New format (hash.salt)
     const [hashed, salt] = stored.split(".");
     const hashedBuf = Buffer.from(hashed, "hex");
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    
-    // Ensure buffers are the same length for timingSafeEqual
-    if (suppliedBuf.length !== hashedBuf.length) {
-      return false;
-    }
-    
-    return timingSafeEqual(hashedBuf, suppliedBuf);
+    if (suppliedBuf.length !== hashedBuf.length) return { ok: false, legacy: false };
+    return { ok: timingSafeEqual(hashedBuf, suppliedBuf), legacy: false };
   } catch (error) {
-    console.error('Password comparison error:', error);
-    return false;
+    console.error("Password comparison error:", error);
+    return { ok: false, legacy: false };
   }
 }
 
 export function setupAuth(app: Express) {
-  const isProd = process.env.NODE_ENV === "production";
-
-  if (isProd && !process.env.SESSION_SECRET) {
-    throw new Error(
-      "SESSION_SECRET environment variable is required in production. " +
-        "Generate a long random string and set it before starting the server."
-    );
-  }
-
+  // env validation already guarantees SESSION_SECRET is set in production.
   const sessionSecret =
-    process.env.SESSION_SECRET || "dev-only-session-secret-do-not-use-in-production";
+    env.SESSION_SECRET || "dev-only-session-secret-do-not-use-in-production";
 
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
@@ -93,17 +80,27 @@ export function setupAuth(app: Express) {
           return done(null, false);
         }
         
-        const passwordMatch = await comparePasswords(password, user.password);
-        
-        if (!passwordMatch) {
+        const { ok, legacy } = await comparePasswords(password, user.password);
+
+        if (!ok) {
           return done(null, false);
         }
-        
+
         // Verificar se o usuário está aprovado (exceto admins)
         if (!user.approved && user.role !== 'admin') {
           return done(null, false, { message: "Usuário aguarda aprovação do gestor" });
         }
-        
+
+        // Auto-upgrade legacy password hashes to the new salted format on successful login.
+        if (legacy) {
+          try {
+            const newHash = await hashPassword(password);
+            await storage.updateUser(user.id, { password: newHash });
+          } catch (e) {
+            console.error("Failed to upgrade legacy password hash:", e);
+          }
+        }
+
         return done(null, user);
       } catch (error) {
         console.error('Login error:', error);

@@ -4,6 +4,7 @@ process.env.TZ = 'America/Sao_Paulo';
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import { env, isProd } from "./config/env";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { log, httpLogger } from "./logger";
@@ -11,10 +12,26 @@ import { testConnection } from "./pg-db";
 
 const app = express();
 
-// Security headers
+// Security headers — strict CSP in production, relaxed in dev for Vite HMR
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: isProd
+      ? {
+          useDefaults: true,
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "blob:"],
+            fontSrc: ["'self'", "data:"],
+            connectSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            frameAncestors: ["'self'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+          },
+        }
+      : false,
     crossOriginEmbedderPolicy: false,
   })
 );
@@ -85,7 +102,7 @@ app.get("/health", async (_req, res) => {
   }
 
   // Support PORT env var (required for Hostinger) with fallback to 5000
-  const port = parseInt(process.env.PORT ?? "5000", 10);
+  const port = env.PORT;
   server.listen(
     {
       port,
