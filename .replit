@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "./dist/index.mjs"]
+run = ["node", "./dist/index.cjs"]
 build = ["npm", "run", "build"]
 
 [[ports]]
@@ -47,3 +47,6 @@ stack = "FULLSTACK_JS"
 
 [userenv.development]
 DATABASE_URL = "postgresql://neondb_owner:npg_QqoTzSpN1wr9@ep-delicate-wave-acdednnh-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+
+[nix]
+channel = "stable-25_05"
