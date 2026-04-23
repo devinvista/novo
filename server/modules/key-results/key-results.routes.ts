@@ -31,12 +31,16 @@ function normalizeKRBody(body: any) {
 keyResultsRouter.get(
   "/",
   asyncHandler(async (req: any, res) => {
+    const limit = intParam(req.query.limit);
+    const offset = intParam(req.query.offset);
     const filters = {
       objectiveId: intParam(req.query.objectiveId),
       regionId: intParam(req.query.regionId),
       subRegionId: intParam(req.query.subRegionId),
       serviceLineId: intParam(req.query.serviceLineId),
       currentUserId: req.user.id,
+      ...(typeof limit === 'number' && limit > 0 ? { limit: Math.min(limit, 200) } : {}),
+      ...(typeof offset === 'number' && offset >= 0 ? { offset } : {}),
     };
     const keyResults = await storage.getKeyResults(filters);
     const keyResultsBR = keyResults.map((kr: any) => ({

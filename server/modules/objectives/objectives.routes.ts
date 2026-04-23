@@ -15,12 +15,16 @@ const intParam = (v: unknown) => (v !== undefined ? parseInt(String(v)) : undefi
 objectivesRouter.get(
   "/",
   asyncHandler(async (req: any, res) => {
+    const limit = intParam(req.query.limit);
+    const offset = intParam(req.query.offset);
     const filters = {
       regionId: intParam(req.query.regionId),
       subRegionId: intParam(req.query.subRegionId),
       serviceLineId: intParam(req.query.serviceLineId),
       ownerId: intParam(req.query.ownerId),
       currentUserId: req.user.id,
+      ...(typeof limit === 'number' && limit > 0 ? { limit: Math.min(limit, 200) } : {}),
+      ...(typeof offset === 'number' && offset >= 0 ? { offset } : {}),
     };
     res.json(await storage.getObjectives(filters));
   })

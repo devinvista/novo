@@ -79,7 +79,10 @@ export class ActionRepo {
       query = query.where(and(...whereConditions)) as any;
     }
 
-    const result = await (query as any).orderBy(desc(actions.createdAt));
+    let q: any = (query as any).orderBy(desc(actions.createdAt));
+    if (typeof filters?.limit === 'number') q = q.limit(filters.limit);
+    if (typeof filters?.offset === 'number') q = q.offset(filters.offset);
+    const result = await q;
 
     return result.map((action: any) => ({
       id: action.id,

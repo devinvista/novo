@@ -52,7 +52,10 @@ export class ObjectiveRepo {
       query = query.where(and(...whereConditions)) as any;
     }
 
-    return (query as any).orderBy(desc(objectives.createdAt));
+    let q: any = (query as any).orderBy(desc(objectives.createdAt));
+    if (typeof filters?.limit === 'number') q = q.limit(filters.limit);
+    if (typeof filters?.offset === 'number') q = q.offset(filters.offset);
+    return q;
   }
 
   async getObjective(id: number, _currentUserId?: number): Promise<any | undefined> {

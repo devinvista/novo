@@ -22,9 +22,13 @@ function cleanActionBody(body: any) {
 actionsRouter.get(
   "/",
   asyncHandler(async (req: any, res) => {
+    const limit = intParam(req.query.limit);
+    const offset = intParam(req.query.offset);
     const actions = await storage.getActions({
       keyResultId: intParam(req.query.keyResultId),
       currentUserId: req.user?.id,
+      ...(typeof limit === 'number' && limit > 0 ? { limit: Math.min(limit, 200) } : {}),
+      ...(typeof offset === 'number' && offset >= 0 ? { offset } : {}),
     });
     res.json(actions);
   })

@@ -62,43 +62,7 @@ export function forceModalCleanup() {
       // ignore
     }
 
-    setTimeout(() => {
-      try {
-        resetStyles();
-
-        const suspiciousElements = document.querySelectorAll(
-          'div[style*="position: fixed"][style*="z-index"]'
-        );
-        suspiciousElements.forEach(el => {
-          try {
-            const style = window.getComputedStyle(el);
-            const zIndex = parseInt(style.zIndex) || 0;
-            const rect = el.getBoundingClientRect();
-
-            if (
-              style.position === 'fixed' &&
-              zIndex >= 50 &&
-              rect.width >= window.innerWidth - 50 &&
-              rect.height >= window.innerHeight - 50 &&
-              el.parentNode &&
-              el.isConnected &&
-              !el.closest('[data-state="open"]') &&
-              !el.querySelector('[data-state="open"]') &&
-              !el.querySelector('main, nav, header, footer') &&
-              el.tagName !== 'HTML' &&
-              el.tagName !== 'BODY' &&
-              el.id !== 'root'
-            ) {
-              el.remove();
-            }
-          } catch {
-            // ignore
-          }
-        });
-      } catch {
-        // ignore
-      }
-    }, 100);
+    setTimeout(resetStyles, 100);
   } catch {
     // ignore
   }
@@ -107,9 +71,4 @@ export function forceModalCleanup() {
 export function cleanupOnDialogClose() {
   forceModalCleanup();
   setTimeout(forceModalCleanup, 300);
-  setTimeout(forceModalCleanup, 500);
-}
-
-if (typeof window !== 'undefined') {
-  (window as any).forceModalCleanup = forceModalCleanup;
 }

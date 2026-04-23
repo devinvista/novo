@@ -53,7 +53,10 @@ export class KeyResultRepo {
     if (whereConditions.length > 0) {
       query = query.where(and(...whereConditions));
     }
-    const result = await query.orderBy(desc(keyResults.createdAt));
+    let q: any = query.orderBy(desc(keyResults.createdAt));
+    if (typeof filters?.limit === 'number') q = q.limit(filters.limit);
+    if (typeof filters?.offset === 'number') q = q.offset(filters.offset);
+    const result = await q;
 
     return result.map((row: any) => {
       const kr = row.keyResults ?? row;
