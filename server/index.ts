@@ -3,6 +3,7 @@ process.env.TZ = 'America/Sao_Paulo';
 
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
+import compression from "compression";
 import rateLimit from "express-rate-limit";
 import { env, isProd } from "./config/env";
 import { registerRoutes } from "./routes";
@@ -37,6 +38,17 @@ app.use(
         }
       : false,
     crossOriginEmbedderPolicy: false,
+  })
+);
+
+// Response compression (gzip/brotli quando suportado pelo cliente)
+app.use(
+  compression({
+    threshold: 1024,
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) return false;
+      return compression.filter(req, res);
+    },
   })
 );
 
