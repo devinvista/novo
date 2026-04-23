@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { PermissionTreePicker } from "@/features/users/permission-tree-picker";
+import { PermissionBadgeList } from "@/features/users/permission-badges";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -757,60 +758,42 @@ export default function UsersPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            {/* Soluções */}
-                            {user.solutionIds && user.solutionIds.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                <span className="text-xs text-muted-foreground">Soluções:</span>
-                                {user.solutionIds.map(id => {
-                                  const solution = solutionMap.get(id);
-                                  return solution && (
-                                    <Badge key={id} variant="outline" className="text-xs px-1 py-0 bg-blue-50 text-blue-700 border-blue-200">
-                                      {solution.name}
-                                    </Badge>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            {/* Linhas de Serviço */}
-                            {user.serviceLineIds && user.serviceLineIds.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                <span className="text-xs text-muted-foreground">Linhas:</span>
-                                {user.serviceLineIds.map(id => {
-                                  const serviceLine = serviceLineMap.get(id);
-                                  return serviceLine && (
-                                    <Badge key={id} variant="outline" className="text-xs px-1 py-0 bg-green-50 text-green-700 border-green-200">
-                                      {serviceLine.name}
-                                    </Badge>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            {/* Serviços */}
-                            {user.serviceIds && user.serviceIds.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                <span className="text-xs text-muted-foreground">Serviços:</span>
-                                {user.serviceIds.map(id => {
-                                  const service = serviceMap.get(id);
-                                  return service && (
-                                    <Badge key={id} variant="outline" className="text-xs px-1 py-0 bg-purple-50 text-purple-700 border-purple-200">
-                                      {service.name}
-                                    </Badge>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            {/* Mostrar "Todas" se for admin ou se não tem restrições */}
+                          <div className="space-y-1 max-w-md">
+                            <PermissionBadgeList
+                              label="Soluções"
+                              tone="blue"
+                              testIdPrefix={`badge-solution-${user.id}`}
+                              items={(user.solutionIds ?? [])
+                                .map((id) => solutionMap.get(id))
+                                .filter((x): x is { id: number; name: string } => Boolean(x))}
+                            />
+                            <PermissionBadgeList
+                              label="Linhas"
+                              tone="green"
+                              testIdPrefix={`badge-line-${user.id}`}
+                              items={(user.serviceLineIds ?? [])
+                                .map((id) => serviceLineMap.get(id))
+                                .filter((x): x is { id: number; name: string } => Boolean(x))}
+                            />
+                            <PermissionBadgeList
+                              label="Serviços"
+                              tone="purple"
+                              testIdPrefix={`badge-service-${user.id}`}
+                              items={(user.serviceIds ?? [])
+                                .map((id) => serviceMap.get(id))
+                                .filter((x): x is { id: number; name: string } => Boolean(x))}
+                            />
                             {user.role === "admin" && (
-                              <Badge variant="default" className="text-xs px-1 py-0 bg-red-50 text-red-700 border-red-200">
+                              <Badge variant="default" className="text-xs px-1.5 py-0 bg-red-50 text-red-700 border-red-200">
                                 Acesso Total
                               </Badge>
                             )}
-                            {user.role !== "admin" && (!user.solutionIds || user.solutionIds.length === 0) && 
-                             (!user.serviceLineIds || user.serviceLineIds.length === 0) && 
-                             (!user.serviceIds || user.serviceIds.length === 0) && (
-                              <span className="text-xs text-muted-foreground">Sem restrições específicas</span>
-                            )}
+                            {user.role !== "admin" &&
+                              (!user.solutionIds || user.solutionIds.length === 0) &&
+                              (!user.serviceLineIds || user.serviceLineIds.length === 0) &&
+                              (!user.serviceIds || user.serviceIds.length === 0) && (
+                                <span className="text-xs text-muted-foreground">Sem restrições específicas</span>
+                              )}
                           </div>
                         </TableCell>
                         <TableCell>
