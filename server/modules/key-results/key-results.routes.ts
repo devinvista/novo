@@ -64,7 +64,7 @@ keyResultsRouter.post(
     try {
       validation = insertKeyResultSchema.parse(requestData);
     } catch (err) {
-      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.errors);
+      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.issues);
       throw err;
     }
 
@@ -100,7 +100,7 @@ keyResultsRouter.put(
     try {
       validation = insertKeyResultSchema.partial().parse(requestData);
     } catch (err) {
-      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.errors);
+      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.issues);
       throw err;
     }
 

@@ -44,7 +44,7 @@ objectivesRouter.post(
     try {
       validation = insertObjectiveSchema.parse(req.body);
     } catch (err) {
-      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.errors);
+      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.issues);
       throw err;
     }
 
@@ -124,7 +124,7 @@ objectivesRouter.put(
     try {
       validation = insertObjectiveSchema.partial().parse(req.body);
     } catch (err) {
-      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.errors);
+      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.issues);
       throw err;
     }
     const existing = await storage.getObjective(id, req.user.id);

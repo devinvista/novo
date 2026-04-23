@@ -38,7 +38,7 @@ actionsRouter.post(
     try {
       validation = insertActionSchema.parse(requestData);
     } catch (err) {
-      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.errors);
+      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.issues);
       throw err;
     }
     const keyResult = await storage.getKeyResult(validation.keyResultId, req.user.id);
@@ -72,7 +72,7 @@ actionsRouter.put(
     try {
       validation = insertActionSchema.partial().parse(requestData);
     } catch (err) {
-      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.errors);
+      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.issues);
       throw err;
     }
 

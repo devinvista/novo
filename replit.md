@@ -343,4 +343,5 @@ O projeto usa um único workflow "Start application" que executa `npm run dev` �
 - Tabela `activities` removida do schema por nunca ter sido populada (audit trail nunca implementado). Caso seja necessário no futuro, recriar com escopo bem definido
 - `client/src/lib/emergency-cleanup.ts` removido (era um hack global expondo `window.emergencyCleanup` via `Ctrl+Shift+C`). `modal-cleanup.ts` permanece como utilitário pontual chamado pelos diálogos (workaround conhecido para limpeza de overlays do Radix — substituir por upgrade do Radix no futuro)
 - `drizzle-orm` atualizado para >= 0.45.2 corrigindo CVE de SQL injection (GHSA-gpj5-g38j-94v9). `drizzle-kit` atualizado para a última versão
-- Plano de upgrade dos majors (React 19, Express 5, Tailwind 4, Vite 8, Zod 4, Recharts 3) documentado em `docs/upgrade-roadmap.md` com matriz de risco × ganho × esforço e ordem de execução recomendada
+- Plano de upgrade dos majors documentado em `docs/upgrade-roadmap.md` com matriz risco × ganho × esforço; histórico de upgrades concluídos no rodapé do mesmo arquivo
+- Sprint 1 do roadmap concluído: `zod` 3 → 4 e `recharts` 2 → 3. `client/src/components/ui/chart.tsx` (shadcn primitive) foi removido por não ter uso. Em rotas, `err.errors` foi substituído por `err.issues` (mudança da API ZodError em v4)

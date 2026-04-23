@@ -95,7 +95,7 @@ usersRouter.post(
     try {
       userData = insertUserSchema.parse(req.body);
     } catch (err) {
-      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.errors);
+      if (err instanceof z.ZodError) throw new ValidationError("Dados inválidos", err.issues);
       throw err;
     }
 

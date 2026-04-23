@@ -7,14 +7,14 @@ Documento de planejamento para os upgrades de major das principais dependências
 
 ## Matriz resumo
 
-| Pacote                  | Atual    | Alvo    | Risco    | Ganho     | Esforço | Prioridade |
-| ----------------------- | -------- | ------- | -------- | --------- | ------- | ---------- |
-| `zod`                   | 3.25.76  | 4.x     | Baixo    | Médio     | 1–2 dias | 🟢 Alta    |
-| `tailwindcss`           | 3.4.19   | 4.x     | Médio    | Alto      | 2–3 dias | 🟢 Alta    |
-| `react` / `react-dom`   | 18.3.1   | 19.x    | Médio    | Médio     | 2–4 dias | 🟡 Média   |
-| `recharts`              | 2.15.4   | 3.x     | Baixo    | Baixo     | 1 dia    | 🟡 Média   |
-| `vite`                  | 5.4.21   | 8.x     | Alto     | Médio     | 2–3 dias | 🟡 Média   |
-| `express`               | 4.22.1   | 5.x     | Alto     | Baixo     | 3–5 dias | 🔴 Baixa   |
+| Pacote                  | Atual    | Alvo    | Risco    | Ganho     | Esforço | Status |
+| ----------------------- | -------- | ------- | -------- | --------- | ------- | ------ |
+| `zod`                   | 4.x      | 4.x     | Baixo    | Médio     | 1–2 dias | ✅ Concluído |
+| `recharts`              | 3.x      | 3.x     | Baixo    | Baixo     | 1 dia    | ✅ Concluído |
+| `tailwindcss`           | 3.4.19   | 4.x     | Médio    | Alto      | 2–3 dias | 🟢 Próximo |
+| `react` / `react-dom`   | 18.3.1   | 19.x    | Médio    | Médio     | 2–4 dias | 🟡 Pendente |
+| `vite`                  | 5.4.21   | 8.x     | Alto     | Médio     | 2–3 dias | 🟡 Pendente |
+| `express`               | 4.22.1   | 5.x     | Alto     | Baixo     | 3–5 dias | 🔴 Pendente |
 
 Legenda de risco:
 - **Baixo**: poucas mudanças quebrando, tipos cobrem o impacto, build/test pegam regressões
@@ -242,3 +242,6 @@ Para cada upgrade, validar antes do merge:
 | ---------- | --------------- | ---------------- | -------------------------------------------------- |
 | 2026-04-23 | `drizzle-orm`   | 0.39.3 → 0.45.2  | Correção de CVE de SQL injection (GHSA-gpj5-g38j-94v9) |
 | 2026-04-23 | `drizzle-kit`   | 0.31.10 → latest | Acompanha drizzle-orm                              |
+| 2026-04-23 | `zod`           | 3.25.76 → 4.x    | Substituído `err.errors` por `err.issues` em 7 routes; `drizzle-zod` e `@hookform/resolvers` já compatíveis |
+| 2026-04-23 | `recharts`      | 2.15.4 → 3.x     | Removido `client/src/components/ui/chart.tsx` (shadcn primitive não utilizado em nenhum componente do app) |
+| 2026-04-23 | `zod-validation-error` | atualizado para latest | Compatibilidade com Zod 4 |
