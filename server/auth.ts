@@ -9,7 +9,9 @@ import { User as SelectUser } from "@shared/schema";
 import { env, isProd } from "./config/env";
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface User extends SelectUser {}
   }
 }

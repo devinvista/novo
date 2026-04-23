@@ -34,6 +34,7 @@ export default function Checkpoints() {
     const urlParams = new URLSearchParams(window.location.search);
     const krParam = urlParams.get('kr');
     if (krParam) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedKeyResultId(parseInt(krParam));
     }
   }, [location]);

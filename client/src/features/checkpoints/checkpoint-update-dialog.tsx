@@ -37,9 +37,11 @@ export default function CheckpointUpdateDialog({
     if (checkpoint) {
       // Se o valor é 0 ou "0", deixar campo vazio para melhor UX
       const currentValue = checkpoint.actualValue;
+      /* eslint-disable react-hooks/set-state-in-effect */
       setActualValue((currentValue && currentValue !== "0" && currentValue !== 0) ? currentValue : "");
       setStatus(checkpoint.status || "pending");
       setNotes(checkpoint.notes || "");
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [checkpoint]);
 

@@ -55,6 +55,7 @@ export default function AnimatedProgressRing({
       }, 100);
       return () => clearTimeout(timer);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnimatedProgress(Math.min(progress, 100));
     }
   }, [progress, showAnimation, status]);

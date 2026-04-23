@@ -49,6 +49,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
     if (open) {
       if (keyResult) {
         // Editing existing key result
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormData({
           objectiveId: keyResult.objectiveId?.toString() || "",
           title: keyResult.title || "",

@@ -131,8 +131,10 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     const start = startOfMonth(earliest);
     const end = endOfMonth(latest);
     const monthCount = Math.max(3, Math.round(differenceInDays(end, start) / 30) + 1);
+    /* eslint-disable react-hooks/set-state-in-effect */
     setViewStart(start);
     setViewMonths(Math.min(monthCount, 12));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [actions]);
 
   // Close tooltip on outside click

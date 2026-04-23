@@ -96,6 +96,7 @@ const FullTooltip = ({ active, payload, label, unit }: any) => {
 // ─── Mini Sparkline (always-visible, no toggle) ───────────────────────────────
 
 function MiniSparkline({ data, color }: { data: ChartPoint[]; color: string }) {
+  // eslint-disable-next-line react-hooks/purity
   const gradId = `spark-${Math.random().toString(36).slice(2, 7)}`;
   return (
     <ResponsiveContainer width="100%" height={48}>

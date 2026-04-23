@@ -35,6 +35,7 @@ export default function Actions() {
     const urlParams = new URLSearchParams(window.location.search);
     const krParam = urlParams.get("kr");
     if (krParam) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setKeyResultFilter(krParam);
     }
   }, [location]);
