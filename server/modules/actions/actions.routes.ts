@@ -6,12 +6,11 @@ import { requireAuth } from "../../middleware/auth";
 import { BadRequestError, ForbiddenError, NotFoundError, ValidationError } from "../../errors/app-error";
 import { insertActionSchema } from "@shared/schema";
 import { recordActivity } from "../../lib/audit-log";
+import { intParam } from "../../lib/route-utils";
 
 export const actionsRouter: Router = Router();
 
 actionsRouter.use(requireAuth);
-
-const intParam = (v: unknown) => (v !== undefined ? parseInt(String(v)) : undefined);
 
 function cleanActionBody(body: any) {
   const requestData = { ...body };

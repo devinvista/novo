@@ -5,12 +5,11 @@ import { requireAuth } from "../../middleware/auth";
 import { NotFoundError } from "../../errors/app-error";
 import { convertBRToDatabase, formatBrazilianNumber } from "../../shared/formatters";
 import { recalcKeyResultFromCheckpoints } from "../../domain/checkpoints/recalc";
+import { intParam } from "../../lib/route-utils";
 
 export const checkpointsRouter: Router = Router();
 
 checkpointsRouter.use(requireAuth);
-
-const intParam = (v: unknown) => (v !== undefined ? parseInt(String(v)) : undefined);
 
 checkpointsRouter.get(
   "/",

@@ -12,6 +12,7 @@ import { requestId } from "./middleware/request-id";
 import { errorHandler } from "./middleware/error-handler";
 import { testConnection } from "./pg-db";
 import { metricsMiddleware, metricsHandler } from "./infra/metrics";
+import { PgRateLimitStore } from "./middleware/pg-rate-limit";
 
 const app = express();
 
@@ -54,22 +55,24 @@ app.use(metricsMiddleware);
 // Prometheus scrape endpoint
 app.get("/metrics", metricsHandler);
 
-// Global rate limiter — protects all /api routes from abuse/scraping
+// Global rate limiter — store distribuído via PostgreSQL (funciona com múltiplas réplicas)
 const globalApiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  store: new PgRateLimitStore({ windowMs: 60 * 1000 }),
   message: { message: "Muitas requisições. Aguarde um instante e tente novamente." },
 });
 app.use("/api", globalApiLimiter);
 
-// Stricter rate limit for auth endpoints (brute-force protection)
+// Rate limit mais restrito para endpoints de autenticação (proteção contra brute-force)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  store: new PgRateLimitStore({ windowMs: 15 * 60 * 1000 }),
   message: { message: "Muitas tentativas. Tente novamente em 15 minutos." },
 });
 

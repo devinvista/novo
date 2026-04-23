@@ -104,10 +104,13 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
     auth.ts             # requireAuth / requireRole / sanitizeUser
     error-handler.ts    # Handler centralizado (AppError, ZodError, fallback)
     request-id.ts       # Correlação de request (UUID por request, injetado no logger)
-    validate.ts         # Middleware de validação Zod para body/params/query
-  modules/              # Routers por domínio (ver tabela de rotas abaixo)
-    objectives/         # /api/objectives
-    key-results/        # /api/key-results
+    validate.ts         # Middleware de validação Zod para body/params/query (usado com validate(schema) nas rotas)
+    pg-rate-limit.ts    # PgRateLimitStore — rate limit distribuído via PostgreSQL (tabela rate_limit_store)
+  lib/
+    route-utils.ts      # intParam() compartilhado + paginationSchema (elimina duplicata nos modules)
+  modules/              # Routers por domínio — padrão: *.routes.ts (HTTP) + *.service.ts (negócio)
+    objectives/         # /api/objectives — objectives.routes.ts + objectives.service.ts
+    key-results/        # /api/key-results — key-results.routes.ts + key-results.service.ts
     actions/            # /api/actions
     checkpoints/        # /api/checkpoints
     action-comments/    # /api/actions/:id/comments
@@ -192,8 +195,8 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 - **`/api/managers` protegido por auth**: formulário de registro usa `/api/managers/public` (só `id` e `name`)
 - **Scrypt com salt**: senhas armazenadas como `hash.salt` (64 bytes)
 - **Helmet**: headers de segurança HTTP em todas as respostas
-- **Rate limiting global**: todas as rotas `/api/*` limitadas a 300 req/min por IP
-- **Rate limiting auth**: `/api/login` e `/api/register` limitados a 30 req / 15 min por IP (anti brute-force)
+- **Rate limiting global**: todas as rotas `/api/*` limitadas a 300 req/min por IP — store distribuído via PostgreSQL (`server/middleware/pg-rate-limit.ts`, tabela `rate_limit_store`)
+- **Rate limiting auth**: `/api/login` e `/api/register` limitados a 30 req / 15 min por IP (anti brute-force) — mesmo store PostgreSQL distribuído
 - **`SESSION_SECRET` obrigatório em produção**: boot falha se `NODE_ENV=production` e env não definida
 - **Sessões PostgreSQL**: `connect-pg-simple` persiste sessões na tabela `session`
 - **Cookies env-aware**: `secure: true` e `sameSite: "none"` só em produção; dev usa `sameSite: "lax"`
