@@ -3,7 +3,7 @@ import {
   strategicIndicators, solutions as solutionsTable, services,
   type Region, type SubRegion, type ServiceLine, type StrategicIndicator,
   type Solution, type Service,
-} from '@shared/pg-schema';
+} from '@shared/schema';
 import { db } from '../pg-db';
 import { eq, asc } from 'drizzle-orm';
 

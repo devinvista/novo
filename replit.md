@@ -78,9 +78,9 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
   index.ts                        # Entry point (porta 5000/PORT env, timezone America/Sao_Paulo, helmet, rate-limit, healthcheck)
   routes.ts                       # Apenas montagem dos routers modulares (~50 linhas)
   auth.ts                         # Autenticação e autorização (Passport.js + scrypt, cookies env-aware)
-  pg-storage.ts                   # Facade fina IStorage que compõe os repositórios (server/repositories/*) — delega chamadas
+  storage/                        # IStorage isolado (interface.ts) + implementação Drizzle (pg.ts) + barrel (index.ts)
+                                   # Facade fina que compõe os repositórios (server/repositories/*) — delega chamadas
   pg-db.ts                        # Conexão com PostgreSQL via pacote `postgres` (DATABASE_URL env var, pool production-grade)
-  storage.ts                      # Re-exporta pg-storage (abstração)
   repositories/                   # Repositórios por agregado (UserRepo, LookupRepo, ObjectiveRepo, KeyResultRepo, ActionRepo, CheckpointRepo, DashboardRepo) + sessionStore
                                    # Cada repositório encapsula queries Drizzle do seu domínio. Novo código deve importar o repo específico em vez do facade.
   cache.ts                        # LRU cache para look-ups (regions/solutions/strategic-indicators etc.)
@@ -90,11 +90,13 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
   middleware/                     # async-handler, auth (requireAuth/requireRole/sanitizeUser), validate (Zod), error-handler, request-id
   modules/                        # Routers por domínio (ver abaixo)
   domain/checkpoints/recalc.ts    # Recálculo de KR a partir de checkpoints
-  quarterly-periods.ts            # Utilitários de cálculo de períodos trimestrais
-  formatters.ts                   # Formatação de números no padrão BR (server-side)
+  shared/                         # Utilitários de servidor compartilhados entre módulos
+    formatters.ts                 # Formatação de números no padrão BR (server-side)
+    quarterly-periods.ts          # Utilitários de cálculo de períodos trimestrais
+  scripts/seed/                   # Scripts de seed de dados (desenvolvimento)
+    seed.ts                       # Seed principal (usuários, regiões, soluções, etc.)
+    seed-okrs.ts                  # Seed de OKRs de exemplo
   vite.ts                         # Setup do servidor Vite em dev / static files em prod (path resolution correta)
-  seed.ts                         # Script de seed de dados (desenvolvimento)
-  seed-okrs.ts                    # Script de seed de OKRs de exemplo (desenvolvimento)
 /server/modules/
   objectives/                     # /api/objectives — CRUD de objetivos
   key-results/                    # /api/key-results — CRUD de KRs
@@ -111,8 +113,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 /tests/                           # Testes Vitest + Supertest
 /.github/workflows/ci.yml         # Pipeline CI (lint, format, typecheck, test, build)
 /shared/
-  pg-schema.ts                    # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod + índices em FKs e colunas de filtro
-  schema.ts                       # Re-exporta pg-schema
+  schema.ts                       # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod + índices em FKs e colunas de filtro
 /migrations/                      # Migrations históricas (referência apenas; usar db:push)
 ```
 
@@ -229,7 +230,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 ### Formatação de Números
 - Padrão brasileiro ABNT (vírgula como separador decimal, ponto como separador de milhar)
 - Client-side: `formatBrazilianNumber()`, `parseDecimalBR()` em `client/src/lib/formatters.ts`
-- Server-side: `formatBrazilianNumber()`, `convertBRToDatabase()` em `server/formatters.ts`
+- Server-side: `formatBrazilianNumber()`, `convertBRToDatabase()` em `server/shared/formatters.ts`
 - A API converte automaticamente valores do formato BR para banco (e vice-versa) nos endpoints de KR e Checkpoint
 
 ### Formatação de Datas e Fuso Horário
@@ -327,7 +328,7 @@ O projeto usa um único workflow "Start application" que executa `npm run dev` �
 - O timezone do servidor é `America/Sao_Paulo` (UTC-3), configurado no entry point
 - A conexão com o banco usa o pacote `postgres` diretamente (não `@neondatabase/serverless`)
 - Sessões persistidas na tabela `session` (PostgreSQL) via `connect-pg-simple`; tabela criada automaticamente ao iniciar
-- Logger HTTP centralizado em `server/logger.ts`: em dev mostra apenas rotas `/api`; em prod loga JSON estruturado para cada request
-- A tabela `activities` existe no schema (`pg-schema.ts`) e no banco, mas não possui rotas nem métodos de storage implementados — está disponível para uso futuro
+- Logger HTTP centralizado em `server/infra/logger.ts`: em dev mostra apenas rotas `/api`; em prod loga JSON estruturado para cada request
+- Health checks expostos em `/health`, `/healthz`, `/api/health` (liveness) e `/readyz`, `/api/ready` (readiness com ping no banco)
 - Arquivos excluídos por obsolescência: `key-result-form.tsx` (→ `key-result-form-simple.tsx`), `simple-dashboard.tsx` (componente órfão, sem imports), `header.tsx` (→ `compact-header.tsx`), `filters.tsx` (→ filtros em `compact-header.tsx`), `dashboard.tsx` (página órfã, sem rota registrada)
-- Re-exports finos mantidos por compatibilidade: `shared/schema.ts` (→ `pg-schema.ts`) e `server/storage.ts` (→ `pg-storage.ts`)
+- Tabela `activities` removida do schema por nunca ter sido populada (audit trail nunca implementado). Caso seja necessário no futuro, recriar com escopo bem definido

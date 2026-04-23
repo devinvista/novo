@@ -1,7 +1,7 @@
 import {
   objectives, keyResults, checkpoints,
   type Checkpoint,
-} from '@shared/pg-schema';
+} from '@shared/schema';
 import { db } from '../pg-db';
 import { eq, and, asc, inArray } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';

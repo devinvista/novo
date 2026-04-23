@@ -1,11 +1,11 @@
-import { db } from "./pg-db";
+import { db } from "../../pg-db";
 import {
   objectives,
   keyResults,
   actions,
   checkpoints,
   actionComments,
-} from "@shared/pg-schema";
+} from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 // IDs fixos conforme os dados inseridos pelo seed principal

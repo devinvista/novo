@@ -5,7 +5,7 @@ import { asyncHandler } from "../../middleware/async-handler";
 import { requireAuth, requireRole } from "../../middleware/auth";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../errors/app-error";
 import { insertKeyResultSchema } from "@shared/schema";
-import { convertBRToDatabase, formatBrazilianNumber } from "../../formatters";
+import { convertBRToDatabase, formatBrazilianNumber } from "../../shared/formatters";
 
 export const keyResultsRouter: Router = Router();
 

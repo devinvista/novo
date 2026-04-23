@@ -1,7 +1,7 @@
 import {
   users, objectives, actions, actionComments,
   type User, type InsertUser,
-} from '@shared/pg-schema';
+} from '@shared/schema';
 import { db } from '../pg-db';
 import { eq, asc, desc } from 'drizzle-orm';
 

@@ -1,7 +1,7 @@
 import {
   users, regions as regionsTable, objectives, keyResults,
   type Objective, type InsertObjective,
-} from '@shared/pg-schema';
+} from '@shared/schema';
 import { db } from '../pg-db';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';

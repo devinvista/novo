@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from '@shared/pg-schema';
+import * as schema from '@shared/schema';
 import { env, isProd } from './config/env';
 
 const connectionUrl = env.DATABASE_URL;

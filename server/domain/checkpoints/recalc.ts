@@ -1,5 +1,5 @@
 import { storage } from "../../storage";
-import { convertBRToDatabase } from "../../formatters";
+import { convertBRToDatabase } from "../../shared/formatters";
 
 /**
  * Recalculates currentValue/progress of a Key Result based on its checkpoints.

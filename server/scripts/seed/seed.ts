@@ -1,4 +1,4 @@
-import { db } from "./pg-db";
+import { db } from "../../pg-db";
 import {
   users,
   regions as regionsTable,
@@ -7,7 +7,7 @@ import {
   serviceLines,
   services,
   strategicIndicators,
-} from "@shared/pg-schema";
+} from "@shared/schema";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import { eq } from "drizzle-orm";

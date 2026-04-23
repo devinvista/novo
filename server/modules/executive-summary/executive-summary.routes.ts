@@ -2,7 +2,7 @@ import { Router } from "express";
 import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
 import { requireAuth } from "../../middleware/auth";
-import { formatBrazilianNumber } from "../../formatters";
+import { formatBrazilianNumber } from "../../shared/formatters";
 
 export const executiveSummaryRouter: Router = Router();
 

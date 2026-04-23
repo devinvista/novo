@@ -1,7 +1,7 @@
 import {
   users, objectives, keyResults, actions, actionComments, serviceLines, services,
   type Action, type InsertAction, type ActionComment, type InsertActionComment,
-} from '@shared/pg-schema';
+} from '@shared/schema';
 import { db } from '../pg-db';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';

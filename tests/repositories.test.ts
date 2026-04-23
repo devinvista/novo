@@ -9,7 +9,7 @@ import { describe, it, expect } from "vitest";
  */
 describe("PgStorage facade composition", () => {
   it("exposes all per-aggregate repositories on the storage instance", async () => {
-    const { storage } = await import("../server/pg-storage");
+    const { storage } = await import("../server/storage");
     expect(storage.users).toBeDefined();
     expect(storage.lookups).toBeDefined();
     expect(storage.objectives).toBeDefined();
@@ -21,7 +21,7 @@ describe("PgStorage facade composition", () => {
   });
 
   it("preserves all IStorage methods on the facade", async () => {
-    const { storage } = await import("../server/pg-storage");
+    const { storage } = await import("../server/storage");
 
     const required = [
       // Users
@@ -57,7 +57,7 @@ describe("PgStorage facade composition", () => {
   });
 
   it("delegates facade methods to the corresponding repo instances", async () => {
-    const { storage } = await import("../server/pg-storage");
+    const { storage } = await import("../server/storage");
 
     // A few representative bindings
     expect(storage.getUser.length).toBeGreaterThanOrEqual(1);

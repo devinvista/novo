@@ -3,7 +3,7 @@ import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
 import { requireAuth } from "../../middleware/auth";
 import { NotFoundError } from "../../errors/app-error";
-import { convertBRToDatabase, formatBrazilianNumber } from "../../formatters";
+import { convertBRToDatabase, formatBrazilianNumber } from "../../shared/formatters";
 import { recalcKeyResultFromCheckpoints } from "../../domain/checkpoints/recalc";
 
 export const checkpointsRouter: Router = Router();

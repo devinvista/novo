@@ -79,7 +79,7 @@ app.use("/api/register", authLimiter);
 let isShuttingDown = false;
 
 // Liveness — process is up. Cheap, no dependencies.
-app.get(["/health", "/healthz"], (_req, res) => {
+app.get(["/health", "/healthz", "/api/health"], (_req, res) => {
   res.status(200).json({
     status: "ok",
     timestamp: new Date().toISOString(),
@@ -89,7 +89,7 @@ app.get(["/health", "/healthz"], (_req, res) => {
 });
 
 // Readiness — process is ready to serve traffic (includes DB check).
-app.get("/readyz", async (_req, res) => {
+app.get(["/readyz", "/api/ready"], async (_req, res) => {
   if (isShuttingDown) {
     return res.status(503).json({ status: "shutting_down" });
   }

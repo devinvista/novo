@@ -1,6 +1,6 @@
-import { objectives } from '@shared/pg-schema';
+import { objectives } from '@shared/schema';
 import { db } from '../pg-db';
-import { getQuarterlyPeriods } from '../quarterly-periods';
+import { getQuarterlyPeriods } from '../shared/quarterly-periods';
 import type { ObjectiveRepo } from './objective.repo';
 import type { KeyResultRepo } from './key-result.repo';
 import type { ActionRepo } from './action.repo';

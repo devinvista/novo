@@ -1,7 +1,7 @@
 import {
   objectives, keyResults, actions, checkpoints, actionComments,
   type KeyResult, type InsertKeyResult,
-} from '@shared/pg-schema';
+} from '@shared/schema';
 import { db } from '../pg-db';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';

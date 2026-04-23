@@ -6,7 +6,7 @@ import { asyncHandler } from "../../middleware/async-handler";
 import { requireAuth, requireRole } from "../../middleware/auth";
 import { ValidationError } from "../../errors/app-error";
 import { cached } from "../../cache";
-import { convertBRToDatabase } from "../../formatters";
+import { convertBRToDatabase } from "../../shared/formatters";
 
 export const adminImportRouter: Router = Router();
 
