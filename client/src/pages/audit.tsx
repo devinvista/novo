@@ -15,6 +15,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { queryClient } from "@/lib/queryClient";
+import type { Activity } from "@shared/schema";
+
+type ActivityWithUser = Activity & { userName?: string | null };
 
 const PAGE_SIZE = 30;
 
@@ -35,12 +38,12 @@ const ENTITY_LABELS: Record<string, string> = {
   kr_check_in: "Check-in de KR",
 };
 
-function formatTimestamp(ts: string | null) {
+function formatTimestamp(ts: string | Date | null): string {
   if (!ts) return "—";
   try {
     return format(new Date(ts), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   } catch {
-    return ts;
+    return String(ts);
   }
 }
 
@@ -102,7 +105,7 @@ export default function AuditPage() {
   if (filterAction !== "all") params.set("action", filterAction);
   if (filterEntity !== "all") params.set("entityType", filterEntity);
 
-  const { data: activities, isLoading, isFetching } = useQuery<any[]>({
+  const { data: activities, isLoading, isFetching } = useQuery<ActivityWithUser[]>({
     queryKey: ["/api/activities", page, filterAction, filterEntity],
     enabled: isAdmin,
     queryFn: async () => {

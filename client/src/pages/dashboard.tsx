@@ -11,6 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Objective, KeyResult, Action, KrCheckIn } from "@shared/schema";
+
+type ObjectiveWithOwner = Objective & { owner?: { id: number; name: string } };
+type ActionWithRelations = Action & {
+  responsible?: { id: number; name: string } | null;
+  keyResult?: { id: number; title: string } | null;
+};
 
 const today = startOfDay(new Date());
 
@@ -66,7 +73,7 @@ function StatCard({
 export default function DashboardPage() {
   const { user } = useAuth();
 
-  const { data: objectives, isLoading: loadingObj } = useQuery<any[]>({
+  const { data: objectives, isLoading: loadingObj } = useQuery<ObjectiveWithOwner[]>({
     queryKey: ["/api/objectives"],
     queryFn: async () => {
       const res = await fetch("/api/objectives", { credentials: "include" });
@@ -75,7 +82,7 @@ export default function DashboardPage() {
     },
   });
 
-  const { data: actions, isLoading: loadingActions } = useQuery<any[]>({
+  const { data: actions, isLoading: loadingActions } = useQuery<ActionWithRelations[]>({
     queryKey: ["/api/actions"],
     queryFn: async () => {
       const res = await fetch("/api/actions", { credentials: "include" });
@@ -84,7 +91,7 @@ export default function DashboardPage() {
     },
   });
 
-  const { data: keyResults, isLoading: loadingKRs } = useQuery<any[]>({
+  const { data: keyResults, isLoading: loadingKRs } = useQuery<KeyResult[]>({
     queryKey: ["/api/key-results"],
     queryFn: async () => {
       const res = await fetch("/api/key-results", { credentials: "include" });
@@ -119,7 +126,7 @@ export default function DashboardPage() {
   );
 
   const weekStart = format(startOfWeek(new Date(), { locale: ptBR }), "yyyy-MM-dd");
-  const { data: checkIns } = useQuery<any[]>({
+  const { data: checkIns } = useQuery<KrCheckIn[]>({
     queryKey: ["/api/kr-check-ins"],
     queryFn: async () => {
       const res = await fetch("/api/kr-check-ins", { credentials: "include" });

@@ -25,7 +25,7 @@ export default function AuthPage() {
   });
 
   // Load managers for registration (uses public endpoint - only id and name)
-  const { data: managers } = useQuery({
+  const { data: managers } = useQuery<Array<{ id: number; name: string }>>({
     queryKey: ["/api/managers/public"],
     queryFn: async () => {
       const response = await fetch('/api/managers/public');

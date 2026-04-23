@@ -19,6 +19,12 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import type { KeyResult, Action, Checkpoint } from "@shared/schema";
+
+type KeyResultWithRelations = KeyResult & {
+  objective?: { id: number; title: string } | null;
+  serviceLine?: { id: number; name: string } | null;
+};
 
 export default function KeyResults() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -59,7 +65,7 @@ export default function KeyResults() {
     deleteMutation.mutate(id);
   };
   
-  const { data: keyResults, isLoading, error } = useQuery({
+  const { data: keyResults, isLoading, error } = useQuery<KeyResultWithRelations[]>({
     queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       if (selectedQuarter && selectedQuarter !== "all") {
@@ -96,7 +102,7 @@ export default function KeyResults() {
   });
 
   // Busca todas as ações de uma vez e agrupa por KR (evita N+1 requests)
-  const { data: actionsCounts } = useQuery({
+  const { data: actionsCounts } = useQuery<Record<number, number>>({
     queryKey: ["/api/actions-counts", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       if (!keyResults || keyResults.length === 0) return {};
@@ -123,7 +129,7 @@ export default function KeyResults() {
   });
 
   // Busca todos os checkpoints de uma vez e agrupa por KR (evita N+1 requests)
-  const { data: checkpointsCounts } = useQuery({
+  const { data: checkpointsCounts } = useQuery<Record<number, { completed: number; total: number }>>({
     queryKey: ["/api/checkpoints-counts", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       if (!keyResults || keyResults.length === 0) return {};

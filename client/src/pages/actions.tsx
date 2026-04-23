@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { KeyResult } from "@shared/schema";
 
 type ViewMode = "list" | "gantt";
 
@@ -40,7 +41,7 @@ export default function Actions() {
     }
   }, [location]);
 
-  const { data: keyResults } = useQuery({
+  const { data: keyResults } = useQuery<KeyResult[]>({
     queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       try {

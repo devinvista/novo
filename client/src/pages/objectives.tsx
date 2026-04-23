@@ -10,6 +10,7 @@ import ObjectiveForm from "@/features/objectives/objective-form";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useFilters } from "@/hooks/use-filters";
+import type { Objective } from "@shared/schema";
 
 export default function Objectives() {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function Objectives() {
   // Check if user can create/edit objectives
   const canManageObjectives = user?.role === "admin" || user?.role === "gestor";
 
-  const { data: objectives, isLoading } = useQuery({
+  const { data: objectives, isLoading } = useQuery<Objective[]>({
     queryKey: ["/api/objectives", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       if (selectedQuarter && selectedQuarter !== "all") {

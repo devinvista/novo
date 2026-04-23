@@ -17,6 +17,7 @@ import CheckpointUpdateDialog from "@/features/checkpoints/checkpoint-update-dia
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useFilters } from "@/hooks/use-filters";
+import type { KeyResult, Checkpoint } from "@shared/schema";
 
 type ViewMode = 'circles' | 'simple';
 
@@ -39,7 +40,7 @@ export default function Checkpoints() {
     }
   }, [location]);
 
-  const { data: keyResults, isLoading: keyResultsLoading } = useQuery({
+  const { data: keyResults, isLoading: keyResultsLoading } = useQuery<KeyResult[]>({
     queryKey: ["/api/key-results"],
     queryFn: async () => {
       const r = await fetch("/api/key-results", { credentials: "include" });
@@ -51,7 +52,7 @@ export default function Checkpoints() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: checkpoints, isLoading: checkpointsLoading } = useQuery({
+  const { data: checkpoints, isLoading: checkpointsLoading } = useQuery<Checkpoint[]>({
     queryKey: ["/api/checkpoints", selectedKeyResultId],
     queryFn: async () => {
       const url = selectedKeyResultId 
