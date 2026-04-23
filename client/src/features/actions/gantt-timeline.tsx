@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   startOfMonth, endOfMonth, addMonths, subMonths,
@@ -6,10 +6,18 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatSP, parseISOSP, nowSP } from "@/lib/timezone";
-import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock, Circle, Calendar } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock,
+  Circle, Calendar, Link2, Link2Off, Plus, X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import ActionForm from "./action-form";
 
 interface GanttTimelineProps {
@@ -37,6 +45,12 @@ interface Action {
   serviceLine?: { id: number; name: string };
 }
 
+interface ActionDependency {
+  id: number;
+  actionId: number;
+  dependsOnId: number;
+}
+
 interface TooltipState {
   action: Action;
   x: number;
@@ -59,20 +73,22 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 const ROW_HEIGHT = 44;
 const LABEL_WIDTH = 220;
-const MIN_DAY_PX = 5; // minimum pixels per day to ensure readability
+const MIN_DAY_PX = 5;
 
 export default function GanttTimeline({ keyResultId, selectedQuarter, filters, onCreateAction }: GanttTimelineProps) {
+  const { toast } = useToast();
   const [viewStart, setViewStart] = useState(() => startOfMonth(subMonths(nowSP(), 1)));
   const [viewMonths, setViewMonths] = useState(5);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [editingAction, setEditingAction] = useState<Action | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [chartWidth, setChartWidth] = useState(0);
+  const [showDeps, setShowDeps] = useState(true);
+  const [depDialogAction, setDepDialogAction] = useState<Action | null>(null);
+  const [addDepTargetId, setAddDepTargetId] = useState<string>("");
 
   const outerRef = useRef<HTMLDivElement>(null);
-  const chartAreaRef = useRef<HTMLDivElement>(null);
 
-  // Measure chart area width and keep it in sync on resize
   const measureWidth = useCallback(() => {
     if (outerRef.current) {
       const w = outerRef.current.getBoundingClientRect().width - LABEL_WIDTH;
@@ -117,11 +133,60 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     },
   });
 
-  // Auto-fit view to cover all action dates
+  const allActions: Action[] = Array.isArray(actions) ? actions : [];
+  const actionIds = allActions.map((a) => a.id);
+
+  const { data: dependencies } = useQuery<ActionDependency[]>({
+    queryKey: ["/api/action-dependencies", actionIds.join(",")],
+    enabled: actionIds.length > 0,
+    queryFn: async () => {
+      if (actionIds.length === 0) return [];
+      const res = await fetch(
+        `/api/action-dependencies?actionIds=${actionIds.join(",")}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const addDepMutation = useMutation({
+    mutationFn: async ({ actionId, dependsOnId }: { actionId: number; dependsOnId: number }) => {
+      const res = await apiRequest("POST", "/api/action-dependencies", { actionId, dependsOnId });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message ?? "Erro ao adicionar dependência");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Dependência adicionada" });
+      queryClient.invalidateQueries({ queryKey: ["/api/action-dependencies"] });
+      setAddDepTargetId("");
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const removeDepMutation = useMutation({
+    mutationFn: async ({ actionId, dependsOnId }: { actionId: number; dependsOnId: number }) => {
+      const res = await apiRequest("DELETE", `/api/action-dependencies/${actionId}/${dependsOnId}`);
+      if (!res.ok) throw new Error("Erro ao remover dependência");
+    },
+    onSuccess: () => {
+      toast({ title: "Dependência removida" });
+      queryClient.invalidateQueries({ queryKey: ["/api/action-dependencies"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    },
+  });
+
   useEffect(() => {
-    if (!actions || actions.length === 0) return;
+    if (!allActions.length) return;
     const dates: Date[] = [];
-    (actions as Action[]).forEach((a) => {
+    allActions.forEach((a) => {
       if (a.createdAt) dates.push(parseISOSP(a.createdAt));
       if (a.dueDate) dates.push(parseISOSP(a.dueDate));
     });
@@ -131,13 +196,10 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     const start = startOfMonth(earliest);
     const end = endOfMonth(latest);
     const monthCount = Math.max(3, Math.round(differenceInDays(end, start) / 30) + 1);
-    /* eslint-disable react-hooks/set-state-in-effect */
     setViewStart(start);
     setViewMonths(Math.min(monthCount, 12));
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [actions]);
 
-  // Close tooltip on outside click
   useEffect(() => {
     const handler = () => setTooltip(null);
     window.addEventListener("click", handler);
@@ -146,15 +208,10 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
 
   const viewEnd = endOfMonth(addMonths(viewStart, viewMonths - 1));
   const totalDays = differenceInDays(viewEnd, viewStart) + 1;
-
-  // Effective chart pixel width: at least MIN_DAY_PX * totalDays
   const minChartPx = totalDays * MIN_DAY_PX;
   const effectiveChartPx = Math.max(chartWidth, minChartPx);
-
-  // px per day — fixed, independent of screen width
   const dayPx = chartWidth > 0 ? effectiveChartPx / totalDays : 0;
 
-  // Build months array
   const months: Date[] = [];
   let m = startOfMonth(viewStart);
   while (!isAfter(m, viewEnd)) {
@@ -162,10 +219,7 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     m = addMonths(m, 1);
   }
 
-  // Group actions by KR
   const grouped: Record<string, { krTitle: string; actions: Action[] }> = {};
-  const allActions: Action[] = Array.isArray(actions) ? actions : [];
-
   allActions.forEach((action) => {
     const krKey = action.keyResult?.id?.toString() || "no-kr";
     const krTitle = action.keyResult?.title || action.keyResultTitle || "Sem Resultado-Chave";
@@ -173,8 +227,9 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     grouped[krKey].actions.push(action);
   });
 
-  interface Row { type: "header" | "action"; krTitle?: string; action?: Action; }
+  interface Row { type: "header" | "action"; krTitle?: string; action?: Action; rowIndex?: number; }
   const rows: Row[] = [];
+  let actionRowIndex = 0;
   Object.values(grouped).forEach(({ krTitle, actions: krActions }) => {
     rows.push({ type: "header", krTitle });
     krActions
@@ -182,10 +237,16 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
         const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
         return (order[a.priority] ?? 2) - (order[b.priority] ?? 2);
       })
-      .forEach((action) => rows.push({ type: "action", action }));
+      .forEach((action) => { rows.push({ type: "action", action, rowIndex: actionRowIndex++ }); });
   });
 
-  // Convert a date to pixel offset from viewStart
+  const actionRowMap: Record<number, number> = {};
+  let headerCount = 0;
+  rows.forEach((row, i) => {
+    if (row.type === "header") { headerCount++; return; }
+    if (row.action) actionRowMap[row.action.id] = i - headerCount;
+  });
+
   const dateToPx = (date: Date): number => {
     const offset = differenceInDays(date, viewStart);
     return Math.max(0, Math.min(effectiveChartPx, offset * dayPx));
@@ -199,20 +260,52 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     const start = action.createdAt ? startOfDay(parseISOSP(action.createdAt)) : null;
     const end = action.dueDate ? startOfDay(parseISOSP(action.dueDate)) : null;
     if (!start && !end) return null;
-
     const effectiveStart = start || end!;
     const effectiveEnd = end || start!;
-
     const leftPx = dateToPx(effectiveStart);
     const rightPx = Math.min(effectiveChartPx, dateToPx(effectiveEnd));
     const widthPx = Math.max(rightPx - leftPx, 4);
-
     const cfg = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
     const isOverdue = end && isBefore(end, today) && action.status !== "completed" && action.status !== "cancelled";
     const isPoint = !start || Math.abs(differenceInDays(effectiveEnd, effectiveStart)) < 1;
-
     return { leftPx, widthPx, cfg, isOverdue, isPoint, effectiveStart, effectiveEnd };
   };
+
+  const barCenterX = (action: Action) => {
+    const bc = barConfig(action);
+    if (!bc) return null;
+    const end = action.dueDate ? startOfDay(parseISOSP(action.dueDate)) : null;
+    if (!end) return bc.leftPx + bc.widthPx / 2;
+    return dateToPx(end);
+  };
+
+  const barStartX = (action: Action) => {
+    const bc = barConfig(action);
+    if (!bc) return null;
+    return bc.leftPx;
+  };
+
+  const getRowPixelTop = (rowIndex: number): number => {
+    let headersPassed = 0;
+    let actionsPassed = 0;
+    for (const row of rows) {
+      if (row.type === "header") {
+        if (actionsPassed >= rowIndex) break;
+        headersPassed++;
+      } else {
+        if (actionsPassed === rowIndex) break;
+        actionsPassed++;
+      }
+    }
+    return (headersPassed * 32) + (rowIndex * ROW_HEIGHT) + ROW_HEIGHT / 2;
+  };
+
+  const deps = dependencies ?? [];
+  const actionMap = new Map(allActions.map((a) => [a.id, a]));
+
+  const depsForDialog = depDialogAction
+    ? deps.filter((d) => d.actionId === depDialogAction.id)
+    : [];
 
   if (isLoading) {
     return (
@@ -252,7 +345,17 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant={showDeps ? "default" : "outline"}
+            size="sm"
+            className="h-7 px-2 text-xs gap-1"
+            onClick={() => setShowDeps((v) => !v)}
+            data-testid="button-toggle-dependencies"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            {deps.length > 0 ? `Dependências (${deps.length})` : "Dependências"}
+          </Button>
           <span className="text-xs text-gray-500">Zoom:</span>
           {[3, 5, 6, 9, 12].map((n) => (
             <Button key={n} variant={viewMonths === n ? "default" : "outline"} size="sm" className="h-7 px-2 text-xs" onClick={() => setViewMonths(n)}>
@@ -278,21 +381,22 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
           <div className="w-0.5 h-3 bg-red-500" />
           <span>Hoje</span>
         </div>
+        {showDeps && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-600">
+            <div className="w-5 h-0.5 bg-violet-400" style={{ borderTop: "2px dashed" }} />
+            <span>Dependência</span>
+          </div>
+        )}
       </div>
 
       {/* Gantt Chart */}
       <div className="relative border rounded-lg overflow-hidden bg-white" ref={outerRef}>
-        {/* Scrollable wrapper so chart doesn't collapse on small screens */}
         <div className="overflow-x-auto">
-          {/* Inner fixed-layout container */}
           <div style={{ minWidth: LABEL_WIDTH + effectiveChartPx }}>
 
-            {/* ── HEADER ── */}
+            {/* HEADER */}
             <div className="flex border-b bg-gray-50 sticky top-0 z-10">
-              {/* Label placeholder — exactly same width as the label column */}
               <div style={{ width: LABEL_WIDTH, flexShrink: 0 }} />
-
-              {/* Month cells — each uses pixel width derived from dayPx */}
               <div className="relative flex shrink-0" style={{ width: effectiveChartPx }}>
                 {months.map((month, i) => {
                   const daysInMonth = differenceInDays(endOfMonth(month), month) + 1;
@@ -310,27 +414,72 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
               </div>
             </div>
 
-            {/* ── ROWS ── */}
+            {/* SVG dependency arrows layer */}
+            {showDeps && deps.length > 0 && dayPx > 0 && (
+              <svg
+                className="absolute pointer-events-none z-20"
+                style={{ top: 32, left: LABEL_WIDTH, width: effectiveChartPx, height: rows.length * ROW_HEIGHT + 32 }}
+              >
+                <defs>
+                  <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L6,3 z" fill="#7c3aed" opacity="0.7" />
+                  </marker>
+                </defs>
+                {deps.map((dep) => {
+                  const fromAction = actionMap.get(dep.dependsOnId);
+                  const toAction = actionMap.get(dep.actionId);
+                  if (!fromAction || !toAction) return null;
+
+                  const fromRowIdx = actionRowMap[dep.dependsOnId];
+                  const toRowIdx = actionRowMap[dep.actionId];
+                  if (fromRowIdx === undefined || toRowIdx === undefined) return null;
+
+                  const x1 = barCenterX(fromAction);
+                  const x2 = barStartX(toAction);
+                  if (x1 === null || x2 === null) return null;
+
+                  const headersBefore = (idx: number) => {
+                    let count = 0;
+                    let actions = 0;
+                    for (const row of rows) {
+                      if (row.type === "header") { count++; continue; }
+                      if (actions === idx) break;
+                      actions++;
+                    }
+                    return count;
+                  };
+
+                  const y1 = (fromRowIdx * ROW_HEIGHT) + headersBefore(fromRowIdx) * 32 + ROW_HEIGHT / 2;
+                  const y2 = (toRowIdx * ROW_HEIGHT) + headersBefore(toRowIdx) * 32 + ROW_HEIGHT / 2;
+
+                  return (
+                    <g key={`${dep.dependsOnId}-${dep.actionId}`}>
+                      <path
+                        d={`M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`}
+                        fill="none"
+                        stroke="#7c3aed"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                        opacity="0.7"
+                        markerEnd="url(#arrowhead)"
+                      />
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
+
+            {/* ROWS */}
             {rows.map((row, rowIdx) => {
               if (row.type === "header") {
                 return (
                   <div key={`header-${rowIdx}`} className="flex items-center bg-gray-50 border-b" style={{ minHeight: 32 }}>
-                    {/* KR title label */}
-                    <div
-                      className="shrink-0 px-3 text-xs font-semibold text-blue-800 truncate"
-                      style={{ width: LABEL_WIDTH }}
-                      title={row.krTitle}
-                    >
+                    <div className="shrink-0 px-3 text-xs font-semibold text-blue-800 truncate" style={{ width: LABEL_WIDTH }} title={row.krTitle}>
                       📌 {row.krTitle}
                     </div>
-                    {/* Grid area */}
                     <div className="relative shrink-0" style={{ width: effectiveChartPx, minHeight: 32 }}>
                       {months.map((month, i) => (
-                        <div
-                          key={i}
-                          className="absolute top-0 bottom-0 border-l border-gray-200"
-                          style={{ left: dateToPx(month) }}
-                        />
+                        <div key={i} className="absolute top-0 bottom-0 border-l border-gray-200" style={{ left: dateToPx(month) }} />
                       ))}
                       {showToday && (
                         <div className="absolute top-0 bottom-0 w-px bg-red-400 opacity-60 z-10" style={{ left: todayPx }} />
@@ -343,6 +492,7 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
               const action = row.action!;
               const bar = barConfig(action);
               const cfg = STATUS_CONFIG[action.status] || STATUS_CONFIG.pending;
+              const actionDeps = deps.filter((d) => d.actionId === action.id);
 
               return (
                 <div
@@ -350,7 +500,6 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
                   className="flex items-center border-b hover:bg-gray-50 transition-colors group"
                   style={{ minHeight: ROW_HEIGHT }}
                 >
-                  {/* Action label */}
                   <div
                     className="shrink-0 px-3 flex items-center gap-2 cursor-pointer"
                     style={{ width: LABEL_WIDTH }}
@@ -358,39 +507,39 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
                     title={action.title}
                   >
                     <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.bg}`} />
-                    <span className="text-xs text-gray-700 truncate group-hover:text-blue-600 transition-colors">
+                    <span className="text-xs text-gray-700 truncate group-hover:text-blue-600 transition-colors flex-1 min-w-0">
                       {action.title}
                     </span>
                     {bar?.isOverdue && <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />}
+                    {actionDeps.length > 0 && (
+                      <span title={`${actionDeps.length} dependência(s)`}>
+                        <Link2 className="h-3 w-3 text-violet-400 shrink-0" />
+                      </span>
+                    )}
+                    <button
+                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      title="Gerenciar dependências"
+                      onClick={(e) => { e.stopPropagation(); setDepDialogAction(action); }}
+                      data-testid={`button-dep-${action.id}`}
+                    >
+                      <Link2 className="h-3 w-3 text-gray-400 hover:text-violet-600" />
+                    </button>
                   </div>
 
-                  {/* Bar area — exact same pixel width as header chart area */}
                   <div className="relative shrink-0" style={{ width: effectiveChartPx, height: ROW_HEIGHT }}>
-                    {/* Month dividers */}
                     {months.map((month, i) => (
-                      <div
-                        key={i}
-                        className="absolute top-0 bottom-0 border-l border-gray-100"
-                        style={{ left: dateToPx(month) }}
-                      />
+                      <div key={i} className="absolute top-0 bottom-0 border-l border-gray-100" style={{ left: dateToPx(month) }} />
                     ))}
-
-                    {/* Today line */}
                     {showToday && (
                       <div className="absolute top-0 bottom-0 w-px bg-red-500 z-10" style={{ left: todayPx }} />
                     )}
-
-                    {/* Bar */}
                     {bar && (
                       <div
                         className={`absolute top-1/2 -translate-y-1/2 rounded cursor-pointer transition-opacity hover:opacity-80
                           ${bar.isPoint ? "w-3 h-3 rounded-full border-2" : "h-6"}
                           ${bar.isOverdue ? "bg-red-200 border border-red-400" : `${cfg.bg} border ${cfg.border}`}
                         `}
-                        style={{
-                          left: bar.leftPx,
-                          width: bar.isPoint ? undefined : bar.widthPx,
-                        }}
+                        style={{ left: bar.leftPx, width: bar.isPoint ? undefined : bar.widthPx }}
                         onClick={(e) => {
                           e.stopPropagation();
                           const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -404,8 +553,6 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
                         )}
                       </div>
                     )}
-
-                    {/* No date indicator */}
                     {!bar && (
                       <div className="absolute inset-0 flex items-center">
                         <span className="text-[10px] text-gray-400 italic pl-2">sem data</span>
@@ -463,12 +610,6 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
               {formatSP(tooltip.action.dueDate, "dd 'de' MMMM yyyy", { locale: ptBR })}
             </p>
           )}
-          {tooltip.action.createdAt && (
-            <p className="text-xs text-gray-500">
-              <span className="font-medium">Criada:</span>{" "}
-              {formatSP(tooltip.action.createdAt, "dd 'de' MMMM yyyy", { locale: ptBR })}
-            </p>
-          )}
           {tooltip.action.responsible && (
             <p className="text-xs text-gray-500 mt-1">
               <span className="font-medium">Responsável:</span> {tooltip.action.responsible.name}
@@ -490,6 +631,104 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
         open={showForm}
         onOpenChange={(open) => { setShowForm(open); if (!open) setEditingAction(null); }}
       />
+
+      {/* Dependency management dialog */}
+      <Dialog open={!!depDialogAction} onOpenChange={(o) => { if (!o) { setDepDialogAction(null); setAddDepTargetId(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-4 w-4 text-violet-500" />
+              Dependências da Ação
+            </DialogTitle>
+            <DialogDescription className="text-xs truncate">
+              {depDialogAction?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Esta ação depende de:
+              </p>
+              {depsForDialog.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">Nenhuma dependência configurada</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {depsForDialog.map((dep) => {
+                    const depAction = actionMap.get(dep.dependsOnId);
+                    return (
+                      <div key={dep.id} className="flex items-center justify-between gap-2 p-2 bg-violet-50 rounded-lg border border-violet-100">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Link2 className="h-3.5 w-3.5 text-violet-400 shrink-0" />
+                          <span className="text-sm text-gray-700 truncate">
+                            {depAction?.title ?? `Ação #${dep.dependsOnId}`}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => removeDepMutation.mutate({ actionId: dep.actionId, dependsOnId: dep.dependsOnId })}
+                          disabled={removeDepMutation.isPending}
+                          className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                          title="Remover dependência"
+                          data-testid={`button-remove-dep-${dep.dependsOnId}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t pt-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Adicionar dependência
+              </p>
+              <div className="flex gap-2">
+                <select
+                  className="flex-1 text-sm border rounded-lg px-2 py-1.5 bg-white"
+                  value={addDepTargetId}
+                  onChange={(e) => setAddDepTargetId(e.target.value)}
+                  data-testid="select-dep-target"
+                >
+                  <option value="">Selecione uma ação...</option>
+                  {allActions
+                    .filter((a) => {
+                      if (!depDialogAction || a.id === depDialogAction.id) return false;
+                      const alreadyDep = depsForDialog.some((d) => d.dependsOnId === a.id);
+                      return !alreadyDep;
+                    })
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.title}
+                      </option>
+                    ))}
+                </select>
+                <Button
+                  size="sm"
+                  className="gap-1"
+                  disabled={!addDepTargetId || addDepMutation.isPending}
+                  onClick={() => {
+                    if (!depDialogAction || !addDepTargetId) return;
+                    addDepMutation.mutate({
+                      actionId: depDialogAction.id,
+                      dependsOnId: parseInt(addDepTargetId),
+                    });
+                  }}
+                  data-testid="button-add-dep"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar
+                </Button>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1.5">
+                Esta ação começará após a ação selecionada ser concluída (finish-to-start).
+                Ciclos são detectados e bloqueados automaticamente.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

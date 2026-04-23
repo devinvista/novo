@@ -12,6 +12,9 @@ import {
   Settings, 
   LogOut,
   User,
+  LayoutDashboard,
+  Trash2,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -24,6 +27,7 @@ export default function Sidebar() {
   const { isOpen } = useSidebarToggle();
 
   const navigationItems = [
+    { href: "/dashboard", icon: LayoutDashboard, label: "Meu Painel" },
     { href: "/", icon: Network, label: "Alinhamento" },
     { href: "/objectives", icon: Goal, label: "Objetivos" },
     { href: "/key-results", icon: Key, label: "Resultados-Chave" },
@@ -34,9 +38,11 @@ export default function Sidebar() {
 
   const adminGestorItems = [
     { href: "/users", icon: Users, label: "Usuários" },
+    { href: "/trash", icon: Trash2, label: "Lixeira" },
   ];
 
   const superAdminItems = [
+    { href: "/audit", icon: Shield, label: "Auditoria" },
     { href: "/settings", icon: Settings, label: "Configurações" },
   ];
 

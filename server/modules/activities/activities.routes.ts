@@ -20,6 +20,7 @@ activitiesRouter.get(
       entityType: req.query.entityType ? String(req.query.entityType) : undefined,
       entityId: intParam(req.query.entityId),
       userId: intParam(req.query.userId),
+      action: req.query.action ? String(req.query.action) : undefined,
       limit: intParam(req.query.limit),
       offset: intParam(req.query.offset),
     });

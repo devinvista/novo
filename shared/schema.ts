@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, integer, timestamp, numeric, json, boolean, serial, index, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, integer, timestamp, numeric, json, boolean, serial, index, unique, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -200,6 +200,18 @@ export const quarterlyPeriods = pgTable("quarterly_periods", {
   endDate: varchar("endDate", { length: 10 }).notNull(),
 });
 
+// Dependências entre ações (finish-to-start para Gantt)
+export const actionDependencies = pgTable("action_dependencies", {
+  id: serial("id").primaryKey(),
+  actionId: integer("action_id").notNull().references(() => actions.id, { onDelete: "cascade" }),
+  dependsOnId: integer("depends_on_id").notNull().references(() => actions.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("idx_action_deps_action_id").on(t.actionId),
+  index("idx_action_deps_depends_on_id").on(t.dependsOnId),
+  unique("uq_action_dependency").on(t.actionId, t.dependsOnId),
+]);
+
 // Audit log — registra create/update/delete/restore em qualquer entidade
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
@@ -253,6 +265,8 @@ export type Service = typeof services.$inferSelect;
 export type StrategicIndicator = typeof strategicIndicators.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = typeof activities.$inferInsert;
+export type ActionDependency = typeof actionDependencies.$inferSelect;
+export type InsertActionDependency = typeof actionDependencies.$inferInsert;
 export type KrCheckIn = typeof krCheckIns.$inferSelect;
 export type InsertKrCheckIn = typeof krCheckIns.$inferInsert;
 

@@ -6,6 +6,7 @@ export interface ListActivityFilters {
   entityType?: string;
   entityId?: number;
   userId?: number;
+  action?: string;
   limit?: number;
   offset?: number;
 }
@@ -16,6 +17,7 @@ export class ActivityRepo {
     if (filters.entityType) conditions.push(eq(activities.entityType, filters.entityType));
     if (filters.entityId !== undefined) conditions.push(eq(activities.entityId, filters.entityId));
     if (filters.userId !== undefined) conditions.push(eq(activities.userId, filters.userId));
+    if (filters.action) conditions.push(eq(activities.action, filters.action));
 
     let q: any = db
       .select({

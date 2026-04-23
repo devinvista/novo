@@ -17,6 +17,7 @@ import { adminImportRouter } from "./modules/admin-import/admin-import.routes";
 import { trashRouter } from "./modules/trash/trash.routes";
 import { activitiesRouter } from "./modules/activities/activities.routes";
 import { krCheckInsRouter } from "./modules/kr-check-ins/kr-check-ins.routes";
+import { actionDependenciesRouter } from "./modules/action-dependencies/action-dependencies.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes (login, register, logout, /api/user)
@@ -52,6 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/executive-summary", executiveSummaryRouter);
   app.use("/api/trash", trashRouter);
   app.use("/api/activities", activitiesRouter);
+  app.use("/api/action-dependencies", actionDependenciesRouter);
 
   return createServer(app);
 }
