@@ -67,16 +67,19 @@ export default function AuthPage() {
         <div className="w-full max-w-md space-y-6 sm:space-y-8">
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
-              <img 
-                src={logoImage} 
-                alt="OKRs Logo" 
+              <img
+                src={logoImage}
+                alt="OKRs"
+                width={192}
+                height={192}
+                fetchPriority="high"
                 className="w-48 h-auto"
               />
             </div>
             <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">Sistema de Gestão de Objetivos</p>
           </div>
 
-          <Tabs defaultValue="login" className="space-y-4">
+          <Tabs defaultValue="login" className="space-y-4" aria-label="Autenticação">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login" className="text-sm sm:text-base">Entrar</TabsTrigger>
               <TabsTrigger value="register" className="text-sm sm:text-base">Cadastrar</TabsTrigger>
@@ -98,6 +101,8 @@ export default function AuthPage() {
                         id="login-username"
                         type="text"
                         autoComplete="username"
+                        spellCheck={false}
+                        autoCapitalize="none"
                         value={loginForm.username}
                         onChange={(e) =>
                           setLoginForm({ ...loginForm, username: e.target.value })
@@ -123,7 +128,7 @@ export default function AuthPage() {
                       />
                     </div>
                     {loginMutation.isError && (
-                      <Alert variant="destructive">
+                      <Alert variant="destructive" role="alert">
                         <AlertDescription>
                           Credenciais inválidas. Verifique seu usuário e senha.
                         </AlertDescription>
@@ -133,11 +138,12 @@ export default function AuthPage() {
                       type="submit"
                       className="w-full h-11 sm:h-12 text-sm sm:text-base"
                       disabled={loginMutation.isPending}
+                      aria-live="polite"
                     >
                       {loginMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                       )}
-                      Entrar
+                      {loginMutation.isPending ? "Entrando…" : "Entrar"}
                     </Button>
                   </form>
                 </CardContent>
@@ -159,6 +165,7 @@ export default function AuthPage() {
                       <Input
                         id="register-name"
                         type="text"
+                        autoComplete="name"
                         value={registerForm.name}
                         onChange={(e) =>
                           setRegisterForm({ ...registerForm, name: e.target.value })
@@ -173,6 +180,10 @@ export default function AuthPage() {
                       <Input
                         id="register-email"
                         type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        spellCheck={false}
+                        autoCapitalize="none"
                         value={registerForm.email}
                         onChange={(e) =>
                           setRegisterForm({ ...registerForm, email: e.target.value })
@@ -187,6 +198,9 @@ export default function AuthPage() {
                       <Input
                         id="register-username"
                         type="text"
+                        autoComplete="username"
+                        spellCheck={false}
+                        autoCapitalize="none"
                         value={registerForm.username}
                         onChange={(e) =>
                           setRegisterForm({ ...registerForm, username: e.target.value })
@@ -219,20 +233,30 @@ export default function AuthPage() {
                           setRegisterForm({ ...registerForm, gestorId: value })
                         }
                       >
-                        <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
+                        <SelectTrigger
+                          id="register-manager"
+                          className="h-11 sm:h-12 text-sm sm:text-base"
+                          aria-label="Gestor responsável"
+                        >
                           <SelectValue placeholder="Selecione seu gestor" />
                         </SelectTrigger>
                         <SelectContent>
-                          {managers?.map((manager: any) => (
-                            <SelectItem key={manager.id} value={manager.id.toString()}>
-                              {manager.name}
-                            </SelectItem>
-                          ))}
+                          {managers && managers.length > 0 ? (
+                            managers.map((manager: any) => (
+                              <SelectItem key={manager.id} value={manager.id.toString()}>
+                                {manager.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                              Nenhum gestor disponível no momento
+                            </div>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                     {registerMutation.isError && (
-                      <Alert variant="destructive">
+                      <Alert variant="destructive" role="alert">
                         <AlertDescription>
                           Erro ao criar conta. Verifique os dados e tente novamente.
                         </AlertDescription>
@@ -242,11 +266,12 @@ export default function AuthPage() {
                       type="submit"
                       className="w-full h-11 sm:h-12 text-sm sm:text-base"
                       disabled={registerMutation.isPending}
+                      aria-live="polite"
                     >
                       {registerMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                       )}
-                      Criar Conta
+                      {registerMutation.isPending ? "Cadastrando…" : "Criar Conta"}
                     </Button>
                   </form>
                 </CardContent>

@@ -26,9 +26,11 @@ function PageFallback() {
   return (
     <div
       className="flex h-full w-full items-center justify-center p-8 text-sm text-muted-foreground"
+      role="status"
+      aria-live="polite"
       data-testid="status-page-loading"
     >
-      Carregando...
+      Carregando…
     </div>
   );
 }
@@ -46,8 +48,11 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-background">
+      <a href="#main" className="skip-link">
+        Pular para o conteúdo principal
+      </a>
       <Sidebar />
-      <div className="flex-1 overflow-auto">
+      <main id="main" className="flex-1 overflow-auto" tabIndex={-1}>
         <Suspense fallback={<PageFallback />}>
           <Switch>
             <Route path="/dashboard" component={Dashboard} />
@@ -65,7 +70,7 @@ function AppContent() {
             <Route component={NotFound} />
           </Switch>
         </Suspense>
-      </div>
+      </main>
     </div>
   );
 }
