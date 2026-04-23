@@ -9,11 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Target, RotateCcw, Grid3X3, List, ArrowLeft, Settings } from "lucide-react";
 
-import CompactHeader from "@/components/compact-header";
-import CheckpointProgressGrid from "@/components/checkpoint-progress-grid";
-import CheckpointTimelineHeader from "@/components/checkpoint-timeline-header";
-import NextCheckpointsOverview from "@/components/next-checkpoints-overview";
-import CheckpointUpdateDialog from "@/components/checkpoint-update-dialog";
+import CompactHeader from "@/components/layout/compact-header";
+import CheckpointProgressGrid from "@/features/checkpoints/checkpoint-progress-grid";
+import CheckpointTimelineHeader from "@/features/checkpoints/checkpoint-timeline-header";
+import NextCheckpointsOverview from "@/features/checkpoints/next-checkpoints-overview";
+import CheckpointUpdateDialog from "@/features/checkpoints/checkpoint-update-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useFilters } from "@/hooks/use-filters";

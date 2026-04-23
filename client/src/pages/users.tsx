@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Edit, Trash2, Shield, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import CompactHeader from "@/components/compact-header";
+import CompactHeader from "@/components/layout/compact-header";
 
 interface User {
   id: number;

@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Plus, Settings as SettingsIcon, MapPin, Target, Layers, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import CompactHeader from "@/components/compact-header";
+import CompactHeader from "@/components/layout/compact-header";
 import { cleanupOnDialogClose } from "@/lib/modal-cleanup";
 import { z } from "zod";
 import { useForm } from "react-hook-form";

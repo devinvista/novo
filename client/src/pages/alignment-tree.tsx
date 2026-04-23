@@ -19,12 +19,12 @@ import {
 import { ptBR } from "date-fns/locale";
 import { formatSP, parseISOSP, nowSP } from "@/lib/timezone";
 import { formatDateBR } from "@/lib/formatters";
-import CompactHeader from "@/components/compact-header";
+import CompactHeader from "@/components/layout/compact-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import KrProgressChart from "@/components/kr-progress-chart-lazy";
+import KrProgressChart from "@/features/key-results/kr-progress-chart-lazy";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useFilters } from "@/hooks/use-filters";
 

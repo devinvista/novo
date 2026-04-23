@@ -1,10 +1,10 @@
 import { lazy, Suspense } from "react";
-import CompactHeader from "@/components/compact-header";
+import CompactHeader from "@/components/layout/compact-header";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useFilters } from "@/hooks/use-filters";
 
 // Lazy-load chart-heavy component (isolates `recharts` in its own chunk)
-const IndicatorsDashboard = lazy(() => import("@/components/indicators-dashboard"));
+const IndicatorsDashboard = lazy(() => import("@/features/indicators/indicators-dashboard"));
 
 export default function Indicators() {
   const { selectedQuarter } = useQuarterlyFilter();

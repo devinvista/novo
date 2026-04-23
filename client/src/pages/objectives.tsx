@@ -2,11 +2,11 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import ObjectivesTable from "@/components/objectives-table";
-import CompactHeader from "@/components/compact-header";
+import ObjectivesTable from "@/features/objectives/objectives-table";
+import CompactHeader from "@/components/layout/compact-header";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import ObjectiveForm from "@/components/objective-form";
+import ObjectiveForm from "@/features/objectives/objective-form";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useFilters } from "@/hooks/use-filters";

@@ -1,14 +1,14 @@
 import { lazy, Suspense } from "react";
-import ExecutiveSummary from "@/components/executive-summary";
-import CompactHeader from "@/components/compact-header";
+import ExecutiveSummary from "@/features/reports/executive-summary";
+import CompactHeader from "@/components/layout/compact-header";
 import { useFilters } from "@/hooks/use-filters";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, FileText, CheckSquare } from "lucide-react";
-import ActionPlan from "@/components/action-plan";
+import ActionPlan from "@/features/actions/action-plan";
 
 // Lazy-load chart-heavy component (isolates `recharts` in its own chunk)
-const IndicatorsDashboard = lazy(() => import("@/components/indicators-dashboard"));
+const IndicatorsDashboard = lazy(() => import("@/features/indicators/indicators-dashboard"));
 
 function ChartFallback() {
   return (

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, TrendingUp, Target, RotateCcw } from "lucide-react";
-import AnimatedProgressRing from "./animated-progress-ring";
+import AnimatedProgressRing from "@/features/indicators/animated-progress-ring";
 import { parseDecimalBR, formatDateBR } from "@/lib/formatters";
 import { nowSP } from "@/lib/timezone";
 

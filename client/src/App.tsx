@@ -15,7 +15,7 @@ const Users = lazy(() => import('@/pages/users'));
 const Reports = lazy(() => import('@/pages/reports'));
 const Settings = lazy(() => import('@/pages/settings'));
 
-import Sidebar from '@/components/sidebar';
+import Sidebar from '@/components/layout/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { AppProviders } from '@/providers/app-providers';
 

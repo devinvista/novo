@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, List, GanttChart } from "lucide-react";
 import { useLocation } from "wouter";
-import CompactHeader from "@/components/compact-header";
+import CompactHeader from "@/components/layout/compact-header";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import ActionForm from "@/components/action-form";
-import ActionTimeline from "@/components/action-timeline";
-import GanttTimeline from "@/components/gantt-timeline";
+import ActionForm from "@/features/actions/action-form";
+import ActionTimeline from "@/features/actions/action-timeline";
+import GanttTimeline from "@/features/actions/gantt-timeline";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useFilters } from "@/hooks/use-filters";
 import {
