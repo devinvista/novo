@@ -15,7 +15,7 @@ Documento de planejamento para os upgrades de major das principais dependências
 | `react` / `react-dom`   | 19.x     | 19.x    | Médio    | Médio     | 2–4 dias | ✅ Concluído |
 | `@radix-ui/*`           | latest   | latest  | Médio    | -         | incluído acima | ✅ Concluído |
 | `vite`                  | 8.0.9    | 8.x     | Alto     | Médio     | 2–3 dias | ✅ Concluído |
-| `express`               | 4.22.1   | 5.x     | Alto     | Baixo     | 3–5 dias | 🔴 Pendente |
+| `express`               | 5.2.1    | 5.x     | Alto     | Baixo     | 3–5 dias | ✅ Concluído |
 
 Legenda de risco:
 - **Baixo**: poucas mudanças quebrando, tipos cobrem o impacto, build/test pegam regressões
@@ -256,3 +256,5 @@ Para cada upgrade, validar antes do merge:
 | 2026-04-23 | `@vitejs/plugin-react` | 4.x → mantido em 4.7 | v6 exigiria Vite 6+ (próximo sprint); v4.7 é compatível com React 19 e Vite 5 |
 | 2026-04-23 | `vite`          | 5.4.21 → 8.0.9   | Sprint 4: upgrade incremental 5→6→7→8. Build de produção e suíte de testes (31 testes) verdes em cada salto. `vite.config.ts` e `server/vite.ts` não exigiram alterações |
 | 2026-04-23 | `@vitejs/plugin-react` | 4.7.0 → 6.0.1 | Atualizado junto com Vite 8 (peer dep `vite: ^8.0.0`). Peer deps opcionais `babel-plugin-react-compiler` e `@rolldown/plugin-babel` não instaladas (React Compiler segue desligado) |
+| 2026-04-23 | `express`       | 4.22.1 → 5.2.1   | Sprint 5. Substituídos os dois `app.use("*", ...)` em `server/vite.ts` por `app.use(handler)` (path-to-regexp 8 não aceita `*` como wildcard). Demais rotas usam paths estáticos ou parâmetros nomeados (`:id`), sem incompatibilidade. Auth (Passport + sessão), helmet, rate limiter, morgan e pino-http funcionam sem alterações. 31 testes verdes, build limpo |
+| 2026-04-23 | `@types/express` | 4.17.21 → 5.x | Atualizado em conjunto com Express 5 |
