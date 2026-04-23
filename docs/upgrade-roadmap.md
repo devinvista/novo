@@ -35,9 +35,9 @@ Legenda de risco:
 
 ---
 
-## 1. Zod 3 → 4
+## 1. Zod 3 → 4 — ✅ Concluído
 
-**Versão atual:** `^3.25.76`  **Versão alvo:** `^4.x`
+**Versão atual:** `^4.3.6`  **Versão alvo (atingida):** `^4.x`
 
 ### Ganhos
 - Performance de validação ~3× mais rápida em payloads grandes
@@ -63,9 +63,9 @@ Legenda de risco:
 
 ---
 
-## 2. Tailwind 3 → 4
+## 2. Tailwind 3 → 4 — ✅ Concluído
 
-**Versão atual:** `^3.4.19`  **Versão alvo:** `^4.x`
+**Versão atual:** `^4.2.4`  **Versão alvo (atingida):** `^4.x`
 
 ### Ganhos
 - Build ~5× mais rápido (engine reescrita em Rust — Lightning CSS)
@@ -93,9 +93,9 @@ Legenda de risco:
 
 ---
 
-## 3. React 18 → 19
+## 3. React 18 → 19 — ✅ Concluído (React Compiler postergado)
 
-**Versão atual:** `^18.3.1`  **Versão alvo:** `^19.x`
+**Versão atual:** `^19.2.5`  **Versão alvo (atingida):** `^19.x`
 
 ### Ganhos
 - `useActionState`, `useFormStatus`, `useOptimistic` para forms
@@ -123,9 +123,9 @@ Legenda de risco:
 
 ---
 
-## 4. Recharts 2 → 3
+## 4. Recharts 2 → 3 — ✅ Concluído
 
-**Versão atual:** `^2.15.4`  **Versão alvo:** `^3.x`
+**Versão atual:** `^3.8.1`  **Versão alvo (atingida):** `^3.x`
 
 ### Ganhos
 - Bundle ~30% menor (tree-shaking real)
@@ -148,9 +148,9 @@ Legenda de risco:
 
 ---
 
-## 5. Vite 5 → 8
+## 5. Vite 5 → 8 — ✅ Concluído
 
-**Versão atual:** `^5.4.21`  **Versão alvo:** `^8.x` (3 majors!)
+**Versão atual:** `^8.0.9`  **Versão alvo (atingida):** `^8.x` (3 majors em sequência)
 
 ### Ganhos
 - Rolldown como bundler padrão (substituindo Rollup) — build muito mais rápido
@@ -176,9 +176,9 @@ Legenda de risco:
 
 ---
 
-## 6. Express 4 → 5
+## 6. Express 4 → 5 — ✅ Concluído
 
-**Versão atual:** `^4.22.1`  **Versão alvo:** `^5.x`
+**Versão atual:** `^5.2.1`  **Versão alvo (atingida):** `^5.x`
 
 ### Ganhos
 - Suporte nativo a `async/await` em handlers (sem `asyncHandler`)
@@ -264,7 +264,7 @@ Para cada upgrade, validar antes do merge:
 | 2026-04-23 | `@types/react` / `@types/react-dom` | 18 → 19 | Atualizados em conjunto com React 19 |
 | 2026-04-23 | `@radix-ui/*` (27 pacotes) | latest | Atualizados todos os primitivos para versões compatíveis com React 19 |
 | 2026-04-23 | `react-is` | novo (^19) | Necessário para `recharts` resolver `import { isFragment } from 'react-is'` |
-| 2026-04-23 | `@vitejs/plugin-react` | 4.x → mantido em 4.7 | v6 exigiria Vite 6+ (próximo sprint); v4.7 é compatível com React 19 e Vite 5 |
+| 2026-04-23 | `@vitejs/plugin-react` | 4.x → 4.7 (intermediário) | Mantido em 4.7 durante o Sprint 3 porque Vite ainda estava em 5; v4.7 é compatível com React 19 e Vite 5–7. **Substituído por 6.0.1 no Sprint 4** quando Vite 8 entrou (linha abaixo no histórico) |
 | 2026-04-23 | `vite`          | 5.4.21 → 8.0.9   | Sprint 4: upgrade incremental 5→6→7→8. Build de produção e suíte de testes (31 testes) verdes em cada salto. `vite.config.ts` e `server/vite.ts` não exigiram alterações |
 | 2026-04-23 | `@vitejs/plugin-react` | 4.7.0 → 6.0.1 | Atualizado junto com Vite 8 (peer dep `vite: ^8.0.0`). Peer deps opcionais `babel-plugin-react-compiler` e `@rolldown/plugin-babel` não instaladas (React Compiler segue desligado) |
 | 2026-04-23 | `express`       | 4.22.1 → 5.2.1   | Sprint 5. Substituídos os dois `app.use("*", ...)` em `server/vite.ts` por `app.use(handler)` (path-to-regexp 8 não aceita `*` como wildcard). Demais rotas usam paths estáticos ou parâmetros nomeados (`:id`), sem incompatibilidade. Auth (Passport + sessão), helmet, rate limiter, morgan e pino-http funcionam sem alterações. 31 testes verdes, build limpo |
