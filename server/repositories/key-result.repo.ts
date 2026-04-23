@@ -1,11 +1,12 @@
 import {
-  objectives, keyResults, actions, checkpoints, actionComments,
+  objectives, keyResults, actions,
   type KeyResult, type InsertKeyResult,
 } from '@shared/schema';
 import { db } from '../pg-db';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, inArray, isNull, isNotNull } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
 import type { ObjectiveRepo } from './objective.repo';
+import { isAdmin } from '../lib/region-guard';
 
 export class KeyResultRepo {
   constructor(
@@ -28,13 +29,19 @@ export class KeyResultRepo {
 
     const whereConditions: any[] = [];
 
+    if (filters?.onlyDeleted) {
+      whereConditions.push(isNotNull(keyResults.deletedAt));
+    } else if (!filters?.includeDeleted) {
+      whereConditions.push(isNull(keyResults.deletedAt));
+    }
+
     if (filters?.objectiveId) whereConditions.push(eq(keyResults.objectiveId, filters.objectiveId));
     if (allowedObjectiveIds.length > 0) whereConditions.push(inArray(keyResults.objectiveId, allowedObjectiveIds));
     if (filters?.serviceLineId) whereConditions.push(eq(keyResults.serviceLineId, filters.serviceLineId));
 
     if (filters?.currentUserId && allowedObjectiveIds.length === 0) {
       const user = await this.userRepo.getUser(filters.currentUserId);
-      if (user && user.role !== 'admin') {
+      if (user && !isAdmin(user)) {
         const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId: filters.currentUserId });
         const objectiveIds = userObjectives.map(obj => obj.id);
         if (objectiveIds.length > 0) {
@@ -78,14 +85,17 @@ export class KeyResultRepo {
     });
   }
 
-  async getKeyResult(id: number, _currentUserId?: number): Promise<any | undefined> {
+  async getKeyResult(id: number, _currentUserId?: number, opts: { includeDeleted?: boolean } = {}): Promise<any | undefined> {
+    const conditions: any[] = [eq(keyResults.id, id)];
+    if (!opts.includeDeleted) conditions.push(isNull(keyResults.deletedAt));
+
     const result = await db.select({
       keyResults: keyResults,
       objectives: objectives,
     })
       .from(keyResults)
       .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .where(eq(keyResults.id, id))
+      .where(and(...conditions))
       .limit(1);
 
     if (result.length === 0) return undefined;
@@ -107,6 +117,7 @@ export class KeyResultRepo {
       serviceLineIds: row.keyResults.serviceLineIds,
       serviceLineId: row.keyResults.serviceLineId,
       serviceId: row.keyResults.serviceId,
+      deletedAt: row.keyResults.deletedAt,
       createdAt: row.keyResults.createdAt,
       updatedAt: row.keyResults.updatedAt,
       objective: row.objectives,
@@ -127,13 +138,21 @@ export class KeyResultRepo {
     return rows[0];
   }
 
+  /** Soft-delete: marca como excluído e cascata para ações. */
+  async softDeleteKeyResult(id: number): Promise<void> {
+    const now = new Date();
+    await db.update(actions)
+      .set({ deletedAt: now })
+      .where(and(eq(actions.keyResultId, id), isNull(actions.deletedAt)));
+    await db.update(keyResults).set({ deletedAt: now }).where(eq(keyResults.id, id));
+  }
+
+  async restoreKeyResult(id: number): Promise<void> {
+    await db.update(keyResults).set({ deletedAt: null }).where(eq(keyResults.id, id));
+  }
+
+  /** Mantido como API legada — agora delega para soft-delete. */
   async deleteKeyResult(id: number): Promise<void> {
-    const krActions = await db.select({ id: actions.id }).from(actions).where(eq(actions.keyResultId, id));
-    for (const action of krActions) {
-      await db.delete(actionComments).where(eq(actionComments.actionId, action.id));
-    }
-    await db.delete(actions).where(eq(actions.keyResultId, id));
-    await db.delete(checkpoints).where(eq(checkpoints.keyResultId, id));
-    await db.delete(keyResults).where(eq(keyResults.id, id));
+    await this.softDeleteKeyResult(id);
   }
 }

@@ -6,6 +6,8 @@ import { requireAuth, requireRole } from "../../middleware/auth";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../errors/app-error";
 import { insertKeyResultSchema } from "@shared/schema";
 import { convertBRToDatabase, formatBrazilianNumber } from "../../shared/formatters";
+import { recordActivity } from "../../lib/audit-log";
+import { recalcObjectiveCascade } from "../../domain/checkpoints/recalc";
 
 export const keyResultsRouter: Router = Router();
 
@@ -90,6 +92,13 @@ keyResultsRouter.post(
       endDate: validation.endDate,
       status,
     });
+    await recordActivity({
+      userId: req.user.id,
+      action: "create",
+      entityType: "key_result",
+      entityId: keyResult.id,
+      after: keyResult,
+    });
     res.status(201).json(keyResult);
   })
 );
@@ -126,21 +135,21 @@ keyResultsRouter.put(
     const objectiveId = keyResult.objectiveId || existing.objectiveId;
     if (objectiveId) {
       try {
-        const objectiveKRs = await storage.getKeyResults({ objectiveId });
-        if (objectiveKRs.length > 0) {
-          const totalProgress = objectiveKRs.reduce((sum: number, kr: any) => {
-            const current = parseFloat(kr.currentValue || "0");
-            const target = parseFloat(kr.targetValue || "1");
-            const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
-            return sum + progress;
-          }, 0);
-          const avgProgress = totalProgress / objectiveKRs.length;
-          await storage.updateObjective(objectiveId, { progress: avgProgress.toFixed(2) });
-        }
+        await recalcObjectiveCascade(objectiveId);
       } catch (objError) {
+        // eslint-disable-next-line no-console
         console.error("Error updating objective progress from KR update:", objError);
       }
     }
+
+    await recordActivity({
+      userId: req.user.id,
+      action: "update",
+      entityType: "key_result",
+      entityId: id,
+      before: existing,
+      after: keyResult,
+    });
 
     res.json(keyResult);
   })
@@ -154,6 +163,13 @@ keyResultsRouter.delete(
     const existing = await storage.getKeyResult(id, req.user.id);
     if (!existing) throw new NotFoundError("Resultado-chave não encontrado ou sem acesso");
     await storage.deleteKeyResult(id);
+    await recordActivity({
+      userId: req.user.id,
+      action: "delete",
+      entityType: "key_result",
+      entityId: id,
+      before: existing,
+    });
     res.sendStatus(204);
   })
 );

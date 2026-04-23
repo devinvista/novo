@@ -5,6 +5,8 @@ import { asyncHandler } from "../../middleware/async-handler";
 import { requireAuth, requireRole } from "../../middleware/auth";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../errors/app-error";
 import { insertObjectiveSchema } from "@shared/schema";
+import { recordActivity } from "../../lib/audit-log";
+import { canAccessAnySubRegion, canAccessRegion, isAdmin } from "../../lib/region-guard";
 
 export const objectivesRouter: Router = Router();
 
@@ -40,6 +42,21 @@ objectivesRouter.get(
   })
 );
 
+/** Lista os objetivos filhos diretos (cascata pai/filho). */
+objectivesRouter.get(
+  "/:id/children",
+  asyncHandler(async (req: any, res) => {
+    const id = parseInt(req.params.id);
+    const parent = await storage.getObjective(id, req.user.id);
+    if (!parent) throw new NotFoundError("Objetivo não encontrado ou sem acesso");
+    const children = await storage.getObjectives({
+      parentObjectiveId: id,
+      currentUserId: req.user.id,
+    });
+    res.json(children);
+  })
+);
+
 objectivesRouter.post(
   "/",
   requireRole(["admin", "gestor"]),
@@ -53,26 +70,22 @@ objectivesRouter.post(
     }
 
     const currentUser = req.user;
-    if (currentUser.role !== "admin") {
-      const userRegionIds = (currentUser.regionIds || []) as any[];
-      const userSubRegionIds = (currentUser.subRegionIds || []) as any[];
-      if (
-        validation.regionId &&
-        userRegionIds.length > 0 &&
-        !userRegionIds.includes(validation.regionId)
-      ) {
+    if (!isAdmin(currentUser)) {
+      if (validation.regionId && !canAccessRegion(currentUser, validation.regionId)) {
         throw new ForbiddenError("Sem permissão para criar objetivo nesta região");
       }
       const subRegionIdsArr = Array.isArray(validation.subRegionIds)
-        ? (validation.subRegionIds as any[])
+        ? (validation.subRegionIds as number[])
         : [];
-      if (
-        subRegionIdsArr.length > 0 &&
-        userSubRegionIds.length > 0 &&
-        !subRegionIdsArr.some((id) => userSubRegionIds.includes(id))
-      ) {
+      if (subRegionIdsArr.length > 0 && !canAccessAnySubRegion(currentUser, subRegionIdsArr)) {
         throw new ForbiddenError("Sem permissão para criar objetivo nesta subregião");
       }
+    }
+
+    // Garante que o pai (se informado) existe e está acessível
+    if (validation.parentObjectiveId) {
+      const parent = await storage.getObjective(validation.parentObjectiveId, currentUser.id);
+      if (!parent) throw new ForbiddenError("Objetivo pai não encontrado ou sem acesso");
     }
 
     let responsibleId = validation.ownerId;
@@ -82,12 +95,12 @@ objectivesRouter.post(
       try {
         const managers = await storage.getManagers();
         const valSubRegionIds = Array.isArray(validation.subRegionIds)
-          ? (validation.subRegionIds as any[])
+          ? (validation.subRegionIds as number[])
           : [];
         if (valSubRegionIds.length > 0) {
           const subRegionManager = managers.find((manager: any) => {
             const mgrSubIds = Array.isArray(manager.subRegionIds)
-              ? (manager.subRegionIds as any[])
+              ? (manager.subRegionIds as number[])
               : [];
             return (
               mgrSubIds.length > 0 &&
@@ -99,13 +112,14 @@ objectivesRouter.post(
         if (!responsibleId && validation.regionId) {
           const regionManager = managers.find((manager: any) => {
             const mgrRegIds = Array.isArray(manager.regionIds)
-              ? (manager.regionIds as any[])
+              ? (manager.regionIds as number[])
               : [];
             return mgrRegIds.includes(validation.regionId);
           });
           if (regionManager) responsibleId = regionManager.id;
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Erro ao buscar gestores para definir responsável:", error);
         responsibleId = currentUser.id;
       }
@@ -115,6 +129,15 @@ objectivesRouter.post(
       ...validation,
       ownerId: responsibleId,
     });
+
+    await recordActivity({
+      userId: currentUser.id,
+      action: "create",
+      entityType: "objective",
+      entityId: objective.id,
+      after: objective,
+    });
+
     res.status(201).json(objective);
   })
 );
@@ -133,7 +156,28 @@ objectivesRouter.put(
     }
     const existing = await storage.getObjective(id, req.user.id);
     if (!existing) throw new NotFoundError("Objetivo não encontrado ou sem acesso");
-    res.json(await storage.updateObjective(id, validation));
+
+    // Previne ciclo na hierarquia
+    if (validation.parentObjectiveId) {
+      if (validation.parentObjectiveId === id) {
+        throw new ValidationError("Um objetivo não pode ser pai de si mesmo");
+      }
+      const ancestors = await storage.objectives.getAncestorIds(validation.parentObjectiveId);
+      if (ancestors.includes(id)) {
+        throw new ValidationError("Hierarquia cíclica detectada");
+      }
+    }
+
+    const updated = await storage.updateObjective(id, validation);
+    await recordActivity({
+      userId: req.user.id,
+      action: "update",
+      entityType: "objective",
+      entityId: id,
+      before: existing,
+      after: updated,
+    });
+    res.json(updated);
   })
 );
 
@@ -145,6 +189,13 @@ objectivesRouter.delete(
     const existing = await storage.getObjective(id, req.user.id);
     if (!existing) throw new NotFoundError("Objetivo não encontrado ou sem acesso");
     await storage.deleteObjective(id);
+    await recordActivity({
+      userId: req.user.id,
+      action: "delete",
+      entityType: "objective",
+      entityId: id,
+      before: existing,
+    });
     res.sendStatus(204);
   })
 );

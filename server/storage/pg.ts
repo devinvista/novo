@@ -4,7 +4,8 @@ import type {
 
 import {
   UserRepo, LookupRepo, ObjectiveRepo, KeyResultRepo,
-  ActionRepo, CheckpointRepo, DashboardRepo, sessionStore,
+  ActionRepo, CheckpointRepo, DashboardRepo, ActivityRepo, KrCheckInRepo,
+  sessionStore,
 } from '../repositories';
 
 import type { IStorage } from './interface';
@@ -24,6 +25,8 @@ export class PgStorage implements IStorage {
   readonly actions = new ActionRepo(this.users, this.objectives);
   readonly checkpoints = new CheckpointRepo(this.users, this.objectives, this.keyResults);
   readonly dashboard = new DashboardRepo(this.objectives, this.keyResults, this.actions);
+  readonly activities = new ActivityRepo();
+  readonly checkIns = new KrCheckInRepo();
 
   // ---------- Users ----------
   getUser(id: number) { return this.users.getUser(id); }
@@ -91,12 +94,16 @@ export class PgStorage implements IStorage {
   updateObjective(id: number, objective: Partial<InsertObjective>) {
     return this.objectives.updateObjective(id, objective);
   }
+  /**
+   * Soft-delete em cascata: arquiva o objetivo e todos os seus KRs/ações.
+   * Mantém os dados e permite restauração via /api/trash.
+   */
   async deleteObjective(id: number): Promise<void> {
     const krIds = await this.objectives.getKeyResultIdsForObjective(id);
     for (const krId of krIds) {
-      await this.keyResults.deleteKeyResult(krId);
+      await this.keyResults.softDeleteKeyResult(krId);
     }
-    await this.objectives.deleteObjectiveRow(id);
+    await this.objectives.softDeleteObjective(id);
   }
 
   // ---------- Key Results ----------

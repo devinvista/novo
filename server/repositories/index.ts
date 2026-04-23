@@ -5,4 +5,6 @@ export { KeyResultRepo } from './key-result.repo';
 export { ActionRepo } from './action.repo';
 export { CheckpointRepo } from './checkpoint.repo';
 export { DashboardRepo } from './dashboard.repo';
+export { ActivityRepo } from './activity.repo';
+export { KrCheckInRepo } from './kr-check-in.repo';
 export { sessionStore } from './session-store';

@@ -14,6 +14,9 @@ import { quartersRouter } from "./modules/quarters/quarters.routes";
 import { executiveSummaryRouter } from "./modules/executive-summary/executive-summary.routes";
 import { usersRouter, managersPublicRouter } from "./modules/users/users.routes";
 import { adminImportRouter } from "./modules/admin-import/admin-import.routes";
+import { trashRouter } from "./modules/trash/trash.routes";
+import { activitiesRouter } from "./modules/activities/activities.routes";
+import { krCheckInsRouter } from "./modules/kr-check-ins/kr-check-ins.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes (login, register, logout, /api/user)
@@ -37,6 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", lookupsRouter);
   app.use("/api", actionCommentsRouter);
   app.use("/api", usersRouter);
+  app.use("/api", krCheckInsRouter);
   app.use("/api/admin", adminLookupsRouter);
   app.use("/api/admin", adminImportRouter);
   app.use("/api/objectives", objectivesRouter);
@@ -46,6 +50,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/dashboard", dashboardRouter);
   app.use("/api/quarters", quartersRouter);
   app.use("/api/executive-summary", executiveSummaryRouter);
+  app.use("/api/trash", trashRouter);
+  app.use("/api/activities", activitiesRouter);
 
   return createServer(app);
 }

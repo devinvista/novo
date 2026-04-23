@@ -5,6 +5,7 @@ import { asyncHandler } from "../../middleware/async-handler";
 import { requireAuth } from "../../middleware/auth";
 import { BadRequestError, ForbiddenError, NotFoundError, ValidationError } from "../../errors/app-error";
 import { insertActionSchema } from "@shared/schema";
+import { recordActivity } from "../../lib/audit-log";
 
 export const actionsRouter: Router = Router();
 
@@ -48,6 +49,13 @@ actionsRouter.post(
     const keyResult = await storage.getKeyResult(validation.keyResultId, req.user.id);
     if (!keyResult) throw new ForbiddenError("Sem permissão para criar ação neste resultado-chave");
     const action = await storage.createAction(validation);
+    await recordActivity({
+      userId: req.user.id,
+      action: "create",
+      entityType: "action",
+      entityId: action.id,
+      after: action,
+    });
     res.status(201).json(action);
   })
 );
@@ -98,6 +106,15 @@ actionsRouter.put(
       });
     }
 
+    await recordActivity({
+      userId: req.user.id,
+      action: "update",
+      entityType: "action",
+      entityId: id,
+      before: existing,
+      after: updatedAction,
+    });
+
     res.json(updatedAction);
   })
 );
@@ -109,6 +126,13 @@ actionsRouter.delete(
     const existing = await storage.getAction(id, req.user.id);
     if (!existing) throw new NotFoundError("Ação não encontrada ou sem acesso");
     await storage.deleteAction(id);
+    await recordActivity({
+      userId: req.user.id,
+      action: "delete",
+      entityType: "action",
+      entityId: id,
+      before: existing,
+    });
     res.sendStatus(204);
   })
 );

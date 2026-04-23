@@ -2,13 +2,13 @@ import { storage } from "../../storage";
 import { convertBRToDatabase } from "../../shared/formatters";
 
 /**
- * Recalculates currentValue/progress of a Key Result based on its checkpoints.
- * Uses the most recent checkpoint (by dueDate) that has a populated actualValue,
- * regardless of status. Also updates the parent objective's progress.
+ * Recalcula currentValue/progress de um Key Result a partir dos seus checkpoints.
+ * Usa o checkpoint mais recente (por dueDate) com actualValue preenchido.
+ * Em seguida propaga progresso para o objetivo pai e — em cascata — para os
+ * ancestrais (até 16 níveis), suportando OKRs hierárquicos.
  *
- * IMPORTANT: invoked WITHOUT userId — access control must already have been
- * verified in the calling endpoint (accessing storage directly bypasses the
- * region filter, required for operacional/gestor users without regionIds).
+ * IMPORTANTE: chamado SEM userId — controle de acesso já deve ter sido feito
+ * no endpoint que invocou esta função.
  */
 export async function recalcKeyResultFromCheckpoints(keyResultId: number): Promise<void> {
   try {
@@ -38,26 +38,22 @@ export async function recalcKeyResultFromCheckpoints(keyResultId: number): Promi
     });
 
     if (currentKR.objectiveId) {
-      const objectiveKRs = await storage.getKeyResults({
-        objectiveId: currentKR.objectiveId,
-      });
-      if (objectiveKRs.length > 0) {
-        const totalProgress = objectiveKRs.reduce((sum: number, kr: any) => {
-          if (kr.id === keyResultId) {
-            return sum + Math.min(newKRProgress, 100);
-          }
-          const current = parseFloat(kr.currentValue || "0");
-          const target = parseFloat(kr.targetValue || "1");
-          const p = target > 0 ? Math.min((current / target) * 100, 100) : 0;
-          return sum + p;
-        }, 0);
-        const avgProgress = totalProgress / objectiveKRs.length;
-        await storage.updateObjective(currentKR.objectiveId, {
-          progress: avgProgress.toFixed(2),
-        } as any);
-      }
+      await recalcObjectiveCascade(currentKR.objectiveId);
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error("Error recalculating Key Result from checkpoints:", err);
+  }
+}
+
+/**
+ * Recalcula o progresso de um objetivo (média dos KRs) e propaga em cascata
+ * para os ancestrais (cujo progresso é a média dos filhos diretos).
+ */
+export async function recalcObjectiveCascade(objectiveId: number): Promise<void> {
+  await storage.objectives.recalcProgressFromKeyResults(objectiveId);
+  const ancestors = await storage.objectives.getAncestorIds(objectiveId);
+  for (const ancestorId of ancestors) {
+    await storage.objectives.recalcProgressFromChildren(ancestorId);
   }
 }

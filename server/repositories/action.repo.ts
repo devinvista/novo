@@ -3,9 +3,10 @@ import {
   type Action, type InsertAction, type ActionComment, type InsertActionComment,
 } from '@shared/schema';
 import { db } from '../pg-db';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, inArray, isNull, isNotNull } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
 import type { ObjectiveRepo } from './objective.repo';
+import { isAdmin } from '../lib/region-guard';
 
 export class ActionRepo {
   constructor(
@@ -41,6 +42,7 @@ export class ActionRepo {
       responsibleId: actions.responsibleId,
       number: actions.number,
       strategicIndicatorId: actions.strategicIndicatorId,
+      deletedAt: actions.deletedAt,
       createdAt: actions.createdAt,
       updatedAt: actions.updatedAt,
       responsibleName: users.name,
@@ -59,9 +61,15 @@ export class ActionRepo {
 
     const whereConditions: any[] = [];
 
+    if (filters?.onlyDeleted) {
+      whereConditions.push(isNotNull(actions.deletedAt));
+    } else if (!filters?.includeDeleted) {
+      whereConditions.push(isNull(actions.deletedAt));
+    }
+
     if (filters?.currentUserId) {
       const user = await this.userRepo.getUser(filters.currentUserId);
-      if (user && user.role !== 'admin') {
+      if (user && !isAdmin(user)) {
         const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId: filters.currentUserId });
         const objectiveIds = userObjectives.map(obj => obj.id);
         if (objectiveIds.length > 0) {
@@ -97,6 +105,7 @@ export class ActionRepo {
       responsibleId: action.responsibleId,
       number: action.number,
       strategicIndicatorId: action.strategicIndicatorId,
+      deletedAt: action.deletedAt,
       createdAt: action.createdAt,
       updatedAt: action.updatedAt,
       keyResult: action.keyResultTitle ? {
@@ -114,7 +123,10 @@ export class ActionRepo {
     }));
   }
 
-  async getAction(id: number, currentUserId?: number): Promise<any | undefined> {
+  async getAction(id: number, currentUserId?: number, opts: { includeDeleted?: boolean } = {}): Promise<any | undefined> {
+    const conds: any[] = [eq(actions.id, id)];
+    if (!opts.includeDeleted) conds.push(isNull(actions.deletedAt));
+
     const result = await db.select({
       action: actions,
       keyResult: keyResults,
@@ -123,7 +135,7 @@ export class ActionRepo {
       .from(actions)
       .leftJoin(keyResults, eq(actions.keyResultId, keyResults.id))
       .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id))
-      .where(eq(actions.id, id))
+      .where(and(...conds))
       .limit(1);
 
     if (result.length === 0) return undefined;
@@ -131,7 +143,7 @@ export class ActionRepo {
 
     if (currentUserId) {
       const user = await this.userRepo.getUser(currentUserId);
-      if (user && user.role !== 'admin') {
+      if (user && !isAdmin(user)) {
         const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId });
         const hasAccess = userObjectives.some(obj => obj.id === row.objective?.id);
         if (!hasAccess) return undefined;
@@ -204,9 +216,17 @@ export class ActionRepo {
     return rows[0];
   }
 
+  async softDeleteAction(id: number): Promise<void> {
+    await db.update(actions).set({ deletedAt: new Date() }).where(eq(actions.id, id));
+  }
+
+  async restoreAction(id: number): Promise<void> {
+    await db.update(actions).set({ deletedAt: null }).where(eq(actions.id, id));
+  }
+
+  /** Mantido como API legada — agora delega para soft-delete. */
   async deleteAction(id: number): Promise<void> {
-    await db.delete(actionComments).where(eq(actionComments.actionId, id));
-    await db.delete(actions).where(eq(actions.id, id));
+    await this.softDeleteAction(id);
   }
 
   // ---- comments ----

@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, integer, timestamp, numeric, json, boolean, serial, index } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, integer, timestamp, numeric, json, boolean, serial, index, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -40,6 +40,8 @@ export const objectives = pgTable("objectives", {
   progress: numeric("progress", { precision: 5, scale: 2 }).default("0.00"),
   period: varchar("period", { length: 50 }),
   serviceLineId: integer("service_line_id").references(() => serviceLines.id),
+  parentObjectiveId: integer("parent_objective_id").references((): AnyPgColumn => objectives.id),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 }, (t) => [
@@ -48,6 +50,8 @@ export const objectives = pgTable("objectives", {
   index("idx_objectives_service_line_id").on(t.serviceLineId),
   index("idx_objectives_status").on(t.status),
   index("idx_objectives_period").on(t.period),
+  index("idx_objectives_parent_id").on(t.parentObjectiveId),
+  index("idx_objectives_deleted_at").on(t.deletedAt),
 ]);
 
 export const keyResults = pgTable("key_results", {
@@ -67,6 +71,7 @@ export const keyResults = pgTable("key_results", {
   frequency: varchar("frequency", { length: 50 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("active"),
   progress: numeric("progress", { precision: 5, scale: 2 }).default("0.00"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 }, (t) => [
@@ -74,6 +79,7 @@ export const keyResults = pgTable("key_results", {
   index("idx_key_results_service_line_id").on(t.serviceLineId),
   index("idx_key_results_service_id").on(t.serviceId),
   index("idx_key_results_status").on(t.status),
+  index("idx_key_results_deleted_at").on(t.deletedAt),
 ]);
 
 export const actions = pgTable("actions", {
@@ -89,6 +95,7 @@ export const actions = pgTable("actions", {
   dueDate: varchar("due_date", { length: 10 }),
   status: varchar("status", { length: 50 }).notNull().default("pending"),
   priority: varchar("priority", { length: 50 }).notNull().default("medium"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 }, (t) => [
@@ -98,6 +105,7 @@ export const actions = pgTable("actions", {
   index("idx_actions_service_line_id").on(t.serviceLineId),
   index("idx_actions_service_id").on(t.serviceId),
   index("idx_actions_status").on(t.status),
+  index("idx_actions_deleted_at").on(t.deletedAt),
 ]);
 
 export const checkpoints = pgTable("checkpoints", {
@@ -192,6 +200,39 @@ export const quarterlyPeriods = pgTable("quarterly_periods", {
   endDate: varchar("endDate", { length: 10 }).notNull(),
 });
 
+// Audit log — registra create/update/delete/restore em qualquer entidade
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").references(() => users.id),
+  action: varchar("action", { length: 50 }).notNull(), // create | update | delete | restore | check_in
+  entityType: varchar("entityType", { length: 50 }).notNull(),
+  entityId: integer("entityId").notNull(),
+  details: text("details"), // JSON serializado com diff
+  createdAt: timestamp("createdAt").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("idx_activities_user_id").on(t.userId),
+  index("idx_activities_entity").on(t.entityType, t.entityId),
+  index("idx_activities_created_at").on(t.createdAt),
+]);
+
+// Check-ins semanais estruturados em KRs (status, confiança, próximos passos, bloqueios)
+export const krCheckIns = pgTable("kr_check_ins", {
+  id: serial("id").primaryKey(),
+  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id),
+  authorId: integer("author_id").notNull().references(() => users.id),
+  weekStart: varchar("week_start", { length: 10 }).notNull(), // YYYY-MM-DD da segunda-feira
+  status: varchar("status", { length: 20 }).notNull().default("on_track"), // on_track | at_risk | off_track
+  confidence: integer("confidence").notNull().default(5), // 1..10
+  currentValue: numeric("current_value", { precision: 15, scale: 2 }),
+  nextSteps: text("next_steps"),
+  blockers: text("blockers"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("idx_kr_check_ins_kr_id").on(t.keyResultId),
+  index("idx_kr_check_ins_week").on(t.weekStart),
+  index("idx_kr_check_ins_author").on(t.authorId),
+]);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Objective = typeof objectives.$inferSelect;
@@ -210,6 +251,10 @@ export type Solution = typeof solutions.$inferSelect;
 export type ServiceLine = typeof serviceLines.$inferSelect;
 export type Service = typeof services.$inferSelect;
 export type StrategicIndicator = typeof strategicIndicators.$inferSelect;
+export type Activity = typeof activities.$inferSelect;
+export type InsertActivity = typeof activities.$inferInsert;
+export type KrCheckIn = typeof krCheckIns.$inferSelect;
+export type InsertKrCheckIn = typeof krCheckIns.$inferInsert;
 
 export const insertUserSchema = createInsertSchema(users);
 export const insertObjectiveSchema = createInsertSchema(objectives);
@@ -217,6 +262,14 @@ export const insertKeyResultSchema = createInsertSchema(keyResults);
 export const insertActionSchema = createInsertSchema(actions);
 export const insertCheckpointSchema = createInsertSchema(checkpoints);
 export const insertActionCommentSchema = createInsertSchema(actionComments);
+export const insertKrCheckInSchema = createInsertSchema(krCheckIns).omit({
+  id: true,
+  authorId: true,
+  createdAt: true,
+}).extend({
+  status: z.enum(["on_track", "at_risk", "off_track"]),
+  confidence: z.number().int().min(1).max(10),
+});
 
 export const userFormSchema = insertUserSchema.omit({
   id: true,
@@ -229,7 +282,8 @@ export const objectiveFormSchema = insertObjectiveSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  progress: true
+  progress: true,
+  deletedAt: true,
 });
 
 export const keyResultFormSchema = insertKeyResultSchema.omit({
@@ -237,14 +291,16 @@ export const keyResultFormSchema = insertKeyResultSchema.omit({
   createdAt: true,
   updatedAt: true,
   currentValue: true,
-  progress: true
+  progress: true,
+  deletedAt: true,
 });
 
 export const actionFormSchema = insertActionSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  number: true
+  number: true,
+  deletedAt: true,
 });
 
 export const checkpointFormSchema = insertCheckpointSchema.omit({
@@ -269,3 +325,4 @@ export type InsertKeyResultType = z.infer<typeof insertKeyResultSchema>;
 export type InsertActionType = z.infer<typeof insertActionSchema>;
 export type InsertCheckpointType = z.infer<typeof insertCheckpointSchema>;
 export type InsertActionCommentType = z.infer<typeof insertActionCommentSchema>;
+export type InsertKrCheckInType = z.infer<typeof insertKrCheckInSchema>;
