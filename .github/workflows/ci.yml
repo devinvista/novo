@@ -36,6 +36,10 @@ jobs:
       - name: Tests
         run: npm test
 
+      - name: Security audit (production deps, high+)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
       - name: Build
         run: npm run build
         env:
