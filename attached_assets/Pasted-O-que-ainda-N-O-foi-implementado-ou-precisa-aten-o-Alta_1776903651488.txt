@@ -1,0 +1,71 @@
+O que ainda NÃO foi implementado ou precisa atenção
+🔴 Alta prioridade
+1. Cobertura de testes muito rasa
+Os 5 arquivos de teste totalizam apenas 218 linhas. O health.test.ts testa um Express em memória, não a aplicação real. Não existem testes de rotas autenticadas, fluxos de login, CRUD de objetivos ou key-results. Uma refatoração futura não tem nenhuma rede de segurança.
+
+2. activities table definida mas nunca populada
+shared/pg-schema.ts tem a tabela activities completa (campos userId, entityType, entityId, action, metadata), mas nenhum repositório a escreve. Está ocupando espaço no schema sem funcionar como audit trail.
+
+3. Vulnerabilidades npm ainda presentes
+O audit mostra 8 vulnerabilidades (1 alta, 7 moderadas) — caiu de 18, mas há remanescentes. A alta é crítica verificar qual pacote afeta.
+
+🟡 Médio prazo
+4. Migrations versionadas ausentes
+Há apenas 1 arquivo em migrations/. O fluxo ainda é db:push para sync. Em produção com dados reais, alterações de schema sem histórico auditável são arriscadas.
+
+5. server/pg-storage.ts e server/storage.ts — nomenclatura legada confusa
+storage.ts é apenas um re-export de pg-storage.ts. pg-storage.ts ainda tem 218 linhas definindo a interface IStorage junto com a implementação. O ideal seria separar server/storage/interface.ts e server/storage/pg.ts.
+
+6. Arquivos soltos na raiz do server/
+
+server/formatters.ts — utilidades de formatação deveriam estar em server/shared/ ou shared/
+server/quarterly-periods.ts — lógica de domínio fora de server/domain/
+server/seed.ts + server/seed-okrs.ts — sem estratégia organizada de seed
+7. client/src/lib/emergency-cleanup.ts e modal-cleanup.ts
+Arquivos de workaround que expõem window.emergencyCleanup globalmente. Indicam um problema de gerenciamento de estado de modais que deveria ser resolvido na raiz.
+
+8. Pool de 20 conexões em prod não validado
+O limite Hostinger pode ser menor. Sem validação documentada há risco de too many connections.
+
+9. Deploy config aponta para dist/index.cjs
+O build principal gera ESM (dist/index.mjs), e o dist/index.cjs é um shim que faz import('./index.mjs'). Inconsistência em relação ao que está configurado no deploy.
+
+🔵 Melhorias de escalabilidade não abordadas
+10. Recharts lazy apenas no KrProgressChart
+indicators.tsx e reports.tsx provavelmente importam recharts diretamente — verificar se as demais páginas de gráficos também usam o wrapper lazy.
+
+11. server/domain/ incompleto
+Só existe server/domain/checkpoints/recalc.ts. Lógica de negócio relevante (ex: regras de progressão de OKR, validação de status) ainda fica dispersa nos routes ou repositories.
+
+12. Redis para sessões em multi-pod
+Documentado como "baixo agora" mas não foi explicitamente registrado como upgrade futuro no replit.md.
+
+🆕 Novas sugestões além da análise original
+13. Sem /api/health exposto
+O app não tem endpoint de health check público (/api/health ou /healthz). O CI cria um Express em memória para testar — não valida o servidor real. Essencial para Kubernetes, load balancers e monitoramento externo.
+
+14. Sem documentação de variáveis de ambiente
+server/config/env.ts define 6 variáveis mas não há .env.example no repositório. Novos desenvolvedores precisam ler o código para saber o que configurar.
+
+15. shared/pg-schema.ts vs shared/schema.ts — dois arquivos de schema
+Gera confusão sobre qual usar. O schema.ts provavelmente é legado — deveria ser consolidado ou removido.
+
+16. Sem paginação nas listagens
+Endpoints como GET /api/objectives retornam todos os registros. Com crescimento de dados, isso vai causar timeout e sobrecarga no banco.
+
+17. Majors pendentes de decisão (Fase 3/4)
+Ainda aguardando decisão: React 19, Express 5, Tailwind 4, Vite 8, Zod 4, Recharts 3. Nenhum deles é urgente, mas o acúmulo de dívida técnica aumenta a cada mês.
+
+Recomendação de execução
+Próximas ações imediatas (sem risco):
+
+Criar .env.example com todas as variáveis documentadas
+Adicionar /api/health endpoint
+Decidir e limpar a tabela activities (implementar ou remover do schema)
+Consolidar shared/schema.ts → shared/pg-schema.ts
+Mover formatters.ts e quarterly-periods.ts para server/shared/
+Sprint seguinte:
+6. Expandir testes — ao menos smoke tests das rotas principais autenticadas
+
+Implementar fluxo de migration versionada (drizzle-kit generate + migrate)
+Resolver emergency-cleanup.ts / modal-cleanup.ts pelo estado correto
