@@ -263,7 +263,7 @@ Para cada upgrade, validar antes do merge:
 | 2026-04-23 | `react` / `react-dom` | 18.3.1 → 19.2.5 | Wrapper `Dialog` em `dialog.tsx` deixou de usar `forwardRef` (Radix v2 `Root` é function component agora). React Compiler **não** habilitado nesta etapa |
 | 2026-04-23 | `@types/react` / `@types/react-dom` | 18 → 19 | Atualizados em conjunto com React 19 |
 | 2026-04-23 | `@radix-ui/*` (27 pacotes) | latest | Atualizados todos os primitivos para versões compatíveis com React 19 |
-| 2026-04-23 | `react-is` | novo (^19) | Necessário para `recharts` resolver `import { isFragment } from 'react-is'` |
+| 2026-04-23 | `react-is` | novo (^19.2.5) | Adicionado como dependência direta para satisfazer a peer dependency declarada por `recharts@3` (`react-is: ^16.8.0 \|\| ... \|\| ^19.0.0`). Recharts usa o pacote internamente para inspeção de elementos React (Fragment, valid element, etc.). Versão alinhada com React 19 |
 | 2026-04-23 | `@vitejs/plugin-react` | 4.x → 4.7 (intermediário) | Mantido em 4.7 durante o Sprint 3 porque Vite ainda estava em 5; v4.7 é compatível com React 19 e Vite 5–7. **Substituído por 6.0.1 no Sprint 4** quando Vite 8 entrou (linha abaixo no histórico) |
 | 2026-04-23 | `vite`          | 5.4.21 → 8.0.9   | Sprint 4: upgrade incremental 5→6→7→8. Build de produção e suíte de testes (31 testes) verdes em cada salto. `vite.config.ts` e `server/vite.ts` não exigiram alterações |
 | 2026-04-23 | `@vitejs/plugin-react` | 4.7.0 → 6.0.1 | Atualizado junto com Vite 8 (peer dep `vite: ^8.0.0`). Peer deps opcionais `babel-plugin-react-compiler` e `@rolldown/plugin-babel` não instaladas (React Compiler segue desligado) |
