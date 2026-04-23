@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils"
 import { forceModalCleanup } from "@/lib/modal-cleanup"
 
 // Enhanced Dialog with automatic cleanup
-const Dialog = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>
->(({ onOpenChange, ...props }, ref) => {
+const Dialog = ({
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) => {
   const handleOpenChange = React.useCallback((open: boolean) => {
     if (!open) {
       // Cleanup when dialog closes - with delay to avoid React conflicts
@@ -28,8 +28,8 @@ const Dialog = React.forwardRef<
       onOpenChange={handleOpenChange}
     />
   );
-})
-Dialog.displayName = DialogPrimitive.Root.displayName
+};
+Dialog.displayName = "Dialog"
 
 const DialogTrigger = DialogPrimitive.Trigger
 

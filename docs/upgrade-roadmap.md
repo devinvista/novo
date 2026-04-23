@@ -12,8 +12,9 @@ Documento de planejamento para os upgrades de major das principais dependências
 | `zod`                   | 4.x      | 4.x     | Baixo    | Médio     | 1–2 dias | ✅ Concluído |
 | `recharts`              | 3.x      | 3.x     | Baixo    | Baixo     | 1 dia    | ✅ Concluído |
 | `tailwindcss`           | 4.x      | 4.x     | Médio    | Alto      | 2–3 dias | ✅ Concluído |
-| `react` / `react-dom`   | 18.3.1   | 19.x    | Médio    | Médio     | 2–4 dias | 🟢 Próximo |
-| `vite`                  | 5.4.21   | 8.x     | Alto     | Médio     | 2–3 dias | 🟡 Pendente |
+| `react` / `react-dom`   | 19.x     | 19.x    | Médio    | Médio     | 2–4 dias | ✅ Concluído |
+| `@radix-ui/*`           | latest   | latest  | Médio    | -         | incluído acima | ✅ Concluído |
+| `vite`                  | 5.4.21   | 8.x     | Alto     | Médio     | 2–3 dias | 🟢 Próximo |
 | `express`               | 4.22.1   | 5.x     | Alto     | Baixo     | 3–5 dias | 🔴 Pendente |
 
 Legenda de risco:
@@ -248,3 +249,8 @@ Para cada upgrade, validar antes do merge:
 | 2026-04-23 | `tailwindcss`   | 3.4.19 → 4.2.4   | CSS-first config (`@theme`/`@plugin`/`@utility` em `index.css`); `postcss.config.js` agora usa `@tailwindcss/postcss`; `tailwind.config.ts` removido |
 | 2026-04-23 | `@tailwindcss/postcss` | novo | Plugin PostCSS dedicado do Tailwind 4 |
 | 2026-04-23 | `tailwindcss-animate` | mantido em 1.0.7 | Continua funcionando via `@plugin` directive em CSS |
+| 2026-04-23 | `react` / `react-dom` | 18.3.1 → 19.2.5 | Wrapper `Dialog` em `dialog.tsx` deixou de usar `forwardRef` (Radix v2 `Root` é function component agora). React Compiler **não** habilitado nesta etapa |
+| 2026-04-23 | `@types/react` / `@types/react-dom` | 18 → 19 | Atualizados em conjunto com React 19 |
+| 2026-04-23 | `@radix-ui/*` (27 pacotes) | latest | Atualizados todos os primitivos para versões compatíveis com React 19 |
+| 2026-04-23 | `react-is` | novo (^19) | Necessário para `recharts` resolver `import { isFragment } from 'react-is'` |
+| 2026-04-23 | `@vitejs/plugin-react` | 4.x → mantido em 4.7 | v6 exigiria Vite 6+ (próximo sprint); v4.7 é compatível com React 19 e Vite 5 |
