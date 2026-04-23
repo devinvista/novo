@@ -128,18 +128,18 @@ function ActionNode({ action, search }: { action: Action; search: string }) {
       data-testid={`action-node-${action.id}`}
     >
       {/* Connector lines */}
-      <div className="flex-shrink-0 flex flex-col items-center mt-0.5">
+      <div className="shrink-0 flex flex-col items-center mt-0.5">
         <div className="w-4 h-px bg-gray-300" />
       </div>
 
-      <Icon className={`h-4 w-4 flex-shrink-0 mt-0.5 ${cfg.color}`} />
+      <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${cfg.color}`} />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 flex-wrap">
           <span className={`text-sm font-medium ${action.status === "cancelled" ? "line-through text-gray-400" : "text-gray-800"}`}>
             {action.title}
           </span>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${pCfg.cls}`}>
               {pCfg.label}
             </span>
@@ -199,14 +199,14 @@ function KRNode({
         onClick={() => setOpen((v) => !v)}
         data-testid={`kr-node-${kr.id}`}
       >
-        <div className="flex-shrink-0 text-blue-400">
+        <div className="shrink-0 text-blue-400">
           {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         </div>
-        <Key className="h-4 w-4 text-blue-500 flex-shrink-0" />
+        <Key className="h-4 w-4 text-blue-500 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-sm font-semibold text-blue-800 truncate">{kr.title}</span>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-gray-500">
                 {completedCount}/{krActions.length} ações
               </span>
@@ -219,12 +219,12 @@ function KRNode({
             <div className="flex-1 max-w-[180px]">
               <ProgressBar value={pct} size="sm" />
             </div>
-            <span className="text-xs text-gray-500 flex-shrink-0">
+            <span className="text-xs text-gray-500 shrink-0">
               {Number(kr.currentValue).toLocaleString("pt-BR")} /{" "}
               {Number(kr.targetValue).toLocaleString("pt-BR")}
               {kr.unit ? ` ${kr.unit}` : ""}
             </span>
-            <span className="text-xs font-semibold text-blue-600 flex-shrink-0">{pct.toFixed(0)}%</span>
+            <span className="text-xs font-semibold text-blue-600 shrink-0">{pct.toFixed(0)}%</span>
           </div>
         </div>
       </button>
@@ -297,18 +297,18 @@ function ObjectiveNode({
 
   return (
     <div
-      className="border border-gray-200 rounded-xl overflow-hidden mb-4 shadow-sm"
+      className="border border-gray-200 rounded-xl overflow-hidden mb-4 shadow-xs"
       data-testid={`objective-node-${objective.id}`}
     >
       {/* Objective Header */}
       <button
-        className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors text-left"
+        className="w-full flex items-center gap-3 p-4 bg-linear-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors text-left"
         onClick={() => setOpen((v) => !v)}
       >
-        <div className="flex-shrink-0 text-blue-600">
+        <div className="shrink-0 text-blue-600">
           {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </div>
-        <Goal className="h-5 w-5 text-blue-700 flex-shrink-0" />
+        <Goal className="h-5 w-5 text-blue-700 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 flex-wrap">
             <div className="min-w-0">
@@ -317,7 +317,7 @@ function ObjectiveNode({
                 <span className="text-xs text-blue-600/70">👤 {objective.owner.name}</span>
               )}
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-gray-500 hidden sm:block">
                 {objKRs.length} KR{objKRs.length !== 1 ? "s" : ""} · {completedActions}/{totalActions} ações
               </span>
@@ -330,8 +330,8 @@ function ObjectiveNode({
             <div className="flex-1 max-w-xs">
               <ProgressBar value={pct} />
             </div>
-            <span className="text-sm font-bold text-blue-700 flex-shrink-0">{pct.toFixed(0)}%</span>
-            <span className="text-xs text-gray-500 hidden sm:block flex-shrink-0">
+            <span className="text-sm font-bold text-blue-700 shrink-0">{pct.toFixed(0)}%</span>
+            <span className="text-xs text-gray-500 hidden sm:block shrink-0">
               {formatDateBR(objective.startDate)} → {formatDateBR(objective.endDate)}
             </span>
           </div>

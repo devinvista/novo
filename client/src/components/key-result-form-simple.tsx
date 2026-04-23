@@ -306,7 +306,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
         <DialogHeader className="text-center space-y-3 pb-6">
           <div className="flex items-center justify-center space-x-2">
             <Target className="h-6 w-6" style={{ color: 'hsl(220, 65%, 36%)' }} />
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(to right, hsl(220, 65%, 36%), hsl(195, 100%, 50%))' }}>
+            <DialogTitle className="text-2xl font-bold bg-linear-to-r bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(to right, hsl(220, 65%, 36%), hsl(195, 100%, 50%))' }}>
               {keyResult ? "Editar Resultado-Chave" : "Novo Resultado-Chave"}
             </DialogTitle>
           </div>
@@ -316,7 +316,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(220, 65%, 36%)' }}>
+          <Card className="border-l-4 shadow-xs" style={{ borderLeftColor: 'hsl(220, 65%, 36%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
                 <Target className="h-5 w-5 mr-2" style={{ color: 'hsl(220, 65%, 36%)' }} />
@@ -373,7 +373,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(137, 62%, 42%)' }}>
+          <Card className="border-l-4 shadow-xs" style={{ borderLeftColor: 'hsl(137, 62%, 42%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
                 <TrendingUp className="h-5 w-5 mr-2" style={{ color: 'hsl(137, 62%, 42%)' }} />
@@ -433,7 +433,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(165, 100%, 32%)' }}>
+          <Card className="border-l-4 shadow-xs" style={{ borderLeftColor: 'hsl(165, 100%, 32%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
                 <Settings className="h-5 w-5 mr-2" style={{ color: 'hsl(165, 100%, 32%)' }} />
@@ -494,7 +494,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(14, 80%, 58%)' }}>
+          <Card className="border-l-4 shadow-xs" style={{ borderLeftColor: 'hsl(14, 80%, 58%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
                 <Briefcase className="h-5 w-5 mr-2" style={{ color: 'hsl(14, 80%, 58%)' }} />
@@ -588,7 +588,7 @@ export default function KeyResultForm({ keyResult, onSuccess, open, onOpenChange
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: 'hsl(195, 100%, 50%)' }}>
+          <Card className="border-l-4 shadow-xs" style={{ borderLeftColor: 'hsl(195, 100%, 50%)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-lg">
                 <Calendar className="h-5 w-5 mr-2" style={{ color: 'hsl(195, 100%, 50%)' }} />

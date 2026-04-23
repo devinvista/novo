@@ -254,7 +254,7 @@ function FullChart({
                   if (!active || !payload?.length) return null;
                   const pct = payload[0].value as number;
                   return (
-                    <div className="bg-white border border-gray-200 rounded p-2 text-xs shadow">
+                    <div className="bg-white border border-gray-200 rounded p-2 text-xs shadow-sm">
                       <p className="font-medium text-gray-700">{label}</p>
                       <p className="font-bold" style={{ color: progressColor(pct) }}>
                         {pct.toFixed(1).replace(".", ",")}%
@@ -389,7 +389,7 @@ export default function KrProgressChart({
         data-testid={`btn-history-${keyResultId}`}
       >
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-3.5 w-3.5 flex-shrink-0" style={{ color }} />
+          <TrendingUp className="h-3.5 w-3.5 shrink-0" style={{ color }} />
           <span className="text-xs font-semibold text-gray-700">Histórico de progresso</span>
           {hasData && lastPct !== null && (
             <span className="text-xs font-bold" style={{ color }}>

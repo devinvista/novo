@@ -11,8 +11,8 @@ Documento de planejamento para os upgrades de major das principais dependências
 | ----------------------- | -------- | ------- | -------- | --------- | ------- | ------ |
 | `zod`                   | 4.x      | 4.x     | Baixo    | Médio     | 1–2 dias | ✅ Concluído |
 | `recharts`              | 3.x      | 3.x     | Baixo    | Baixo     | 1 dia    | ✅ Concluído |
-| `tailwindcss`           | 3.4.19   | 4.x     | Médio    | Alto      | 2–3 dias | 🟢 Próximo |
-| `react` / `react-dom`   | 18.3.1   | 19.x    | Médio    | Médio     | 2–4 dias | 🟡 Pendente |
+| `tailwindcss`           | 4.x      | 4.x     | Médio    | Alto      | 2–3 dias | ✅ Concluído |
+| `react` / `react-dom`   | 18.3.1   | 19.x    | Médio    | Médio     | 2–4 dias | 🟢 Próximo |
 | `vite`                  | 5.4.21   | 8.x     | Alto     | Médio     | 2–3 dias | 🟡 Pendente |
 | `express`               | 4.22.1   | 5.x     | Alto     | Baixo     | 3–5 dias | 🔴 Pendente |
 
@@ -245,3 +245,6 @@ Para cada upgrade, validar antes do merge:
 | 2026-04-23 | `zod`           | 3.25.76 → 4.x    | Substituído `err.errors` por `err.issues` em 7 routes; `drizzle-zod` e `@hookform/resolvers` já compatíveis |
 | 2026-04-23 | `recharts`      | 2.15.4 → 3.x     | Removido `client/src/components/ui/chart.tsx` (shadcn primitive não utilizado em nenhum componente do app) |
 | 2026-04-23 | `zod-validation-error` | atualizado para latest | Compatibilidade com Zod 4 |
+| 2026-04-23 | `tailwindcss`   | 3.4.19 → 4.2.4   | CSS-first config (`@theme`/`@plugin`/`@utility` em `index.css`); `postcss.config.js` agora usa `@tailwindcss/postcss`; `tailwind.config.ts` removido |
+| 2026-04-23 | `@tailwindcss/postcss` | novo | Plugin PostCSS dedicado do Tailwind 4 |
+| 2026-04-23 | `tailwindcss-animate` | mantido em 1.0.7 | Continua funcionando via `@plugin` directive em CSS |

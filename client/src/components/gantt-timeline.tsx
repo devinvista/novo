@@ -291,14 +291,14 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
               <div style={{ width: LABEL_WIDTH, flexShrink: 0 }} />
 
               {/* Month cells — each uses pixel width derived from dayPx */}
-              <div className="relative flex flex-shrink-0" style={{ width: effectiveChartPx }}>
+              <div className="relative flex shrink-0" style={{ width: effectiveChartPx }}>
                 {months.map((month, i) => {
                   const daysInMonth = differenceInDays(endOfMonth(month), month) + 1;
                   const monthPx = daysInMonth * dayPx;
                   return (
                     <div
                       key={i}
-                      className="border-l first:border-l-0 flex items-center justify-center py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide flex-shrink-0"
+                      className="border-l first:border-l-0 flex items-center justify-center py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide shrink-0"
                       style={{ width: monthPx }}
                     >
                       {formatSP(month, "MMM yyyy", { locale: ptBR })}
@@ -315,14 +315,14 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
                   <div key={`header-${rowIdx}`} className="flex items-center bg-gray-50 border-b" style={{ minHeight: 32 }}>
                     {/* KR title label */}
                     <div
-                      className="flex-shrink-0 px-3 text-xs font-semibold text-blue-800 truncate"
+                      className="shrink-0 px-3 text-xs font-semibold text-blue-800 truncate"
                       style={{ width: LABEL_WIDTH }}
                       title={row.krTitle}
                     >
                       📌 {row.krTitle}
                     </div>
                     {/* Grid area */}
-                    <div className="relative flex-shrink-0" style={{ width: effectiveChartPx, minHeight: 32 }}>
+                    <div className="relative shrink-0" style={{ width: effectiveChartPx, minHeight: 32 }}>
                       {months.map((month, i) => (
                         <div
                           key={i}
@@ -350,20 +350,20 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
                 >
                   {/* Action label */}
                   <div
-                    className="flex-shrink-0 px-3 flex items-center gap-2 cursor-pointer"
+                    className="shrink-0 px-3 flex items-center gap-2 cursor-pointer"
                     style={{ width: LABEL_WIDTH }}
                     onClick={() => { setEditingAction(action); setShowForm(true); }}
                     title={action.title}
                   >
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.bg}`} />
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.bg}`} />
                     <span className="text-xs text-gray-700 truncate group-hover:text-blue-600 transition-colors">
                       {action.title}
                     </span>
-                    {bar?.isOverdue && <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />}
+                    {bar?.isOverdue && <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />}
                   </div>
 
                   {/* Bar area — exact same pixel width as header chart area */}
-                  <div className="relative flex-shrink-0" style={{ width: effectiveChartPx, height: ROW_HEIGHT }}>
+                  <div className="relative shrink-0" style={{ width: effectiveChartPx, height: ROW_HEIGHT }}>
                     {/* Month dividers */}
                     {months.map((month, i) => (
                       <div

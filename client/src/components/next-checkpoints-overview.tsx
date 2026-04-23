@@ -104,7 +104,7 @@ export default function NextCheckpointsOverview({
             </p>
           </div>
           
-          <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+          <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
         </div>
 
         <div className="flex items-center justify-between text-xs text-gray-500">

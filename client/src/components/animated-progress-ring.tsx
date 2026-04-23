@@ -113,7 +113,7 @@ export default function AnimatedProgressRing({
             stroke="#e5e7eb"
             strokeWidth={strokeWidth}
             fill="transparent"
-            className="drop-shadow-sm"
+            className="drop-shadow-xs"
           />
           
           {/* Progress Circle */}

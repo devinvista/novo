@@ -114,15 +114,15 @@ export default function CheckpointTimelineHeader({
             
             <div className="relative">
               {/* Timeline base line - design mais sutil */}
-              <div className="w-full h-2 bg-gradient-to-r from-slate-100 to-slate-200 rounded-full border border-slate-200/50">
+              <div className="w-full h-2 bg-linear-to-r from-slate-100 to-slate-200 rounded-full border border-slate-200/50">
                 {/* Progress line - tons neutros */}
                 <motion.div 
-                  className="h-full bg-gradient-to-r from-slate-300 via-slate-400 to-slate-500 rounded-full shadow-sm"
+                  className="h-full bg-linear-to-r from-slate-300 via-slate-400 to-slate-500 rounded-full shadow-xs"
                   initial={{ width: 0 }}
                   animate={{ width: `${timelineData.timeProgress}%` }}
                   transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
                 >
-                  <div className="h-full bg-gradient-to-t from-slate-400/30 to-transparent rounded-full"></div>
+                  <div className="h-full bg-linear-to-t from-slate-400/30 to-transparent rounded-full"></div>
                 </motion.div>
               </div>
 
@@ -188,8 +188,8 @@ export default function CheckpointTimelineHeader({
           </div>
 
           {/* Progresso Geral à direita - design circular otimizado */}
-          <div className="flex-shrink-0">
-            <div className="flex flex-col items-center gap-2 bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100">
+          <div className="shrink-0">
+            <div className="flex flex-col items-center gap-2 bg-linear-to-br from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100">
               <div className="relative w-20 h-20">
                 {/* Círculo de fundo */}
                 <svg className="w-20 h-20" viewBox="0 0 36 36">

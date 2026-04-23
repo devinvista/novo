@@ -292,7 +292,7 @@ export default function IndicatorsDashboard({ selectedQuarter, filters }: Indica
                 <Card key={indicator.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg flex-shrink-0 ${colorClass}`}>
+                      <div className={`p-2 rounded-lg shrink-0 ${colorClass}`}>
                         {getIndicatorIcon(indicator.name, idx)}
                       </div>
                       <div className="min-w-0">

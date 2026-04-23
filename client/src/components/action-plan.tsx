@@ -181,7 +181,7 @@ export default function ActionPlan({ selectedQuarter, filters }: ActionPlanProps
       {/* Action Plans for each Objective */}
       {groupedData.map((objective: any) => (
         <Card key={objective.id} className="border-l-4 border-l-[#003366]">
-          <CardHeader className="bg-gradient-to-r from-[#003366]/10 to-[#0066cc]/10 dark:from-[#003366]/30 dark:to-[#0066cc]/30">
+          <CardHeader className="bg-linear-to-r from-[#003366]/10 to-[#0066cc]/10 dark:from-[#003366]/30 dark:to-[#0066cc]/30">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <CardTitle className="text-xl text-[#003366] dark:text-[#0066cc] mb-2">

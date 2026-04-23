@@ -1,105 +1,271 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap')
+layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
+@plugin 'tailwindcss-animate';
+@plugin '@tailwindcss/typography';
 
+@custom-variant dark (&:is(.dark *));
 
-:root {
-  /* FIERGS Color Palette */
-  --fiergs-blue: hsl(220, 65%, 36%); /* #1a4b9f */
-  --fiergs-cyan: hsl(195, 100%, 50%); /* #0091d6 */
-  --fiergs-green-iel: hsl(165, 100%, 32%); /* #00b39c */
-  --fiergs-orange: hsl(14, 80%, 58%); /* #ef5e31 */
-  --fiergs-green-sesi: hsl(137, 62%, 42%); /* #4db74f */
-  --fiergs-white: hsl(0, 0%, 100%); /* #ffffff */
-  
-  /* Base theme using FIERGS colors */
-  --background: var(--fiergs-white);
-  --foreground: hsl(220, 65%, 15%);
-  --muted: hsl(220, 20%, 96%);
-  --muted-foreground: hsl(220, 20%, 45%);
-  --popover: var(--fiergs-white);
-  --popover-foreground: hsl(220, 65%, 15%);
-  --card: var(--fiergs-white);
-  --card-foreground: hsl(220, 65%, 15%);
-  --border: hsl(220, 20%, 90%);
-  --input: hsl(220, 20%, 94%);
-  --primary: var(--fiergs-blue);
-  --primary-foreground: var(--fiergs-white);
-  --secondary: hsl(220, 65%, 95%);
-  --secondary-foreground: var(--fiergs-blue);
-  --accent: var(--fiergs-cyan);
-  --accent-foreground: var(--fiergs-white);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: var(--fiergs-white);
-  --ring: var(--fiergs-blue);
-  --radius: 0.5rem;
-  
-  /* Chart colors using FIERGS palette */
-  --chart-1: var(--fiergs-blue);
-  --chart-2: var(--fiergs-cyan);
-  --chart-3: var(--fiergs-green-iel);
-  --chart-4: var(--fiergs-orange);
-  --chart-5: var(--fiergs-green-sesi);
-  
-  /* Status colors using FIERGS palette */
-  --success: var(--fiergs-green-sesi);
-  --success-foreground: var(--fiergs-white);
-  --warning: var(--fiergs-orange);
-  --warning-foreground: var(--fiergs-white);
-  --info: var(--fiergs-cyan);
-  --info-foreground: var(--fiergs-white);
-  
-  /* Sidebar colors */
-  --sidebar-background: var(--fiergs-white);
-  --sidebar-foreground: hsl(220, 65%, 15%);
-  --sidebar-primary: var(--fiergs-blue);
-  --sidebar-primary-foreground: var(--fiergs-white);
-  --sidebar-accent: hsl(220, 20%, 94%);
-  --sidebar-accent-foreground: hsl(220, 65%, 15%);
-  --sidebar-border: hsl(220, 20%, 90%);
-  --sidebar-ring: var(--fiergs-blue);
+@theme {
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
 }
 
-.dark {
-  --background: hsl(210, 11%, 15%);
-  --foreground: hsl(0, 0%, 95%);
-  --muted: hsl(210, 11%, 21%);
-  --muted-foreground: hsl(215, 13%, 65%);
-  --popover: hsl(210, 11%, 15%);
-  --popover-foreground: hsl(0, 0%, 95%);
-  --card: hsl(210, 11%, 15%);
-  --card-foreground: hsl(0, 0%, 95%);
-  --border: hsl(210, 11%, 21%);
-  --input: hsl(210, 11%, 21%);
-  --primary: hsl(220, 65%, 55%);
-  --primary-foreground: hsl(220, 65%, 8%);
-  --secondary: hsl(220, 65%, 15%);
-  --secondary-foreground: var(--fiergs-white);
-  --accent: var(--fiergs-cyan);
-  --accent-foreground: hsl(220, 65%, 8%);
-  --destructive: hsl(0, 75%, 55%);
-  --destructive-foreground: var(--fiergs-white);
-  --ring: hsl(220, 65%, 70%);
-  
-  /* Dark mode chart colors */
-  --chart-1: hsl(220, 65%, 60%);
-  --chart-2: hsl(195, 100%, 60%);
-  --chart-3: hsl(165, 100%, 50%);
-  --chart-4: hsl(14, 80%, 65%);
-  --chart-5: hsl(137, 62%, 55%);
-  
-  /* Sidebar colors for dark mode */
-  --sidebar-background: hsl(220, 65%, 8%);
-  --sidebar-foreground: var(--fiergs-white);
-  --sidebar-primary: hsl(220, 65%, 55%);
-  --sidebar-primary-foreground: hsl(220, 65%, 8%);
-  --sidebar-accent: hsl(220, 65%, 15%);
-  --sidebar-accent-foreground: var(--fiergs-white);
-  --sidebar-border: hsl(220, 65%, 20%);
-  --sidebar-ring: hsl(220, 65%, 70%);
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility dropdown-menu-overlay {
+  /* Force dropdown menus to appear above all content */
+  z-index: 9999 !important;
+}
+
+@utility progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+@utility progress-bar-fill {
+  @apply h-2 rounded-full transition-all duration-300 ease-in-out;
+
+  &.green {
+    @apply bg-secondary;
+  }
+
+  &.yellow {
+    @apply bg-accent;
+  }
+
+  &.red {
+    @apply bg-destructive;
+  }
+}
+
+@utility green {
+  &.progress-bar-fill {
+    @apply bg-secondary;
+  }
+}
+
+@utility yellow {
+  &.progress-bar-fill {
+    @apply bg-accent;
+  }
+}
+
+@utility red {
+  &.progress-bar-fill {
+    @apply bg-destructive;
+  }
+}
+
+@utility fiergs-gradient {
+  /* FIERGS branded utility classes */
+  background: linear-gradient(
+    135deg,
+    hsl(var(--fiergs-blue)) 0%,
+    hsl(var(--fiergs-cyan)) 100%
+  );
+}
+
+@utility fiergs-accent-green-iel {
+  background-color: hsl(var(--fiergs-green-iel));
+  color: hsl(var(--fiergs-white));
+}
+
+@utility fiergs-accent-orange {
+  background-color: hsl(var(--fiergs-orange));
+  color: hsl(var(--fiergs-white));
+}
+
+@utility fiergs-accent-green-sesi {
+  background-color: hsl(var(--fiergs-green-sesi));
+  color: hsl(var(--fiergs-white));
+}
+
+@utility force-break-words {
+  /* Força quebra de palavras longas em comentários */
+  word-break: break-all !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
+}
+
+@layer utilities {
+  :root {
+    /* FIERGS Color Palette */
+    --fiergs-blue: hsl(220, 65%, 36%); /* #1a4b9f */
+    --fiergs-cyan: hsl(195, 100%, 50%); /* #0091d6 */
+    --fiergs-green-iel: hsl(165, 100%, 32%); /* #00b39c */
+    --fiergs-orange: hsl(14, 80%, 58%); /* #ef5e31 */
+    --fiergs-green-sesi: hsl(137, 62%, 42%); /* #4db74f */
+    --fiergs-white: hsl(0, 0%, 100%); /* #ffffff */
+
+    /* Base theme using FIERGS colors */
+    --background: var(--fiergs-white);
+    --foreground: hsl(220, 65%, 15%);
+    --muted: hsl(220, 20%, 96%);
+    --muted-foreground: hsl(220, 20%, 45%);
+    --popover: var(--fiergs-white);
+    --popover-foreground: hsl(220, 65%, 15%);
+    --card: var(--fiergs-white);
+    --card-foreground: hsl(220, 65%, 15%);
+    --border: hsl(220, 20%, 90%);
+    --input: hsl(220, 20%, 94%);
+    --primary: var(--fiergs-blue);
+    --primary-foreground: var(--fiergs-white);
+    --secondary: hsl(220, 65%, 95%);
+    --secondary-foreground: var(--fiergs-blue);
+    --accent: var(--fiergs-cyan);
+    --accent-foreground: var(--fiergs-white);
+    --destructive: hsl(0, 84%, 60%);
+    --destructive-foreground: var(--fiergs-white);
+    --ring: var(--fiergs-blue);
+    --radius: 0.5rem;
+
+    /* Chart colors using FIERGS palette */
+    --chart-1: var(--fiergs-blue);
+    --chart-2: var(--fiergs-cyan);
+    --chart-3: var(--fiergs-green-iel);
+    --chart-4: var(--fiergs-orange);
+    --chart-5: var(--fiergs-green-sesi);
+
+    /* Status colors using FIERGS palette */
+    --success: var(--fiergs-green-sesi);
+    --success-foreground: var(--fiergs-white);
+    --warning: var(--fiergs-orange);
+    --warning-foreground: var(--fiergs-white);
+    --info: var(--fiergs-cyan);
+    --info-foreground: var(--fiergs-white);
+
+    /* Sidebar colors */
+    --sidebar-background: var(--fiergs-white);
+    --sidebar-foreground: hsl(220, 65%, 15%);
+    --sidebar-primary: var(--fiergs-blue);
+    --sidebar-primary-foreground: var(--fiergs-white);
+    --sidebar-accent: hsl(220, 20%, 94%);
+    --sidebar-accent-foreground: hsl(220, 65%, 15%);
+    --sidebar-border: hsl(220, 20%, 90%);
+    --sidebar-ring: var(--fiergs-blue);
+  }
+
+  .dark {
+    --background: hsl(210, 11%, 15%);
+    --foreground: hsl(0, 0%, 95%);
+    --muted: hsl(210, 11%, 21%);
+    --muted-foreground: hsl(215, 13%, 65%);
+    --popover: hsl(210, 11%, 15%);
+    --popover-foreground: hsl(0, 0%, 95%);
+    --card: hsl(210, 11%, 15%);
+    --card-foreground: hsl(0, 0%, 95%);
+    --border: hsl(210, 11%, 21%);
+    --input: hsl(210, 11%, 21%);
+    --primary: hsl(220, 65%, 55%);
+    --primary-foreground: hsl(220, 65%, 8%);
+    --secondary: hsl(220, 65%, 15%);
+    --secondary-foreground: var(--fiergs-white);
+    --accent: var(--fiergs-cyan);
+    --accent-foreground: hsl(220, 65%, 8%);
+    --destructive: hsl(0, 75%, 55%);
+    --destructive-foreground: var(--fiergs-white);
+    --ring: hsl(220, 65%, 70%);
+
+    /* Dark mode chart colors */
+    --chart-1: hsl(220, 65%, 60%);
+    --chart-2: hsl(195, 100%, 60%);
+    --chart-3: hsl(165, 100%, 50%);
+    --chart-4: hsl(14, 80%, 65%);
+    --chart-5: hsl(137, 62%, 55%);
+
+    /* Sidebar colors for dark mode */
+    --sidebar-background: hsl(220, 65%, 8%);
+    --sidebar-foreground: var(--fiergs-white);
+    --sidebar-primary: hsl(220, 65%, 55%);
+    --sidebar-primary-foreground: hsl(220, 65%, 8%);
+    --sidebar-accent: hsl(220, 65%, 15%);
+    --sidebar-accent-foreground: var(--fiergs-white);
+    --sidebar-border: hsl(220, 65%, 20%);
+    --sidebar-ring: hsl(220, 65%, 70%);
+  }
 }
 
 @layer base {
@@ -110,60 +276,5 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-}
-
-@layer components {
-  /* Force dropdown menus to appear above all content */
-  .dropdown-menu-overlay {
-    z-index: 9999 !important;
-  }
-  
-  .progress-bar {
-    @apply w-full bg-gray-200 rounded-full h-2;
-  }
-  
-  .progress-bar-fill {
-    @apply h-2 rounded-full transition-all duration-300 ease-in-out;
-  }
-  
-  .progress-bar-fill.green {
-    @apply bg-secondary;
-  }
-  
-  .progress-bar-fill.yellow {
-    @apply bg-accent;
-  }
-  
-  .progress-bar-fill.red {
-    @apply bg-destructive;
-  }
-  
-  /* FIERGS branded utility classes */
-  .fiergs-gradient {
-    background: linear-gradient(135deg, hsl(var(--fiergs-blue)) 0%, hsl(var(--fiergs-cyan)) 100%);
-  }
-
-  .fiergs-accent-green-iel {
-    background-color: hsl(var(--fiergs-green-iel));
-    color: hsl(var(--fiergs-white));
-  }
-
-  .fiergs-accent-orange {
-    background-color: hsl(var(--fiergs-orange));
-    color: hsl(var(--fiergs-white));
-  }
-
-  .fiergs-accent-green-sesi {
-    background-color: hsl(var(--fiergs-green-sesi));
-    color: hsl(var(--fiergs-white));
-  }
-
-  /* Força quebra de palavras longas em comentários */
-  .force-break-words {
-    word-break: break-all !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    hyphens: auto !important;
   }
 }

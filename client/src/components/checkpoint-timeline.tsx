@@ -103,7 +103,7 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
   const { startDate, endDate, timeProgress, checkpointPositions, title, progress, currentValue, targetValue, unit, progressColors } = timelineData;
 
   return (
-    <Card className="bg-gradient-to-r from-slate-50 to-gray-50 border-0 shadow-sm">
+    <Card className="bg-linear-to-r from-slate-50 to-gray-50 border-0 shadow-xs">
       <CardContent className="p-4">
         <div className="space-y-3">
           {/* Header compacto */}
@@ -141,13 +141,13 @@ export default function CheckpointTimeline({ keyResultId }: CheckpointTimelinePr
           {/* Timeline Container compacto */}
           <div className="relative">
             {/* Background Timeline - design sutil e diferenciado */}
-            <div className="w-full h-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full relative overflow-hidden border border-gray-200/50">
+            <div className="w-full h-2 bg-linear-to-r from-gray-100 to-gray-200 rounded-full relative overflow-hidden border border-gray-200/50">
               {/* Progress Bar - usando tons de cinza para não competir com o progresso principal */}
               <div 
-                className="h-full bg-gradient-to-r from-slate-400 to-slate-500 rounded-full transition-all duration-500 shadow-sm"
+                className="h-full bg-linear-to-r from-slate-400 to-slate-500 rounded-full transition-all duration-500 shadow-xs"
                 style={{ width: `${timeProgress}%` }}
               >
-                <div className="h-full bg-gradient-to-t from-slate-500/20 to-transparent rounded-full"></div>
+                <div className="h-full bg-linear-to-t from-slate-500/20 to-transparent rounded-full"></div>
               </div>
             </div>
 

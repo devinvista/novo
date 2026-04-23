@@ -25,7 +25,7 @@ export default function QuarterlyFilter({ variant = "header", className = "" }: 
     switch (variant) {
       case "header":
         return {
-          trigger: "w-64 bg-white/10 border-white/20 text-white backdrop-blur-sm",
+          trigger: "w-64 bg-white/10 border-white/20 text-white backdrop-blur-xs",
           placeholder: "🗓️ Todos os períodos"
         };
       case "card":

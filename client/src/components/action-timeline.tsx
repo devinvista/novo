@@ -266,8 +266,8 @@ export default function ActionTimeline({
           <button
             key={kpi.key}
             onClick={() => setStatusFilter(kpi.key)}
-            className={`rounded-lg border p-2 text-center transition-all hover:shadow-sm ${kpi.bg} ${kpi.border} ${
-              statusFilter === kpi.key ? "ring-2 ring-offset-1 ring-blue-400 shadow-sm" : ""
+            className={`rounded-lg border p-2 text-center transition-all hover:shadow-xs ${kpi.bg} ${kpi.border} ${
+              statusFilter === kpi.key ? "ring-2 ring-offset-1 ring-blue-400 shadow-xs" : ""
             }`}
           >
             <div className={`text-xl font-bold ${kpi.color}`}>{kpi.value}</div>
@@ -333,10 +333,10 @@ export default function ActionTimeline({
                 onClick={() => toggleKR(krId)}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  {isCollapsed ? <ChevronRight className="h-4 w-4 text-blue-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-blue-600 flex-shrink-0" />}
+                  {isCollapsed ? <ChevronRight className="h-4 w-4 text-blue-600 shrink-0" /> : <ChevronDown className="h-4 w-4 text-blue-600 shrink-0" />}
                   <span className="text-sm font-semibold text-blue-800 truncate">📌 {krTitle}</span>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                <div className="flex items-center gap-3 shrink-0 ml-3">
                   <span className="text-xs text-blue-600">{krCompleted}/{krActions.length} concluídas</span>
                   <div className="w-20 bg-blue-200 rounded-full h-1.5">
                     <div className="bg-blue-600 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
@@ -360,7 +360,7 @@ export default function ActionTimeline({
                         key={action.id}
                         className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${isOverdue ? "bg-red-50" : ""}`}
                       >
-                        <div className="mt-0.5 flex-shrink-0">
+                        <div className="mt-0.5 shrink-0">
                           <StatusIcon className={`h-5 w-5 ${cfg.color}`} />
                         </div>
 
@@ -408,7 +408,7 @@ export default function ActionTimeline({
                             </div>
 
                             {/* Right: badges + actions */}
-                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            <div className="flex flex-col items-end gap-1.5 shrink-0">
                               <div className="flex items-center gap-1.5">
                                 {/* Priority badge */}
                                 <Badge variant={PRIORITY_CONFIG[action.priority as keyof typeof PRIORITY_CONFIG]?.variant ?? "secondary"} className="text-[10px] px-1.5 py-0 h-4">

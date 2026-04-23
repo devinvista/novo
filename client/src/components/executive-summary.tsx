@@ -151,7 +151,7 @@ export default function ExecutiveSummary() {
           {mainObjectives && mainObjectives.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-1">
               {mainObjectives.map((objective: any, index: number) => (
-                <div key={index} className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/30 dark:to-green-950/30">
+                <div key={index} className="p-4 border rounded-lg bg-linear-to-r from-blue-50 to-green-50 dark:from-blue-950/30 dark:to-green-950/30">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">{objective.title}</h4>
@@ -380,7 +380,7 @@ export default function ExecutiveSummary() {
       </Card>
 
       {/* Conclusão e Recomendações */}
-      <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/30 dark:to-blue-950/30">
+      <Card className="bg-linear-to-r from-green-50 to-blue-50 dark:from-green-950/30 dark:to-blue-950/30">
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Award className="h-5 w-5 text-emerald-600" />
@@ -421,7 +421,7 @@ export default function ExecutiveSummary() {
             </div>
           </div>
           
-          <div className="p-4 bg-gradient-to-r from-emerald-100 to-blue-100 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-lg">
+          <div className="p-4 bg-linear-to-r from-emerald-100 to-blue-100 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-lg">
             <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Recomendações Estratégicas</h4>
             <div className="grid gap-3 md:grid-cols-2 text-sm">
               <div>
