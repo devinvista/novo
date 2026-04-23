@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "E1ZoPg3EgNI_Zk1AxTKmO"
+uri = "file://docs/upgrade-roadmap.md"
+type = "text"
+title = "Roadmap de Upgrade dos Majors"
