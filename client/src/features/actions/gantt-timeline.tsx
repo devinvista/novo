@@ -501,10 +501,21 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
                   style={{ minHeight: ROW_HEIGHT }}
                 >
                   <div
-                    className="shrink-0 px-3 flex items-center gap-2 cursor-pointer"
+                    className="shrink-0 px-3 flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
                     style={{ width: LABEL_WIDTH }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Editar ação: ${action.title}`}
                     onClick={() => { setEditingAction(action); setShowForm(true); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setEditingAction(action);
+                        setShowForm(true);
+                      }
+                    }}
                     title={action.title}
+                    data-testid={`row-action-${action.id}`}
                   >
                     <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.bg}`} />
                     <span className="text-xs text-gray-700 truncate group-hover:text-blue-600 transition-colors flex-1 min-w-0">
@@ -535,16 +546,28 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
                     )}
                     {bar && (
                       <div
-                        className={`absolute top-1/2 -translate-y-1/2 rounded cursor-pointer transition-opacity hover:opacity-80
+                        className={`absolute top-1/2 -translate-y-1/2 rounded cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1
                           ${bar.isPoint ? "w-3 h-3 rounded-full border-2" : "h-6"}
                           ${bar.isOverdue ? "bg-red-200 border border-red-400" : `${cfg.bg} border ${cfg.border}`}
                         `}
                         style={{ left: bar.leftPx, width: bar.isPoint ? undefined : bar.widthPx }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Detalhes da ação: ${action.title}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          const rect = (e.target as HTMLElement).getBoundingClientRect();
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                           setTooltip({ action, x: rect.left, y: rect.top });
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setTooltip({ action, x: rect.left, y: rect.top });
+                          }
+                        }}
+                        data-testid={`bar-action-${action.id}`}
                       >
                         {!bar.isPoint && bar.widthPx > 30 && (
                           <span className="absolute inset-0 flex items-center px-1.5 text-white text-[10px] font-medium truncate leading-none">
