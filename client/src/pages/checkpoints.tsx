@@ -312,8 +312,18 @@ export default function Checkpoints() {
                           selectedCheckpoints.map((checkpoint: any) => (
                             <div
                               key={checkpoint.id}
-                              className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                              className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                               onClick={() => handleCheckpointClick(checkpoint)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  handleCheckpointClick(checkpoint);
+                                }
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`Atualizar checkpoint: ${checkpoint.title}`}
+                              data-testid={`row-checkpoint-${checkpoint.id}`}
                             >
                               <div className="flex items-center justify-between">
                                 <div>
