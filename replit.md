@@ -314,15 +314,24 @@ NODE_ENV=production
 npm run dev         # Desenvolvimento (npx tsx + Vite HMR) — porta 5000
 npm run build       # Build de produção (frontend Vite + backend esbuild)
 npm run start       # Produção (requer build prévio)
-npm run db:push     # Sincronizar schema Drizzle com banco de dados
+npm run db:push     # Sincronizar schema Drizzle com banco (apenas dev)
+npm test            # Roda toda a suíte Vitest (health, schemas, rotas, repositórios)
 ```
+
+### Migrations versionadas (recomendado para produção)
+Em produção, prefira migrations versionadas em vez de `db:push`:
+```bash
+npx drizzle-kit generate    # Gera SQL incremental em /migrations a partir de mudanças no schema.ts
+npx drizzle-kit migrate     # Aplica migrations pendentes ao banco
+```
+Commite os arquivos gerados em `/migrations` para ter histórico auditável de cada alteração de schema.
 
 ## Workflow de Desenvolvimento
 O projeto usa um único workflow "Start application" que executa `npm run dev` → `npx tsx server/index.ts`. O servidor Express na porta 5000 serve tanto a API REST quanto o frontend React (via Vite HMR em dev / arquivos estáticos em prod).
 
 ## Notas de Manutenção
-- Schema gerenciado pelo Drizzle ORM via `npm run db:push` (sem migrations manuais)
-- Arquivos em `/migrations/` são referência histórica apenas
+- Em desenvolvimento o schema é sincronizado com `npm run db:push`. Em produção use `npx drizzle-kit generate` + `npx drizzle-kit migrate` para ter histórico auditável
+- `/migrations/` guarda o histórico das alterações geradas pelo drizzle-kit
 - Autenticação usa scrypt com salt para hash de senhas (formato `hash.salt`)
 - Comentários automáticos do sistema são criados ao alterar ações para status final
 - O timezone do servidor é `America/Sao_Paulo` (UTC-3), configurado no entry point
@@ -332,3 +341,5 @@ O projeto usa um único workflow "Start application" que executa `npm run dev` �
 - Health checks expostos em `/health`, `/healthz`, `/api/health` (liveness) e `/readyz`, `/api/ready` (readiness com ping no banco)
 - Arquivos excluídos por obsolescência: `key-result-form.tsx` (→ `key-result-form-simple.tsx`), `simple-dashboard.tsx` (componente órfão, sem imports), `header.tsx` (→ `compact-header.tsx`), `filters.tsx` (→ filtros em `compact-header.tsx`), `dashboard.tsx` (página órfã, sem rota registrada)
 - Tabela `activities` removida do schema por nunca ter sido populada (audit trail nunca implementado). Caso seja necessário no futuro, recriar com escopo bem definido
+- `client/src/lib/emergency-cleanup.ts` removido (era um hack global expondo `window.emergencyCleanup` via `Ctrl+Shift+C`). `modal-cleanup.ts` permanece como utilitário pontual chamado pelos diálogos (workaround conhecido para limpeza de overlays do Radix — substituir por upgrade do Radix no futuro)
+- `drizzle-orm` atualizado para >= 0.45.2 corrigindo CVE de SQL injection (GHSA-gpj5-g38j-94v9). `drizzle-kit` atualizado para a última versão

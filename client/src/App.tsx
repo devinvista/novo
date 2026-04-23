@@ -1,7 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { Router, Route, Switch } from 'wouter';
 import { cleanupOnDialogClose } from '@/lib/modal-cleanup';
-import { setupEmergencyCleanup } from '@/lib/emergency-cleanup';
 
 import AuthPage from '@/pages/auth-page';
 import NotFound from '@/pages/not-found';
@@ -36,8 +35,6 @@ function AppContent() {
 
   useEffect(() => {
     cleanupOnDialogClose();
-    const removeEmergencyCleanup = setupEmergencyCleanup();
-    return removeEmergencyCleanup;
   }, []);
 
   if (!user) {
