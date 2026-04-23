@@ -1,10 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
 import { validate } from "../../middleware/validate";
 import { requireAuth, requireRole } from "../../middleware/auth";
-import { BadRequestError } from "../../errors/app-error";
+import * as AdminLookupsService from "./admin-lookups.service";
 
 export const adminLookupsRouter: Router = Router();
 
@@ -24,8 +23,7 @@ adminLookupsRouter.post(
   "/strategic-indicators",
   validate(nameCode),
   asyncHandler(async (req, res) => {
-    const indicator = await storage.createStrategicIndicator(req.body as any);
-    res.json(indicator);
+    res.json(await AdminLookupsService.createStrategicIndicator(req.body));
   })
 );
 
@@ -35,8 +33,7 @@ adminLookupsRouter.put(
   validate(nameCode),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const indicator = await storage.updateStrategicIndicator(id, req.body as any);
-    res.json(indicator);
+    res.json(await AdminLookupsService.updateStrategicIndicator(id, req.body));
   })
 );
 
@@ -45,19 +42,7 @@ adminLookupsRouter.delete(
   validate(idParam, "params"),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const keyResults = await storage.getKeyResults({});
-    const isUsed = keyResults.some((kr: any) => {
-      const indicators = Array.isArray(kr.strategicIndicatorIds)
-        ? kr.strategicIndicatorIds
-        : JSON.parse(kr.strategicIndicatorIds || "[]");
-      return indicators.includes(id);
-    });
-    if (isUsed) {
-      throw new BadRequestError(
-        "Não é possível excluir indicador que está sendo usado em resultados-chave"
-      );
-    }
-    await storage.deleteStrategicIndicator(id);
+    await AdminLookupsService.deleteStrategicIndicator(id);
     res.json({ message: "Indicador estratégico excluído com sucesso" });
   })
 );
@@ -72,8 +57,7 @@ adminLookupsRouter.post(
   "/regions",
   validate(regionSchema),
   asyncHandler(async (req, res) => {
-    const region = await storage.createRegion(req.body as any);
-    res.json(region);
+    res.json(await AdminLookupsService.createRegion(req.body));
   })
 );
 
@@ -83,8 +67,7 @@ adminLookupsRouter.put(
   validate(regionSchema),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const region = await storage.updateRegion(id, req.body as any);
-    res.json(region);
+    res.json(await AdminLookupsService.updateRegion(id, req.body));
   })
 );
 
@@ -93,19 +76,7 @@ adminLookupsRouter.delete(
   validate(idParam, "params"),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const [objectives, subRegions] = await Promise.all([
-      storage.getObjectives({}),
-      storage.getSubRegions(),
-    ]);
-    if (
-      objectives.some((o: any) => o.regionId === id) ||
-      subRegions.some((s: any) => s.regionId === id)
-    ) {
-      throw new BadRequestError(
-        "Não é possível excluir região que possui objetivos ou sub-regiões associadas"
-      );
-    }
-    await storage.deleteRegion(id);
+    await AdminLookupsService.deleteRegion(id);
     res.json({ message: "Região excluída com sucesso" });
   })
 );
@@ -121,8 +92,7 @@ adminLookupsRouter.post(
   "/sub-regions",
   validate(subRegionSchema),
   asyncHandler(async (req, res) => {
-    const sr = await storage.createSubRegion(req.body as any);
-    res.json(sr);
+    res.json(await AdminLookupsService.createSubRegion(req.body));
   })
 );
 
@@ -132,8 +102,7 @@ adminLookupsRouter.put(
   validate(subRegionSchema),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const sr = await storage.updateSubRegion(id, req.body as any);
-    res.json(sr);
+    res.json(await AdminLookupsService.updateSubRegion(id, req.body));
   })
 );
 
@@ -142,13 +111,7 @@ adminLookupsRouter.delete(
   validate(idParam, "params"),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const objectives = await storage.getObjectives({});
-    if (objectives.some((o: any) => o.subRegionId === id)) {
-      throw new BadRequestError(
-        "Não é possível excluir sub-região que possui objetivos associados"
-      );
-    }
-    await storage.deleteSubRegion(id);
+    await AdminLookupsService.deleteSubRegion(id);
     res.json({ message: "Sub-região excluída com sucesso" });
   })
 );
@@ -164,8 +127,7 @@ adminLookupsRouter.post(
   "/solutions",
   validate(solutionSchema),
   asyncHandler(async (req, res) => {
-    const solution = await storage.createSolution(req.body as any);
-    res.json(solution);
+    res.json(await AdminLookupsService.createSolution(req.body));
   })
 );
 
@@ -175,8 +137,7 @@ adminLookupsRouter.put(
   validate(solutionSchema),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const solution = await storage.updateSolution(id, req.body as any);
-    res.json(solution);
+    res.json(await AdminLookupsService.updateSolution(id, req.body));
   })
 );
 
@@ -185,13 +146,7 @@ adminLookupsRouter.delete(
   validate(idParam, "params"),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const serviceLines = await storage.getServiceLines();
-    if (serviceLines.some((sl: any) => sl.solutionId === id)) {
-      throw new BadRequestError(
-        "Não é possível excluir solução que possui linhas de serviço associadas"
-      );
-    }
-    await storage.deleteSolution(id);
+    await AdminLookupsService.deleteSolution(id);
     res.json({ message: "Solução excluída com sucesso" });
   })
 );
@@ -208,8 +163,7 @@ adminLookupsRouter.post(
   "/service-lines",
   validate(serviceLineSchema),
   asyncHandler(async (req, res) => {
-    const sl = await storage.createServiceLine(req.body as any);
-    res.json(sl);
+    res.json(await AdminLookupsService.createServiceLine(req.body));
   })
 );
 
@@ -219,8 +173,7 @@ adminLookupsRouter.put(
   validate(serviceLineSchema),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const sl = await storage.updateServiceLine(id, req.body as any);
-    res.json(sl);
+    res.json(await AdminLookupsService.updateServiceLine(id, req.body));
   })
 );
 
@@ -229,21 +182,7 @@ adminLookupsRouter.delete(
   validate(idParam, "params"),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const [services, objectives, keyResults] = await Promise.all([
-      storage.getServices(),
-      storage.getObjectives({}),
-      storage.getKeyResults({}),
-    ]);
-    if (
-      services.some((s: any) => s.serviceLineId === id) ||
-      objectives.some((o: any) => o.serviceLineId === id) ||
-      keyResults.some((kr: any) => kr.serviceLineId === id)
-    ) {
-      throw new BadRequestError(
-        "Não é possível excluir linha de serviço que está sendo utilizada"
-      );
-    }
-    await storage.deleteServiceLine(id);
+    await AdminLookupsService.deleteServiceLine(id);
     res.json({ message: "Linha de serviço excluída com sucesso" });
   })
 );
@@ -260,8 +199,7 @@ adminLookupsRouter.post(
   "/services",
   validate(serviceSchema),
   asyncHandler(async (req, res) => {
-    const svc = await storage.createService(req.body as any);
-    res.json(svc);
+    res.json(await AdminLookupsService.createService(req.body));
   })
 );
 
@@ -271,8 +209,7 @@ adminLookupsRouter.put(
   validate(serviceSchema),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const svc = await storage.updateService(id, req.body as any);
-    res.json(svc);
+    res.json(await AdminLookupsService.updateService(id, req.body));
   })
 );
 
@@ -281,13 +218,7 @@ adminLookupsRouter.delete(
   validate(idParam, "params"),
   asyncHandler(async (req, res) => {
     const { id } = req.params as unknown as { id: number };
-    const keyResults = await storage.getKeyResults({});
-    if (keyResults.some((kr: any) => kr.serviceId === id)) {
-      throw new BadRequestError(
-        "Não é possível excluir serviço que está sendo utilizado em resultados-chave"
-      );
-    }
-    await storage.deleteService(id);
+    await AdminLookupsService.deleteService(id);
     res.json({ message: "Serviço excluído com sucesso" });
   })
 );
