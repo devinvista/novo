@@ -17,6 +17,17 @@ Documento de planejamento para os upgrades de major das principais dependências
 | `vite`                  | 8.0.9    | 8.x     | Alto     | Médio     | 2–3 dias | ✅ Concluído |
 | `express`               | 5.2.1    | 5.x     | Alto     | Baixo     | 3–5 dias | ✅ Concluído |
 
+> **Todos os majors do roadmap original foram concluídos.** Itens em aberto declarados explicitamente:
+> - 🟡 **React Compiler** (opt-in) — postergado. Decisão: avaliar em sprint dedicado depois de medir custo/ganho com profiling. Exigirá `babel-plugin-react-compiler` (peer dep opcional do `@vitejs/plugin-react@6`) e configuração no `vite.config.ts`.
+> - 🟡 **Smoke test manual de regressão** (login → criar objetivo → criar KR → atualizar checkpoint) — não foi executado por falta de credenciais; recomendado antes do próximo deploy de produção.
+>
+> ### Baseline de bundle pós-roadmap (2026-04-23)
+> Capturado após todos os 5 sprints. Use como referência para medir crescimento em upgrades futuros:
+> - `dist/public/assets/` total: **2,3 MB** (somatório de todos os chunks JS/CSS)
+> - Maior chunk: `CartesianChart` 331 kB (gzip 98 kB) — recharts
+> - Entry principal: `index` 224 kB (gzip 70 kB)
+> - Server bundle: `dist/index.mjs` **129,6 kB**
+
 Legenda de risco:
 - **Baixo**: poucas mudanças quebrando, tipos cobrem o impacto, build/test pegam regressões
 - **Médio**: mudanças semânticas pontuais, exigem revisão por feature
@@ -258,3 +269,4 @@ Para cada upgrade, validar antes do merge:
 | 2026-04-23 | `@vitejs/plugin-react` | 4.7.0 → 6.0.1 | Atualizado junto com Vite 8 (peer dep `vite: ^8.0.0`). Peer deps opcionais `babel-plugin-react-compiler` e `@rolldown/plugin-babel` não instaladas (React Compiler segue desligado) |
 | 2026-04-23 | `express`       | 4.22.1 → 5.2.1   | Sprint 5. Substituídos os dois `app.use("*", ...)` em `server/vite.ts` por `app.use(handler)` (path-to-regexp 8 não aceita `*` como wildcard). Demais rotas usam paths estáticos ou parâmetros nomeados (`:id`), sem incompatibilidade. Auth (Passport + sessão), helmet, rate limiter, morgan e pino-http funcionam sem alterações. 31 testes verdes, build limpo |
 | 2026-04-23 | `@types/express` | 4.17.21 → 5.x | Atualizado em conjunto com Express 5 |
+| 2026-04-23 | `client/src/components/ui/chart.tsx` | removido | Limpeza tardia do Sprint 1 (recharts). Arquivo era shadcn primitive não importado em nenhum componente do app e gerava 8 erros de TS sob recharts 3 + React 19. Remoção destrava `npm run check` (passa limpo agora) |
