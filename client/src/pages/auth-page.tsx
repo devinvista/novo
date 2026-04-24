@@ -70,10 +70,8 @@ export default function AuthPage() {
               <img
                 src={logoImage}
                 alt="OKRs"
-                width={56}
-                height={56}
                 fetchPriority="high"
-                className="w-14 h-14 object-contain"
+                className="w-full max-w-[200px] h-auto object-contain"
               />
             </div>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-3">Sistema de Gestão de Objetivos</p>

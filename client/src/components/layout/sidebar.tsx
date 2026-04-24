@@ -98,13 +98,11 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">
       {/* Logo/Header */}
-      <div className="px-4 py-4 border-b border-sidebar-border flex items-center">
+      <div className="border-b border-sidebar-border">
         <img
           src={logoImage}
           alt="OKRs"
-          width={40}
-          height={40}
-          className="w-10 h-10 object-contain flex-shrink-0"
+          className="w-full h-auto object-contain block"
         />
       </div>
 
