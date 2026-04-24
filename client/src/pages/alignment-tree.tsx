@@ -532,52 +532,52 @@ export default function AlignmentTree() {
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-gray-50 border-b px-6 py-3 overflow-x-auto">
-        <div className="flex items-center gap-3 md:gap-4 flex-nowrap whitespace-nowrap text-sm">
-          <div className="flex items-center gap-1.5">
-            <Goal className="h-4 w-4 text-blue-600" />
+      <div className="bg-gray-50 border-b px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4 flex-nowrap whitespace-nowrap text-xs sm:text-sm">
+          <div className="flex items-center gap-1 sm:gap-1.5" title="Objetivos">
+            <Goal className="h-4 w-4 text-blue-600 shrink-0" />
             <span className="font-semibold text-blue-700">{stats.totalObj}</span>
-            <span className="text-gray-500">objetivos</span>
+            <span className="text-gray-500 hidden lg:inline">objetivos</span>
           </div>
-          <div className="w-px h-4 bg-gray-300" />
-          <div className="flex items-center gap-1.5">
-            <Key className="h-4 w-4 text-indigo-500" />
+          <div className="w-px h-4 bg-gray-300 hidden sm:block" />
+          <div className="flex items-center gap-1 sm:gap-1.5" title="Resultados-chave">
+            <Key className="h-4 w-4 text-indigo-500 shrink-0" />
             <span className="font-semibold text-indigo-700">{stats.totalKR}</span>
-            <span className="text-gray-500">resultados-chave</span>
+            <span className="text-gray-500 hidden lg:inline">resultados-chave</span>
           </div>
-          <div className="w-px h-4 bg-gray-300" />
-          <div className="flex items-center gap-1.5">
-            <CheckSquare className="h-4 w-4 text-green-500" />
+          <div className="w-px h-4 bg-gray-300 hidden sm:block" />
+          <div className="flex items-center gap-1 sm:gap-1.5" title="Ações">
+            <CheckSquare className="h-4 w-4 text-green-500 shrink-0" />
             <span className="font-semibold text-green-700">{stats.totalActions}</span>
-            <span className="text-gray-500">ações</span>
+            <span className="text-gray-500 hidden lg:inline">ações</span>
           </div>
-          <div className="w-px h-4 bg-gray-300" />
-          <div className="flex items-center gap-1.5">
-            <CheckCircle className="h-4 w-4 text-green-600" />
+          <div className="w-px h-4 bg-gray-300 hidden sm:block" />
+          <div className="flex items-center gap-1 sm:gap-1.5" title="Concluídas">
+            <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
             <span className="font-semibold text-green-700">{stats.completedActions}</span>
-            <span className="text-gray-500">concluídas</span>
+            <span className="text-gray-500 hidden lg:inline">concluídas</span>
           </div>
-          <div className="w-px h-4 bg-gray-300" />
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-blue-500" />
+          <div className="w-px h-4 bg-gray-300 hidden sm:block" />
+          <div className="flex items-center gap-1 sm:gap-1.5" title="Em progresso">
+            <Clock className="h-4 w-4 text-blue-500 shrink-0" />
             <span className="font-semibold text-blue-700">{stats.inProgressActions}</span>
-            <span className="text-gray-500">em progresso</span>
+            <span className="text-gray-500 hidden lg:inline">em progresso</span>
           </div>
           {stats.overdueActions > 0 && (
             <>
-              <div className="w-px h-4 bg-gray-300" />
-              <div className="flex items-center gap-1.5">
-                <AlertCircle className="h-4 w-4 text-red-500" />
+              <div className="w-px h-4 bg-gray-300 hidden sm:block" />
+              <div className="flex items-center gap-1 sm:gap-1.5" title="Atrasadas">
+                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
                 <span className="font-semibold text-red-600">{stats.overdueActions}</span>
-                <span className="text-gray-500">atrasadas</span>
+                <span className="text-gray-500 hidden lg:inline">atrasadas</span>
               </div>
             </>
           )}
-          <div className="w-px h-4 bg-gray-300" />
-          <div className="flex items-center gap-1.5">
-            <TrendingUp className="h-4 w-4 text-purple-500" />
+          <div className="w-px h-4 bg-gray-300 hidden sm:block" />
+          <div className="flex items-center gap-1 sm:gap-1.5" title="Progresso médio">
+            <TrendingUp className="h-4 w-4 text-purple-500 shrink-0" />
             <span className="font-semibold text-purple-700">{stats.avgProgress.toFixed(0)}%</span>
-            <span className="text-gray-500">progresso médio</span>
+            <span className="text-gray-500 hidden lg:inline">progresso médio</span>
           </div>
         </div>
       </div>
