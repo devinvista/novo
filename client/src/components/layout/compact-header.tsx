@@ -118,8 +118,8 @@ export default function CompactHeader({ showFilters = true }: CompactHeaderProps
   const hasActiveFilters = filters.regionId || filters.subRegionId || filters.serviceLineId;
 
   return (
-    <header className="bg-linear-to-r from-[#1a4b9f] to-[#0091d6] text-white shadow-md border-b border-[#4db74f]/40 shrink-0">
-      <div className="px-4 py-1.5">
+    <header className="bg-linear-to-r from-[#1a4b9f] to-[#0091d6] text-white shadow-md border-b border-[#4db74f]/40 shrink-0 h-14 flex items-center">
+      <div className="px-4 w-full">
         <div className="flex items-center justify-between">
           {/* Logo e Toggle quando sidebar está oculta */}
           {!isOpen && (
