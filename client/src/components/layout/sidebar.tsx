@@ -98,11 +98,11 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">
       {/* Logo/Header */}
-      <div className="h-16 border-b border-sidebar-border flex items-center px-5">
+      <div className="py-1.5 px-4 border-b border-sidebar-border flex items-center">
         <img
           src={logoImage}
           alt="OKRs"
-          className="h-9 w-auto object-contain"
+          className="h-8 w-auto object-contain"
         />
       </div>
 
