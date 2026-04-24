@@ -12,10 +12,9 @@ export default function Indicators() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <main className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader showFilters={true} />
 
-        <div className="p-6 border-b bg-white pt-20">
+        <div className="p-6 border-b bg-white">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Indicadores Estratégicos</h2>
             <p className="text-gray-600">Acompanhe os indicadores estratégicos da organização</p>
@@ -36,7 +35,6 @@ export default function Indicators() {
             <IndicatorsDashboard selectedQuarter={selectedQuarter} filters={filters} />
           </Suspense>
         </div>
-      </main>
     </div>
   );
 }

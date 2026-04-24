@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
+import CompactHeader from "@/components/layout/compact-header";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -126,7 +127,8 @@ export default function AuditPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="p-6 border-b bg-white">
+      <CompactHeader showFilters={false} />
+      <div className="p-6 border-b bg-white shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-50 rounded-lg">

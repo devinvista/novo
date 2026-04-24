@@ -77,7 +77,7 @@ export default function Settings() {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader showFilters={false} />
-        <div className="flex-1 flex items-center justify-center pt-16">
+        <div className="flex-1 flex items-center justify-center">
           <Card className="w-96">
             <CardHeader>
               <CardTitle className="text-center">Acesso Negado</CardTitle>
@@ -95,7 +95,7 @@ export default function Settings() {
     <div className="flex-1 flex flex-col overflow-hidden">
       <CompactHeader showFilters={false} />
       
-      <div className="p-6 border-b bg-white pt-16">
+      <div className="p-6 border-b bg-white">
         <div className="flex items-center gap-4">
           <SettingsIcon className="h-8 w-8" />
           <div>

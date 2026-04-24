@@ -77,7 +77,7 @@ export default function Actions() {
     <div className="flex-1 flex flex-col overflow-hidden">
       <CompactHeader showFilters={true} />
 
-      <div className="p-6 border-b bg-white pt-16">
+      <div className="p-6 border-b bg-white">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Ações</h2>

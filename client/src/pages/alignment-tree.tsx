@@ -491,7 +491,7 @@ export default function AlignmentTree() {
       <CompactHeader showFilters={true} />
 
       {/* Page Header */}
-      <div className="p-6 border-b bg-white pt-16">
+      <div className="p-6 border-b bg-white">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Alinhamento Estratégico</h2>

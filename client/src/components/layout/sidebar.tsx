@@ -98,14 +98,18 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">
       {/* Logo/Header */}
-      <div className="p-6 border-b border-sidebar-border flex justify-center">
+      <div className="px-4 py-4 border-b border-sidebar-border flex items-center gap-3">
         <img
           src={logoImage}
           alt="OKRs"
-          width={128}
-          height={128}
-          className="w-32 h-auto"
+          width={40}
+          height={40}
+          className="w-10 h-10 object-contain flex-shrink-0"
         />
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-sidebar-foreground leading-tight">OKRs</p>
+          <p className="text-[10px] text-sidebar-foreground/50 leading-tight truncate">FIERGS / SESI / SENAI</p>
+        </div>
       </div>
 
       {/* Navigation Menu */}

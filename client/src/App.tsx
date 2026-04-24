@@ -52,7 +52,7 @@ function AppContent() {
         Pular para o conteúdo principal
       </a>
       <Sidebar />
-      <main id="main" className="flex-1 overflow-auto" tabIndex={-1}>
+      <main id="main" className="flex-1 flex flex-col overflow-hidden" tabIndex={-1}>
         <Suspense fallback={<PageFallback />}>
           <Switch>
             <Route path="/dashboard" component={Dashboard} />

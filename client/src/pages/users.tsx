@@ -478,9 +478,9 @@ export default function UsersPage() {
 
   if (loadingUsers) {
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader />
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="text-center">Carregando...</div>
         </div>
       </div>
@@ -488,9 +488,9 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader />
-        <div className="p-4 sm:p-6 pt-16">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* Pending Users Section */}
           {currentUser?.role === "admin" && pendingUsers.length > 0 && (
             <Card className="mb-6">

@@ -115,7 +115,7 @@ export default function Checkpoints() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <CompactHeader showFilters={false} />
         
-        <div className="flex-1 overflow-y-auto p-6 pt-16">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -145,7 +145,7 @@ export default function Checkpoints() {
     <div className="flex-1 flex flex-col overflow-hidden">
       <CompactHeader showFilters={false} />
       
-      <div className="flex-1 overflow-y-auto p-6 pt-16 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
