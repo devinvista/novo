@@ -98,7 +98,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">
       {/* Logo/Header */}
-      <div className="py-1.5 px-4 border-b border-sidebar-border flex items-center">
+      <div className="py-2 px-4 border-b border-sidebar-border flex items-center justify-center">
         <img
           src={logoImage}
           alt="OKRs"
