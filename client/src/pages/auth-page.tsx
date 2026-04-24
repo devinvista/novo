@@ -66,7 +66,7 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-md space-y-6 sm:space-y-8">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-2">
+            <div className="flex items-center justify-center mb-2">
               <img
                 src={logoImage}
                 alt="OKRs"
@@ -75,10 +75,6 @@ export default function AuthPage() {
                 fetchPriority="high"
                 className="w-14 h-14 object-contain"
               />
-              <div className="text-left">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">OKRs</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">FIERGS / SESI / SENAI</p>
-              </div>
             </div>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-3">Sistema de Gestão de Objetivos</p>
           </div>
