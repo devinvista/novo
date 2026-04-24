@@ -532,8 +532,8 @@ export default function AlignmentTree() {
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-gray-50 border-b px-6 py-3">
-        <div className="flex items-center gap-6 flex-wrap text-sm">
+      <div className="bg-gray-50 border-b px-6 py-3 overflow-x-auto">
+        <div className="flex items-center gap-3 md:gap-4 flex-nowrap whitespace-nowrap text-sm">
           <div className="flex items-center gap-1.5">
             <Goal className="h-4 w-4 text-blue-600" />
             <span className="font-semibold text-blue-700">{stats.totalObj}</span>
