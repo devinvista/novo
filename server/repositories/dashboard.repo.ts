@@ -56,6 +56,7 @@ export class DashboardRepo {
 
     const userObjectives = await this.objectiveRepo.getObjectives(objectiveFilters);
 
+    let quarterRange: { start: Date; end: Date } | null = null;
     let quarterObjectives = userObjectives;
     if (quarter && quarter !== 'all') {
       const quarterMatch = quarter.match(/(\d{4})-T(\d)/);
@@ -64,7 +65,8 @@ export class DashboardRepo {
         const quarterNum = parseInt(quarterMatch[2]);
         const quarterStartMonth = (quarterNum - 1) * 3;
         const quarterStartDate = new Date(year, quarterStartMonth, 1);
-        const quarterEndDate = new Date(year, quarterStartMonth + 3, 0);
+        const quarterEndDate = new Date(year, quarterStartMonth + 3, 0, 23, 59, 59, 999);
+        quarterRange = { start: quarterStartDate, end: quarterEndDate };
 
         quarterObjectives = userObjectives.filter(obj => {
           const objStart = new Date(obj.startDate);
@@ -82,6 +84,15 @@ export class DashboardRepo {
       const userKeyResults = await this.keyResultRepo.getKeyResults({ currentUserId });
       quarterKeyResults = userKeyResults.filter(kr => objectiveIds.includes(kr.objectiveId));
 
+      if (quarterRange) {
+        quarterKeyResults = quarterKeyResults.filter(kr => {
+          if (!kr.startDate || !kr.endDate) return true;
+          const krStart = new Date(kr.startDate);
+          const krEnd = new Date(kr.endDate);
+          return krStart <= quarterRange!.end && krEnd >= quarterRange!.start;
+        });
+      }
+
       if (filters?.serviceLineId) {
         quarterKeyResults = quarterKeyResults.filter(kr => kr.serviceLineId === filters.serviceLineId);
       }
@@ -90,6 +101,14 @@ export class DashboardRepo {
       if (keyResultIds.length > 0) {
         const userActions = await this.actionRepo.getActions({ currentUserId });
         quarterActions = userActions.filter(action => keyResultIds.includes(action.keyResultId));
+
+        if (quarterRange) {
+          quarterActions = quarterActions.filter(action => {
+            if (!action.dueDate) return false;
+            const due = new Date(action.dueDate);
+            return due >= quarterRange!.start && due <= quarterRange!.end;
+          });
+        }
       }
     }
 
