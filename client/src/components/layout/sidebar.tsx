@@ -96,7 +96,7 @@ export default function Sidebar() {
   if (!isOpen) return null;
 
   return (
-    <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">
+    <aside className="w-64 h-screen bg-sidebar-background border-r border-sidebar-border flex flex-col overflow-hidden">
       {/* Logo/Header */}
       <div className="h-14 shrink-0 border-b border-sidebar-border flex items-center justify-center overflow-hidden px-4">
         <img
@@ -107,7 +107,10 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 p-4 space-y-2" aria-label="Navegação principal">
+      <nav
+        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2"
+        aria-label="Navegação principal"
+      >
         {navigationItems.map((item) => (
           <NavLinkItem key={item.href} item={item} />
         ))}
@@ -124,7 +127,7 @@ export default function Sidebar() {
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="shrink-0 p-4 border-t border-sidebar-border">
         <div className="flex items-center space-x-3">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="text-sm">
