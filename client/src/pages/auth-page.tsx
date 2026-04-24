@@ -66,12 +66,12 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-md space-y-6 sm:space-y-8">
           <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
+            <div className="flex items-center justify-center mb-4">
               <img
                 src={logoImage}
                 alt="OKRs"
                 fetchPriority="high"
-                className="w-full max-w-[200px] h-auto object-contain"
+                className="h-16 w-auto object-contain"
               />
             </div>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-3">Sistema de Gestão de Objetivos</p>

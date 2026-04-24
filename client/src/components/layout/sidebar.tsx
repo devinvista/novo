@@ -98,11 +98,11 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col">
       {/* Logo/Header */}
-      <div className="border-b border-sidebar-border">
+      <div className="h-16 border-b border-sidebar-border flex items-center px-5">
         <img
           src={logoImage}
           alt="OKRs"
-          className="w-full h-auto object-contain block"
+          className="h-9 w-auto object-contain"
         />
       </div>
 
