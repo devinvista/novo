@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Target, RotateCcw, Grid3X3, List, ArrowLeft, Settings } from "lucide-react";
 
-import CompactHeader from "@/components/layout/compact-header";
+
 import CheckpointProgressGrid from "@/features/checkpoints/checkpoint-progress-grid";
 import CheckpointTimelineHeader from "@/features/checkpoints/checkpoint-timeline-header";
 import NextCheckpointsOverview from "@/features/checkpoints/next-checkpoints-overview";
@@ -113,7 +113,6 @@ export default function Checkpoints() {
   if (keyResultsLoading || checkpointsLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        <CompactHeader showFilters={false} />
         
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
@@ -143,7 +142,6 @@ export default function Checkpoints() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <CompactHeader showFilters={false} />
       
       <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           <div className="max-w-7xl mx-auto space-y-6">

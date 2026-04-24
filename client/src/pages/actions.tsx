@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, List, GanttChart } from "lucide-react";
 import { useLocation } from "wouter";
-import CompactHeader from "@/components/layout/compact-header";
+
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -75,7 +75,7 @@ export default function Actions() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <CompactHeader showFilters={true} />
+
 
       <div className="p-6 border-b bg-white">
         <div className="flex items-center justify-between flex-wrap gap-4">

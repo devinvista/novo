@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { Router, Route, Switch } from 'wouter';
+import { Router, Route, Switch, useLocation } from 'wouter';
 import { cleanupOnDialogClose } from '@/lib/modal-cleanup';
 
 import AuthPage from '@/pages/auth-page';
@@ -19,8 +19,11 @@ const Trash = lazy(() => import('@/pages/trash'));
 const Audit = lazy(() => import('@/pages/audit'));
 
 import Sidebar from '@/components/layout/sidebar';
+import CompactHeader from '@/components/layout/compact-header';
 import { useAuth } from '@/hooks/use-auth';
 import { AppProviders } from '@/providers/app-providers';
+
+const NO_FILTER_ROUTES = ['/dashboard', '/checkpoints', '/audit', '/settings', '/trash'];
 
 function PageFallback() {
   return (
@@ -37,6 +40,7 @@ function PageFallback() {
 
 function AppContent() {
   const { user } = useAuth();
+  const [location] = useLocation();
 
   useEffect(() => {
     cleanupOnDialogClose();
@@ -46,6 +50,8 @@ function AppContent() {
     return <AuthPage />;
   }
 
+  const showFilters = !NO_FILTER_ROUTES.some((r) => location === r || location.startsWith(r + '/'));
+
   return (
     <div className="flex h-screen bg-background">
       <a href="#main" className="skip-link">
@@ -53,23 +59,26 @@ function AppContent() {
       </a>
       <Sidebar />
       <main id="main" className="flex-1 flex flex-col overflow-hidden" tabIndex={-1}>
-        <Suspense fallback={<PageFallback />}>
-          <Switch>
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/" component={AlignmentTree} />
-            <Route path="/objectives" component={Objectives} />
-            <Route path="/key-results" component={KeyResults} />
-            <Route path="/actions" component={Actions} />
-            <Route path="/checkpoints" component={Checkpoints} />
-            <Route path="/indicators" component={Indicators} />
-            <Route path="/users" component={Users} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/trash" component={Trash} />
-            <Route path="/audit" component={Audit} />
-            <Route component={NotFound} />
-          </Switch>
-        </Suspense>
+        <CompactHeader showFilters={showFilters} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Suspense fallback={<PageFallback />}>
+            <Switch>
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/" component={AlignmentTree} />
+              <Route path="/objectives" component={Objectives} />
+              <Route path="/key-results" component={KeyResults} />
+              <Route path="/actions" component={Actions} />
+              <Route path="/checkpoints" component={Checkpoints} />
+              <Route path="/indicators" component={Indicators} />
+              <Route path="/users" component={Users} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/settings" component={Settings} />
+              <Route path="/trash" component={Trash} />
+              <Route path="/audit" component={Audit} />
+              <Route component={NotFound} />
+            </Switch>
+          </Suspense>
+        </div>
       </main>
     </div>
   );

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
-import CompactHeader from "@/components/layout/compact-header";
+
 import KeyResultForm from "@/features/key-results/key-result-form-simple";
 import KrProgressChart from "@/features/key-results/kr-progress-chart-lazy";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
@@ -193,9 +193,6 @@ export default function KeyResults() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-        <CompactHeader 
-          showFilters={true}
-        />
         
         <div className="p-6 border-b bg-white">
           <div className="flex items-center justify-between">

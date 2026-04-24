@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Plus, Settings as SettingsIcon, MapPin, Target, Layers, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import CompactHeader from "@/components/layout/compact-header";
+
 import { cleanupOnDialogClose } from "@/lib/modal-cleanup";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -76,7 +76,6 @@ export default function Settings() {
   if (user?.role !== "admin") {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        <CompactHeader showFilters={false} />
         <div className="flex-1 flex items-center justify-center">
           <Card className="w-96">
             <CardHeader>
@@ -93,7 +92,6 @@ export default function Settings() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <CompactHeader showFilters={false} />
       
       <div className="p-6 border-b bg-white">
         <div className="flex items-center gap-4">

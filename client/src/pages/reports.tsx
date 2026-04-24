@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import ExecutiveSummary from "@/features/reports/executive-summary";
-import CompactHeader from "@/components/layout/compact-header";
+
 import { useFilters } from "@/hooks/use-filters";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,7 +27,7 @@ export default function Reports() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <CompactHeader showFilters={true} />
+
 
       <div className="flex-1 overflow-y-auto p-6">
         <Tabs defaultValue="indicators" className="space-y-6">

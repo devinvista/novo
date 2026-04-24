@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import CompactHeader from "@/components/layout/compact-header";
+
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useFilters } from "@/hooks/use-filters";
 
@@ -12,7 +12,6 @@ export default function Indicators() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-        <CompactHeader showFilters={true} />
 
         <div className="p-6 border-b bg-white">
           <div>

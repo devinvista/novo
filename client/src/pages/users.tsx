@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Edit, Trash2, Shield, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import CompactHeader from "@/components/layout/compact-header";
+
 
 interface User {
   id: number;
@@ -479,7 +479,6 @@ export default function UsersPage() {
   if (loadingUsers) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        <CompactHeader />
         <div className="flex-1 overflow-y-auto p-6">
           <div className="text-center">Carregando...</div>
         </div>
@@ -489,7 +488,6 @@ export default function UsersPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-        <CompactHeader />
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* Pending Users Section */}
           {currentUser?.role === "admin" && pendingUsers.length > 0 && (

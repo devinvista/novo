@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import ObjectivesTable from "@/features/objectives/objectives-table";
-import CompactHeader from "@/components/layout/compact-header";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ObjectiveForm from "@/features/objectives/objective-form";
@@ -57,9 +57,6 @@ export default function Objectives() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-        <CompactHeader 
-          showFilters={true}
-        />
         
         <div className="p-6 border-b bg-white">
           <div className="flex items-center justify-between">

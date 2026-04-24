@@ -19,7 +19,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import { formatSP, parseISOSP, nowSP } from "@/lib/timezone";
 import { formatDateBR } from "@/lib/formatters";
-import CompactHeader from "@/components/layout/compact-header";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -488,7 +488,7 @@ export default function AlignmentTree() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <CompactHeader showFilters={true} />
+
 
       {/* Page Header */}
       <div className="p-6 border-b bg-white">
