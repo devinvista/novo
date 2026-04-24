@@ -310,17 +310,18 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
   };
 
   const onSubmit = (data: ActionFormData) => {
-    // Validate action due date is before linked Key Result end date
+    // Validate action due date is within linked Key Result period
     if (data.dueDate && data.keyResultId) {
       const selectedKeyResult = keyResults?.find((kr: any) => kr.id === data.keyResultId);
       if (selectedKeyResult) {
         const actionDueDate = parseISOSP(data.dueDate);
+        const krStartDate = parseISOSP(selectedKeyResult.startDate);
         const krEndDate = parseISOSP(selectedKeyResult.endDate);
-        
-        if (actionDueDate > krEndDate) {
+
+        if (actionDueDate < krStartDate || actionDueDate > krEndDate) {
           toast({
             title: "Erro de Validação",
-            description: `A data de vencimento da ação deve ser anterior ao término do resultado-chave (${formatDateBR(selectedKeyResult.endDate)})`,
+            description: `A data de vencimento da ação deve estar entre ${formatDateBR(selectedKeyResult.startDate)} e ${formatDateBR(selectedKeyResult.endDate)} (período do resultado-chave)`,
             variant: "destructive",
           });
           return;

@@ -2,13 +2,41 @@
  * Serviço de Resultados-Chave — lógica de negócio separada das rotas HTTP.
  */
 import { storage } from "../../storage";
-import { ForbiddenError, NotFoundError } from "../../errors/app-error";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../../errors/app-error";
 import { convertBRToDatabase, formatBrazilianNumber } from "../../shared/formatters";
 import { recordActivity } from "../../lib/audit-log";
 import { recalcObjectiveCascade } from "../../domain/checkpoints/recalc";
 import type { InsertKeyResult } from "@shared/schema";
 
 type CurrentUser = { id: number; role: string };
+
+function formatDateBR(value: string | Date): string {
+  const d = typeof value === "string" ? value : value.toISOString().slice(0, 10);
+  const [y, m, day] = d.slice(0, 10).split("-");
+  return `${day}/${m}/${y}`;
+}
+
+function assertKRWithinObjective(
+  objective: { startDate: string | Date; endDate: string | Date; title?: string },
+  startDate: string | Date,
+  endDate: string | Date
+) {
+  const objStart = new Date(objective.startDate);
+  const objEnd = new Date(objective.endDate);
+  const krStart = new Date(startDate);
+  const krEnd = new Date(endDate);
+
+  if (krStart > krEnd) {
+    throw new BadRequestError("A data inicial do resultado-chave deve ser anterior à data final");
+  }
+  if (krStart < objStart || krEnd > objEnd) {
+    throw new BadRequestError(
+      `As datas do resultado-chave devem estar dentro do período do objetivo (${formatDateBR(
+        objective.startDate
+      )} até ${formatDateBR(objective.endDate)})`
+    );
+  }
+}
 
 /**
  * Normaliza o body de criação/edição de KR:
@@ -67,6 +95,8 @@ export async function createKeyResult(currentUser: CurrentUser, data: InsertKeyR
   const objective = await storage.getObjective(data.objectiveId, currentUser.id);
   if (!objective) throw new ForbiddenError("Sem permissão para criar resultado-chave neste objetivo");
 
+  assertKRWithinObjective(objective, data.startDate, data.endDate);
+
   const status = resolveKRStatus(
     data.status ?? undefined,
     data.startDate,
@@ -102,9 +132,18 @@ export async function updateKeyResult(
   const existing = await storage.getKeyResult(id, currentUser.id);
   if (!existing) throw new NotFoundError("Resultado-chave não encontrado ou sem acesso");
 
+  let parentObjective: any = null;
   if (data.objectiveId && data.objectiveId !== existing.objectiveId) {
-    const newObjective = await storage.getObjective(data.objectiveId, currentUser.id);
-    if (!newObjective) throw new ForbiddenError("Sem permissão para mover resultado-chave para este objetivo");
+    parentObjective = await storage.getObjective(data.objectiveId, currentUser.id);
+    if (!parentObjective) throw new ForbiddenError("Sem permissão para mover resultado-chave para este objetivo");
+  } else {
+    parentObjective = await storage.getObjective(existing.objectiveId, currentUser.id);
+  }
+
+  if (parentObjective && (data.startDate || data.endDate)) {
+    const startDate = data.startDate ?? existing.startDate;
+    const endDate = data.endDate ?? existing.endDate;
+    assertKRWithinObjective(parentObjective, startDate, endDate);
   }
 
   const updateData: any = { ...data };

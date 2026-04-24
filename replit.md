@@ -301,6 +301,12 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 - Endpoint `/api/key-results/:id/recreate-checkpoints` recria checkpoints
 - Ao concluir um checkpoint, o `currentValue` e `progress` do KR pai são atualizados (via `recalc.ts`)
 
+### Validação de Datas (Hierárquica)
+- KR (`server/modules/key-results/key-results.service.ts`): `assertKRWithinObjective` valida que `startDate`/`endDate` do resultado-chave estejam dentro do período do objetivo pai (chamado em create + update)
+- Ação (`server/modules/actions/actions.service.ts`): `assertActionWithinKR` valida que `dueDate` esteja dentro do período do KR pai (chamado em create + update)
+- Frontend espelha as mesmas regras em `action-form.tsx` e `key-result-form-simple.tsx` para feedback imediato
+- Erros retornam como `BadRequestError` com mensagem em português contendo o intervalo permitido
+
 ### Performance
 - **Code-splitting**: `App.tsx` usa `React.lazy` + `Suspense` para todas as páginas autenticadas
 - **Cache LRU server-side** (`server/cache.ts`): lookups cacheados com TTL de 5 minutos; mutações em `/api/admin/*` invalidam o cache automaticamente

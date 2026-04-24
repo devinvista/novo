@@ -19,6 +19,30 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "CANCELADA",
 };
 
+function formatDateBR(value: string | Date): string {
+  const d = typeof value === "string" ? value : value.toISOString().slice(0, 10);
+  const [y, m, day] = d.slice(0, 10).split("-");
+  return `${day}/${m}/${y}`;
+}
+
+function assertActionWithinKR(
+  keyResult: { startDate: string | Date; endDate: string | Date },
+  dueDate: string | Date | null | undefined
+) {
+  if (!dueDate) return;
+  const krStart = new Date(keyResult.startDate);
+  const krEnd = new Date(keyResult.endDate);
+  const due = new Date(dueDate);
+
+  if (due < krStart || due > krEnd) {
+    throw new BadRequestError(
+      `A data de vencimento da ação deve estar dentro do período do resultado-chave (${formatDateBR(
+        keyResult.startDate
+      )} até ${formatDateBR(keyResult.endDate)})`
+    );
+  }
+}
+
 /**
  * Normaliza o body removendo campos nulos/vazios que devem virar undefined.
  */
@@ -37,6 +61,8 @@ export async function createAction(currentUser: CurrentUser, data: InsertAction)
   if (!keyResult) {
     throw new ForbiddenError("Sem permissão para criar ação neste resultado-chave");
   }
+
+  assertActionWithinKR(keyResult, data.dueDate);
 
   const action = await storage.createAction(data);
 
@@ -62,6 +88,18 @@ export async function updateAction(
 ) {
   const existing = await storage.getAction(id, currentUser.id);
   if (!existing) throw new NotFoundError("Ação não encontrada ou sem acesso");
+
+  if (data.dueDate !== undefined || data.keyResultId !== undefined) {
+    const targetKrId = data.keyResultId ?? existing.keyResultId;
+    const targetDueDate = data.dueDate ?? existing.dueDate;
+    if (targetKrId && targetDueDate) {
+      const parentKR = await storage.getKeyResult(targetKrId, currentUser.id);
+      if (!parentKR) {
+        throw new ForbiddenError("Sem permissão para vincular ação a este resultado-chave");
+      }
+      assertActionWithinKR(parentKR, targetDueDate);
+    }
+  }
 
   const currentIsFinal = FINAL_STATUSES.includes(existing.status as any);
   const newStatus = data.status as string | undefined;
