@@ -111,7 +111,7 @@ export default function UsersPage() {
   const [selectedServiceLinesForApproval, setSelectedServiceLinesForApproval] = useState<number[]>([]);
   const [selectedServicesForApproval, setSelectedServicesForApproval] = useState<number[]>([]);
 
-  const form = useForm<UserFormData>({
+  const form = useForm<z.input<typeof userFormSchema>, any, UserFormData>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
       username: "",
@@ -771,7 +771,7 @@ export default function UsersPage() {
                               testIdPrefix={`badge-line-${user.id}`}
                               items={(user.serviceLineIds ?? [])
                                 .map((id) => serviceLineMap.get(id))
-                                .filter((x): x is { id: number; name: string } => Boolean(x))}
+                                .filter((x): x is ServiceLine => Boolean(x))}
                             />
                             <PermissionBadgeList
                               label="Serviços"
@@ -779,7 +779,7 @@ export default function UsersPage() {
                               testIdPrefix={`badge-service-${user.id}`}
                               items={(user.serviceIds ?? [])
                                 .map((id) => serviceMap.get(id))
-                                .filter((x): x is { id: number; name: string } => Boolean(x))}
+                                .filter((x): x is Service => Boolean(x))}
                             />
                             {user.role === "admin" && (
                               <Badge variant="default" className="text-xs px-1.5 py-0 bg-red-50 text-red-700 border-red-200">

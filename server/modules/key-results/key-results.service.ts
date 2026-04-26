@@ -110,6 +110,12 @@ export async function createKeyResult(currentUser: CurrentUser, data: InsertKeyR
     status,
   });
 
+  try {
+    await storage.generateCheckpoints(keyResult.id);
+  } catch (err) {
+    console.error("[KeyResultsService] Erro ao gerar checkpoints automáticos:", err);
+  }
+
   await recordActivity({
     userId: currentUser.id,
     action: "create",

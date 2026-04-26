@@ -254,25 +254,25 @@ Para cada upgrade, validar antes do merge:
 - **Sempre em branch isolada** com PR separado para revisão dedicada
 - **Atualizar este documento** após cada upgrade concluído (mover item para histórico)
 
-## Sprint 6 (proposto) — Bibliotecas de UI e tooling
+## Sprint 6 — Bibliotecas de UI e tooling
 
-> Status: planejado, ainda não iniciado. Catalogado em 26/abr/2026 a partir de `npm outdated`. Nenhum item é urgente; todos são "majors disponíveis" sem CVE crítico.
+> Status: **Fases A, B e C concluídas em 26/abr/2026.** Resta apenas `date-fns@4` (postergado — não bloqueia nada e exige revisão de `server/formatters.ts`).
 
 ### Matriz Sprint 6
 
 | Pacote                  | Atual    | Alvo    | Risco | Esforço | Notas |
 | ----------------------- | -------- | ------- | ----- | ------- | ----- |
-| `framer-motion`         | 11.18.2  | 12.x    | Médio | 1 dia   | Renomeado para `motion`; checar imports e `LayoutGroup` |
-| `lucide-react`          | 0.453.0  | 1.x     | Baixo | 0,5 dia | Primeira major estável; tree-shaking melhor |
-| `tailwind-merge`        | 2.6.1    | 3.x     | Baixo | 0,5 dia | Compatível com Tailwind 4; revisar tipos |
-| `react-day-picker`      | 8.10.1   | 9.x     | Médio | 1 dia   | API de selectors mudou (`mode`, `selected`) |
-| `react-resizable-panels`| 2.1.9    | 4.x     | Médio | 1 dia   | Dois saltos de major; revisar shadcn `Resizable` |
-| `@hookform/resolvers`   | 3.10.0   | 5.x     | Baixo | 0,5 dia | Apenas Zod 4 importado, ajuste mínimo |
-| `drizzle-zod`           | 0.7.1    | 0.8.x   | Baixo | 0,5 dia | Acompanhar drizzle-orm; sintaxe estável |
-| `date-fns`              | 3.6.0    | 4.x     | Médio | 1 dia   | Função `format` perdeu defaults; impacto em `formatters.ts` |
-| `esbuild`               | 0.25.12  | 0.28.x  | Baixo | 0,1 dia | Apenas devDep do build server-side |
-| `typescript`            | 5.9.3    | 6.0.x   | Alto  | 2 dias  | Major TS — auditar `strict`, novas regras de inferência |
-| `@types/node`           | 20.x     | 25.x    | Baixo | 0,1 dia | Alinhar com Node 20 LTS instalado |
+| `framer-motion`         | 11.18.2  | 12.x    | Médio | 1 dia   | ✅ Concluído (12.38.0) — 8 arquivos com `motion.*`/`AnimatePresence`, sem mudanças de import necessárias |
+| `lucide-react`          | 0.453.0  | 1.x     | Baixo | 0,5 dia | ✅ Concluído (1.11.0) |
+| `tailwind-merge`        | 2.6.1    | 3.x     | Baixo | 0,5 dia | ✅ Concluído (3.5.0) |
+| `react-day-picker`      | 8.10.1   | 9.x     | Médio | 1 dia   | ✅ Concluído (9.14.0) — `calendar.tsx` migrado: classNames v9 (`month_caption`, `weekdays`, `weekday`, `day_button` etc.) + componente `Chevron` único com `orientation` |
+| `react-resizable-panels`| 2.1.9    | 4.x     | Médio | 1 dia   | ✅ Concluído (4.10.0) — exports renomeados: `PanelGroup` → `Group`, `PanelResizeHandle` → `Separator` (atualizado em `resizable.tsx`) |
+| `@hookform/resolvers`   | 3.10.0   | 5.x     | Baixo | 0,5 dia | ✅ Concluído (5.2.2) — `useForm` agora exige 3 generics: `useForm<z.input<typeof schema>, any, z.output<typeof schema>>` (11 chamadas atualizadas em users/settings/action-form/objective-form) |
+| `drizzle-zod`           | 0.7.1    | 0.8.x   | Baixo | 0,5 dia | ✅ Concluído (0.8.3) |
+| `date-fns`              | 3.6.0    | 4.x     | Médio | 1 dia   | 🟡 Postergado — exige revisão de `server/formatters.ts` |
+| `esbuild`               | 0.25.12  | 0.28.x  | Baixo | 0,1 dia | ✅ Concluído (0.28.0) |
+| `typescript`            | 5.9.3    | 6.0.x   | Alto  | 2 dias  | ✅ Concluído (6.0.3) — apenas 1 ajuste: removido `baseUrl: "."` de `tsconfig.json` (deprecated em TS6, paths funcionam relativos ao tsconfig.json sem ele) |
+| `@types/node`           | 20.x     | 25.x    | Baixo | 0,1 dia | ✅ Concluído (24.12.2) — limitado a v24 porque `engines.node = >=20 <25` |
 
 **Esforço total estimado:** 8–9 dias úteis. Pode ser quebrado em três fases:
 1. **Fase A — quick wins (2 dias):** `lucide-react`, `tailwind-merge`, `@hookform/resolvers`, `drizzle-zod`, `esbuild`, `@types/node`
@@ -312,3 +312,6 @@ Para cada upgrade, validar antes do merge:
 | 2026-04-26 | `react-hook-form` | 7.73.1 → 7.74.0 | Patch trivial pós-roadmap |
 | 2026-04-26 | `@tanstack/react-query` | 5.99.2 → 5.100.5 | Patch trivial pós-roadmap |
 | 2026-04-26 | `tailwind.config.ts` | removido | Arquivo redundante — Tailwind 4 não o carrega (config CSS-first em `client/src/index.css`). `components.json` atualizado com `tailwind.config: ""` para destravar `npx shadcn add` em modo CSS-first. |
+| 2026-04-26 | **Sprint 6 Fase A** | — | `lucide-react` 0.453 → 1.11.0 · `tailwind-merge` 2.6 → 3.5.0 · `@hookform/resolvers` 3.10 → 5.2.2 · `drizzle-zod` 0.7 → 0.8.3 · `esbuild` 0.25 → 0.28.0 · `@types/node` 20 → 24.12.2. Único breaking real: `useForm<T>` do `@hookform/resolvers@5` agora exige 3 generics (`useForm<z.input<typeof S>, any, T>`) — atualizado em 11 chamadas (users.tsx, settings.tsx, action-form.tsx ×2, objective-form.tsx ×2). Fixados também 2 type-guards pré-existentes em `users.tsx` (`is ServiceLine` / `is Service`). |
+| 2026-04-26 | **Sprint 6 Fase B** | — | `framer-motion` 11.18 → 12.38.0 (zero ajustes — imports antigos seguem válidos) · `react-day-picker` 8.10 → 9.14.0 (`calendar.tsx` reescrito com classNames v9 e componente `Chevron` único com prop `orientation`) · `react-resizable-panels` 2.1 → 4.10.0 (`resizable.tsx` migrado dos namespaces `PanelGroup`/`PanelResizeHandle` para os exports nomeados `Group`/`Separator`). |
+| 2026-04-26 | **Sprint 6 Fase C** | — | `typescript` 5.9 → 6.0.3. Único ajuste: removido `baseUrl: "."` do `tsconfig.json` (deprecated em TS6; `paths` resolve relativo ao próprio tsconfig sem ele). 0 erros de tipo, 37/37 testes verdes, bundle 2,4 MB / server 162,9 kB (sem regressão). `date-fns@4` deixado fora propositalmente (impacta `server/formatters.ts` e merece ciclo dedicado). |

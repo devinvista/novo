@@ -33,7 +33,7 @@ export default function ObjectiveForm({ objective, onSuccess }: ObjectiveFormPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const form = useForm<ObjectiveFormData>({
+  const form = useForm<z.input<typeof objectiveFormSchema>, any, ObjectiveFormData>({
     resolver: zodResolver(objectiveFormSchema),
     defaultValues: {
       title: objective?.title || "",

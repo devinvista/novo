@@ -103,7 +103,7 @@ export default function ActionForm({ action, onSuccess, open, onOpenChange, defa
 
 
 
-  const form = useForm<ActionFormData>({
+  const form = useForm<z.input<typeof actionFormSchema>, any, ActionFormData>({
     resolver: zodResolver(actionFormSchema),
     defaultValues: {
       keyResultId: action?.keyResultId || defaultKeyResultId || 0,

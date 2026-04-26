@@ -170,7 +170,7 @@ function StrategicIndicatorsTab() {
   const [editingItem, setEditingItem] = useState<StrategicIndicator | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof strategicIndicatorSchema>>({
+  const form = useForm<z.input<typeof strategicIndicatorSchema>, any, z.infer<typeof strategicIndicatorSchema>>({
     resolver: zodResolver(strategicIndicatorSchema),
     defaultValues: {
       name: "",
@@ -454,7 +454,7 @@ function RegionsTab() {
   const [isRegionDialogOpen, setIsRegionDialogOpen] = useState(false);
   const [isSubRegionDialogOpen, setIsSubRegionDialogOpen] = useState(false);
 
-  const regionForm = useForm<z.infer<typeof regionSchema>>({
+  const regionForm = useForm<z.input<typeof regionSchema>, any, z.infer<typeof regionSchema>>({
     resolver: zodResolver(regionSchema),
     defaultValues: {
       name: "",
@@ -462,7 +462,7 @@ function RegionsTab() {
     },
   });
 
-  const subRegionForm = useForm<z.infer<typeof subRegionSchema>>({
+  const subRegionForm = useForm<z.input<typeof subRegionSchema>, any, z.infer<typeof subRegionSchema>>({
     resolver: zodResolver(subRegionSchema),
     defaultValues: {
       name: "",
@@ -1005,7 +1005,7 @@ function SolutionsTab() {
   const [editingItem, setEditingItem] = useState<Solution | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof solutionSchema>>({
+  const form = useForm<z.input<typeof solutionSchema>, any, z.infer<typeof solutionSchema>>({
     resolver: zodResolver(solutionSchema),
     defaultValues: {
       name: "",
@@ -1295,7 +1295,7 @@ function ServiceLinesTab() {
   const [editingItem, setEditingItem] = useState<ServiceLine | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof serviceLineSchema>>({
+  const form = useForm<z.input<typeof serviceLineSchema>, any, z.infer<typeof serviceLineSchema>>({
     resolver: zodResolver(serviceLineSchema),
     defaultValues: {
       name: "",
@@ -1625,7 +1625,7 @@ function ServicesTab() {
   const [editingItem, setEditingItem] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof serviceSchema>>({
+  const form = useForm<z.input<typeof serviceSchema>, any, z.infer<typeof serviceSchema>>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       name: "",
