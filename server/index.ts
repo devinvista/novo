@@ -134,7 +134,6 @@ app.get(["/readyz", "/api/ready"], async (_req, res) => {
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);
