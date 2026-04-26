@@ -196,7 +196,9 @@ export default function GanttTimeline({ keyResultId, selectedQuarter, filters, o
     const start = startOfMonth(earliest);
     const end = endOfMonth(latest);
     const monthCount = Math.max(3, Math.round(differenceInDays(end, start) / 30) + 1);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intencional: ajusta janela inicial do gantt aos dados; usuário pode sobrescrever via botões
     setViewStart(start);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setViewMonths(Math.min(monthCount, 12));
   }, [actions]);
 

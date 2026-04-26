@@ -25,13 +25,15 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 /client/src/
   components/
     layout/
-      sidebar.tsx              # Barra lateral de navegação (App.tsx)
-      compact-header.tsx       # Cabeçalho global com filtros (importado por todas as páginas)
+      sidebar.tsx              # Barra lateral de navegação (única importada por App.tsx)
+      compact-header.tsx       # Cabeçalho global com filtros (única importada por App.tsx)
       quarterly-filter.tsx     # Filtro de período trimestral (usado pelo compact-header)
-    ui/                        # Componentes Shadcn/ui
+    ui/                        # Componentes Shadcn/ui (Radix + tailwind-variants)
       date-input-br.tsx        # Input de data no padrão BR (DD/MM/AAAA)
       number-input-br.tsx      # Input numérico no padrão BR (vírgula decimal)
       [demais componentes ui shadcn]
+    # Observação: 26/abr/2026 — todos os componentes "soltos" em components/ foram removidos;
+    # a versão canônica de cada um vive em features/<dominio>/ ou layout/.
   features/
     actions/
       action-form.tsx          # Formulário de criação/edição de ações
@@ -361,6 +363,11 @@ npx drizzle-kit migrate    # Aplica migrations pendentes
 - Logger HTTP centralizado em `server/infra/logger.ts`: dev mostra só rotas `/api`; prod loga JSON estruturado
 - A conexão com o banco usa o pacote `postgres` diretamente (não `@neondatabase/serverless`)
 - Sessões persistidas na tabela `session` (PostgreSQL) via `connect-pg-simple`
-- Arquivos limpos em abril/2026: `server/logger.ts`, `server/formatters.ts`, `server/pg-storage.ts`, `server/storage.ts`, `server/quarterly-periods.ts`, `server/seed.ts`, `server/seed-okrs.ts`, `shared/pg-schema.ts` (todos eram barris de compatibilidade obsoletos sem uso direto); `client/src/components/` duplas de componentes agora canônicos em `client/src/features/` e `client/src/components/layout/`
-- 26/abr/2026: `tailwind.config.ts` removido — Tailwind 4 usa config CSS-first em `client/src/index.css` (`@theme`, `@plugin`); `components.json` atualizado com `tailwind.config: ""`
-- 26/abr/2026: smoke test manual de regressão executado; bug detectado: `POST /api/key-results` não gera checkpoints automaticamente (precisa chamar `/recreate-checkpoints` em seguida). Investigar `server/modules/key-results/key-results.service.ts`
+- Estabilidade do processo: listeners `pool.on('error')` em `server/repositories/session-store.ts` e `server/middleware/pg-rate-limit.ts` + `idleTimeoutMillis: 10000`; handler `uncaughtException` em `server/index.ts` apenas loga e nunca derruba o servidor (compatível com proxy do Replit que reseta sockets idle)
+- `POST /api/key-results` já gera checkpoints automaticamente em `key-results.service.ts:114` via `storage.generateCheckpoints(keyResult.id)`; rota `/recreate-checkpoints` permanece disponível para regenerar manualmente após edições
+
+#### Histórico de limpeza (abril/2026)
+- Backend: removidos `server/logger.ts`, `server/formatters.ts`, `server/pg-storage.ts`, `server/storage.ts`, `server/quarterly-periods.ts`, `server/seed.ts`, `server/seed-okrs.ts`, `shared/pg-schema.ts` (barris de compatibilidade sem uso)
+- Frontend: removidos 21 componentes duplicados em `client/src/components/*.tsx` (`action-form`, `action-plan`, `action-timeline`, `animated-progress-ring`, `checkpoint-progress-grid`, `checkpoint-timeline-header`, `checkpoint-timeline`, `checkpoint-update-dialog`, `checkpoint-updater`, `compact-header`, `executive-summary`, `gantt-timeline`, `indicators-dashboard`, `key-result-form-simple`, `kr-progress-chart`, `kr-progress-chart-lazy`, `next-checkpoints-overview`, `objective-form`, `objectives-table`, `quarterly-filter`, `sidebar`) — versões canônicas vivem em `client/src/features/<dominio>/` e `client/src/components/layout/`
+- Build: `tailwind.config.ts` removido — Tailwind 4 usa config CSS-first em `client/src/index.css` (`@theme`, `@plugin`, `@custom-variant`) processada por `@tailwindcss/postcss` (postcss.config.js); `components.json` já estava com `"tailwind.config": ""`
+- Lint: `npx tsc --noEmit` zerado; `npx eslint .` saiu de 7 erros + 728 avisos para 0 erros + 549 avisos (apenas `@typescript-eslint/no-explicit-any` em `server/storage/pg.ts` e em `tests/`)
