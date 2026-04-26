@@ -167,9 +167,30 @@ app.get(["/readyz", "/api/ready"], async (_req, res) => {
   process.on("SIGINT", () => shutdown("SIGINT"));
 
   process.on("unhandledRejection", (reason) => {
-    logger.error({ reason }, "unhandled promise rejection");
+    logger.error({ reason }, "unhandled promise rejection (recovered)");
   });
-  process.on("uncaughtException", (err) => {
+  process.on("uncaughtException", (err: any) => {
+    // Transient/recoverable DB errors should NOT take down the server.
+    // Neon (serverless Postgres) closes idle connections aggressively, which
+    // surfaces here when a pool client errors out without a listener.
+    const transientCodes = new Set([
+      "ECONNRESET",
+      "EPIPE",
+      "ETIMEDOUT",
+      "ECONNREFUSED",
+      "57P01", // admin_shutdown
+      "57P02", // crash_shutdown
+      "57P03", // cannot_connect_now
+      "08006", // connection_failure
+      "08003", // connection_does_not_exist
+      "08000", // connection_exception
+    ]);
+    const code = err?.code;
+    const isTransient = code && transientCodes.has(code);
+    if (isTransient) {
+      logger.error({ err }, "transient uncaught exception (recovered, not shutting down)");
+      return;
+    }
     logger.fatal({ err }, "uncaught exception, shutting down");
     shutdown("uncaughtException");
   });

@@ -10,6 +10,11 @@ const sessionPool = new pg.Pool({
     ? { rejectUnauthorized: false }
     : undefined,
   max: 5,
+  idleTimeoutMillis: 10_000,
+});
+
+sessionPool.on('error', (err) => {
+  console.error('[sessionPool] idle client error (recovered):', err?.message ?? err);
 });
 
 export const sessionStore = new PgSession({

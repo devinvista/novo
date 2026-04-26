@@ -21,13 +21,18 @@ const CREATE_TABLE_SQL = `
 `;
 
 function buildPool(): pg.Pool {
-  return new pg.Pool({
+  const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL?.includes("sslmode=require")
       ? { rejectUnauthorized: false }
       : undefined,
     max: 3,
+    idleTimeoutMillis: 10_000,
   });
+  pool.on("error", (err) => {
+    console.error("[PgRateLimitStore] idle client error (recovered):", err?.message ?? err);
+  });
+  return pool;
 }
 
 export class PgRateLimitStore implements Store {
