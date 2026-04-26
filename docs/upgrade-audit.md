@@ -4,6 +4,9 @@ Estado das principais dependências em **abril/2026** e avaliação de breaking
 changes. Todas as majors abaixo já estão instaladas; este documento valida
 que o código está alinhado e lista o que ainda merece atenção.
 
+> Última atualização: 26/abr/2026 — incluída a avaliação do React Compiler
+> e marcado como resolvido o débito do `tailwind.config.ts`.
+
 | Pacote | Versão atual | Status |
 |---|---|---|
 | react / react-dom | ^19.2.5 | ✅ OK (com observação) |
@@ -51,20 +54,12 @@ que o código está alinhado e lista o que ainda merece atenção.
 - `client/src/index.css` já usa a sintaxe v4: `@import 'tailwindcss';`,
   `@plugin`, `@theme`, `@custom-variant dark`.
 - `postcss.config.js` usa `@tailwindcss/postcss` (correto para v4).
+- `tailwind.config.ts` **removido em 26/abr/2026** (arquivo redundante; v4
+  não o carregava sem `@config` em `index.css`).
+- `components.json` ajustado para `"tailwind": { "config": "" }` — o CLI do
+  shadcn 4 lê só o CSS-first config.
 
-**Pendência (limpeza, não urgente):**
-- `tailwind.config.ts` continua no repositório mas **não é mais carregado**
-  por Tailwind 4 (não há `@config` directive em `index.css`). As declarações
-  `darkMode`, `content`, `theme.extend.colors`, `theme.extend.borderRadius`
-  estão duplicadas no `@theme` do CSS.
-- `components.json` (shadcn CLI) ainda referencia `tailwind.config.ts`. Se for
-  rodar `npx shadcn add`, o CLI lê esse arquivo. Se a equipe não usa mais o CLI
-  do shadcn, o config pode ser removido.
-
-**Recomendação:**
-- Manter `tailwind.config.ts` enquanto a equipe ainda rodar `npx shadcn add`.
-- Caso contrário, remover e atualizar `components.json` para refletir só a
-  configuração CSS-first.
+**Status:** resolvido.
 
 ## Vite 8
 
@@ -134,17 +129,51 @@ que o código está alinhado e lista o que ainda merece atenção.
 
 ---
 
+## React Compiler — avaliação (26/abr/2026)
+
+**Tentativa de habilitar:** instalados `babel-plugin-react-compiler` e
+`@rolldown/plugin-babel` em conjunto com `@vitejs/plugin-react@6` + Vite 8.
+
+**Resultado:**
+- ✅ Build de produção completou (3,3 s)
+- ✅ 37/37 testes verdes
+- ⚠️ Bundle cresceu de 2,3 MB → 2,4 MB (+~4%) — dentro do orçamento de 5%
+- ❌ Configuração via `react({ babel: { plugins: [...] } })` **não tipa** —
+  `@vitejs/plugin-react@6` removeu `babel` do `Options` (rolldown trocou o
+  pipeline). O plugin agora exporta `reactCompilerPreset` que precisa ser
+  consumido por `rolldownBabel`.
+- ❌ `@rolldown/plugin-babel@0.2.3` exporta default (não named) e o
+  `PluginOptions` não aceita `extensions`/`include`/`exclude` diretos — exige
+  `filter` configurado, com sintaxe ainda em ajuste no upstream.
+
+**Decisão:** **mantido desligado**. Custo de configuração alto para um ganho
+de bundle marginal e sem profiling de produção que justifique. Reavaliar
+quando:
+1. `@vitejs/plugin-react` v7 documentar um wrapper estável `react({ compiler: true })`, OU
+2. tivermos profiling real mostrando hotspots de re-render que `useMemo`/`useCallback` não cobrem.
+
+**Estado do código:** `vite.config.ts` reverteu para o `react()` simples. As
+duas dependências experimentais foram removidas via `npm uninstall`.
+
 ## Resumo executivo
 
-Todas as majors estão **funcionalmente compatíveis** com o código atual. A
-única dívida real identificada é:
+Todas as majors estão **funcionalmente compatíveis** com o código atual. As
+dívidas anteriormente listadas foram resolvidas em 26/abr/2026:
 
-1. **`tailwind.config.ts` redundante** — pode ser removido se a equipe não usa
-   mais o CLI `npx shadcn add`. Decisão de produto.
-2. **`forwardRef` em shadcn/ui** — modernização opcional para alinhar ao novo
-   modelo de refs do React 19. Sem urgência.
+1. ✅ **`tailwind.config.ts` redundante** — removido; `components.json`
+   ajustado para CSS-first config.
+2. 🟡 **`forwardRef` em shadcn/ui** — modernização opcional para alinhar ao
+   novo modelo de refs do React 19. Sem urgência. Recomendado fazer junto
+   com upgrade de shadcn ou na chegada do React 20.
+3. 🟡 **Bug de checkpoints automáticos no KR create** — descoberto no smoke
+   test de regressão. `POST /api/key-results` não dispara a geração
+   automática de checkpoints documentada em `replit.md`. Workaround atual:
+   chamar `/api/key-results/:id/recreate-checkpoints` em seguida.
 
 Nenhum upgrade emergencial recomendado. Próximos majors a monitorar:
 - **Express 6** (em desenvolvimento) — vai trazer router refatorado.
 - **React 20** — provável remoção de `forwardRef`.
 - **Tailwind 5** — sem roadmap público ainda.
+
+Para um Sprint 6 dedicado a destravar 11 majors disponíveis (UI + tooling),
+ver `docs/upgrade-roadmap.md` → seção "Sprint 6 (proposto)".

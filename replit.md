@@ -362,3 +362,5 @@ npx drizzle-kit migrate    # Aplica migrations pendentes
 - A conexão com o banco usa o pacote `postgres` diretamente (não `@neondatabase/serverless`)
 - Sessões persistidas na tabela `session` (PostgreSQL) via `connect-pg-simple`
 - Arquivos limpos em abril/2026: `server/logger.ts`, `server/formatters.ts`, `server/pg-storage.ts`, `server/storage.ts`, `server/quarterly-periods.ts`, `server/seed.ts`, `server/seed-okrs.ts`, `shared/pg-schema.ts` (todos eram barris de compatibilidade obsoletos sem uso direto); `client/src/components/` duplas de componentes agora canônicos em `client/src/features/` e `client/src/components/layout/`
+- 26/abr/2026: `tailwind.config.ts` removido — Tailwind 4 usa config CSS-first em `client/src/index.css` (`@theme`, `@plugin`); `components.json` atualizado com `tailwind.config: ""`
+- 26/abr/2026: smoke test manual de regressão executado; bug detectado: `POST /api/key-results` não gera checkpoints automaticamente (precisa chamar `/recreate-checkpoints` em seguida). Investigar `server/modules/key-results/key-results.service.ts`

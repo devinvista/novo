@@ -1,6 +1,6 @@
 # Roadmap de Upgrade dos Majors
 
-> Última atualização: abril/2026
+> Última atualização: 26/abr/2026
 > Responsável: time de plataforma
 
 Documento de planejamento para os upgrades de major das principais dependências do projeto. Cada bloco contém **versão atual**, **versão alvo**, **ganhos**, **riscos**, **esforço estimado** e **passos sugeridos**. A ordem de execução está definida no final.
@@ -17,9 +17,9 @@ Documento de planejamento para os upgrades de major das principais dependências
 | `vite`                  | 8.0.9    | 8.x     | Alto     | Médio     | 2–3 dias | ✅ Concluído |
 | `express`               | 5.2.1    | 5.x     | Alto     | Baixo     | 3–5 dias | ✅ Concluído |
 
-> **Todos os majors do roadmap original foram concluídos.** Itens em aberto declarados explicitamente:
-> - 🟡 **React Compiler** (opt-in) — postergado. Decisão: avaliar em sprint dedicado depois de medir custo/ganho com profiling. Exigirá `babel-plugin-react-compiler` (peer dep opcional do `@vitejs/plugin-react@6`) e configuração no `vite.config.ts`.
-> - 🟡 **Smoke test manual de regressão** (login → criar objetivo → criar KR → atualizar checkpoint) — não foi executado por falta de credenciais; recomendado antes do próximo deploy de produção.
+> **Todos os majors do roadmap original foram concluídos.** Status dos itens em aberto:
+> - ✅ **Smoke test manual de regressão** — executado em 26/abr/2026 com usuário admin temporário. Login, listagem de objetivos/regiões/quarters, criação de objetivo, criação de KR, recriação e atualização de checkpoint funcionaram. **Bug detectado:** `POST /api/key-results` não gera checkpoints automaticamente, contradizendo a documentação em `replit.md` (seção "Checkpoints"). É necessário chamar `POST /api/key-results/:id/recreate-checkpoints` manualmente após criar o KR. **Ação:** abrir issue para investigar `server/modules/key-results/key-results.service.ts`.
+> - 🟡 **React Compiler** (opt-in) — **avaliação concluída em 26/abr/2026, mantido desligado**. Detalhes em `docs/upgrade-audit.md` (seção "React Compiler — avaliação"). Resumo: a integração com Vite 8 + `@vitejs/plugin-react@6` exige o pipeline novo via `@rolldown/plugin-babel` + `reactCompilerPreset`, com API ainda em ajuste (PluginOptions não aceita `extensions` direto, requer `filter` configurado). O ganho em bundle medido empiricamente foi marginal (+~4% no tamanho total). Decisão: postergar até que o `@vitejs/plugin-react` documente um wrapper estável ou que tenhamos profiling de produção que justifique o esforço.
 >
 > ### Baseline de bundle pós-roadmap (2026-04-23)
 > Capturado após todos os 5 sprints. Use como referência para medir crescimento em upgrades futuros:
@@ -27,6 +27,12 @@ Documento de planejamento para os upgrades de major das principais dependências
 > - Maior chunk: `CartesianChart` 331 kB (gzip 98 kB) — recharts
 > - Entry principal: `index` 224 kB (gzip 70 kB)
 > - Server bundle: `dist/index.mjs` **129,6 kB**
+>
+> ### Baseline pós-manutenção (2026-04-26)
+> Após patches/minors aplicados (vite 8.0.10, postcss 8.5.11, express-rate-limit 8.4.1, react-hook-form 7.74.0, @tanstack/react-query 5.100.5):
+> - `dist/public/assets/` total: **2,4 MB** (≈+4% vs. baseline; dentro do orçamento de 5%)
+> - Server bundle: `dist/index.mjs` **162,8 kB**
+> - 37/37 testes verdes
 
 Legenda de risco:
 - **Baixo**: poucas mudanças quebrando, tipos cobrem o impacto, build/test pegam regressões
@@ -248,6 +254,36 @@ Para cada upgrade, validar antes do merge:
 - **Sempre em branch isolada** com PR separado para revisão dedicada
 - **Atualizar este documento** após cada upgrade concluído (mover item para histórico)
 
+## Sprint 6 (proposto) — Bibliotecas de UI e tooling
+
+> Status: planejado, ainda não iniciado. Catalogado em 26/abr/2026 a partir de `npm outdated`. Nenhum item é urgente; todos são "majors disponíveis" sem CVE crítico.
+
+### Matriz Sprint 6
+
+| Pacote                  | Atual    | Alvo    | Risco | Esforço | Notas |
+| ----------------------- | -------- | ------- | ----- | ------- | ----- |
+| `framer-motion`         | 11.18.2  | 12.x    | Médio | 1 dia   | Renomeado para `motion`; checar imports e `LayoutGroup` |
+| `lucide-react`          | 0.453.0  | 1.x     | Baixo | 0,5 dia | Primeira major estável; tree-shaking melhor |
+| `tailwind-merge`        | 2.6.1    | 3.x     | Baixo | 0,5 dia | Compatível com Tailwind 4; revisar tipos |
+| `react-day-picker`      | 8.10.1   | 9.x     | Médio | 1 dia   | API de selectors mudou (`mode`, `selected`) |
+| `react-resizable-panels`| 2.1.9    | 4.x     | Médio | 1 dia   | Dois saltos de major; revisar shadcn `Resizable` |
+| `@hookform/resolvers`   | 3.10.0   | 5.x     | Baixo | 0,5 dia | Apenas Zod 4 importado, ajuste mínimo |
+| `drizzle-zod`           | 0.7.1    | 0.8.x   | Baixo | 0,5 dia | Acompanhar drizzle-orm; sintaxe estável |
+| `date-fns`              | 3.6.0    | 4.x     | Médio | 1 dia   | Função `format` perdeu defaults; impacto em `formatters.ts` |
+| `esbuild`               | 0.25.12  | 0.28.x  | Baixo | 0,1 dia | Apenas devDep do build server-side |
+| `typescript`            | 5.9.3    | 6.0.x   | Alto  | 2 dias  | Major TS — auditar `strict`, novas regras de inferência |
+| `@types/node`           | 20.x     | 25.x    | Baixo | 0,1 dia | Alinhar com Node 20 LTS instalado |
+
+**Esforço total estimado:** 8–9 dias úteis. Pode ser quebrado em três fases:
+1. **Fase A — quick wins (2 dias):** `lucide-react`, `tailwind-merge`, `@hookform/resolvers`, `drizzle-zod`, `esbuild`, `@types/node`
+2. **Fase B — UI sensível (3 dias):** `framer-motion`, `react-day-picker`, `react-resizable-panels` (com regressão visual)
+3. **Fase C — runtime (3 dias):** `date-fns` + `typescript` (em ordem; TS por último porque eleva o piso de tipos)
+
+### Métricas de sucesso (mesmas do roadmap principal)
+- ✅ `npm run check`, `npm test`, `npm run build` verdes
+- ✅ Bundle não cresce mais que 5% vs. baseline pós-manutenção (2,4 MB)
+- ✅ Smoke test manual reaplicado ao final da Fase B
+
 ## Histórico de upgrades concluídos
 
 | Data       | Pacote          | De → Para        | Notas                                              |
@@ -270,3 +306,9 @@ Para cada upgrade, validar antes do merge:
 | 2026-04-23 | `express`       | 4.22.1 → 5.2.1   | Sprint 5. Substituídos os dois `app.use("*", ...)` em `server/vite.ts` por `app.use(handler)` (path-to-regexp 8 não aceita `*` como wildcard). Demais rotas usam paths estáticos ou parâmetros nomeados (`:id`), sem incompatibilidade. Auth (Passport + sessão), helmet, rate limiter, morgan e pino-http funcionam sem alterações. 31 testes verdes, build limpo |
 | 2026-04-23 | `@types/express` | 4.17.21 → 5.x | Atualizado em conjunto com Express 5 |
 | 2026-04-23 | `client/src/components/ui/chart.tsx` | removido | Limpeza tardia do Sprint 1 (recharts). Arquivo era shadcn primitive não importado em nenhum componente do app e gerava 8 erros de TS sob recharts 3 + React 19. Remoção destrava `npm run check` (passa limpo agora) |
+| 2026-04-26 | `vite` | 8.0.9 → 8.0.10 | Patch trivial pós-roadmap |
+| 2026-04-26 | `postcss` | 8.5.10 → 8.5.11 | Patch trivial pós-roadmap |
+| 2026-04-26 | `express-rate-limit` | 8.3.2 → 8.4.1 | Patch trivial pós-roadmap |
+| 2026-04-26 | `react-hook-form` | 7.73.1 → 7.74.0 | Patch trivial pós-roadmap |
+| 2026-04-26 | `@tanstack/react-query` | 5.99.2 → 5.100.5 | Patch trivial pós-roadmap |
+| 2026-04-26 | `tailwind.config.ts` | removido | Arquivo redundante — Tailwind 4 não o carrega (config CSS-first em `client/src/index.css`). `components.json` atualizado com `tailwind.config: ""` para destravar `npx shadcn add` em modo CSS-first. |
