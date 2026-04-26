@@ -166,32 +166,17 @@ app.get(["/readyz", "/api/ready"], async (_req, res) => {
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
 
-  process.on("unhandledRejection", (reason) => {
+  process.on("unhandledRejection", (reason: any) => {
+    // Use console.error directly so the message survives even if pino async transport drops it.
+    console.error("[unhandledRejection]", reason?.stack ?? reason);
     logger.error({ reason }, "unhandled promise rejection (recovered)");
   });
   process.on("uncaughtException", (err: any) => {
-    // Transient/recoverable DB errors should NOT take down the server.
-    // Neon (serverless Postgres) closes idle connections aggressively, which
-    // surfaces here when a pool client errors out without a listener.
-    const transientCodes = new Set([
-      "ECONNRESET",
-      "EPIPE",
-      "ETIMEDOUT",
-      "ECONNREFUSED",
-      "57P01", // admin_shutdown
-      "57P02", // crash_shutdown
-      "57P03", // cannot_connect_now
-      "08006", // connection_failure
-      "08003", // connection_does_not_exist
-      "08000", // connection_exception
-    ]);
-    const code = err?.code;
-    const isTransient = code && transientCodes.has(code);
-    if (isTransient) {
-      logger.error({ err }, "transient uncaught exception (recovered, not shutting down)");
-      return;
-    }
-    logger.fatal({ err }, "uncaught exception, shutting down");
-    shutdown("uncaughtException");
+    // NEVER shut down on uncaught exceptions. They are almost always transient
+    // (DB connection drop from Neon, broken pipe on aborted client, etc.) and
+    // taking down the server makes the app unusable. Log loudly and keep going.
+    // Use console.error so the trace is flushed synchronously to stderr.
+    console.error("[uncaughtException]", err?.stack ?? err, "code=", err?.code);
+    logger.error({ err, code: err?.code }, "uncaught exception (recovered, NOT shutting down)");
   });
 })();
