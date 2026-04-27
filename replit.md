@@ -1,13 +1,13 @@
 # Sistema de Gestão Estratégica - OKRs FIERGS/SESI/SENAI
 
-## Visão Geral
-Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreamento de objetivos organizacionais, resultados-chave, ações e checkpoints de progresso. Suporta estrutura multi-regional com controle de acesso hierárquico (admin / gestor / operacional).
+## Overview
+Platform for managing OKRs (Objectives and Key Results) to track organizational objectives, key results, actions, and progress checkpoints. It supports a multi-regional structure with hierarchical access control (admin / manager / operational). The project aims to provide a comprehensive tool for strategic planning and execution, enabling organizations to define, monitor, and achieve their strategic goals efficiently.
 
-## Preferências do Usuário
+## User Preferences
 - Estilo de comunicação: Linguagem simples e cotidiana
 - Idioma: Português brasileiro (toda interface, documentação e textos)
 
-## Arquitetura do Sistema
+## System Architecture
 
 ### Stack Tecnológico
 - **Frontend**: React 19 + TypeScript, Vite, Tailwind CSS 4, Shadcn/ui (Radix UI)
@@ -20,376 +20,48 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 - **Formulários**: React Hook Form + Zod 4
 
 ### Estrutura de Arquivos
-
-```
-/client/src/
-  components/
-    layout/
-      sidebar.tsx              # Barra lateral de navegação (única importada por App.tsx)
-      compact-header.tsx       # Cabeçalho global com filtros (única importada por App.tsx)
-      quarterly-filter.tsx     # Filtro de período trimestral (usado pelo compact-header)
-    ui/                        # Componentes Shadcn/ui (Radix + tailwind-variants)
-      date-input-br.tsx        # Input de data no padrão BR (DD/MM/AAAA)
-      number-input-br.tsx      # Input numérico no padrão BR (vírgula decimal)
-      [demais componentes ui shadcn]
-    # Observação: 26/abr/2026 — todos os componentes "soltos" em components/ foram removidos;
-    # a versão canônica de cada um vive em features/<dominio>/ ou layout/.
-  features/
-    actions/
-      action-form.tsx          # Formulário de criação/edição de ações
-      action-plan.tsx          # Plano de ação (aba Relatórios)
-      action-timeline.tsx      # Timeline visual de ações
-      gantt-timeline.tsx       # Timeline Gantt de ações
-    checkpoints/
-      checkpoint-progress-grid.tsx    # Grade de progresso de checkpoints (círculos animados)
-      checkpoint-timeline-header.tsx  # Cabeçalho com timeline de checkpoints
-      checkpoint-update-dialog.tsx    # Diálogo de atualização de checkpoint
-      next-checkpoints-overview.tsx   # Visão geral dos próximos checkpoints
-    indicators/
-      animated-progress-ring.tsx  # Anel de progresso animado (usado no checkpoint-progress-grid)
-      indicators-dashboard.tsx    # Painel de indicadores estratégicos (lazy-loaded)
-    key-results/
-      key-result-form-simple.tsx  # Formulário de KR
-      kr-progress-chart.tsx       # Gráfico de progresso de KR (recharts)
-      kr-progress-chart-lazy.tsx  # Wrapper lazy com Suspense (isola recharts em chunk próprio)
-    objectives/
-      objective-form.tsx          # Formulário de objetivo
-      objectives-table.tsx        # Tabela de objetivos
-    reports/
-      executive-summary.tsx       # Resumo executivo
-    users/
-      region-tree-picker.tsx      # Árvore Regiões → Sub-regiões (cascata, mesma UX da árvore de serviços)
-      permission-tree-picker.tsx  # Árvore Soluções → Linhas → Serviços
-      permission-badges.tsx       # Lista de badges colorida com overflow "+N" usada na tabela de usuários
-  pages/
-    alignment-tree.tsx  # / — Árvore de alinhamento (dashboard principal)
-    objectives.tsx      # /objectives — Objetivos
-    key-results.tsx     # /key-results — Resultados-Chave
-    actions.tsx         # /actions — Ações
-    checkpoints.tsx     # /checkpoints — Checkpoints
-    indicators.tsx      # /indicators — Indicadores (rota disponível, fora do menu)
-    reports.tsx         # /reports — Relatórios (indicadores + resumo + plano de ação)
-    users.tsx           # /users — Usuários (admin/gestor)
-    settings.tsx        # /settings — Configurações (admin)
-    trash.tsx           # /trash — Lixeira
-    audit.tsx           # /audit — Auditoria
-    dashboard.tsx       # /dashboard — Meu Painel
-    auth-page.tsx       # Página de login/registro
-    not-found.tsx       # 404
-  hooks/
-    use-auth.tsx               # Autenticação
-    use-filters.tsx            # Filtros globais (região, sub-região, linha de serviço)
-    use-quarterly-filter.tsx   # Filtro de período trimestral global
-    use-sidebar-toggle.tsx     # Estado de abertura/fechamento do sidebar
-    use-mobile.tsx             # Detecção de dispositivo móvel
-    use-toast.ts               # Toast notifications
-  lib/
-    queryClient.ts             # TanStack Query client + apiRequest helper
-    formatters.ts              # Formatação de números (padrão BR) + datas DD/MM/AAAA
-    timezone.ts                # Helpers de fuso horário (America/Sao_Paulo) via date-fns-tz
-    checkpoint-utils.ts        # Utilitários de progresso/badge de checkpoints
-    frequency-translations.ts  # Tradução de frequências (en → pt-BR)
-    modal-cleanup.ts           # Limpeza de overlays Radix UI travados
-    emergency-cleanup.ts       # Limpeza de emergência (Ctrl+Shift+C)
-  providers/
-    app-providers.tsx          # Provedores de contexto (AuthProvider, FiltersProvider, QueryClientProvider)
-
-/server/
-  index.ts              # Entry point (porta 5000/PORT, timezone America/Sao_Paulo, helmet, rate-limit, healthcheck)
-  routes.ts             # Montagem dos routers modulares (~55 linhas)
-  auth.ts               # Autenticação (Passport.js + scrypt, cookies env-aware)
-  pg-db.ts              # Conexão PostgreSQL via `postgres` (DATABASE_URL, pool production-grade)
-  cache.ts              # LRU cache para lookups (5 min TTL, auto-invalidado em mutações /api/admin/*)
-  config/env.ts         # Validação Zod de variáveis de ambiente no boot
-  errors/app-error.ts   # Classes de erro tipadas (AppError, NotFoundError, ForbiddenError, ValidationError)
-  infra/
-    logger.ts           # Logger pino (único logger) + httpLogger pino-http + correlação por requestId
-    metrics.ts          # Métricas Prometheus (GET /metrics): contadores, histograma de latência, métricas Node
-  middleware/
-    async-handler.ts    # Wrapper async para rotas Express (propaga erros corretamente)
-    auth.ts             # requireAuth / requireRole / sanitizeUser
-    error-handler.ts    # Handler centralizado (AppError, ZodError, fallback)
-    request-id.ts       # Correlação de request (UUID por request, injetado no logger)
-    validate.ts         # Middleware de validação Zod para body/params/query (usado com validate(schema) nas rotas)
-    pg-rate-limit.ts    # PgRateLimitStore — rate limit distribuído via PostgreSQL (tabela rate_limit_store)
-  lib/
-    route-utils.ts      # intParam() compartilhado + paginationSchema (elimina duplicata nos modules)
-  modules/              # Routers por domínio — padrão: *.routes.ts (HTTP) + *.service.ts (negócio)
-    objectives/         # /api/objectives — objectives.routes.ts + objectives.service.ts
-    key-results/        # /api/key-results — key-results.routes.ts + key-results.service.ts
-    actions/            # /api/actions
-    checkpoints/        # /api/checkpoints
-    action-comments/    # /api/actions/:id/comments
-    action-dependencies/# /api/action-dependencies
-    kr-check-ins/       # /api/kr-check-ins
-    lookups/            # /api/regions, /api/solutions, etc. (com cache)
-    admin-lookups/      # /api/admin/* — CRUD administrativo de lookups
-    admin-import/       # /api/admin/export-template, /api/admin/import-data (Excel)
-    dashboard/          # /api/dashboard/kpis
-    quarters/           # /api/quarters
-    executive-summary/  # /api/executive-summary
-    users/              # /api/users, /api/managers, /api/pending-users
-    trash/              # /api/trash
-    activities/         # /api/activities (audit trail)
-  domain/
-    checkpoints/recalc.ts  # Recálculo de KR/Objetivo a partir de checkpoints
-  repositories/            # Repositórios Drizzle por agregado
-    user.repo.ts           # UserRepo
-    lookup.repo.ts         # LookupRepo (regions, solutions, services, indicators)
-    objective.repo.ts      # ObjectiveRepo
-    key-result.repo.ts     # KeyResultRepo
-    action.repo.ts         # ActionRepo
-    checkpoint.repo.ts     # CheckpointRepo
-    kr-check-in.repo.ts    # KrCheckInRepo
-    dashboard.repo.ts      # DashboardRepo
-    activity.repo.ts       # ActivityRepo
-    session-store.ts       # connect-pg-simple session store
-    index.ts               # Barrel de repositórios
-  storage/
-    interface.ts           # Interface IStorage (facade composta pelos repos)
-    pg.ts                  # PgStorage — implementação Drizzle (compõe repos)
-    index.ts               # Barrel: export { PgStorage, storage } + IStorage
-  shared/
-    formatters.ts          # Formatação números BR server-side (convertBRToDatabase, formatBrazilianNumber)
-    quarterly-periods.ts   # Cálculo de períodos trimestrais
-  lib/
-    audit-log.ts           # recordActivity() — grava na tabela activities
-    region-guard.ts        # canAccessRegion / canAccessAnySubRegion / isAdmin
-  scripts/seed/
-    seed.ts                # Seed principal (usuários, regiões, soluções)
-    seed-okrs.ts           # Seed de OKRs de exemplo
-  vite.ts                  # Setup Vite dev / static files prod
-
-/shared/
-  schema.ts   # Schema Drizzle (PostgreSQL) + tipos TypeScript + schemas Zod + índices
-
-/tests/       # Testes Vitest + Supertest
-  auth.test.ts
-  cache.test.ts
-  health.test.ts
-  metrics.test.ts
-  repositories.test.ts
-  routes.test.ts
-  schema.test.ts
-
-/migrations/  # Migrations históricas (referência; usar db:push em dev)
-/docs/        # Documentação interna (upgrade-roadmap.md, migrations.md, upgrade-audit.md)
-/.github/workflows/ci.yml  # Pipeline CI (lint, format, typecheck, test, build)
-```
+The project is organized into `/client` for the frontend, `/server` for the backend, and `/shared` for common schemas and utilities. Key frontend features are modularized under `client/src/features/`, while backend routes and business logic reside in `server/modules/` and `server/services/`. Repositories for database interactions are located in `server/repositories/`.
 
 ### Banco de Dados - Tabelas Principais
-| Tabela | Descrição |
-|--------|-----------|
-| `users` | Usuários com roles (admin/gestor/operacional) e arrays JSON de permissões |
-| `objectives` | Objetivos estratégicos com dono, região, sub-regiões e período |
-| `key_results` | Resultados-chave vinculados a objetivos com metas e progresso |
-| `actions` | Ações vinculadas a key results com responsável, prazo e status |
-| `checkpoints` | Marcos de progresso gerados automaticamente por frequência do KR |
-| `action_comments` | Comentários em ações (incluindo comentários automáticos do sistema) |
-| `regions` | Regiões organizacionais |
-| `sub_regions` | Sub-regiões vinculadas a regiões |
-| `solutions` | Soluções FIERGS (SESI, SENAI, IEL, etc.) |
-| `service_lines` | Linhas de serviço por solução |
-| `services` | Serviços por linha de serviço |
-| `strategic_indicators` | Indicadores estratégicos globais |
-| `quarterly_periods` | Períodos trimestrais de controle |
-| `activities` | Log de atividades (audit trail) |
-| `session` | Sessões PostgreSQL (auto-criada pelo connect-pg-simple) |
+The database schema includes tables for `users`, `objectives`, `key_results`, `actions`, `checkpoints`, `regions`, `sub_regions`, `solutions`, `service_lines`, `services`, `strategic_indicators`, `quarterly_periods`, and `activities` for auditing.
 
 ### Segurança e Produção
-- **Senhas nunca expostas**: `sanitizeUser()` remove `password` de todas as respostas de usuário
-- **`/api/managers` protegido por auth**: formulário de registro usa `/api/managers/public` (só `id` e `name`)
-- **Scrypt com salt**: senhas armazenadas como `hash.salt` (64 bytes)
-- **Helmet**: headers de segurança HTTP em todas as respostas
-- **Rate limiting global**: todas as rotas `/api/*` limitadas a 300 req/min por IP — store distribuído via PostgreSQL (`server/middleware/pg-rate-limit.ts`, tabela `rate_limit_store`)
-- **Rate limiting auth**: `/api/login` e `/api/register` limitados a 30 req / 15 min por IP (anti brute-force) — mesmo store PostgreSQL distribuído
-- **`SESSION_SECRET` obrigatório em produção**: boot falha se `NODE_ENV=production` e env não definida
-- **Sessões PostgreSQL**: `connect-pg-simple` persiste sessões na tabela `session`
-- **Cookies env-aware**: `secure: true` e `sameSite: "none"` só em produção; dev usa `sameSite: "lax"`
-- **Liveness probe**: `GET /health`, `/healthz`, `/api/health` — verifica apenas que o processo está vivo
-- **Readiness probe**: `GET /readyz`, `/api/ready` — verifica conectividade com banco + estado de shutdown
-- **Graceful shutdown**: SIGTERM/SIGINT acionam fechamento ordenado. Timeout forçado de 10s
-- **CSP estrita em produção**: Helmet aplica Content-Security-Policy com `default-src 'self'`
-- **Hash de senha legado**: ainda aceito no login com auto-upgrade para `hash.salt` no primeiro login
-- **Métricas Prometheus**: `GET /metrics` — contadores por método/rota/status, histograma de latência
+- **Senhas Seguras**: Scrypt com salt; `sanitizeUser()` remove senhas de respostas.
+- **Headers de Segurança**: Helmet para headers HTTP seguros.
+- **Rate Limiting**: Global e por rota de autenticação, com store distribuído via PostgreSQL.
+- **Sessões Seguras**: `SESSION_SECRET` obrigatório em produção, sessões persistidas em PostgreSQL, cookies `env-aware`.
+- **Probes**: Liveness (`/health`) e Readiness (`/readyz`) probes para monitoramento.
+- **Graceful Shutdown**: Fechamento ordenado em SIGTERM/SIGINT.
+- **Métricas**: Prometheus (`/metrics`) para monitoramento de performance.
 
 ### API - Rotas Principais
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/api/login` | Autenticação |
-| POST | `/api/logout` | Encerrar sessão |
-| POST | `/api/register` | Registro público (aguarda aprovação) |
-| GET | `/api/user` | Usuário atual autenticado |
-| GET | `/api/managers/public` | Gestores para formulário de registro (sem auth) |
-| GET/POST | `/api/objectives` | Listar / criar objetivos |
-| GET/PUT/DELETE | `/api/objectives/:id` | Objetivo específico |
-| GET/POST | `/api/key-results` | Listar / criar resultados-chave |
-| GET/PUT/DELETE | `/api/key-results/:id` | KR específico |
-| POST | `/api/key-results/:id/recreate-checkpoints` | Recriar checkpoints de um KR |
-| GET/POST | `/api/actions` | Listar / criar ações |
-| GET/PUT/DELETE | `/api/actions/:id` | Ação específica |
-| GET/POST | `/api/actions/:id/comments` | Comentários de ação |
-| GET | `/api/checkpoints` | Listar checkpoints (suporta `?keyResultId=`) |
-| PUT | `/api/checkpoints/:id` | Atualizar checkpoint |
-| POST | `/api/checkpoints/:id/update` | Atualização simplificada de checkpoint |
-| DELETE | `/api/checkpoints/:id` | Excluir checkpoint |
-| GET | `/api/dashboard/kpis` | KPIs do dashboard |
-| GET | `/api/executive-summary` | Resumo executivo |
-| GET/POST | `/api/users` | Usuários |
-| GET | `/api/managers` | Lista de gestores (requer auth) |
-| GET | `/api/pending-users` | Usuários pendentes de aprovação |
-| PATCH | `/api/users/:id` | Atualizar usuário |
-| DELETE | `/api/users/:id` | Excluir usuário |
-| POST | `/api/users/approve` | Aprovar usuário com permissões (gestor herda/filtra escopo automaticamente) |
-| GET | `/api/regions` | Listar regiões |
-| GET | `/api/sub-regions` | Listar sub-regiões |
-| GET | `/api/solutions` | Listar soluções |
-| GET | `/api/service-lines` | Listar linhas de serviço |
-| GET | `/api/services` | Listar serviços |
-| GET | `/api/strategic-indicators` | Listar indicadores estratégicos |
-| GET | `/api/quarters` | Períodos trimestrais |
-| GET | `/api/activities` | Log de atividades (audit trail) |
-| GET | `/api/action-dependencies` | Dependências entre ações |
-| POST/PUT/DELETE | `/api/admin/strategic-indicators/:id` | CRUD indicadores (admin) |
-| POST/PUT/DELETE | `/api/admin/regions/:id` | CRUD regiões (admin) |
-| POST/PUT/DELETE | `/api/admin/sub-regions/:id` | CRUD sub-regiões (admin) |
-| POST/PUT/DELETE | `/api/admin/solutions/:id` | CRUD soluções (admin) |
-| POST/PUT/DELETE | `/api/admin/service-lines/:id` | CRUD linhas de serviço (admin) |
-| POST/PUT/DELETE | `/api/admin/services/:id` | CRUD serviços (admin) |
-| GET | `/api/admin/export-template` | Download de template Excel |
-| POST | `/api/admin/import-data` | Importação de dados via Excel |
+The API provides comprehensive CRUD operations for objectives, key results, actions, checkpoints, and user management. It also includes routes for dashboard KPIs, executive summaries, audit trails, and administrative lookups. Key authentication routes include `/api/login`, `/api/logout`, and `/api/register`.
 
-### Controle de Acesso por Role
-| Role | Permissões |
-|------|-----------|
-| `admin` | Acesso total a todos os dados, usuários e configurações |
-| `gestor` | Criar/editar objetivos e KRs, gerenciar usuários operacionais do time |
-| `operacional` | Visualizar dados do escopo, atualizar checkpoints e ações |
+### Controle de Acesso
+- **Roles**: `admin` (acesso total), `gestor` (gerencia objetivos, KRs e usuários operacionais do time), `operacional` (visualiza dados, atualiza checkpoints e ações).
+- **Permissões Organizacionais**: Usuários não-admin têm restrições baseadas em Regiões, Sub-regiões, Soluções, Linhas de Serviço e Serviços, gerenciadas via árvores de seleção (`RegionTreePicker`, `PermissionTreePicker`). As permissões são filtradas no backend para todas as listagens de dados.
 
-### Permissões Organizacionais (por usuário)
-- Cada usuário não-admin pode ter restrições em 5 dimensões: **Regiões**, **Sub-regiões**, **Soluções**, **Linhas de Serviço** e **Serviços**.
-- Edição na página `/users` usa duas árvores em cascata com a mesma UX:
-  - `RegionTreePicker` (Região → Sub-região)
-  - `PermissionTreePicker` (Solução → Linha → Serviço)
-- Marcar/desmarcar um nó pai propaga a todos os filhos; estados parciais aparecem como indeterminados.
-- Backend (`server/modules/users/users.service.ts:assertGestorScope`): gestor só pode atribuir IDs dentro do próprio escopo nas 5 dimensões; admin sem restrições.
-- Backend (`server/modules/users/users.service.ts:approveUser`): permissões herdam/filtram automaticamente pelo escopo do gestor aprovador.
-- Listagens filtradas pelo escopo do usuário autenticado em `/api/regions`, `/api/sub-regions`, `/api/solutions`, `/api/service-lines`, `/api/services`, `/api/objectives`, `/api/key-results`, `/api/actions`, `/api/checkpoints` (via helpers em `server/lib/region-guard.ts`).
-- Filtro de sub-regiões em objetivos é pós-SQL (coluna `objectives.subRegionIds` é `json`, não `jsonb`): aplicado em `server/repositories/objective.repo.ts` quando o usuário tem `subRegionIds` configurado.
-- Tabela de usuários colapsa as restrições em "Todas/Todos" quando o acesso é integral (admin, sem restrições, ou todos os itens da categoria selecionados).
+### Funcionalidades
+- **Filtros Globais**: Região, sub-região, linha de serviço e trimestre, gerenciados via `FiltersProvider`.
+- **Formatação**: Números e datas no padrão brasileiro (ABNT) e fuso horário `America/Sao_Paulo`.
+- **Checkpoints**: Gerados automaticamente ao criar um KR com base na frequência e atualizam o progresso do KR pai.
+- **Validação Hierárquica de Datas**: KRs dentro do período do objetivo pai; ações dentro do período do KR pai.
+- **Performance**: Code-splitting com `React.lazy`, cache LRU server-side para lookups, e lazy-loading de bibliotecas grandes como `recharts`.
+- **Qualidade de Código**: ESLint, Prettier, Vitest/Supertest para testes, Husky + lint-staged para hooks de pre-commit, e CI automatizado.
 
-### Rotas do Frontend (Wouter)
-| Rota | Página | Visibilidade no Menu |
-|------|--------|-------------|
-| `/` | Alinhamento (árvore de objetivos) | Todos |
-| `/dashboard` | Meu Painel | Todos |
-| `/objectives` | Objetivos | Todos |
-| `/key-results` | Resultados-Chave | Todos |
-| `/actions` | Ações | Todos |
-| `/checkpoints` | Checkpoints | Todos |
-| `/reports` | Relatórios (indicadores + resumo + plano de ação) | Todos |
-| `/users` | Usuários | Admin e Gestor |
-| `/settings` | Configurações | Admin |
-| `/trash` | Lixeira | Admin |
-| `/audit` | Auditoria | Admin |
-| `/indicators` | Indicadores Estratégicos | Fora do menu |
-
-### Filtros Globais
-- Gerenciados pelo `FiltersProvider` em `app-providers.tsx`
-- Hooks: `useFilters()` (região/sub-região/linha de serviço) e `useQuarterlyFilter()` (trimestre)
-- Renderizados via `CompactHeader` com `showFilters={true}` em cada página
-
-### Formatação de Números
-- Padrão brasileiro ABNT (vírgula como separador decimal, ponto como separador de milhar)
-- Client-side: `formatBrazilianNumber()`, `parseDecimalBR()` em `client/src/lib/formatters.ts`
-- Server-side: `formatBrazilianNumber()`, `convertBRToDatabase()` em `server/shared/formatters.ts`
-
-### Formatação de Datas e Fuso Horário
-- Fuso horário fixo: `America/Sao_Paulo` (UTC-3) — definido em `server/index.ts` via `process.env.TZ`
-- Client: helpers em `client/src/lib/timezone.ts` (`formatSP`, `parseISOSP`, `nowSP`, `toSPZoned`) via `date-fns-tz`
-- Datas armazenadas como `YYYY-MM-DD` (sem horário) — interpretadas como meia-noite em São Paulo
-- Exibição: `DD/MM/AAAA` e `DD/MM/AAAA HH:mm` via `formatDateBR` / `formatDateTimeBR` em `client/src/lib/formatters.ts`
-
-### Gerenciamento de Modais
-- Limpeza automática de overlays Radix UI travados em `client/src/lib/modal-cleanup.ts`
-- Cleanup de emergência via `Ctrl+Shift+C` em `client/src/lib/emergency-cleanup.ts`
-
-### Checkpoints
-- Gerados automaticamente ao criar um KR com base na frequência (semanal, quinzenal, mensal, trimestral)
-- Endpoint `/api/key-results/:id/recreate-checkpoints` recria checkpoints
-- Ao concluir um checkpoint, o `currentValue` e `progress` do KR pai são atualizados (via `recalc.ts`)
-
-### Validação de Datas (Hierárquica)
-- KR (`server/modules/key-results/key-results.service.ts`): `assertKRWithinObjective` valida que `startDate`/`endDate` do resultado-chave estejam dentro do período do objetivo pai (chamado em create + update)
-- Ação (`server/modules/actions/actions.service.ts`): `assertActionWithinKR` valida que `dueDate` esteja dentro do período do KR pai (chamado em create + update)
-- Frontend espelha as mesmas regras em `action-form.tsx` e `key-result-form-simple.tsx` para feedback imediato
-- Erros retornam como `BadRequestError` com mensagem em português contendo o intervalo permitido
-
-### Performance
-- **Code-splitting**: `App.tsx` usa `React.lazy` + `Suspense` para todas as páginas autenticadas
-- **Cache LRU server-side** (`server/cache.ts`): lookups cacheados com TTL de 5 minutos; mutações em `/api/admin/*` invalidam o cache automaticamente
-- **recharts lazy-loaded**: `kr-progress-chart-lazy.tsx` isola a lib recharts em chunk separado
-
-### Qualidade de Código
-- **ESLint** (`eslint.config.js`): TypeScript + React Hooks + React Refresh, integrado com Prettier
-- **Prettier** (`.prettierrc.json`): 100 cols, double quotes, semi, trailing comma ES5
-- **Vitest** + **Supertest**: testes em `tests/*.test.ts`, cobertura via `@vitest/coverage-v8`
-- **Husky + lint-staged**: hook `pre-commit` aplica `eslint --fix` + `prettier --write` nos arquivos staged
-- **CI** (`.github/workflows/ci.yml`): lint + format check + typecheck + testes + build em cada push/PR
-
-## Configuração do Ambiente
-
-### Variáveis de Ambiente
-| Variável | Descrição | Obrigatória |
-|----------|-----------|-------------|
-| `DATABASE_URL` | URL de conexão PostgreSQL | Sim |
-| `SESSION_SECRET` | Segredo para sessões (obrigatório em produção) | Sim (prod) |
-| `PORT` | Porta do servidor (padrão: 5000) | Não |
-| `NODE_ENV` | `production` ativa cookies seguros, logs JSON, etc. | Sim (prod) |
-
-### Usuário Padrão
-- **Username**: `admin`
-- **Senha**: `admin123`
-- **Role**: admin
-
-### Executar o Projeto
-```bash
-npm run dev             # Desenvolvimento (tsx + Vite HMR) — porta 5000
-npm run build           # Build de produção (Vite frontend + esbuild backend)
-npm run start           # Produção (requer build prévio)
-npm run db:push         # Sincronizar schema Drizzle com banco (dev)
-npm test                # Suíte Vitest completa
-npm run lint            # ESLint
-npm run format          # Prettier
-```
-
-### Migrations Versionadas (Produção)
-```bash
-npx drizzle-kit generate   # Gera SQL incremental em /migrations
-npx drizzle-kit migrate    # Aplica migrations pendentes
-```
-
-## Workflow de Desenvolvimento
-Único workflow "Start application" executa `npm run dev` → `node_modules/.bin/tsx server/index.ts`. O servidor Express na porta 5000 serve tanto a API REST quanto o frontend React (Vite HMR em dev / estáticos em prod).
-
-## Notas de Manutenção
-- Schema sincronizado com `npm run db:push` em dev; migrations versionadas para produção
-- Autenticação usa scrypt com salt (`hash.salt`); hash legado ainda suportado com auto-upgrade
-- Comentários automáticos criados ao alterar ações para status final
-- Logger HTTP centralizado em `server/infra/logger.ts`: dev mostra só rotas `/api`; prod loga JSON estruturado
-- A conexão com o banco usa o pacote `postgres` diretamente (não `@neondatabase/serverless`)
-- Sessões persistidas na tabela `session` (PostgreSQL) via `connect-pg-simple`
-- Estabilidade do processo: listeners `pool.on('error')` em `server/repositories/session-store.ts` e `server/middleware/pg-rate-limit.ts` + `idleTimeoutMillis: 10000`; handler `uncaughtException` em `server/index.ts` apenas loga e nunca derruba o servidor (compatível com proxy do Replit que reseta sockets idle)
-- `POST /api/key-results` já gera checkpoints automaticamente em `key-results.service.ts:114` via `storage.generateCheckpoints(keyResult.id)`; rota `/recreate-checkpoints` permanece disponível para regenerar manualmente após edições
-
-#### Histórico de limpeza (abril/2026)
-- Backend: removidos `server/logger.ts`, `server/formatters.ts`, `server/pg-storage.ts`, `server/storage.ts`, `server/quarterly-periods.ts`, `server/seed.ts`, `server/seed-okrs.ts`, `shared/pg-schema.ts` (barris de compatibilidade sem uso)
-- Frontend: removidos 21 componentes duplicados em `client/src/components/*.tsx` (`action-form`, `action-plan`, `action-timeline`, `animated-progress-ring`, `checkpoint-progress-grid`, `checkpoint-timeline-header`, `checkpoint-timeline`, `checkpoint-update-dialog`, `checkpoint-updater`, `compact-header`, `executive-summary`, `gantt-timeline`, `indicators-dashboard`, `key-result-form-simple`, `kr-progress-chart`, `kr-progress-chart-lazy`, `next-checkpoints-overview`, `objective-form`, `objectives-table`, `quarterly-filter`, `sidebar`) — versões canônicas vivem em `client/src/features/<dominio>/` e `client/src/components/layout/`
-- Build: `tailwind.config.ts` removido — Tailwind 4 usa config CSS-first em `client/src/index.css` (`@theme`, `@plugin`, `@custom-variant`) processada por `@tailwindcss/postcss` (postcss.config.js); `components.json` já estava com `"tailwind.config": ""`
-- Lint: `npx tsc --noEmit` zerado; `npx eslint .` saiu de 7 erros + 728 avisos para 0 erros + 549 avisos (apenas `@typescript-eslint/no-explicit-any` em `server/storage/pg.ts` e em `tests/`)
-
-#### Histórico de mudanças (27/abr/2026)
-- **Permissões organizacionais — Regiões/Sub-regiões**: novo `client/src/features/users/region-tree-picker.tsx` (árvore Região → Sub-região, mesma UX da árvore de serviços) na seção *Permissões Organizacionais* da página `/users`.
-- **Backend**: `assertGestorScope` (em `server/modules/users/users.service.ts`) agora valida `regionIds` e `subRegionIds` contra o escopo do gestor; `ObjectiveRepo.getObjectives` (em `server/repositories/objective.repo.ts`) aplica filtro pós-SQL de sub-regiões para usuários com `subRegionIds` definido e suporta `filters.subRegionId`.
-- **UI**: tabela de usuários agora mostra um único badge "Todas/Todos" por categoria quando o acesso é integral (admin, sem restrições, ou todos os itens marcados); badges individuais aparecem apenas em seleção parcial. Componente `permission-badges` ganhou as tonalidades `amber` e `rose` para Regiões/Sub-regiões.
-- **Limpeza adicional (27/abr/2026)**: novamente removidos os 21 componentes soltos em `client/src/components/*.tsx` (haviam reaparecido) + `client/src/features/checkpoints/checkpoint-updater.tsx` (sem uso). Resultado: `npx tsc --noEmit` limpo; `npx eslint .` saiu de 6 erros + 731 avisos para **0 erros + 536 avisos**.
+## External Dependencies
+- **PostgreSQL**: Primary database for all application data and session storage.
+- **Passport.js**: Authentication middleware.
+- **Express.js**: Web framework for the backend.
+- **React**: Frontend library.
+- **Vite**: Frontend build tool.
+- **Tailwind CSS**: Utility-first CSS framework.
+- **Shadcn/ui (Radix UI)**: UI component library.
+- **TanStack Query**: Server state management.
+- **Wouter**: Frontend routing.
+- **React Hook Form**: Form management.
+- **Zod**: Schema validation.
+- **Drizzle ORM**: TypeScript ORM.
+- **Pino**: Logging library.
+- **Prometheus**: Metrics collection.
+- **date-fns-tz**: Date and time utilities with timezone support.
