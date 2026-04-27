@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { PermissionTreePicker } from "@/features/users/permission-tree-picker";
+import { RegionTreePicker } from "@/features/users/region-tree-picker";
 import { PermissionBadgeList } from "@/features/users/permission-badges";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -212,8 +213,15 @@ export default function UsersPage() {
       );
 
   // Filtros responsivos baseados nas seleções do formulário
+  const selectedRegionIds = form.watch("regionIds") || [];
   const selectedSolutionIds = form.watch("solutionIds") || [];
   const selectedServiceLineIds = form.watch("serviceLineIds") || [];
+
+  // Sub-regiões filtradas pelas regiões selecionadas
+  // Se nenhuma região selecionada = mostrar todas as sub-regiões disponíveis
+  const filteredSubRegions = selectedRegionIds.length > 0
+    ? availableSubRegions.filter(sr => selectedRegionIds.includes(sr.regionId))
+    : availableSubRegions;
 
   // Linhas de serviço filtradas pelas soluções selecionadas
   // Se nenhuma solução selecionada = mostrar todas as linhas disponíveis
@@ -226,6 +234,16 @@ export default function UsersPage() {
   const filteredServices = selectedServiceLineIds.length > 0
     ? availableServices.filter(service => selectedServiceLineIds.includes(service.serviceLineId))
     : availableServices;
+
+  // O(1) lookup maps para regiões/sub-regiões na tabela
+  const regionMap = useMemo(
+    () => new Map(regions.map((r) => [r.id, r])),
+    [regions]
+  );
+  const subRegionMap = useMemo(
+    () => new Map(subRegions.map((s) => [s.id, s])),
+    [subRegions]
+  );
 
   // Mutations
   const createUserMutation = useMutation({
@@ -670,10 +688,34 @@ export default function UsersPage() {
                             <div className="space-y-4 border-t pt-4">
                               <h3 className="font-medium text-sm">Permissões Organizacionais</h3>
                               <p className="text-xs text-muted-foreground">
-                                Defina as Soluções, Linhas de Serviço e Serviços que este usuário pode acessar. 
+                                Defina as Regiões, Sub-regiões, Soluções, Linhas de Serviço e Serviços que este usuário pode acessar.
                                 Deixe vazio para liberar acesso a todos os itens disponíveis.
                                 {currentUser?.role === "gestor" && " Limitado às suas próprias permissões."}
                               </p>
+
+                              <FormField
+                                control={form.control}
+                                name="regionIds"
+                                render={() => (
+                                  <FormItem>
+                                    <FormLabel>Regiões e Sub-regiões</FormLabel>
+                                    <RegionTreePicker
+                                      regions={availableRegions}
+                                      subRegions={availableSubRegions}
+                                      value={{
+                                        regionIds: form.watch("regionIds") || [],
+                                        subRegionIds: form.watch("subRegionIds") || [],
+                                      }}
+                                      onChange={(next) => {
+                                        form.setValue("regionIds", next.regionIds, { shouldDirty: true });
+                                        form.setValue("subRegionIds", next.subRegionIds, { shouldDirty: true });
+                                      }}
+                                      helperText="Marque uma região para selecionar todas as suas sub-regiões. Use a busca para encontrar rapidamente."
+                                    />
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
 
                               <FormField
                                 control={form.control}
@@ -758,6 +800,22 @@ export default function UsersPage() {
                         <TableCell>
                           <div className="space-y-1 max-w-md">
                             <PermissionBadgeList
+                              label="Regiões"
+                              tone="amber"
+                              testIdPrefix={`badge-region-${user.id}`}
+                              items={(user.regionIds ?? [])
+                                .map((id) => regionMap.get(id))
+                                .filter((x): x is Region => Boolean(x))}
+                            />
+                            <PermissionBadgeList
+                              label="Sub-regiões"
+                              tone="rose"
+                              testIdPrefix={`badge-subregion-${user.id}`}
+                              items={(user.subRegionIds ?? [])
+                                .map((id) => subRegionMap.get(id))
+                                .filter((x): x is SubRegion => Boolean(x))}
+                            />
+                            <PermissionBadgeList
                               label="Soluções"
                               tone="blue"
                               testIdPrefix={`badge-solution-${user.id}`}
@@ -787,6 +845,8 @@ export default function UsersPage() {
                               </Badge>
                             )}
                             {user.role !== "admin" &&
+                              (!user.regionIds || user.regionIds.length === 0) &&
+                              (!user.subRegionIds || user.subRegionIds.length === 0) &&
                               (!user.solutionIds || user.solutionIds.length === 0) &&
                               (!user.serviceLineIds || user.serviceLineIds.length === 0) &&
                               (!user.serviceIds || user.serviceIds.length === 0) && (

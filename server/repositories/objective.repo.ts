@@ -5,7 +5,7 @@ import {
 import { db } from '../pg-db';
 import { eq, and, desc, inArray, isNull, isNotNull, sql } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
-import { hasGlobalRegionAccess, isAdmin, userRegionIds } from '../lib/region-guard';
+import { hasGlobalRegionAccess, isAdmin, userRegionIds, userSubRegionIds } from '../lib/region-guard';
 
 export interface ObjectiveFilters {
   regionId?: number;
@@ -82,7 +82,32 @@ export class ObjectiveRepo {
     let q: any = (query as any).orderBy(desc(objectives.createdAt));
     if (typeof filters.limit === 'number') q = q.limit(filters.limit);
     if (typeof filters.offset === 'number') q = q.offset(filters.offset);
-    return q;
+
+    let rows: any[] = await q;
+
+    // Pós-filtro por sub-região (json column → filtro em memória).
+    // Restringe quando o usuário tem sub-regiões definidas; objetivos sem
+    // restrição de sub-região permanecem visíveis se a região passou no filtro.
+    if (filters.currentUserId) {
+      const user = await this.userRepo.getUser(filters.currentUserId);
+      if (user && !isAdmin(user)) {
+        const userSubs = userSubRegionIds(user);
+        if (userSubs.length > 0) {
+          rows = rows.filter((o: any) => {
+            const subs: number[] = Array.isArray(o.subRegionIds) ? o.subRegionIds : [];
+            if (subs.length === 0) return true;
+            return subs.some((id) => userSubs.includes(id));
+          });
+        }
+      }
+    }
+
+    if (typeof filters.subRegionId === 'number') {
+      const target = filters.subRegionId;
+      rows = rows.filter((o: any) => Array.isArray(o.subRegionIds) && o.subRegionIds.includes(target));
+    }
+
+    return rows;
   }
 
   async getObjective(id: number, _currentUserId?: number, opts: { includeDeleted?: boolean } = {}): Promise<any | undefined> {

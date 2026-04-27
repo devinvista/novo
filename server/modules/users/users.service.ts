@@ -21,7 +21,12 @@ type CurrentUser = {
   serviceIds?: number[];
 };
 
-type ScopeField = "solutionIds" | "serviceLineIds" | "serviceIds";
+type ScopeField =
+  | "regionIds"
+  | "subRegionIds"
+  | "solutionIds"
+  | "serviceLineIds"
+  | "serviceIds";
 
 /**
  * Valida se um gestor só atribui ids dentro do próprio escopo.
@@ -29,6 +34,8 @@ type ScopeField = "solutionIds" | "serviceLineIds" | "serviceIds";
  */
 export function assertGestorScope(currentUser: CurrentUser, userData: Record<string, any>) {
   const cur: Record<ScopeField, number[]> = {
+    regionIds: Array.isArray(currentUser.regionIds) ? currentUser.regionIds : [],
+    subRegionIds: Array.isArray(currentUser.subRegionIds) ? currentUser.subRegionIds : [],
     solutionIds: Array.isArray(currentUser.solutionIds) ? currentUser.solutionIds : [],
     serviceLineIds: Array.isArray(currentUser.serviceLineIds) ? currentUser.serviceLineIds : [],
     serviceIds: Array.isArray(currentUser.serviceIds) ? currentUser.serviceIds : [],
@@ -42,6 +49,8 @@ export function assertGestorScope(currentUser: CurrentUser, userData: Record<str
     if (invalid.length > 0) throw new ForbiddenError(msg);
   };
 
+  check("regionIds", "Você não tem permissão para atribuir estas regiões ao usuário");
+  check("subRegionIds", "Você não tem permissão para atribuir estas sub-regiões ao usuário");
   check("solutionIds", "Você não tem permissão para atribuir estas soluções ao usuário");
   check("serviceLineIds", "Você não tem permissão para atribuir estas linhas de serviço ao usuário");
   check("serviceIds", "Você não tem permissão para atribuir estes serviços ao usuário");
