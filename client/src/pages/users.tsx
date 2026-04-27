@@ -97,6 +97,67 @@ const userFormSchema = z.object({
 
 type UserFormData = z.infer<typeof userFormSchema>;
 
+interface PermissionRowProps {
+  label: string;
+  fullLabel: string;
+  tone: "amber" | "rose" | "blue" | "green" | "purple";
+  testIdPrefix: string;
+  total: number;
+  ids?: number[];
+  isAdmin: boolean;
+  items: { id: number; name: string }[];
+}
+
+const FULL_TONE_CLASS: Record<PermissionRowProps["tone"], string> = {
+  amber: "bg-amber-50 text-amber-700 border-amber-200",
+  rose: "bg-rose-50 text-rose-700 border-rose-200",
+  blue: "bg-blue-50 text-blue-700 border-blue-200",
+  green: "bg-green-50 text-green-700 border-green-200",
+  purple: "bg-purple-50 text-purple-700 border-purple-200",
+};
+
+function PermissionRow({
+  label,
+  fullLabel,
+  tone,
+  testIdPrefix,
+  total,
+  ids,
+  isAdmin,
+  items,
+}: PermissionRowProps) {
+  const selectedCount = Array.isArray(ids) ? ids.length : 0;
+  const isFull =
+    isAdmin ||
+    (total > 0 && (selectedCount === 0 || selectedCount >= total));
+
+  if (isFull) {
+    return (
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-muted-foreground shrink-0">{label}:</span>
+        <Badge
+          variant="outline"
+          className={`text-xs px-1.5 py-0 ${FULL_TONE_CLASS[tone]}`}
+          data-testid={`${testIdPrefix}-all`}
+        >
+          {fullLabel}
+        </Badge>
+      </div>
+    );
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <PermissionBadgeList
+      label={label}
+      tone={tone}
+      testIdPrefix={testIdPrefix}
+      items={items}
+    />
+  );
+}
+
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
@@ -799,42 +860,62 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1 max-w-md">
-                            <PermissionBadgeList
+                            <PermissionRow
                               label="Regiões"
+                              fullLabel="Todas"
                               tone="amber"
                               testIdPrefix={`badge-region-${user.id}`}
+                              total={regions.length}
+                              ids={user.regionIds}
+                              isAdmin={user.role === "admin"}
                               items={(user.regionIds ?? [])
                                 .map((id) => regionMap.get(id))
                                 .filter((x): x is Region => Boolean(x))}
                             />
-                            <PermissionBadgeList
+                            <PermissionRow
                               label="Sub-regiões"
+                              fullLabel="Todas"
                               tone="rose"
                               testIdPrefix={`badge-subregion-${user.id}`}
+                              total={subRegions.length}
+                              ids={user.subRegionIds}
+                              isAdmin={user.role === "admin"}
                               items={(user.subRegionIds ?? [])
                                 .map((id) => subRegionMap.get(id))
                                 .filter((x): x is SubRegion => Boolean(x))}
                             />
-                            <PermissionBadgeList
+                            <PermissionRow
                               label="Soluções"
+                              fullLabel="Todas"
                               tone="blue"
                               testIdPrefix={`badge-solution-${user.id}`}
+                              total={solutions.length}
+                              ids={user.solutionIds}
+                              isAdmin={user.role === "admin"}
                               items={(user.solutionIds ?? [])
                                 .map((id) => solutionMap.get(id))
                                 .filter((x): x is { id: number; name: string } => Boolean(x))}
                             />
-                            <PermissionBadgeList
+                            <PermissionRow
                               label="Linhas"
+                              fullLabel="Todas"
                               tone="green"
                               testIdPrefix={`badge-line-${user.id}`}
+                              total={serviceLines.length}
+                              ids={user.serviceLineIds}
+                              isAdmin={user.role === "admin"}
                               items={(user.serviceLineIds ?? [])
                                 .map((id) => serviceLineMap.get(id))
                                 .filter((x): x is ServiceLine => Boolean(x))}
                             />
-                            <PermissionBadgeList
+                            <PermissionRow
                               label="Serviços"
+                              fullLabel="Todos"
                               tone="purple"
                               testIdPrefix={`badge-service-${user.id}`}
+                              total={services.length}
+                              ids={user.serviceIds}
+                              isAdmin={user.role === "admin"}
                               items={(user.serviceIds ?? [])
                                 .map((id) => serviceMap.get(id))
                                 .filter((x): x is Service => Boolean(x))}
@@ -844,14 +925,6 @@ export default function UsersPage() {
                                 Acesso Total
                               </Badge>
                             )}
-                            {user.role !== "admin" &&
-                              (!user.regionIds || user.regionIds.length === 0) &&
-                              (!user.subRegionIds || user.subRegionIds.length === 0) &&
-                              (!user.solutionIds || user.solutionIds.length === 0) &&
-                              (!user.serviceLineIds || user.serviceLineIds.length === 0) &&
-                              (!user.serviceIds || user.serviceIds.length === 0) && (
-                                <span className="text-xs text-muted-foreground">Sem restrições específicas</span>
-                              )}
                           </div>
                         </TableCell>
                         <TableCell>
