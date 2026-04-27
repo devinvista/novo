@@ -57,6 +57,10 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
       objectives-table.tsx        # Tabela de objetivos
     reports/
       executive-summary.tsx       # Resumo executivo
+    users/
+      region-tree-picker.tsx      # Árvore Regiões → Sub-regiões (cascata, mesma UX da árvore de serviços)
+      permission-tree-picker.tsx  # Árvore Soluções → Linhas → Serviços
+      permission-badges.tsx       # Lista de badges colorida com overflow "+N" usada na tabela de usuários
   pages/
     alignment-tree.tsx  # / — Árvore de alinhamento (dashboard principal)
     objectives.tsx      # /objectives — Objetivos
@@ -236,7 +240,7 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | GET | `/api/pending-users` | Usuários pendentes de aprovação |
 | PATCH | `/api/users/:id` | Atualizar usuário |
 | DELETE | `/api/users/:id` | Excluir usuário |
-| POST | `/api/users/approve` | Aprovar usuário com permissões |
+| POST | `/api/users/approve` | Aprovar usuário com permissões (gestor herda/filtra escopo automaticamente) |
 | GET | `/api/regions` | Listar regiões |
 | GET | `/api/sub-regions` | Listar sub-regiões |
 | GET | `/api/solutions` | Listar soluções |
@@ -261,6 +265,18 @@ Plataforma de gerenciamento de OKR (Objectives and Key Results) para rastreament
 | `admin` | Acesso total a todos os dados, usuários e configurações |
 | `gestor` | Criar/editar objetivos e KRs, gerenciar usuários operacionais do time |
 | `operacional` | Visualizar dados do escopo, atualizar checkpoints e ações |
+
+### Permissões Organizacionais (por usuário)
+- Cada usuário não-admin pode ter restrições em 5 dimensões: **Regiões**, **Sub-regiões**, **Soluções**, **Linhas de Serviço** e **Serviços**.
+- Edição na página `/users` usa duas árvores em cascata com a mesma UX:
+  - `RegionTreePicker` (Região → Sub-região)
+  - `PermissionTreePicker` (Solução → Linha → Serviço)
+- Marcar/desmarcar um nó pai propaga a todos os filhos; estados parciais aparecem como indeterminados.
+- Backend (`server/modules/users/users.service.ts:assertGestorScope`): gestor só pode atribuir IDs dentro do próprio escopo nas 5 dimensões; admin sem restrições.
+- Backend (`server/modules/users/users.service.ts:approveUser`): permissões herdam/filtram automaticamente pelo escopo do gestor aprovador.
+- Listagens filtradas pelo escopo do usuário autenticado em `/api/regions`, `/api/sub-regions`, `/api/solutions`, `/api/service-lines`, `/api/services`, `/api/objectives`, `/api/key-results`, `/api/actions`, `/api/checkpoints` (via helpers em `server/lib/region-guard.ts`).
+- Filtro de sub-regiões em objetivos é pós-SQL (coluna `objectives.subRegionIds` é `json`, não `jsonb`): aplicado em `server/repositories/objective.repo.ts` quando o usuário tem `subRegionIds` configurado.
+- Tabela de usuários colapsa as restrições em "Todas/Todos" quando o acesso é integral (admin, sem restrições, ou todos os itens da categoria selecionados).
 
 ### Rotas do Frontend (Wouter)
 | Rota | Página | Visibilidade no Menu |
@@ -371,3 +387,9 @@ npx drizzle-kit migrate    # Aplica migrations pendentes
 - Frontend: removidos 21 componentes duplicados em `client/src/components/*.tsx` (`action-form`, `action-plan`, `action-timeline`, `animated-progress-ring`, `checkpoint-progress-grid`, `checkpoint-timeline-header`, `checkpoint-timeline`, `checkpoint-update-dialog`, `checkpoint-updater`, `compact-header`, `executive-summary`, `gantt-timeline`, `indicators-dashboard`, `key-result-form-simple`, `kr-progress-chart`, `kr-progress-chart-lazy`, `next-checkpoints-overview`, `objective-form`, `objectives-table`, `quarterly-filter`, `sidebar`) — versões canônicas vivem em `client/src/features/<dominio>/` e `client/src/components/layout/`
 - Build: `tailwind.config.ts` removido — Tailwind 4 usa config CSS-first em `client/src/index.css` (`@theme`, `@plugin`, `@custom-variant`) processada por `@tailwindcss/postcss` (postcss.config.js); `components.json` já estava com `"tailwind.config": ""`
 - Lint: `npx tsc --noEmit` zerado; `npx eslint .` saiu de 7 erros + 728 avisos para 0 erros + 549 avisos (apenas `@typescript-eslint/no-explicit-any` em `server/storage/pg.ts` e em `tests/`)
+
+#### Histórico de mudanças (27/abr/2026)
+- **Permissões organizacionais — Regiões/Sub-regiões**: novo `client/src/features/users/region-tree-picker.tsx` (árvore Região → Sub-região, mesma UX da árvore de serviços) na seção *Permissões Organizacionais* da página `/users`.
+- **Backend**: `assertGestorScope` (em `server/modules/users/users.service.ts`) agora valida `regionIds` e `subRegionIds` contra o escopo do gestor; `ObjectiveRepo.getObjectives` (em `server/repositories/objective.repo.ts`) aplica filtro pós-SQL de sub-regiões para usuários com `subRegionIds` definido e suporta `filters.subRegionId`.
+- **UI**: tabela de usuários agora mostra um único badge "Todas/Todos" por categoria quando o acesso é integral (admin, sem restrições, ou todos os itens marcados); badges individuais aparecem apenas em seleção parcial. Componente `permission-badges` ganhou as tonalidades `amber` e `rose` para Regiões/Sub-regiões.
+- **Limpeza adicional (27/abr/2026)**: novamente removidos os 21 componentes soltos em `client/src/components/*.tsx` (haviam reaparecido) + `client/src/features/checkpoints/checkpoint-updater.tsx` (sem uso). Resultado: `npx tsc --noEmit` limpo; `npx eslint .` saiu de 6 erros + 731 avisos para **0 erros + 536 avisos**.
