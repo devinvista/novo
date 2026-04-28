@@ -126,8 +126,8 @@ export class PgStorage implements IStorage {
   createActionComment(comment: InsertActionComment) { return this.actions.createActionComment(comment); }
 
   // ---------- Checkpoints ----------
-  getCheckpoints(keyResultId?: number, currentUserId?: number) {
-    return this.checkpoints.getCheckpoints(keyResultId, currentUserId);
+  getCheckpoints(keyResultId?: number, currentUserId?: number, filters?: { regionId?: number; subRegionId?: number }) {
+    return this.checkpoints.getCheckpoints(keyResultId, currentUserId, filters);
   }
   getCheckpoint(id: number, currentUserId?: number) { return this.checkpoints.getCheckpoint(id, currentUserId); }
   updateCheckpoint(id: number, data: any) { return this.checkpoints.updateCheckpoint(id, data); }

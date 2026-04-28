@@ -25,10 +25,14 @@ export function formatCheckpointsForResponse(list: any[]) {
 }
 
 /**
- * Lista checkpoints (opcionalmente filtrados por KR) e formata valores.
+ * Lista checkpoints (opcionalmente filtrados por KR e/ou região/sub-região) e formata valores.
  */
-export async function listCheckpoints(currentUser: CurrentUser, keyResultId?: number) {
-  const checkpoints = await storage.getCheckpoints(keyResultId, currentUser.id);
+export async function listCheckpoints(
+  currentUser: CurrentUser,
+  keyResultId?: number,
+  filters?: { regionId?: number; subRegionId?: number }
+) {
+  const checkpoints = await storage.getCheckpoints(keyResultId, currentUser.id, filters);
   return formatCheckpointsForResponse(checkpoints);
 }
 

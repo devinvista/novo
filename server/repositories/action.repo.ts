@@ -67,7 +67,20 @@ export class ActionRepo {
       whereConditions.push(isNull(actions.deletedAt));
     }
 
-    if (filters?.currentUserId) {
+    // Region/sub-region filtering: resolve allowed objective IDs first, then restrict actions
+    let allowedObjectiveIds: number[] = [];
+    if (filters?.regionId || filters?.subRegionId) {
+      const objectiveFilters: any = {};
+      if (filters.regionId) objectiveFilters.regionId = filters.regionId;
+      if (filters.subRegionId) objectiveFilters.subRegionId = filters.subRegionId;
+      if (filters.currentUserId) objectiveFilters.currentUserId = filters.currentUserId;
+      const filteredObjectives = await this.objectiveRepo.getObjectives(objectiveFilters);
+      allowedObjectiveIds = filteredObjectives.map(obj => obj.id);
+      if (allowedObjectiveIds.length === 0) return [];
+      whereConditions.push(inArray(objectives.id, allowedObjectiveIds));
+    }
+
+    if (filters?.currentUserId && allowedObjectiveIds.length === 0) {
       const user = await this.userRepo.getUser(filters.currentUserId);
       if (user && !isAdmin(user)) {
         const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId: filters.currentUserId });

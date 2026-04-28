@@ -56,7 +56,7 @@ export class CheckpointRepo {
     private readonly keyResultRepo: KeyResultRepo,
   ) {}
 
-  async getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<any[]> {
+  async getCheckpoints(keyResultId?: number, currentUserId?: number, filters?: { regionId?: number; subRegionId?: number }): Promise<any[]> {
     let query = db.select({
       checkpoints: checkpoints,
       keyResults: keyResults,
@@ -70,7 +70,20 @@ export class CheckpointRepo {
 
     if (keyResultId) conditions.push(eq(checkpoints.keyResultId, keyResultId));
 
-    if (currentUserId) {
+    // Region/sub-region filtering cascades from objectives
+    let allowedObjectiveIds: number[] = [];
+    if (filters?.regionId || filters?.subRegionId) {
+      const objectiveFilters: any = {};
+      if (filters?.regionId) objectiveFilters.regionId = filters.regionId;
+      if (filters?.subRegionId) objectiveFilters.subRegionId = filters.subRegionId;
+      if (currentUserId) objectiveFilters.currentUserId = currentUserId;
+      const filteredObjectives = await this.objectiveRepo.getObjectives(objectiveFilters);
+      allowedObjectiveIds = filteredObjectives.map(obj => obj.id);
+      if (allowedObjectiveIds.length === 0) return [];
+      conditions.push(inArray(objectives.id, allowedObjectiveIds));
+    }
+
+    if (currentUserId && allowedObjectiveIds.length === 0) {
       const user = await this.userRepo.getUser(currentUserId);
       if (user && user.role !== 'admin') {
         const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId });

@@ -12,7 +12,10 @@ checkpointsRouter.get(
   "/",
   asyncHandler(async (req: any, res) => {
     res.json(
-      await CheckpointsService.listCheckpoints(req.user, intParam(req.query.keyResultId))
+      await CheckpointsService.listCheckpoints(req.user, intParam(req.query.keyResultId), {
+        regionId: intParam(req.query.regionId),
+        subRegionId: intParam(req.query.subRegionId),
+      })
     );
   })
 );

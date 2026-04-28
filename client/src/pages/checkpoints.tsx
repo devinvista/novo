@@ -40,10 +40,17 @@ export default function Checkpoints() {
     }
   }, [location]);
 
+  const { filters } = useFilters();
+
   const { data: keyResults, isLoading: keyResultsLoading } = useQuery<KeyResult[]>({
-    queryKey: ["/api/key-results"],
+    queryKey: ["/api/key-results", JSON.stringify(filters)],
     queryFn: async () => {
-      const r = await fetch("/api/key-results", { credentials: "include" });
+      const params = new URLSearchParams();
+      if (filters?.regionId) params.append("regionId", filters.regionId.toString());
+      if (filters?.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
+      if (filters?.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
+      const url = `/api/key-results${params.toString() ? `?${params}` : ""}`;
+      const r = await fetch(url, { credentials: "include" });
       if (!r.ok) throw new Error("Erro ao carregar resultados-chave");
       const data = await r.json();
       return Array.isArray(data) ? data : [];
@@ -53,11 +60,13 @@ export default function Checkpoints() {
   });
 
   const { data: checkpoints, isLoading: checkpointsLoading } = useQuery<Checkpoint[]>({
-    queryKey: ["/api/checkpoints", selectedKeyResultId],
+    queryKey: ["/api/checkpoints", selectedKeyResultId, JSON.stringify(filters)],
     queryFn: async () => {
-      const url = selectedKeyResultId 
-        ? `/api/checkpoints?keyResultId=${selectedKeyResultId}` 
-        : "/api/checkpoints";
+      const params = new URLSearchParams();
+      if (selectedKeyResultId) params.append("keyResultId", selectedKeyResultId.toString());
+      if (filters?.regionId) params.append("regionId", filters.regionId.toString());
+      if (filters?.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
+      const url = `/api/checkpoints${params.toString() ? `?${params}` : ""}`;
       const r = await fetch(url, { credentials: "include" });
       if (!r.ok) throw new Error("Erro ao carregar checkpoints");
       const data = await r.json();

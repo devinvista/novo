@@ -20,6 +20,7 @@ export class KeyResultRepo {
     if (filters?.regionId || filters?.subRegionId) {
       const objectiveFilters: any = {};
       if (filters.regionId) objectiveFilters.regionId = filters.regionId;
+      if (filters.subRegionId) objectiveFilters.subRegionId = filters.subRegionId;
       if (filters.currentUserId) objectiveFilters.currentUserId = filters.currentUserId;
 
       const filteredObjectives = await this.objectiveRepo.getObjectives(objectiveFilters);

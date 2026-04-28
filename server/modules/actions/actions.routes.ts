@@ -25,6 +25,8 @@ actionsRouter.get(
     const offset = intParam(req.query.offset);
     const actions = await storage.getActions({
       keyResultId: intParam(req.query.keyResultId),
+      regionId: intParam(req.query.regionId),
+      subRegionId: intParam(req.query.subRegionId),
       currentUserId: req.user?.id,
       ...(typeof limit === "number" && limit > 0 ? { limit: Math.min(limit, 200) } : {}),
       ...(typeof offset === "number" && offset >= 0 ? { offset } : {}),

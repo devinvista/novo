@@ -57,7 +57,7 @@ export interface IStorage {
   updateAction(id: number, action: Partial<InsertAction>): Promise<Action>;
   deleteAction(id: number): Promise<void>;
 
-  getCheckpoints(keyResultId?: number, currentUserId?: number): Promise<any[]>;
+  getCheckpoints(keyResultId?: number, currentUserId?: number, filters?: { regionId?: number; subRegionId?: number }): Promise<any[]>;
   getCheckpoint(id: number, currentUserId?: number): Promise<any | undefined>;
   updateCheckpoint(id: number, data: any): Promise<Checkpoint>;
   deleteCheckpoint(id: number): Promise<void>;
