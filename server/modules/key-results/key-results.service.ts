@@ -157,6 +157,20 @@ export async function updateKeyResult(
 
   const keyResult = await storage.updateKeyResult(id, updateData);
 
+  // Regenerate checkpoints if period or frequency changed
+  const periodChanged =
+    (data.startDate && data.startDate !== existing.startDate) ||
+    (data.endDate && data.endDate !== existing.endDate) ||
+    (data.frequency && data.frequency !== existing.frequency);
+
+  if (periodChanged) {
+    try {
+      await storage.generateCheckpoints(keyResult.id);
+    } catch (err) {
+      console.error("[KeyResultsService] Erro ao regenerar checkpoints após edição do KR:", err);
+    }
+  }
+
   const objectiveId = keyResult.objectiveId || existing.objectiveId;
   if (objectiveId) {
     try {

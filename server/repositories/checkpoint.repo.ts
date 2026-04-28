@@ -8,6 +8,33 @@ import type { UserRepo } from './user.repo';
 import type { ObjectiveRepo } from './objective.repo';
 import type { KeyResultRepo } from './key-result.repo';
 
+/**
+ * Parses a YYYY-MM-DD string as a LOCAL date (no UTC offset).
+ * Prevents the common bug where new Date('2026-01-01') becomes Dec 31 in UTC-3.
+ */
+function parseLocalDate(str: string): Date {
+  const [year, month, day] = str.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Normalizes frequency values from both Portuguese and English names
+ * to a canonical English key used internally.
+ */
+function normalizeFrequency(frequency: string): string {
+  const map: Record<string, string> = {
+    semanal: 'weekly',
+    weekly: 'weekly',
+    quinzenal: 'biweekly',
+    biweekly: 'biweekly',
+    mensal: 'monthly',
+    monthly: 'monthly',
+    trimestral: 'quarterly',
+    quarterly: 'quarterly',
+  };
+  return map[frequency?.toLowerCase().trim()] ?? 'default';
+}
+
 export class CheckpointRepo {
   constructor(
     private readonly userRepo: UserRepo,
@@ -75,9 +102,10 @@ export class CheckpointRepo {
 
     await db.delete(checkpoints).where(eq(checkpoints.keyResultId, keyResultId));
 
-    const startDate = new Date(keyResult.startDate);
-    const endDate = new Date(keyResult.endDate);
-    const frequency = keyResult.frequency;
+    // Parse as local dates to avoid UTC-offset shifting the day
+    const startDate = parseLocalDate(keyResult.startDate);
+    const endDate = parseLocalDate(keyResult.endDate);
+    const frequency = normalizeFrequency(keyResult.frequency);
     const totalTarget = Number(keyResult.targetValue);
 
     const periods: { number: number; dueDate: Date }[] = [];
@@ -85,29 +113,26 @@ export class CheckpointRepo {
     let checkpointNumber = 1;
 
     while (currentDate <= endDate) {
-      let nextDate: Date;
+      let nextDate: Date = new Date(currentDate);
+
       switch (frequency) {
         case 'weekly':
-          nextDate = new Date(currentDate);
           nextDate.setDate(currentDate.getDate() + 7);
           break;
         case 'biweekly':
-          nextDate = new Date(currentDate);
           nextDate.setDate(currentDate.getDate() + 14);
           break;
         case 'monthly':
-          nextDate = new Date(currentDate);
           nextDate.setMonth(currentDate.getMonth() + 1);
           break;
         case 'quarterly':
-          nextDate = new Date(currentDate);
           nextDate.setMonth(currentDate.getMonth() + 3);
           break;
         default:
           nextDate = new Date(endDate);
       }
 
-      if (nextDate > endDate) nextDate = endDate;
+      if (nextDate > endDate) nextDate = new Date(endDate);
       periods.push({ number: checkpointNumber, dueDate: nextDate });
       currentDate = new Date(nextDate);
       currentDate.setDate(currentDate.getDate() + 1);
@@ -116,6 +141,7 @@ export class CheckpointRepo {
     }
 
     const totalPeriods = periods.length;
+
     const formatBrazilianDate = (date: Date) => {
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -127,7 +153,9 @@ export class CheckpointRepo {
     for (let i = 0; i < periods.length; i++) {
       const period = periods[i];
       const isLastCheckpoint = i === periods.length - 1;
-      const targetValue = isLastCheckpoint ? totalTarget : (totalTarget / totalPeriods) * (i + 1);
+      const targetValue = isLastCheckpoint
+        ? totalTarget
+        : (totalTarget / totalPeriods) * (i + 1);
 
       let periodStart: Date;
       if (i === 0) {
