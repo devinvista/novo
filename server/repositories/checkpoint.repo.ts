@@ -7,6 +7,7 @@ import { eq, and, asc, inArray } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
 import type { ObjectiveRepo } from './objective.repo';
 import type { KeyResultRepo } from './key-result.repo';
+import { buildAccessScope, keyResultMatchesProductScope } from '../lib/access-scope';
 
 /**
  * Parses a YYYY-MM-DD string as a LOCAL date (no UTC offset).
@@ -84,15 +85,30 @@ export class CheckpointRepo {
     }
 
     if (currentUserId && allowedObjectiveIds.length === 0) {
-      const user = await this.userRepo.getUser(currentUserId);
-      if (user && user.role !== 'admin') {
+      const scope = await buildAccessScope(currentUserId, this.userRepo);
+      if (!scope) return [];
+      if (!scope.isAdmin) {
+        // Filtra por KRs visíveis (cascata: objetivo + produto)
         const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId });
         const objectiveIds = userObjectives.map(obj => obj.id);
-        if (objectiveIds.length > 0) {
-          conditions.push(inArray(objectives.id, objectiveIds));
-        } else {
-          return [];
-        }
+        if (objectiveIds.length === 0) return [];
+
+        const krRows = await db
+          .select({
+            id: keyResults.id,
+            serviceLineId: keyResults.serviceLineId,
+            serviceLineIds: keyResults.serviceLineIds,
+            serviceId: keyResults.serviceId,
+          })
+          .from(keyResults)
+          .where(inArray(keyResults.objectiveId, objectiveIds));
+
+        const visibleKrIds = scope.hasProductScope
+          ? krRows.filter((kr) => keyResultMatchesProductScope(scope, kr)).map((kr) => kr.id)
+          : krRows.map((kr) => kr.id);
+
+        if (visibleKrIds.length === 0) return [];
+        conditions.push(inArray(checkpoints.keyResultId, visibleKrIds));
       }
     }
 
@@ -109,9 +125,22 @@ export class CheckpointRepo {
     }));
   }
 
-  async getCheckpoint(id: number, _currentUserId?: number): Promise<any | undefined> {
+  async getCheckpoint(id: number, currentUserId?: number): Promise<any | undefined> {
     const rows = await db.select().from(checkpoints).where(eq(checkpoints.id, id)).limit(1);
-    return rows.length > 0 ? rows[0] : undefined;
+    if (rows.length === 0) return undefined;
+    const cp = rows[0];
+
+    if (currentUserId) {
+      const scope = await buildAccessScope(currentUserId, this.userRepo);
+      if (!scope) return undefined;
+      if (!scope.isAdmin) {
+        // Verifica acesso ao KR pai (que já cascateia para objetivo + produto).
+        const kr = await this.keyResultRepo.getKeyResult(cp.keyResultId, currentUserId);
+        if (!kr) return undefined;
+      }
+    }
+
+    return cp;
   }
 
   async updateCheckpoint(id: number, data: any): Promise<Checkpoint> {

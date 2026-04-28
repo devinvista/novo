@@ -9,6 +9,7 @@ import {
   ValidationError,
 } from "../../errors/app-error";
 import { sanitizeUser, sanitizeUsers } from "../../middleware/auth";
+import { invalidateAccessScope } from "../../lib/access-scope";
 import type { InsertUser } from "@shared/schema";
 
 type CurrentUser = {
@@ -122,6 +123,7 @@ export async function updateUser(
   }
 
   const user = await storage.updateUser(id, userData);
+  invalidateAccessScope(id);
   return sanitizeUser(user);
 }
 
@@ -155,6 +157,7 @@ export async function setUserActive(currentUser: CurrentUser, id: number, active
   }
 
   const user = await storage.updateUser(id, { active });
+  invalidateAccessScope(id);
   return sanitizeUser(user);
 }
 
@@ -218,5 +221,6 @@ export async function approveUser(currentUser: CurrentUser, payload: ApprovePayl
     currentUser.id,
     finalPermissions
   );
+  invalidateAccessScope(payload.id);
   return sanitizeUser(user);
 }

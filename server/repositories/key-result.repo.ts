@@ -6,7 +6,7 @@ import { db } from '../pg-db';
 import { eq, and, desc, inArray, isNull, isNotNull } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
 import type { ObjectiveRepo } from './objective.repo';
-import { isAdmin } from '../lib/region-guard';
+import { buildAccessScope, keyResultMatchesProductScope } from '../lib/access-scope';
 
 export class KeyResultRepo {
   constructor(
@@ -40,9 +40,11 @@ export class KeyResultRepo {
     if (allowedObjectiveIds.length > 0) whereConditions.push(inArray(keyResults.objectiveId, allowedObjectiveIds));
     if (filters?.serviceLineId) whereConditions.push(eq(keyResults.serviceLineId, filters.serviceLineId));
 
+    // Restrição por escopo do usuário (objetivos visíveis)
     if (filters?.currentUserId && allowedObjectiveIds.length === 0) {
-      const user = await this.userRepo.getUser(filters.currentUserId);
-      if (user && !isAdmin(user)) {
+      const scope = await buildAccessScope(filters.currentUserId, this.userRepo);
+      if (!scope) return [];
+      if (!scope.isAdmin) {
         const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId: filters.currentUserId });
         const objectiveIds = userObjectives.map(obj => obj.id);
         if (objectiveIds.length > 0) {
@@ -64,7 +66,22 @@ export class KeyResultRepo {
     let q: any = query.orderBy(desc(keyResults.createdAt));
     if (typeof filters?.limit === 'number') q = q.limit(filters.limit);
     if (typeof filters?.offset === 'number') q = q.offset(filters.offset);
-    const result = await q;
+    let result = await q;
+
+    // ─── Filtro adicional pelo escopo de produto do KR ───────────────────
+    if (filters?.currentUserId) {
+      const scope = await buildAccessScope(filters.currentUserId, this.userRepo);
+      if (scope && !scope.isAdmin && scope.hasProductScope) {
+        result = result.filter((row: any) => {
+          const kr = row.keyResults ?? row;
+          return keyResultMatchesProductScope(scope, {
+            serviceLineId: kr.serviceLineId,
+            serviceLineIds: kr.serviceLineIds,
+            serviceId: kr.serviceId,
+          });
+        });
+      }
+    }
 
     return result.map((row: any) => {
       const kr = row.keyResults ?? row;
@@ -86,7 +103,7 @@ export class KeyResultRepo {
     });
   }
 
-  async getKeyResult(id: number, _currentUserId?: number, opts: { includeDeleted?: boolean } = {}): Promise<any | undefined> {
+  async getKeyResult(id: number, currentUserId?: number, opts: { includeDeleted?: boolean } = {}): Promise<any | undefined> {
     const conditions: any[] = [eq(keyResults.id, id)];
     if (!opts.includeDeleted) conditions.push(isNull(keyResults.deletedAt));
 
@@ -101,6 +118,26 @@ export class KeyResultRepo {
 
     if (result.length === 0) return undefined;
     const row = result[0];
+
+    if (currentUserId) {
+      const scope = await buildAccessScope(currentUserId, this.userRepo);
+      if (!scope) return undefined;
+      if (!scope.isAdmin) {
+        // Verifica acesso ao objetivo pai (região + permite indireto)
+        const objAccess = await this.objectiveRepo.getObjective(row.keyResults.objectiveId, currentUserId);
+        if (!objAccess) return undefined;
+        // Verifica produto no próprio KR
+        if (scope.hasProductScope &&
+            !keyResultMatchesProductScope(scope, {
+              serviceLineId: row.keyResults.serviceLineId,
+              serviceLineIds: row.keyResults.serviceLineIds,
+              serviceId: row.keyResults.serviceId,
+            })) {
+          return undefined;
+        }
+      }
+    }
+
     return {
       id: row.keyResults.id,
       objectiveId: row.keyResults.objectiveId,

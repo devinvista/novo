@@ -3,9 +3,14 @@ import {
   type Objective, type InsertObjective,
 } from '@shared/schema';
 import { db } from '../pg-db';
-import { eq, and, desc, inArray, isNull, isNotNull, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray, isNull, isNotNull, sql, or } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
-import { hasGlobalRegionAccess, isAdmin, userRegionIds, userSubRegionIds } from '../lib/region-guard';
+import {
+  buildAccessScope,
+  keyResultMatchesProductScope,
+  objectiveDirectlyMatchesProductScope,
+  type AccessScope,
+} from '../lib/access-scope';
 
 export interface ObjectiveFilters {
   regionId?: number;
@@ -23,6 +28,88 @@ export interface ObjectiveFilters {
 export class ObjectiveRepo {
   constructor(private readonly userRepo: UserRepo) {}
 
+  /**
+   * Calcula os IDs de objetivos visíveis para o escopo de produto:
+   * união entre objetivos com serviceLineId direto e objetivos cujos KRs
+   * casam com o escopo (linha de serviço, lista json, ou serviço).
+   */
+  private async getObjectiveIdsByProductScope(scope: AccessScope): Promise<number[] | null> {
+    if (!scope.hasProductScope || scope.isAdmin) return null;
+
+    const slIds = scope.effectiveServiceLineIds;
+    const svcIds = scope.serviceIds;
+
+    const directIds = new Set<number>();
+    if (slIds.length > 0) {
+      const rows = await db
+        .select({ id: objectives.id })
+        .from(objectives)
+        .where(inArray(objectives.serviceLineId, slIds));
+      rows.forEach((r) => directIds.add(r.id));
+    }
+
+    // Objetivos visíveis indiretamente: aqueles com KRs que casam com o escopo.
+    const krConds: any[] = [];
+    if (slIds.length > 0) {
+      krConds.push(inArray(keyResults.serviceLineId, slIds));
+      // Linhas listadas no campo json — verificadas em memória abaixo.
+    }
+    if (svcIds.length > 0) {
+      krConds.push(inArray(keyResults.serviceId, svcIds));
+    }
+
+    const indirectIds = new Set<number>();
+    if (krConds.length > 0) {
+      const krRows = await db
+        .select({ objectiveId: keyResults.objectiveId })
+        .from(keyResults)
+        .where(or(...krConds));
+      krRows.forEach((r) => indirectIds.add(r.objectiveId));
+    }
+
+    // Verificação adicional para serviceLineIds (json) em memória.
+    if (slIds.length > 0) {
+      const krRows2 = await db
+        .select({ objectiveId: keyResults.objectiveId, serviceLineIds: keyResults.serviceLineIds })
+        .from(keyResults);
+      for (const row of krRows2) {
+        const list: number[] = Array.isArray(row.serviceLineIds)
+          ? (row.serviceLineIds as number[])
+          : [];
+        if (list.some((id) => slIds.includes(id))) indirectIds.add(row.objectiveId);
+      }
+    }
+
+    return Array.from(new Set([...directIds, ...indirectIds]));
+  }
+
+  /**
+   * Garante que o resultado da query respeite o escopo de acesso completo
+   * (região + produto). Inclui ancestrais visíveis para preservar a árvore
+   * de alinhamento (um objetivo filho visível mantém o pai acessível).
+   */
+  private async expandWithAncestors(visibleIds: Set<number>): Promise<Set<number>> {
+    const expanded = new Set(visibleIds);
+    if (visibleIds.size === 0) return expanded;
+
+    const all = await db
+      .select({ id: objectives.id, parent: objectives.parentObjectiveId })
+      .from(objectives);
+    const parentMap = new Map<number, number | null>();
+    all.forEach((r) => parentMap.set(r.id, r.parent ?? null));
+
+    for (const id of Array.from(visibleIds)) {
+      let current: number | null = parentMap.get(id) ?? null;
+      let depth = 0;
+      while (current && !expanded.has(current) && depth < 16) {
+        expanded.add(current);
+        current = parentMap.get(current) ?? null;
+        depth++;
+      }
+    }
+    return expanded;
+  }
+
   async getObjectives(filters: ObjectiveFilters = {}): Promise<any[]> {
     let query = db.select({
       id: objectives.id,
@@ -37,6 +124,7 @@ export class ObjectiveRepo {
       subRegionIds: objectives.subRegionIds,
       ownerId: objectives.ownerId,
       parentObjectiveId: objectives.parentObjectiveId,
+      serviceLineId: objectives.serviceLineId,
       progress: objectives.progress,
       deletedAt: objectives.deletedAt,
       createdAt: objectives.createdAt,
@@ -56,19 +144,28 @@ export class ObjectiveRepo {
       whereConditions.push(isNull(objectives.deletedAt));
     }
 
+    let scope: AccessScope | null = null;
     if (filters.currentUserId) {
-      const user = await this.userRepo.getUser(filters.currentUserId);
-      if (user && !isAdmin(user)) {
-        if (!hasGlobalRegionAccess(user)) {
-          const regions = userRegionIds(user);
-          if (regions.length === 0) return [];
-          whereConditions.push(inArray(objectives.regionId, regions));
-        }
+      scope = await buildAccessScope(filters.currentUserId, this.userRepo);
+      if (!scope) return [];
+
+      // ─── Region filter (drizzle WHERE) ─────────────────────────────────
+      if (!scope.isAdmin && scope.regionIds.length > 0) {
+        whereConditions.push(inArray(objectives.regionId, scope.regionIds));
+      }
+
+      // ─── Product filter ────────────────────────────────────────────────
+      const productIds = await this.getObjectiveIdsByProductScope(scope);
+      if (productIds !== null) {
+        if (productIds.length === 0) return [];
+        const expanded = await this.expandWithAncestors(new Set(productIds));
+        whereConditions.push(inArray(objectives.id, Array.from(expanded)));
       }
     }
 
     if (filters.regionId) whereConditions.push(eq(objectives.regionId, filters.regionId));
     if (filters.ownerId) whereConditions.push(eq(objectives.ownerId, filters.ownerId));
+    if (filters.serviceLineId) whereConditions.push(eq(objectives.serviceLineId, filters.serviceLineId));
     if (filters.parentObjectiveId === null) {
       whereConditions.push(isNull(objectives.parentObjectiveId));
     } else if (typeof filters.parentObjectiveId === 'number') {
@@ -86,20 +183,12 @@ export class ObjectiveRepo {
     let rows: any[] = await q;
 
     // Pós-filtro por sub-região (json column → filtro em memória).
-    // Restringe quando o usuário tem sub-regiões definidas; objetivos sem
-    // restrição de sub-região permanecem visíveis se a região passou no filtro.
-    if (filters.currentUserId) {
-      const user = await this.userRepo.getUser(filters.currentUserId);
-      if (user && !isAdmin(user)) {
-        const userSubs = userSubRegionIds(user);
-        if (userSubs.length > 0) {
-          rows = rows.filter((o: any) => {
-            const subs: number[] = Array.isArray(o.subRegionIds) ? o.subRegionIds : [];
-            if (subs.length === 0) return true;
-            return subs.some((id) => userSubs.includes(id));
-          });
-        }
-      }
+    if (scope && !scope.isAdmin && scope.subRegionIds.length > 0) {
+      rows = rows.filter((o: any) => {
+        const subs: number[] = Array.isArray(o.subRegionIds) ? o.subRegionIds : [];
+        if (subs.length === 0) return true;
+        return subs.some((id) => scope!.subRegionIds.includes(id));
+      });
     }
 
     if (typeof filters.subRegionId === 'number') {
@@ -110,7 +199,101 @@ export class ObjectiveRepo {
     return rows;
   }
 
-  async getObjective(id: number, _currentUserId?: number, opts: { includeDeleted?: boolean } = {}): Promise<any | undefined> {
+  /**
+   * Verifica se um objetivo é acessível pelo escopo do usuário (região + produto).
+   * Usado por getObjective(id, currentUserId).
+   */
+  private async isObjectiveAccessible(
+    scope: AccessScope,
+    obj: { id: number; regionId: number | null; subRegionIds: unknown; serviceLineId: number | null }
+  ): Promise<boolean> {
+    if (scope.isAdmin) return true;
+
+    // Região
+    if (scope.regionIds.length > 0) {
+      if (obj.regionId == null || !scope.regionIds.includes(obj.regionId)) return false;
+    }
+    if (scope.subRegionIds.length > 0) {
+      const subs: number[] = Array.isArray(obj.subRegionIds) ? (obj.subRegionIds as number[]) : [];
+      if (subs.length > 0 && !subs.some((id) => scope.subRegionIds.includes(id))) return false;
+    }
+
+    // Produto
+    if (scope.hasProductScope) {
+      if (objectiveDirectlyMatchesProductScope(scope, obj)) return true;
+
+      // Match indireto via KRs filhos
+      const krRows = await db
+        .select({
+          serviceLineId: keyResults.serviceLineId,
+          serviceLineIds: keyResults.serviceLineIds,
+          serviceId: keyResults.serviceId,
+        })
+        .from(keyResults)
+        .where(eq(keyResults.objectiveId, obj.id));
+      if (krRows.some((kr) => keyResultMatchesProductScope(scope, kr))) return true;
+
+      // Match indireto via objetivos descendentes (alinhamento)
+      const childIds = await this.getDescendantIds(obj.id);
+      if (childIds.length > 0) {
+        const directDescendants = await db
+          .select({ id: objectives.id, serviceLineId: objectives.serviceLineId })
+          .from(objectives)
+          .where(inArray(objectives.id, childIds));
+        if (directDescendants.some((d) => objectiveDirectlyMatchesProductScope(scope, d))) {
+          return true;
+        }
+        const krInDescendants = await db
+          .select({
+            serviceLineId: keyResults.serviceLineId,
+            serviceLineIds: keyResults.serviceLineIds,
+            serviceId: keyResults.serviceId,
+          })
+          .from(keyResults)
+          .where(inArray(keyResults.objectiveId, childIds));
+        if (krInDescendants.some((kr) => keyResultMatchesProductScope(scope, kr))) return true;
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  /** IDs de descendentes (até 16 níveis). */
+  private async getDescendantIds(rootId: number): Promise<number[]> {
+    const all = await db
+      .select({ id: objectives.id, parent: objectives.parentObjectiveId })
+      .from(objectives);
+    const childrenMap = new Map<number, number[]>();
+    all.forEach((r) => {
+      if (r.parent != null) {
+        const arr = childrenMap.get(r.parent) ?? [];
+        arr.push(r.id);
+        childrenMap.set(r.parent, arr);
+      }
+    });
+    const out: number[] = [];
+    const stack: { id: number; depth: number }[] = [{ id: rootId, depth: 0 }];
+    const seen = new Set<number>([rootId]);
+    while (stack.length) {
+      const cur = stack.pop()!;
+      if (cur.depth >= 16) continue;
+      const kids = childrenMap.get(cur.id) ?? [];
+      for (const k of kids) {
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(k);
+        stack.push({ id: k, depth: cur.depth + 1 });
+      }
+    }
+    return out;
+  }
+
+  async getObjective(
+    id: number,
+    currentUserId?: number,
+    opts: { includeDeleted?: boolean } = {}
+  ): Promise<any | undefined> {
     const conditions: any[] = [eq(objectives.id, id)];
     if (!opts.includeDeleted) conditions.push(isNull(objectives.deletedAt));
 
@@ -127,6 +310,7 @@ export class ObjectiveRepo {
       subRegionIds: objectives.subRegionIds,
       ownerId: objectives.ownerId,
       parentObjectiveId: objectives.parentObjectiveId,
+      serviceLineId: objectives.serviceLineId,
       progress: objectives.progress,
       deletedAt: objectives.deletedAt,
       createdAt: objectives.createdAt,
@@ -140,7 +324,17 @@ export class ObjectiveRepo {
       .where(and(...conditions))
       .limit(1);
 
-    return rows.length > 0 ? rows[0] : undefined;
+    if (rows.length === 0) return undefined;
+    const obj = rows[0];
+
+    if (currentUserId) {
+      const scope = await buildAccessScope(currentUserId, this.userRepo);
+      if (!scope) return undefined;
+      const ok = await this.isObjectiveAccessible(scope, obj);
+      if (!ok) return undefined;
+    }
+
+    return obj;
   }
 
   async createObjective(objective: InsertObjective): Promise<Objective> {
@@ -252,6 +446,6 @@ export class ObjectiveRepo {
     return avg;
   }
 
-  // sql é usado no método acima caso outras queries precisem de raw — manter import.
+  // sql é usado caso outras queries precisem de raw — manter import.
   _sql = sql;
 }

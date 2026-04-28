@@ -6,7 +6,11 @@ import { db } from '../pg-db';
 import { eq, and, desc, inArray, isNull, isNotNull } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
 import type { ObjectiveRepo } from './objective.repo';
-import { isAdmin } from '../lib/region-guard';
+import {
+  actionMatchesProductScope,
+  buildAccessScope,
+  keyResultMatchesProductScope,
+} from '../lib/access-scope';
 
 export class ActionRepo {
   constructor(
@@ -26,6 +30,39 @@ export class ActionRepo {
       // eslint-disable-next-line no-console
       console.error('Error creating system comment:', error);
     }
+  }
+
+  /**
+   * Resolve o conjunto de keyResultIds visíveis para um usuário (objetivo + KR).
+   * Retorna null quando o usuário tem acesso global e não há restrição.
+   */
+  private async getVisibleKeyResultIdsForUser(userId: number): Promise<number[] | null> {
+    const scope = await buildAccessScope(userId, this.userRepo);
+    if (!scope) return [];
+    if (scope.isAdmin || (!scope.regionIds.length && !scope.subRegionIds.length && !scope.hasProductScope)) {
+      return null;
+    }
+
+    const objs = await this.objectiveRepo.getObjectives({ currentUserId: userId });
+    const objectiveIds = objs.map((o) => o.id);
+    if (objectiveIds.length === 0) return [];
+
+    const krRows = await db
+      .select({
+        id: keyResults.id,
+        serviceLineId: keyResults.serviceLineId,
+        serviceLineIds: keyResults.serviceLineIds,
+        serviceId: keyResults.serviceId,
+      })
+      .from(keyResults)
+      .where(inArray(keyResults.objectiveId, objectiveIds));
+
+    if (!scope.hasProductScope) {
+      return krRows.map((r) => r.id);
+    }
+    return krRows
+      .filter((kr) => keyResultMatchesProductScope(scope, kr))
+      .map((kr) => kr.id);
   }
 
   async getActions(filters?: any): Promise<any[]> {
@@ -80,16 +117,12 @@ export class ActionRepo {
       whereConditions.push(inArray(objectives.id, allowedObjectiveIds));
     }
 
+    // Filtro por escopo do usuário (cascata via KRs visíveis)
     if (filters?.currentUserId && allowedObjectiveIds.length === 0) {
-      const user = await this.userRepo.getUser(filters.currentUserId);
-      if (user && !isAdmin(user)) {
-        const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId: filters.currentUserId });
-        const objectiveIds = userObjectives.map(obj => obj.id);
-        if (objectiveIds.length > 0) {
-          whereConditions.push(inArray(objectives.id, objectiveIds));
-        } else {
-          return [];
-        }
+      const visibleKrIds = await this.getVisibleKeyResultIdsForUser(filters.currentUserId);
+      if (visibleKrIds !== null) {
+        if (visibleKrIds.length === 0) return [];
+        whereConditions.push(inArray(actions.keyResultId, visibleKrIds));
       }
     }
 
@@ -103,7 +136,23 @@ export class ActionRepo {
     let q: any = (query as any).orderBy(desc(actions.createdAt));
     if (typeof filters?.limit === 'number') q = q.limit(filters.limit);
     if (typeof filters?.offset === 'number') q = q.offset(filters.offset);
-    const result = await q;
+    let result = await q;
+
+    // Filtro adicional pelo escopo de produto da própria ação (defesa em profundidade)
+    if (filters?.currentUserId) {
+      const scope = await buildAccessScope(filters.currentUserId, this.userRepo);
+      if (scope && !scope.isAdmin && scope.hasProductScope) {
+        result = result.filter((a: any) => {
+          // Se a ação tem produto definido, ele precisa casar.
+          // Se não tem, mantém visível (já passou pelo filtro do KR pai).
+          if (a.serviceId == null && a.serviceLineId == null) return true;
+          return actionMatchesProductScope(scope, {
+            serviceLineId: a.serviceLineId,
+            serviceId: a.serviceId,
+          });
+        });
+      }
+    }
 
     return result.map((action: any) => ({
       id: action.id,
@@ -155,11 +204,32 @@ export class ActionRepo {
     const row = result[0];
 
     if (currentUserId) {
-      const user = await this.userRepo.getUser(currentUserId);
-      if (user && !isAdmin(user)) {
-        const userObjectives = await this.objectiveRepo.getObjectives({ currentUserId });
-        const hasAccess = userObjectives.some(obj => obj.id === row.objective?.id);
-        if (!hasAccess) return undefined;
+      const scope = await buildAccessScope(currentUserId, this.userRepo);
+      if (!scope) return undefined;
+      if (!scope.isAdmin) {
+        // Acesso ao objetivo pai (região)
+        const objAccess = await this.objectiveRepo.getObjective(row.objective?.id ?? 0, currentUserId);
+        if (!objAccess) return undefined;
+
+        // Escopo de produto: ação visível se KR pai casa com escopo OU
+        // a própria ação possui um produto que casa com o escopo.
+        if (scope.hasProductScope) {
+          const krMatches = row.keyResult
+            ? keyResultMatchesProductScope(scope, {
+                serviceLineId: row.keyResult.serviceLineId,
+                serviceLineIds: row.keyResult.serviceLineIds,
+                serviceId: row.keyResult.serviceId,
+              })
+            : false;
+          const actionMatches = actionMatchesProductScope(scope, {
+            serviceLineId: row.action.serviceLineId,
+            serviceId: row.action.serviceId,
+          });
+          const actionHasProduct = row.action.serviceId != null || row.action.serviceLineId != null;
+
+          if (!krMatches) return undefined;
+          if (actionHasProduct && !actionMatches) return undefined;
+        }
       }
     }
 
