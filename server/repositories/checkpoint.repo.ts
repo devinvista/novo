@@ -35,6 +35,20 @@ function normalizeFrequency(frequency: string): string {
   return map[frequency?.toLowerCase().trim()] ?? 'default';
 }
 
+/**
+ * Advances a date by one frequency period (same logic as the generation loop).
+ */
+function addFrequency(date: Date, frequency: string): Date {
+  const next = new Date(date);
+  switch (frequency) {
+    case 'weekly':    next.setDate(next.getDate() + 7);      break;
+    case 'biweekly':  next.setDate(next.getDate() + 14);     break;
+    case 'monthly':   next.setMonth(next.getMonth() + 1);    break;
+    case 'quarterly': next.setMonth(next.getMonth() + 3);    break;
+  }
+  return next;
+}
+
 export class CheckpointRepo {
   constructor(
     private readonly userRepo: UserRepo,
@@ -139,6 +153,20 @@ export class CheckpointRepo {
       checkpointNumber++;
       if (nextDate >= endDate) break;
     }
+
+    // Rule: the penultimate checkpoint must be at least one full frequency period
+    // away from the end date. If it is closer, it is dropped — the final (end date)
+    // checkpoint absorbs it.
+    if (periods.length >= 2) {
+      const secondToLast = periods[periods.length - 2].dueDate;
+      const nextFromSecondToLast = addFrequency(secondToLast, frequency);
+      if (nextFromSecondToLast > endDate) {
+        periods.splice(periods.length - 2, 1);
+      }
+    }
+
+    // Re-number after any removal
+    periods.forEach((p, i) => { p.number = i + 1; });
 
     const totalPeriods = periods.length;
 
