@@ -103,13 +103,25 @@ export default function DashboardPage() {
 
   const isLoading = loadingObj || loadingActions || loadingKRs;
 
-  const myObjectives = (objectives ?? []).filter(
-    (o) => o.ownerId === user?.id && !o.deletedAt
-  );
+  // Usuário "escopado" por produto (operacional com solução / linha / serviço
+  // atribuídos): "Meu Painel" mostra TUDO dentro do escopo dele, não apenas o
+  // que ele é dono — pois a API já filtra a visibilidade pelo escopo.
+  const hasProductScope =
+    ((user as any)?.solutionIds?.length ?? 0) > 0 ||
+    ((user as any)?.serviceLineIds?.length ?? 0) > 0 ||
+    ((user as any)?.serviceIds?.length ?? 0) > 0;
 
-  const myActions = (actions ?? []).filter(
-    (a) => (a.responsibleId === user?.id || a.responsible?.id === user?.id) && !a.deletedAt
-  );
+  const myObjectives = (objectives ?? []).filter((o) => {
+    if (o.deletedAt) return false;
+    if (hasProductScope) return true;
+    return o.ownerId === user?.id;
+  });
+
+  const myActions = (actions ?? []).filter((a) => {
+    if (a.deletedAt) return false;
+    if (hasProductScope) return true;
+    return a.responsibleId === user?.id || a.responsible?.id === user?.id;
+  });
 
   const overdueActions = myActions.filter((a) => {
     if (!a.dueDate) return false;
