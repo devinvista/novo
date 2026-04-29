@@ -1,13 +1,22 @@
 import {
   objectives, keyResults, checkpoints,
-  type Checkpoint,
+  type Checkpoint, type KeyResult, type Objective, type InsertCheckpoint,
 } from '@shared/schema';
 import { db } from '../pg-db';
-import { eq, and, asc, inArray } from 'drizzle-orm';
+import { eq, and, asc, inArray, type SQL } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
-import type { ObjectiveRepo } from './objective.repo';
+import type { ObjectiveRepo, ObjectiveFilters } from './objective.repo';
 import type { KeyResultRepo } from './key-result.repo';
 import { buildAccessScope, keyResultMatchesProductScope } from '../lib/access-scope';
+
+/**
+ * Checkpoint enriquecido com KR e objetivo associados (resultado de listagens
+ * com join). KR/objetivo podem ser null devido aos `leftJoin`.
+ */
+export interface CheckpointWithRelations extends Checkpoint {
+  keyResult: KeyResult | null;
+  objective: Objective | null;
+}
 
 /**
  * Parses a YYYY-MM-DD string as a LOCAL date (no UTC offset).
@@ -19,21 +28,34 @@ function parseLocalDate(str: string): Date {
 }
 
 /**
- * Normalizes frequency values from both Portuguese and English names
- * to a canonical English key used internally.
+ * Frequências aceitas (canônicas). Mantém PT-BR e EN como sinônimos para
+ * compatibilidade com dados antigos / importações.
  */
-function normalizeFrequency(frequency: string): string {
-  const map: Record<string, string> = {
-    semanal: 'weekly',
-    weekly: 'weekly',
-    quinzenal: 'biweekly',
-    biweekly: 'biweekly',
-    mensal: 'monthly',
-    monthly: 'monthly',
-    trimestral: 'quarterly',
-    quarterly: 'quarterly',
-  };
-  return map[frequency?.toLowerCase().trim()] ?? 'default';
+const FREQUENCY_MAP: Record<string, 'weekly' | 'biweekly' | 'monthly' | 'quarterly'> = {
+  semanal: 'weekly',
+  weekly: 'weekly',
+  quinzenal: 'biweekly',
+  biweekly: 'biweekly',
+  mensal: 'monthly',
+  monthly: 'monthly',
+  trimestral: 'quarterly',
+  quarterly: 'quarterly',
+};
+
+/**
+ * Normaliza a frequência para a chave canônica em inglês.
+ * Lança erro se a frequência for desconhecida — antes retornava 'default'
+ * silenciosamente, fazendo `addFrequency` virar no-op (geração de
+ * checkpoints ficava infinita ou só com o último período).
+ */
+function normalizeFrequency(frequency: string): 'weekly' | 'biweekly' | 'monthly' | 'quarterly' {
+  const normalized = FREQUENCY_MAP[frequency?.toLowerCase().trim()];
+  if (!normalized) {
+    throw new Error(
+      `Frequência inválida: "${frequency}". Use uma das opções: ${Object.keys(FREQUENCY_MAP).join(', ')}`
+    );
+  }
+  return normalized;
 }
 
 /**
@@ -57,7 +79,11 @@ export class CheckpointRepo {
     private readonly keyResultRepo: KeyResultRepo,
   ) {}
 
-  async getCheckpoints(keyResultId?: number, currentUserId?: number, filters?: { regionId?: number; subRegionId?: number }): Promise<any[]> {
+  async getCheckpoints(
+    keyResultId?: number,
+    currentUserId?: number,
+    filters?: { regionId?: number; subRegionId?: number }
+  ): Promise<CheckpointWithRelations[]> {
     let query = db.select({
       checkpoints: checkpoints,
       keyResults: keyResults,
@@ -67,14 +93,14 @@ export class CheckpointRepo {
       .leftJoin(keyResults, eq(checkpoints.keyResultId, keyResults.id))
       .leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
 
-    const conditions: any[] = [];
+    const conditions: SQL[] = [];
 
     if (keyResultId) conditions.push(eq(checkpoints.keyResultId, keyResultId));
 
     // Region/sub-region filtering cascades from objectives
     let allowedObjectiveIds: number[] = [];
     if (filters?.regionId || filters?.subRegionId) {
-      const objectiveFilters: any = {};
+      const objectiveFilters: ObjectiveFilters = {};
       if (filters?.regionId) objectiveFilters.regionId = filters.regionId;
       if (filters?.subRegionId) objectiveFilters.subRegionId = filters.subRegionId;
       if (currentUserId) objectiveFilters.currentUserId = currentUserId;
@@ -113,19 +139,21 @@ export class CheckpointRepo {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
+      // Drizzle's chained builder não tem tipo público para o branch "after where",
+      // por isso o cast aqui (limitação conhecida da API fluente).
+      query = query.where(and(...conditions)) as typeof query;
     }
 
-    const results = await (query as any).orderBy(asc(checkpoints.dueDate));
+    const results = await query.orderBy(asc(checkpoints.dueDate));
 
-    return results.map((row: any) => ({
+    return results.map((row): CheckpointWithRelations => ({
       ...row.checkpoints,
       keyResult: row.keyResults,
       objective: row.objectives,
     }));
   }
 
-  async getCheckpoint(id: number, currentUserId?: number): Promise<any | undefined> {
+  async getCheckpoint(id: number, currentUserId?: number): Promise<Checkpoint | undefined> {
     const rows = await db.select().from(checkpoints).where(eq(checkpoints.id, id)).limit(1);
     if (rows.length === 0) return undefined;
     const cp = rows[0];
@@ -143,7 +171,7 @@ export class CheckpointRepo {
     return cp;
   }
 
-  async updateCheckpoint(id: number, data: any): Promise<Checkpoint> {
+  async updateCheckpoint(id: number, data: Partial<InsertCheckpoint>): Promise<Checkpoint> {
     const rows = await db.update(checkpoints).set(data).where(eq(checkpoints.id, id)).returning();
     return rows[0];
   }

@@ -1,12 +1,36 @@
 import {
   objectives, keyResults, actions,
-  type KeyResult, type InsertKeyResult,
+  type KeyResult, type InsertKeyResult, type Objective,
 } from '@shared/schema';
 import { db } from '../pg-db';
-import { eq, and, desc, inArray, isNull, isNotNull } from 'drizzle-orm';
+import { eq, and, desc, inArray, isNull, isNotNull, type SQL } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
-import type { ObjectiveRepo } from './objective.repo';
+import type { ObjectiveRepo, ObjectiveFilters } from './objective.repo';
 import { buildAccessScope, keyResultMatchesProductScope } from '../lib/access-scope';
+
+/**
+ * KR enriquecido com objetivo e progresso recalculado para a UI.
+ *
+ * Usamos `Omit` porque o `progress` no banco é `numeric` (string), mas para
+ * a camada de aplicação convertemos para number — então precisamos sobrescrever
+ * o tipo do campo.
+ */
+export type KeyResultWithRelations = Omit<KeyResult, 'progress'> & {
+  objective: Objective | null;
+  progress: number;
+};
+
+export interface KeyResultFilters {
+  regionId?: number;
+  subRegionId?: number;
+  objectiveId?: number;
+  serviceLineId?: number;
+  currentUserId?: number;
+  includeDeleted?: boolean;
+  onlyDeleted?: boolean;
+  limit?: number;
+  offset?: number;
+}
 
 export class KeyResultRepo {
   constructor(
@@ -14,11 +38,11 @@ export class KeyResultRepo {
     private readonly objectiveRepo: ObjectiveRepo,
   ) {}
 
-  async getKeyResults(filters?: any): Promise<any[]> {
+  async getKeyResults(filters?: KeyResultFilters): Promise<KeyResultWithRelations[]> {
     let allowedObjectiveIds: number[] = [];
 
     if (filters?.regionId || filters?.subRegionId) {
-      const objectiveFilters: any = {};
+      const objectiveFilters: ObjectiveFilters = {};
       if (filters.regionId) objectiveFilters.regionId = filters.regionId;
       if (filters.subRegionId) objectiveFilters.subRegionId = filters.subRegionId;
       if (filters.currentUserId) objectiveFilters.currentUserId = filters.currentUserId;
@@ -28,7 +52,7 @@ export class KeyResultRepo {
       if (allowedObjectiveIds.length === 0) return [];
     }
 
-    const whereConditions: any[] = [];
+    const whereConditions: SQL[] = [];
 
     if (filters?.onlyDeleted) {
       whereConditions.push(isNotNull(keyResults.deletedAt));
@@ -58,33 +82,34 @@ export class KeyResultRepo {
     let query = db.select({
       keyResults: keyResults,
       objectives: objectives,
-    }).from(keyResults).leftJoin(objectives, eq(keyResults.objectiveId, objectives.id)) as any;
+    }).from(keyResults).leftJoin(objectives, eq(keyResults.objectiveId, objectives.id));
 
     if (whereConditions.length > 0) {
-      query = query.where(and(...whereConditions));
+      // Cast por limitação da API encadeada do Drizzle (sem tipo público para o branch após .where).
+      query = query.where(and(...whereConditions)) as typeof query;
     }
-    let q: any = query.orderBy(desc(keyResults.createdAt));
-    if (typeof filters?.limit === 'number') q = q.limit(filters.limit);
-    if (typeof filters?.offset === 'number') q = q.offset(filters.offset);
+    let q: typeof query = query.orderBy(desc(keyResults.createdAt)) as typeof query;
+    if (typeof filters?.limit === 'number') q = q.limit(filters.limit) as typeof query;
+    if (typeof filters?.offset === 'number') q = q.offset(filters.offset) as typeof query;
     let result = await q;
 
     // ─── Filtro adicional pelo escopo de produto do KR ───────────────────
     if (filters?.currentUserId) {
       const scope = await buildAccessScope(filters.currentUserId, this.userRepo);
       if (scope && !scope.isAdmin && scope.hasProductScope) {
-        result = result.filter((row: any) => {
-          const kr = row.keyResults ?? row;
+        result = result.filter((row) => {
+          const kr = row.keyResults;
           return keyResultMatchesProductScope(scope, {
             serviceLineId: kr.serviceLineId,
-            serviceLineIds: kr.serviceLineIds,
+            serviceLineIds: kr.serviceLineIds as number[] | null,
             serviceId: kr.serviceId,
           });
         });
       }
     }
 
-    return result.map((row: any) => {
-      const kr = row.keyResults ?? row;
+    return result.map((row): KeyResultWithRelations => {
+      const kr = row.keyResults;
       const objective = row.objectives ?? null;
       let calculatedProgress = 0;
       if (kr.currentValue && kr.targetValue) {
@@ -103,8 +128,12 @@ export class KeyResultRepo {
     });
   }
 
-  async getKeyResult(id: number, currentUserId?: number, opts: { includeDeleted?: boolean } = {}): Promise<any | undefined> {
-    const conditions: any[] = [eq(keyResults.id, id)];
+  async getKeyResult(
+    id: number,
+    currentUserId?: number,
+    opts: { includeDeleted?: boolean } = {}
+  ): Promise<(KeyResult & { objective: Objective | null }) | undefined> {
+    const conditions: SQL[] = [eq(keyResults.id, id)];
     if (!opts.includeDeleted) conditions.push(isNull(keyResults.deletedAt));
 
     const result = await db.select({

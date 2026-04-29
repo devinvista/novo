@@ -31,16 +31,19 @@ export const objectives = pgTable("objectives", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
-  ownerId: integer("owner_id").notNull().references(() => users.id),
-  regionId: integer("region_id").references(() => regions.id),
+  // Owner é obrigatório: bloqueia exclusão do usuário enquanto houver objetivos.
+  ownerId: integer("owner_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  // Região e linha de serviço são opcionais: limpa o vínculo se a taxonomia mudar.
+  regionId: integer("region_id").references(() => regions.id, { onDelete: "set null" }),
   subRegionIds: json("sub_region_ids").default([]),
   startDate: varchar("start_date", { length: 10 }).notNull(),
   endDate: varchar("end_date", { length: 10 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("active"),
   progress: numeric("progress", { precision: 5, scale: 2 }).default("0.00"),
   period: varchar("period", { length: 50 }),
-  serviceLineId: integer("service_line_id").references(() => serviceLines.id),
-  parentObjectiveId: integer("parent_objective_id").references((): AnyPgColumn => objectives.id),
+  serviceLineId: integer("service_line_id").references(() => serviceLines.id, { onDelete: "set null" }),
+  // Auto-referência: se o pai for removido, vira raiz (set null) em vez de cascatear.
+  parentObjectiveId: integer("parent_objective_id").references((): AnyPgColumn => objectives.id, { onDelete: "set null" }),
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
@@ -56,7 +59,8 @@ export const objectives = pgTable("objectives", {
 
 export const keyResults = pgTable("key_results", {
   id: serial("id").primaryKey(),
-  objectiveId: integer("objective_id").notNull().references(() => objectives.id),
+  // KR não existe sem objetivo: cascateia exclusão (soft-delete continua sendo o caminho usual).
+  objectiveId: integer("objective_id").notNull().references(() => objectives.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   targetValue: numeric("target_value", { precision: 15, scale: 2 }).notNull(),
@@ -64,8 +68,8 @@ export const keyResults = pgTable("key_results", {
   unit: varchar("unit", { length: 50 }),
   strategicIndicatorIds: json("strategicIndicatorIds").default([]),
   serviceLineIds: json("serviceLineIds").default([]),
-  serviceLineId: integer("service_line_id").references(() => serviceLines.id),
-  serviceId: integer("service_id").references(() => services.id),
+  serviceLineId: integer("service_line_id").references(() => serviceLines.id, { onDelete: "set null" }),
+  serviceId: integer("service_id").references(() => services.id, { onDelete: "set null" }),
   startDate: varchar("start_date", { length: 10 }).notNull(),
   endDate: varchar("end_date", { length: 10 }).notNull(),
   frequency: varchar("frequency", { length: 50 }).notNull(),
@@ -84,14 +88,16 @@ export const keyResults = pgTable("key_results", {
 
 export const actions = pgTable("actions", {
   id: serial("id").primaryKey(),
-  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id),
+  // Action sem KR não faz sentido — cascateia exclusão.
+  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   number: integer("number").notNull().default(1),
-  strategicIndicatorId: integer("strategic_indicator_id").references(() => strategicIndicators.id),
-  serviceLineId: integer("service_line_id").references(() => serviceLines.id),
-  serviceId: integer("service_id").references(() => services.id),
-  responsibleId: integer("responsible_id").references(() => users.id),
+  strategicIndicatorId: integer("strategic_indicator_id").references(() => strategicIndicators.id, { onDelete: "set null" }),
+  serviceLineId: integer("service_line_id").references(() => serviceLines.id, { onDelete: "set null" }),
+  serviceId: integer("service_id").references(() => services.id, { onDelete: "set null" }),
+  // Se o responsável for removido, mantém a ação mas limpa o vínculo.
+  responsibleId: integer("responsible_id").references(() => users.id, { onDelete: "set null" }),
   dueDate: varchar("due_date", { length: 10 }),
   status: varchar("status", { length: 50 }).notNull().default("pending"),
   priority: varchar("priority", { length: 50 }).notNull().default("medium"),
@@ -110,7 +116,8 @@ export const actions = pgTable("actions", {
 
 export const checkpoints = pgTable("checkpoints", {
   id: serial("id").primaryKey(),
-  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id),
+  // Checkpoint pertence a um KR — cascateia exclusão.
+  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull().default("Checkpoint"),
   period: varchar("period", { length: 50 }).notNull(),
   targetValue: numeric("target_value", { precision: 15, scale: 2 }).notNull(),
@@ -132,8 +139,10 @@ export const checkpoints = pgTable("checkpoints", {
 
 export const actionComments = pgTable("action_comments", {
   id: serial("id").primaryKey(),
-  actionId: integer("actionId").notNull().references(() => actions.id),
-  userId: integer("userId").notNull().references(() => users.id),
+  // Comentário pertence à ação — cascateia exclusão.
+  actionId: integer("actionId").notNull().references(() => actions.id, { onDelete: "cascade" }),
+  // Restritivo: bloqueia remoção do usuário enquanto houver comentários (preserva autoria).
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "restrict" }),
   comment: text("comment").notNull(),
   createdAt: timestamp("createdAt").default(sql`CURRENT_TIMESTAMP`),
 }, (t) => [
@@ -151,7 +160,8 @@ export const subRegions = pgTable("sub_regions", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }).notNull().unique(),
-  regionId: integer("region_id").notNull().references(() => regions.id),
+  // Sub-região não existe sem região pai — cascateia.
+  regionId: integer("region_id").notNull().references(() => regions.id, { onDelete: "cascade" }),
 }, (t) => [
   index("idx_sub_regions_region_id").on(t.regionId),
 ]);
@@ -168,7 +178,8 @@ export const serviceLines = pgTable("service_lines", {
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
-  solutionId: integer("solution_id").notNull().references(() => solutions.id),
+  // Restritivo: não permite remover uma solução enquanto houver linhas de serviço dependentes.
+  solutionId: integer("solution_id").notNull().references(() => solutions.id, { onDelete: "restrict" }),
 }, (t) => [
   index("idx_service_lines_solution_id").on(t.solutionId),
 ]);
@@ -178,7 +189,8 @@ export const services = pgTable("services", {
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }).notNull().unique(),
   description: text("description"),
-  serviceLineId: integer("service_line_id").notNull().references(() => serviceLines.id),
+  // Restritivo: não remove uma linha enquanto houver serviços dependentes.
+  serviceLineId: integer("service_line_id").notNull().references(() => serviceLines.id, { onDelete: "restrict" }),
 }, (t) => [
   index("idx_services_service_line_id").on(t.serviceLineId),
 ]);
@@ -215,7 +227,8 @@ export const actionDependencies = pgTable("action_dependencies", {
 // Audit log — registra create/update/delete/restore em qualquer entidade
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
-  userId: integer("userId").references(() => users.id),
+  // Audit log: preserva o registro mesmo se o usuário for removido (set null).
+  userId: integer("userId").references(() => users.id, { onDelete: "set null" }),
   action: varchar("action", { length: 50 }).notNull(), // create | update | delete | restore | check_in
   entityType: varchar("entityType", { length: 50 }).notNull(),
   entityId: integer("entityId").notNull(),
@@ -230,8 +243,10 @@ export const activities = pgTable("activities", {
 // Check-ins semanais estruturados em KRs (status, confiança, próximos passos, bloqueios)
 export const krCheckIns = pgTable("kr_check_ins", {
   id: serial("id").primaryKey(),
-  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id),
-  authorId: integer("author_id").notNull().references(() => users.id),
+  // Check-in pertence a um KR — cascateia exclusão.
+  keyResultId: integer("key_result_id").notNull().references(() => keyResults.id, { onDelete: "cascade" }),
+  // Restritivo: bloqueia remoção do autor enquanto houver check-ins atribuídos.
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   weekStart: varchar("week_start", { length: 10 }).notNull(), // YYYY-MM-DD da segunda-feira
   status: varchar("status", { length: 20 }).notNull().default("on_track"), // on_track | at_risk | off_track
   confidence: integer("confidence").notNull().default(5), // 1..10

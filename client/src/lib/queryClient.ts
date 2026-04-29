@@ -41,6 +41,28 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+/**
+ * Determina se uma falha de query merece nova tentativa.
+ *
+ * Não tenta novamente para:
+ *  - 4xx (erro do cliente: validação, autorização, recurso inexistente)
+ *  - falhas explícitas de aborto (usuário navegou)
+ *
+ * Tenta novamente até 2 vezes para 5xx e erros de rede transientes.
+ */
+function shouldRetry(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 2) return false;
+  const msg = error instanceof Error ? error.message : String(error);
+  // Mensagens do throwIfResNotOk começam com "<status>: ..."
+  const m = msg.match(/^(\d{3}):/);
+  if (m) {
+    const status = parseInt(m[1], 10);
+    if (status >= 400 && status < 500) return false;
+  }
+  if (/aborted|cancel/i.test(msg)) return false;
+  return true;
+}
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -50,9 +72,12 @@ export const queryClient = new QueryClient({
       refetchOnReconnect: true,
       staleTime: 5 * 60_000,
       gcTime: 10 * 60_000,
-      retry: false,
+      // Retry com backoff exponencial (1s → 2s → max 8s) apenas para 5xx/rede.
+      retry: shouldRetry,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
     },
     mutations: {
+      // Mutations não tentam novamente por padrão para evitar duplicatas (POST/PUT).
       retry: false,
     },
   },

@@ -54,17 +54,15 @@ Quando dois usuários atualizam checkpoints de KRs do **mesmo objetivo simultane
 
 O `try/catch` engolia qualquer erro com `console.error` e retornava sucesso ao usuário, mesmo quando o KR ou o objetivo ficava com progresso desatualizado. Agora os erros são logados estruturadamente (Pino) **e propagados** para o handler central, permitindo que o front receba um 500 e mostre toast de erro.
 
-#### D. Filtros JSON aplicados em memória
-**Arquivo:** `server/repositories/objective.repo.ts:72-81, 186-192`
+#### D. Filtros JSON aplicados em memória **✅ CORRIGIDO**
+**Arquivo:** `server/repositories/objective.repo.ts`
 
-Filtros por `serviceLineIds` / `subRegionIds` (colunas JSON) estão sendo aplicados após carregar **todos** os objetivos do usuário em memória. Em escala de centenas de objetivos por trimestre, vira gargalo.
+Filtros por `serviceLineIds` (KRs) e `subRegionIds` (objetivos) eram aplicados em memória após `SELECT *`. Agora um helper `jsonArrayContainsAny` constrói condições `coluna::jsonb @> '[id]'::jsonb` ORed para cada id, executadas no Postgres. A regra "objetivo sem sub-região é visível" foi preservada via `jsonb_array_length = 0 OR contém algum`. Próximo passo opcional: migrar as colunas para `jsonb` nativo + índice GIN para indexação completa.
 
-**Correção sugerida:** migrar essas colunas de `json` para `jsonb` (se ainda não forem) e usar operadores `?|`, `@>`, `jsonb_path_ops` via `sql` template do Drizzle, com índice GIN.
+#### E. `convertBRToDatabase` aceita formatos ambíguos sem reportar **✅ CORRIGIDO**
+**Arquivo:** `server/shared/formatters.ts`
 
-#### E. `convertBRToDatabase` aceita formatos ambíguos sem reportar
-**Arquivo:** `server/shared/formatters.ts:57-125`
-
-Quando recebe lixo (`"abc,xyz"`) retorna `0` silenciosamente. Isso esconde erros de digitação que viram metas zeradas. Recomendado lançar erro para frontend tratar, ou retornar `null` e validar.
+Adicionada função `convertBRToDatabaseStrict` que lança `Error` para entradas inválidas. A função legada `convertBRToDatabase` agora emite um `console.warn` claro quando recebe valor não numérico (em vez de retornar 0 em silêncio), facilitando rastrear digitações erradas que viravam metas zeradas. Use a versão estrita em fronteiras de input do usuário.
 
 ### 3.3 Médios
 
@@ -73,27 +71,34 @@ Quando recebe lixo (`"abc,xyz"`) retorna `0` silenciosamente. Isso esconde erros
 
 Em `recalcProgressFromKeyResults` e `recalcProgressFromChildren` qualquer `NaN`/`Infinity` (vindo de coluna corrompida ou divisão por zero não-pega) era convertido com `.toFixed(2)` resultando em `"NaN"` gravado no Postgres. Agora todos os valores intermediários e o `avg` final passam por `Number.isFinite` antes de gravar.
 
-#### F.1. `normalizeFrequency` retorna `'default'` silenciosamente
-**Arquivo:** `server/repositories/checkpoint.repo.ts:25-37`
+#### F.1. `normalizeFrequency` retorna `'default'` silenciosamente **✅ CORRIGIDO**
+**Arquivo:** `server/repositories/checkpoint.repo.ts`
 
-Frequências inválidas viram `'default'`, e em `addFrequency` não há `case 'default'` — gera comportamento inesperado na geração de checkpoints. Preferir lançar erro com lista de frequências aceitas.
+Agora `normalizeFrequency` lança erro com a lista de frequências aceitas quando recebe valor desconhecido, em vez de devolver `'default'` (que tornava `addFrequency` um no-op e fazia a geração de checkpoints rodar para sempre ou só com o último período). Tipo de retorno restrito ao union `'weekly' | 'biweekly' | 'monthly' | 'quarterly'`.
 
-#### G. Uso disseminado de `any` em repositórios e rotas
-Vários repositórios (`checkpoint.repo.ts`, `objective.repo.ts`) e rotas (`req: any, res`) usam `any`. Perde-se segurança de tipos do TS justamente nas fronteiras críticas. Sugestão: tipar `req` com `AuthenticatedRequest = Request & { user: User }`.
+#### G. Uso disseminado de `any` em repositórios e rotas **✅ CORRIGIDO (parcial)**
+**Arquivos:** `server/repositories/checkpoint.repo.ts`, `server/repositories/key-result.repo.ts`, `server/repositories/objective.repo.ts`, `server/middleware/auth.ts`
 
-#### H. Cascade delete não definido em FKs
+Tipos introduzidos: `AuthenticatedRequest` (já existia, agora consumido em rotas), `CheckpointWithRelations`, `KeyResultWithRelations`, `KeyResultFilters`, `ObjectiveFilters`. Arrays de condição passaram de `any[]` para `SQL[]` (Drizzle). `Promise<any[]>` virou `Promise<CheckpointWithRelations[]>` e `Promise<KeyResultWithRelations[]>`. `updateCheckpoint(id, data: any)` virou `Partial<InsertCheckpoint>`. Os poucos `as any` restantes são limitação conhecida da API encadeada do Drizzle (sem tipo público para o branch após `.where`) e estão comentados.
+
+#### H. Cascade delete não definido em FKs **✅ CORRIGIDO**
 **Arquivo:** `shared/schema.ts`
 
-Nenhuma FK declara `onDelete`. Em prática isso é amenizado pelo soft delete, mas convém ser explícito (`{ onDelete: "set null" }` ou `"restrict"`) para evitar dependência implícita da camada de aplicação.
+Todas as FKs ganharam `onDelete` explícito:
+- **cascade** (filho não existe sem pai): `keyResults.objectiveId`, `actions.keyResultId`, `checkpoints.keyResultId`, `actionComments.actionId`, `subRegions.regionId`, `krCheckIns.keyResultId`.
+- **set null** (preserva o registro, limpa o vínculo): `objectives.regionId`, `objectives.serviceLineId`, `objectives.parentObjectiveId`, `keyResults.serviceLineId`, `keyResults.serviceId`, `actions.{strategicIndicatorId,serviceLineId,serviceId,responsibleId}`, `activities.userId`.
+- **restrict** (bloqueia exclusão do pai enquanto houver dependentes): `objectives.ownerId`, `actionComments.userId`, `serviceLines.solutionId`, `services.serviceLineId`, `krCheckIns.authorId`.
+
+Migração aplicada via `npm run db:push --force` (apenas DROP/ADD CONSTRAINT, sem perda de dados).
 
 ### 3.4 Baixos
 
-| # | Achado | Arquivo |
+| # | Achado | Status |
 |---|---|---|
-| I | N+1 implícito no recálculo em cascata (uma query por ancestral) | `server/domain/checkpoints/recalc.ts:60-62` |
-| J | Índices compostos em `activities` (entityType+entityId) ausentes | `shared/schema.ts:224+` |
-| K | Loading skeleton ausente em algumas páginas (alignment-tree) | `client/src/pages/alignment-tree.tsx` |
-| L | Sem retry/backoff configurado no TanStack Query | `client/src/lib/queryClient.ts` |
+| I | N+1 implícito no recálculo em cascata (uma query por ancestral) | **✅ CORRIGIDO** — `getAncestorIds` agora usa uma única query recursiva (CTE) com proteção contra ciclos via array `visited`, em vez de até 16 round-trips |
+| J | Índices compostos em `activities` (entityType+entityId) ausentes | **✅ JÁ EXISTIA** — `idx_activities_entity` composto na linha 226 do schema |
+| K | Loading skeleton ausente em algumas páginas (alignment-tree) | **✅ JÁ EXISTIA** — skeleton condicional ao `isLoading` presente em `client/src/pages/alignment-tree.tsx` |
+| L | Sem retry/backoff configurado no TanStack Query | **✅ CORRIGIDO** — `client/src/lib/queryClient.ts` agora aplica retry com backoff exponencial (até 2 tentativas, 1s→2s→8s) apenas para 5xx/erros de rede; pula 4xx e abortos. Mutations seguem sem retry para evitar duplicatas. |
 
 ---
 

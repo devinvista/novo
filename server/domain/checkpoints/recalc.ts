@@ -89,17 +89,17 @@ export async function recalcKeyResultFromCheckpoints(keyResultId: number): Promi
       // medições reais. Checkpoints pendentes têm actualValue=0 por padrão
       // e não devem zerar o progresso do KR.
       const withValue = allCheckpoints
-        .filter((cp: { actualValue: unknown; status: string }) => {
+        .filter((cp): cp is typeof cp => {
           const v = cp.actualValue;
           if (v === null || v === undefined || v === "") return false;
           return cp.status === "completed";
         })
-        .sort(
-          (
-            a: { dueDate: string | Date },
-            b: { dueDate: string | Date }
-          ) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
-        );
+        .sort((a, b) => {
+          // dueDate é nullable no schema; checkpoints sem data caem para o final.
+          const ta = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+          const tb = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+          return tb - ta;
+        });
 
       const krTargetValue = convertBRToDatabase(currentKR.targetValue || "0");
       const latestValueRaw = withValue.length > 0 ? withValue[0].actualValue : "0";

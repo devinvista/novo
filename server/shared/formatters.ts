@@ -53,75 +53,115 @@ export function formatNumberBR(value: number | string, decimals: number = 2): st
 // REMOVIDA: convertDatabaseToBR era duplicata de formatBrazilianNumber
 // Use formatBrazilianNumber diretamente
 
-// Converte valor brasileiro (vírgula, pontos) para valor de banco (apenas ponto decimal)
-export function convertBRToDatabase(value: string | number): number {
+/**
+ * Implementação interna do parser BR → number. Retorna `null` quando o valor
+ * de entrada é não-vazio mas não pode ser interpretado como um número
+ * brasileiro válido (ex.: "abc,xyz", "10..5", "1,2,3"). Vazio/null/undefined
+ * retornam 0.
+ *
+ * As funções públicas decidem se devolvem 0 (legacy) ou lançam erro (strict).
+ */
+function tryParseBRNumber(value: string | number): number | null {
   if (typeof value === "number") {
-    return isNaN(value) ? 0 : value;
+    return Number.isFinite(value) ? value : null;
   }
-  if (!value || value === "" || value === null || value === undefined) return 0;
-  
+  if (value === null || value === undefined) return 0;
   const stringValue = value.toString().trim();
-  
-  // Se é um número padrão do banco (apenas dígitos e ponto decimal), mas NÃO separador de milhares brasileiro
-  // Rejeita padrões como "2.300" (exatamente 3 dígitos após ponto) que são separadores de milhares no Brasil
-  if (/^\d+\.\d{3}$/.test(stringValue)) {
-    // É separador de milhares brasileiro - não usar parseFloat, ir para lógica brasileira
-  } else if (/^\d+\.?\d{0,2}$/.test(stringValue)) {
-    // É número padrão do banco (0-2 dígitos após ponto) - usar parseFloat direto  
-    const parsed = parseFloat(stringValue);
-    return isNaN(parsed) ? 0 : parsed;
+  if (stringValue === "") return 0;
+
+  // Apenas caracteres permitidos: dígitos, vírgula, ponto e sinal de menos no início.
+  if (!/^-?[\d.,]+$/.test(stringValue)) return null;
+
+  // Sinal opcional. Trabalhamos com a magnitude e reaplicamos no final.
+  const negative = stringValue.startsWith('-');
+  const magnitude = negative ? stringValue.slice(1) : stringValue;
+  if (magnitude === "" || /^[.,]/.test(magnitude) || /[.,]$/.test(magnitude)) return null;
+  if (/[.,]{2,}/.test(magnitude)) return null;
+
+  // Caso: número de banco "padrão" (apenas dígitos e até 2 casas após o ponto)
+  // que NÃO seja "X.YYY" exato (separador de milhares BR).
+  if (/^\d+\.\d{1,2}$/.test(magnitude)) {
+    const parsed = parseFloat(magnitude);
+    return Number.isFinite(parsed) ? (negative ? -parsed : parsed) : null;
   }
-  
-  // Para formato brasileiro, determinar se vírgula é decimal ou separador de milhares
-  const hasComma = stringValue.includes(',');
-  const hasDot = stringValue.includes('.');
-  
+
+  const hasComma = magnitude.includes(',');
+  const hasDot = magnitude.includes('.');
   let cleanValue: string;
-  
+
   if (hasComma && hasDot) {
-    // Formato: 1.234.567,89 (ponto = milhares, vírgula = decimal)
-    const parts = stringValue.split(',');
-    if (parts.length === 2) {
-      const wholePart = parts[0].replace(/\./g, ''); // Remove pontos dos milhares
-      const decimalPart = parts[1];
-      cleanValue = `${wholePart}.${decimalPart}`;
-    } else {
-      cleanValue = stringValue.replace(/[^\d.,]/g, '').replace(',', '.');
-    }
+    // Formato: 1.234.567,89 — vírgula é decimal, pontos são milhares.
+    if ((magnitude.match(/,/g) || []).length > 1) return null;
+    const parts = magnitude.split(',');
+    const wholePart = parts[0].replace(/\./g, '');
+    const decimalPart = parts[1];
+    if (!/^\d+$/.test(wholePart) || !/^\d+$/.test(decimalPart)) return null;
+    cleanValue = `${wholePart}.${decimalPart}`;
   } else if (hasComma && !hasDot) {
-    // Só vírgula - pode ser decimal (2,50) ou milhares (2.500 digitado como 2,500)
-    const commaIndex = stringValue.indexOf(',');
-    const afterComma = stringValue.substring(commaIndex + 1);
-    
-    // Se tem 1-2 dígitos após vírgula, é decimal; se tem 3+ dígitos, é separador de milhares
-    if (afterComma.length <= 2) {
-      cleanValue = stringValue.replace(',', '.');
+    if ((magnitude.match(/,/g) || []).length > 1) return null;
+    const [whole, frac = ""] = magnitude.split(',');
+    if (!/^\d+$/.test(whole) || !/^\d*$/.test(frac)) return null;
+    if (frac.length <= 2) {
+      cleanValue = `${whole}.${frac || '0'}`;
     } else {
-      cleanValue = stringValue.replace(',', '');
+      // 3+ dígitos após vírgula tratamos como separador de milhares (ex.: "2,500" → 2500)
+      cleanValue = `${whole}${frac}`;
     }
   } else if (hasDot && !hasComma) {
-    // Só ponto - verificar se é decimal ou separador de milhares
-    const dotIndex = stringValue.indexOf('.');
-    const afterDot = stringValue.substring(dotIndex + 1);
-    
-    // CORREÇÃO: Se tem exatamente 3 dígitos após ponto, é SEMPRE separador de milhares brasileiro
-    if (afterDot.length === 3) {
-      // Exatamente 3 dígitos = separador de milhares brasileiro (ex: 2.300 → 2300, 12.500 → 12500)
-      cleanValue = stringValue.replace(/\./g, '');
-    } else if (afterDot.length === 1 || afterDot.length === 2) {
-      // 1-2 dígitos após ponto = decimal (ex: 2.5 → 2.5, 2.50 → 2.50)
-      cleanValue = stringValue;
+    const parts = magnitude.split('.');
+    // Se há múltiplos pontos OU exatamente 3 dígitos no último grupo, é separador de milhares.
+    const lastGroup = parts[parts.length - 1];
+    if (parts.length > 2 || (parts.length === 2 && lastGroup.length === 3)) {
+      if (parts.some((p, i) => (i === 0 ? !/^\d{1,3}$/.test(p) : !/^\d{3}$/.test(p)))) return null;
+      cleanValue = parts.join('');
     } else {
-      // Mais de 3 dígitos ou outros casos = separador de milhares
-      cleanValue = stringValue.replace(/\./g, '');
+      cleanValue = magnitude;
     }
   } else {
-    // Só dígitos
-    cleanValue = stringValue.replace(/[^\d]/g, '');
+    cleanValue = magnitude;
   }
-  
+
   const parsed = parseFloat(cleanValue);
-  return isNaN(parsed) ? 0 : parsed;
+  if (!Number.isFinite(parsed)) return null;
+  return negative ? -parsed : parsed;
+}
+
+/**
+ * Converte valor brasileiro (vírgula, pontos) para número.
+ *
+ * COMPATIBILIDADE: para entradas inválidas devolve 0 e emite um WARN no
+ * console — isso preserva o comportamento histórico de muitos pontos do
+ * código que esperavam fallback silencioso. Para validação rigorosa em
+ * fronteiras (rotas/serviços que recebem input do usuário), use
+ * `convertBRToDatabaseStrict`, que lança `Error` em entrada inválida.
+ */
+export function convertBRToDatabase(value: string | number): number {
+  const result = tryParseBRNumber(value);
+  if (result === null) {
+    // Antes esse caminho retornava 0 silenciosamente, escondendo erros de
+    // digitação que viravam metas zeradas.
+    console.warn(
+      `[formatters] convertBRToDatabase recebeu valor não numérico (${JSON.stringify(value)}); ` +
+      `aplicando fallback 0. Use convertBRToDatabaseStrict para validar a entrada.`
+    );
+    return 0;
+  }
+  return result;
+}
+
+/**
+ * Versão estrita: lança `Error` para entradas não numéricas. Use sempre que
+ * o valor venha de input do usuário e precisar ser validado antes de gravar.
+ */
+export function convertBRToDatabaseStrict(value: string | number): number {
+  const result = tryParseBRNumber(value);
+  if (result === null) {
+    throw new Error(
+      `Valor numérico inválido: ${JSON.stringify(value)}. ` +
+      `Use formato brasileiro (ex.: 1.234,56) ou padrão (1234.56).`
+    );
+  }
+  return result;
 }
 
 // Valida entrada brasileira (aceita vírgula, ponto, e separadores de milhares)

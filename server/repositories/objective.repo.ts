@@ -3,7 +3,7 @@ import {
   type Objective, type InsertObjective,
 } from '@shared/schema';
 import { db } from '../pg-db';
-import { eq, and, desc, inArray, isNull, isNotNull, sql, or } from 'drizzle-orm';
+import { eq, and, desc, inArray, isNull, isNotNull, sql, or, type SQL } from 'drizzle-orm';
 import type { UserRepo } from './user.repo';
 import {
   buildAccessScope,
@@ -11,6 +11,22 @@ import {
   objectiveDirectlyMatchesProductScope,
   type AccessScope,
 } from '../lib/access-scope';
+
+/**
+ * Constrói uma condição SQL para "alguma posição do array JSON contém um
+ * dos ids fornecidos". Funciona em colunas `json` (cast para `jsonb`) e
+ * permite que o filtro seja aplicado no banco em vez de em memória.
+ *
+ * Implementação: combina `jsonb @> '[id]'::jsonb` com OR para cada id.
+ * Esse padrão é indexável por GIN se um dia migrarmos a coluna para `jsonb`.
+ */
+function jsonArrayContainsAny(column: any, ids: number[]): SQL | undefined {
+  if (ids.length === 0) return undefined;
+  const conds = ids.map(
+    (id) => sql`${column}::jsonb @> ${JSON.stringify([id])}::jsonb`
+  );
+  return conds.length === 1 ? conds[0] : or(...conds);
+}
 
 export interface ObjectiveFilters {
   regionId?: number;
@@ -49,10 +65,14 @@ export class ObjectiveRepo {
     }
 
     // Objetivos visíveis indiretamente: aqueles com KRs que casam com o escopo.
-    const krConds: any[] = [];
+    // Antes, o filtro pela coluna `serviceLineIds` (JSON) era feito em memória —
+    // o que carregava TODOS os KRs do banco a cada listagem. Agora ele entra
+    // direto no WHERE como `serviceLineIds::jsonb @> '[id]'::jsonb`.
+    const krConds: SQL[] = [];
     if (slIds.length > 0) {
       krConds.push(inArray(keyResults.serviceLineId, slIds));
-      // Linhas listadas no campo json — verificadas em memória abaixo.
+      const jsonCond = jsonArrayContainsAny(keyResults.serviceLineIds, slIds);
+      if (jsonCond) krConds.push(jsonCond);
     }
     if (svcIds.length > 0) {
       krConds.push(inArray(keyResults.serviceId, svcIds));
@@ -65,19 +85,6 @@ export class ObjectiveRepo {
         .from(keyResults)
         .where(or(...krConds));
       krRows.forEach((r) => indirectIds.add(r.objectiveId));
-    }
-
-    // Verificação adicional para serviceLineIds (json) em memória.
-    if (slIds.length > 0) {
-      const krRows2 = await db
-        .select({ objectiveId: keyResults.objectiveId, serviceLineIds: keyResults.serviceLineIds })
-        .from(keyResults);
-      for (const row of krRows2) {
-        const list: number[] = Array.isArray(row.serviceLineIds)
-          ? (row.serviceLineIds as number[])
-          : [];
-        if (list.some((id) => slIds.includes(id))) indirectIds.add(row.objectiveId);
-      }
     }
 
     return Array.from(new Set([...directIds, ...indirectIds]));
@@ -161,6 +168,16 @@ export class ObjectiveRepo {
         const expanded = await this.expandWithAncestors(new Set(productIds));
         whereConditions.push(inArray(objectives.id, Array.from(expanded)));
       }
+
+      // ─── Sub-região (json) filtrada no banco (antes era em memória) ───
+      // Mantém objetivos sem sub-região (array vazio) visíveis: regra de
+      // negócio existente — escopo só restringe quando o objetivo declara
+      // sub-regiões. Implementado como `array_length = 0 OR contém algum`.
+      if (scope.subRegionIds.length > 0) {
+        const containsAny = jsonArrayContainsAny(objectives.subRegionIds, scope.subRegionIds);
+        const emptyOrNull = sql`(${objectives.subRegionIds} IS NULL OR jsonb_array_length(${objectives.subRegionIds}::jsonb) = 0)`;
+        whereConditions.push(containsAny ? or(emptyOrNull, containsAny)! : emptyOrNull);
+      }
     }
 
     if (filters.regionId) whereConditions.push(eq(objectives.regionId, filters.regionId));
@@ -172,6 +189,12 @@ export class ObjectiveRepo {
       whereConditions.push(eq(objectives.parentObjectiveId, filters.parentObjectiveId));
     }
 
+    // Filtro explícito por sub-região (parâmetro do request) também no banco.
+    if (typeof filters.subRegionId === 'number') {
+      const cond = jsonArrayContainsAny(objectives.subRegionIds, [filters.subRegionId]);
+      if (cond) whereConditions.push(cond);
+    }
+
     if (whereConditions.length > 0) {
       query = query.where(and(...whereConditions)) as any;
     }
@@ -180,23 +203,7 @@ export class ObjectiveRepo {
     if (typeof filters.limit === 'number') q = q.limit(filters.limit);
     if (typeof filters.offset === 'number') q = q.offset(filters.offset);
 
-    let rows: any[] = await q;
-
-    // Pós-filtro por sub-região (json column → filtro em memória).
-    if (scope && !scope.isAdmin && scope.subRegionIds.length > 0) {
-      rows = rows.filter((o: any) => {
-        const subs: number[] = Array.isArray(o.subRegionIds) ? o.subRegionIds : [];
-        if (subs.length === 0) return true;
-        return subs.some((id) => scope!.subRegionIds.includes(id));
-      });
-    }
-
-    if (typeof filters.subRegionId === 'number') {
-      const target = filters.subRegionId;
-      rows = rows.filter((o: any) => Array.isArray(o.subRegionIds) && o.subRegionIds.includes(target));
-    }
-
-    return rows;
+    return await q;
   }
 
   /**
@@ -380,22 +387,43 @@ export class ObjectiveRepo {
     return rows.map(r => r.id);
   }
 
-  /** Ancestrais (do mais próximo até a raiz) sem ciclos. Limite de 16 níveis. */
+  /**
+   * Ancestrais (do mais próximo até a raiz) sem ciclos. Limite de 16 níveis.
+   *
+   * Antes: até 16 round-trips ao banco (N+1) — um SELECT por ancestral.
+   * Agora: uma única query recursiva (CTE) que devolve todos os ancestrais
+   * em ordem topológica, com proteção explícita contra ciclos via lista de
+   * ids visitados e limite de profundidade.
+   */
   async getAncestorIds(id: number): Promise<number[]> {
-    const ancestors: number[] = [];
-    let current = id;
-    for (let depth = 0; depth < 16; depth++) {
-      const rows = await db
-        .select({ parentId: objectives.parentObjectiveId })
-        .from(objectives)
-        .where(eq(objectives.id, current))
-        .limit(1);
-      const parent = rows[0]?.parentId;
-      if (!parent || ancestors.includes(parent)) break;
-      ancestors.push(parent);
-      current = parent;
+    const result = await db.execute(sql`
+      WITH RECURSIVE ancestors(id, parent_id, depth, visited) AS (
+        SELECT o.id, o.parent_objective_id, 0, ARRAY[o.id]
+        FROM objectives o
+        WHERE o.id = ${id}
+        UNION ALL
+        SELECT o.id, o.parent_objective_id, a.depth + 1, a.visited || o.id
+        FROM objectives o
+        JOIN ancestors a ON o.id = a.parent_id
+        WHERE a.depth < 16
+          AND NOT (o.id = ANY(a.visited))
+      )
+      SELECT parent_id
+      FROM ancestors
+      WHERE parent_id IS NOT NULL
+      ORDER BY depth ASC
+    `);
+    const rows = (result as { rows?: Array<{ parent_id: number | null }> }).rows
+      ?? (result as unknown as Array<{ parent_id: number | null }>);
+    const ids: number[] = [];
+    const seen = new Set<number>();
+    for (const r of rows) {
+      const p = r.parent_id;
+      if (p == null || seen.has(p)) continue;
+      seen.add(p);
+      ids.push(p);
     }
-    return ancestors;
+    return ids;
   }
 
   /**
