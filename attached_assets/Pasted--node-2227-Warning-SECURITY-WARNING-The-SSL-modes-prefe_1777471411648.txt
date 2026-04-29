@@ -1,0 +1,60 @@
+
+(node:2227) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[13:59:50] INFO: serving on port 5000
+    source: "express"
+[13:59:59] WARN: request completed
+    req: {
+      "id": "95948437-8385-4a70-b8eb-3ef32883b6a8",
+      "method": "GET",
+      "url": "/api/user"
+    }
+    requestId: "95948437-8385-4a70-b8eb-3ef32883b6a8"
+    res: {
+      "statusCode": 401
+    }
+    responseTime: 1175
+[13:59:59] INFO: request completed
+    req: {
+      "id": "758dd52b-13f0-4ce3-abd8-a1865ff1af15",
+      "method": "GET",
+      "url": "/api/managers/public"
+    }
+    requestId: "758dd52b-13f0-4ce3-abd8-a1865ff1af15"
+    res: {
+      "statusCode": 304
+    }
+    responseTime: 1853
+[14:00:01] INFO: request completed
+    req: {
+      "id": "91e00734-a86e-4b61-94e0-d58ae347be36",
+      "method": "POST",
+      "url": "/api/login"
+    }
+    requestId: "91e00734-a86e-4b61-94e0-d58ae347be36"
+    res: {
+      "statusCode": 200
+    }
+    responseTime: 978
+[14:02:49] WARN: request completed
+    req: {
+      "id": "19667053-5f21-44ff-8d74-92b3e046c037",
+      "method": "POST",
+      "url": "/api/login"
+    }
+    requestId: "19667053-5f21-44ff-8d74-92b3e046c037"
+    res: {
+      "statusCode": 401
+    }
+    responseTime: 4336
+11:02:49 AM [vite] (client) [console.error] Login error: Error: 401: Unauthorized
+    at throwIfResNotOk (https://a5b1fee5-9948-478c-8d3f-250d593711b7-00-29bpsnm3n20z2.worf.replit.dev/src/lib/queryClient.ts:5:9)
+    at async apiRequest (https://a5b1fee5-9948-478c-8d3f-250d593711b7-00-29bpsnm3n20z2.worf.replit.dev/src/lib/queryClient.ts:15:2)
+    at async Object.mutationFn (https://a5b1fee5-9948-478c-8d3f-250d593711b7-00-29bpsnm3n20z2.worf.replit.dev/src/hooks/use-auth.tsx:21:16)
