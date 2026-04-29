@@ -14,10 +14,13 @@ export async function recalcKeyResultFromCheckpoints(keyResultId: number): Promi
   try {
     const allCheckpoints = await storage.getCheckpoints(keyResultId);
 
+    // Apenas checkpoints já atualizados (status "completed") representam medições reais.
+    // Checkpoints pendentes têm actualValue=0 por padrão e não devem zerar o progresso do KR.
     const withValue = allCheckpoints
       .filter((cp: any) => {
         const v = cp.actualValue;
-        return v !== null && v !== undefined && v !== "";
+        if (v === null || v === undefined || v === "") return false;
+        return cp.status === "completed";
       })
       .sort(
         (a: any, b: any) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
