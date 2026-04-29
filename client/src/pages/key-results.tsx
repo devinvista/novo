@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Activity, Calendar, Trash2, MoreHorizontal } from "lucide-react";
+import { Plus, Edit, Activity, Calendar, Trash2, MoreHorizontal, MessageSquarePlus } from "lucide-react";
 import { useLocation } from "wouter";
 
 import KeyResultForm from "@/features/key-results/key-result-form-simple";
 import KrProgressChart from "@/features/key-results/kr-progress-chart-lazy";
+import KrCheckInDialog from "@/features/key-results/kr-check-in-dialog";
 import { useQuarterlyFilter } from "@/hooks/use-quarterly-filter";
 import { useAuth } from "@/hooks/use-auth";
 import { useFilters } from "@/hooks/use-filters";
@@ -29,6 +30,7 @@ type KeyResultWithRelations = KeyResult & {
 export default function KeyResults() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedKeyResult, setSelectedKeyResult] = useState<any>(null);
+  const [checkInKr, setCheckInKr] = useState<any>(null);
   const [, setLocation] = useLocation();
   const { selectedQuarter } = useQuarterlyFilter();
   const { filters } = useFilters();
@@ -340,6 +342,7 @@ export default function KeyResults() {
                             size="sm" 
                             className="flex-1 relative"
                             onClick={() => setLocation(`/actions?kr=${kr.id}`)}
+                            data-testid={`button-actions-${kr.id}`}
                           >
                             <Activity className="h-4 w-4 mr-1" />
                             {(actionsCounts?.[kr.id] || 0) === 0 ? "Criar Ações" : "Ações"}
@@ -357,6 +360,7 @@ export default function KeyResults() {
                             size="sm" 
                             className="flex-1 relative"
                             onClick={() => setLocation(`/checkpoints?kr=${kr.id}`)}
+                            data-testid={`button-checkpoints-${kr.id}`}
                           >
                             <Calendar className="h-4 w-4 mr-1" />
                             Checkpoints
@@ -369,6 +373,16 @@ export default function KeyResults() {
                                 : "0/0"
                               }
                             </Badge>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => setCheckInKr(kr)}
+                            data-testid={`button-checkin-${kr.id}`}
+                          >
+                            <MessageSquarePlus className="h-4 w-4 mr-1" />
+                            Check-in
                           </Button>
                         </div>
                         
@@ -410,6 +424,16 @@ export default function KeyResults() {
           }
         }}
       />
+
+      {checkInKr && (
+        <KrCheckInDialog
+          keyResult={checkInKr}
+          open={!!checkInKr}
+          onOpenChange={(open) => {
+            if (!open) setCheckInKr(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -37,6 +37,12 @@ The database schema includes tables for `users`, `objectives`, `key_results`, `a
 ### API - Rotas Principais
 The API provides comprehensive CRUD operations for objectives, key results, actions, checkpoints, and user management. It also includes routes for dashboard KPIs, executive summaries, audit trails, and administrative lookups. Key authentication routes include `/api/login`, `/api/logout`, and `/api/register`.
 
+### Check-ins Semanais de KR
+Cada Resultado-Chave possui um botão "Check-in" no card que abre um diálogo com duas abas:
+- **Novo check-in**: status (`on_track` / `at_risk` / `off_track`), nível de confiança (1–10), valor atual opcional (atualiza KR e cascata de progresso), próximos passos e bloqueios.
+- **Histórico**: timeline cronológica com autor, semana (segunda-feira), badge de status e confiança.
+Endpoints: `GET/POST /api/key-results/:id/check-ins`, `GET /api/key-results/:id/check-ins/latest`, `GET /api/kr-check-ins`. Toda inserção é auditada e dispara `recalcObjectiveCascade` quando há valor reportado.
+
 ### Controle de Acesso
 - **Roles**: `admin` (acesso total), `gestor` (gerencia objetivos, KRs e usuários operacionais do time), `operacional` (visualiza dados, atualiza checkpoints e ações).
 - **Permissões Organizacionais**: Usuários não-admin têm restrições baseadas em Regiões, Sub-regiões, Soluções, Linhas de Serviço e Serviços, gerenciadas via árvores de seleção (`RegionTreePicker`, `PermissionTreePicker`). As permissões são filtradas no backend para todas as listagens de dados.
