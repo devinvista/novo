@@ -11,8 +11,12 @@ import type { InsertObjective } from "@shared/schema";
 type CurrentUser = {
   id: number;
   role: string;
-  regionIds?: number[];
-  subRegionIds?: number[];
+  // Permissão por escopo é armazenada em jsonb, cujo tipo inferido pelo
+  // drizzle é `unknown`. Mantemos `unknown` aqui para aceitar tanto o
+  // `Express.User` (typed via SelectUser) quanto objetos manualmente
+  // construídos; checagens em runtime usam `Array.isArray`.
+  regionIds?: unknown;
+  subRegionIds?: unknown;
 };
 
 /**

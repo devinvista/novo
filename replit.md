@@ -55,6 +55,17 @@ Endpoints: `GET/POST /api/key-results/:id/check-ins`, `GET /api/key-results/:id/
 - **Performance**: Code-splitting com `React.lazy`, cache LRU server-side para lookups, e lazy-loading de bibliotecas grandes como `recharts`.
 - **Qualidade de Código**: ESLint, Prettier, Vitest/Supertest para testes, Husky + lint-staged para hooks de pre-commit, e CI automatizado.
 
+## Sprint 1 — Estabilidade (concluído em 2026-04-29)
+
+Trilha 1 do plano em `docs/analise-mercado.md`. Foco em corrigir riscos de produção sem mudar comportamento funcional.
+
+1. **Race condition no recálculo de progresso** — `server/domain/checkpoints/recalc.ts` agora roda dentro de `db.transaction` com `pg_advisory_xact_lock(objectiveId)`. Os checkpoints são re-lidos dentro do lock e cada ancestral é recalculado adquirindo seu próprio advisory lock antes de gravar. Updates concorrentes em um mesmo objetivo passam a ser serializados, evitando perda de atualização.
+2. **Auditoria de validação Zod** — schemas Zod aplicados aos endpoints `PATCH/POST` de `users` e às rotas mutativas de `action-dependencies`, fechando lacunas onde o body chegava direto ao storage.
+3. **Tipagem forte em `req`/`res`** — novo `AuthenticatedRequest` em `server/middleware/auth.ts` e `asyncHandler<R extends Request>` genérico. Os 14 arquivos de rotas migraram de `req: any` para `asyncHandler<AuthenticatedRequest>(...)`. `req.user` deixou de ser `any`. Uso de `parseInt(String(req.params.X))` para conviver com a `ParamsDictionary` mais permissiva do `@types/express` 5.
+4. **Playwright E2E** — adiada por decisão do usuário; será reavaliada na próxima sprint.
+
+Verificações: `npm run check` limpo (0 erros TS); `npm test` 37/37 passando; workflow `Start application` reiniciado com sucesso na porta 5000.
+
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data and session storage.
 - **Passport.js**: Authentication middleware.

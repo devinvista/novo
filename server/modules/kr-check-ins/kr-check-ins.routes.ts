@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, type AuthenticatedRequest } from "../../middleware/auth";
 import { NotFoundError, ValidationError } from "../../errors/app-error";
 import { insertKrCheckInSchema } from "@shared/schema";
 import { recordActivity } from "../../lib/audit-log";
@@ -19,9 +19,9 @@ krCheckInsRouter.use(requireAuth);
  */
 krCheckInsRouter.get(
   "/kr-check-ins",
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const userKrs = await storage.getKeyResults({ currentUserId: req.user.id });
-    const krIds = userKrs.map((kr: any) => kr.id);
+    const krIds = (userKrs as Array<{ id: number }>).map((kr) => kr.id);
     const items = await storage.checkIns.listAcrossKeyResults(krIds);
     res.json(items);
   })
@@ -38,8 +38,8 @@ function mondayOfWeek(date: Date): string {
 
 krCheckInsRouter.get(
   "/key-results/:id/check-ins",
-  asyncHandler(async (req: any, res) => {
-    const keyResultId = parseInt(req.params.id);
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const keyResultId = parseInt(String(req.params.id));
     const kr = await storage.getKeyResult(keyResultId, req.user.id);
     if (!kr) throw new NotFoundError("Resultado-chave não encontrado ou sem acesso");
     const items = await storage.checkIns.list(keyResultId);
@@ -49,18 +49,18 @@ krCheckInsRouter.get(
 
 krCheckInsRouter.post(
   "/key-results/:id/check-ins",
-  asyncHandler(async (req: any, res) => {
-    const keyResultId = parseInt(req.params.id);
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const keyResultId = parseInt(String(req.params.id));
     const kr = await storage.getKeyResult(keyResultId, req.user.id);
     if (!kr) throw new NotFoundError("Resultado-chave não encontrado ou sem acesso");
 
-    const body: any = { ...req.body, keyResultId };
+    const body: Record<string, unknown> = { ...(req.body as Record<string, unknown>), keyResultId };
     if (!body.weekStart) body.weekStart = mondayOfWeek(new Date());
     if (body.currentValue && typeof body.currentValue === "string") {
       body.currentValue = convertBRToDatabase(body.currentValue).toString();
     }
 
-    let parsed: any;
+    let parsed: z.infer<typeof insertKrCheckInSchema>;
     try {
       parsed = insertKrCheckInSchema.parse(body);
     } catch (err) {
@@ -100,8 +100,8 @@ krCheckInsRouter.post(
 
 krCheckInsRouter.get(
   "/key-results/:id/check-ins/latest",
-  asyncHandler(async (req: any, res) => {
-    const keyResultId = parseInt(req.params.id);
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const keyResultId = parseInt(String(req.params.id));
     const kr = await storage.getKeyResult(keyResultId, req.user.id);
     if (!kr) throw new NotFoundError("Resultado-chave não encontrado ou sem acesso");
     const latest = await storage.checkIns.latest(keyResultId);

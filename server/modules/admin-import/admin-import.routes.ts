@@ -1,9 +1,9 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import multer from "multer";
 import ExcelJS from "exceljs";
 import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
-import { requireAuth, requireRole } from "../../middleware/auth";
+import { requireAuth, requireRole, type AuthenticatedRequest } from "../../middleware/auth";
 import { ValidationError } from "../../errors/app-error";
 import { cached } from "../../cache";
 import { convertBRToDatabase } from "../../shared/formatters";
@@ -45,6 +45,10 @@ const cellToString = (v: unknown): string => {
   }
   return String(v);
 };
+
+interface AuthenticatedRequestWithFile extends AuthenticatedRequest {
+  file?: Express.Multer.File;
+}
 
 adminImportRouter.use(requireAuth, requireRole(["admin"]));
 
@@ -135,11 +139,16 @@ adminImportRouter.get(
 adminImportRouter.post(
   "/import-data",
   upload.single("file"),
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequestWithFile>(async (req, res) => {
     if (!req.file) throw new ValidationError("Nenhum arquivo fornecido");
 
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(req.file.buffer);
+    // @types/node mais novo expôs métodos novos (resize, maxByteLength…) no
+    // tipo Buffer, mas o tipo genérico `Buffer<ArrayBuffer>` retornado por
+    // Buffer.from / Multer ainda não os carrega. exceljs assina com o tipo
+    // “largo”, então fazemos um único cast aqui — em runtime é o mesmo
+    // objeto Buffer Node nativo.
+    await workbook.xlsx.load(req.file.buffer as unknown as Parameters<typeof workbook.xlsx.load>[0]);
     let imported = 0;
     const errors: string[] = [];
 
@@ -158,8 +167,8 @@ adminImportRouter.post(
               endDate: cellToString(row[3]),
               status: cellToString(row[4]) || "active",
               regionId: parseInt(cellToString(row[5])) || null,
-              ownerId: parseInt(cellToString(row[6])) || req.user!.id,
-            } as any);
+              ownerId: parseInt(cellToString(row[6])) || req.user.id,
+            } as Parameters<typeof storage.createObjective>[0]);
             imported++;
           } catch (error) {
             errors.push(`Erro ao importar objetivo ${title}: ${error}`);
@@ -188,7 +197,7 @@ adminImportRouter.post(
               frequency: cellToString(row[9]) || "monthly",
               objectiveId: parseInt(objectiveIdStr),
               strategicIndicatorIds: cellToString(row[8]) || "[]",
-            } as any);
+            } as Parameters<typeof storage.createKeyResult>[0]);
             imported++;
           } catch (error) {
             errors.push(`Erro ao importar resultado-chave ${title}: ${error}`);
@@ -213,8 +222,8 @@ adminImportRouter.post(
               priority: cellToString(row[3]) || "medium",
               status: cellToString(row[4]) || "pending",
               keyResultId: parseInt(krIdStr),
-              responsibleId: parseInt(cellToString(row[6])) || req.user!.id,
-            } as any);
+              responsibleId: parseInt(cellToString(row[6])) || req.user.id,
+            } as Parameters<typeof storage.createAction>[0]);
             imported++;
           } catch (error) {
             errors.push(`Erro ao importar ação ${title}: ${error}`);
@@ -230,3 +239,6 @@ adminImportRouter.post(
     });
   })
 );
+
+// Re-export Request type to satisfy unused imports if any (no-op)
+export type { Request };

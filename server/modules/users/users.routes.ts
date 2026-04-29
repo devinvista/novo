@@ -1,8 +1,14 @@
 import { Router } from "express";
+import { z } from "zod";
 import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
 import { validate } from "../../middleware/validate";
-import { requireAuth, requireRole, sanitizeUsers } from "../../middleware/auth";
+import {
+  requireAuth,
+  requireRole,
+  sanitizeUsers,
+  type AuthenticatedRequest,
+} from "../../middleware/auth";
 import { insertUserSchema } from "@shared/schema";
 import * as UsersService from "./users.service";
 
@@ -13,17 +19,51 @@ export const managersPublicRouter: Router = Router();
 managersPublicRouter.get(
   "/managers/public",
   asyncHandler(async (_req, res) => {
-    const managers = await storage.getManagers();
-    res.json(managers.map((m: any) => ({ id: m.id, name: m.name })));
+    const managers = (await storage.getManagers()) as Array<{ id: number; name: string }>;
+    res.json(managers.map((m) => ({ id: m.id, name: m.name })));
   })
 );
 
 // Authenticated endpoints
 usersRouter.use(requireAuth);
 
+// ─── Validation schemas ───────────────────────────────────────────────────
+const idArray = z.array(z.coerce.number().int().positive()).optional();
+
+/**
+ * Update payload for `PATCH /users/:id`. Mirrors `insertUserSchema.partial()` but allows
+ * an empty/blank password (which is then stripped by the service so the existing hash is kept).
+ */
+const updateUserSchema = insertUserSchema
+  .partial()
+  .extend({
+    password: z.string().optional().or(z.literal("")),
+    regionIds: idArray,
+    subRegionIds: idArray,
+    solutionIds: idArray,
+    serviceLineIds: idArray,
+    serviceIds: idArray,
+    gestorId: z.coerce.number().int().positive().nullable().optional(),
+    active: z.boolean().optional(),
+  })
+  .strict();
+
+const setActiveSchema = z.object({ active: z.boolean() });
+
+const approveUserSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  regionIds: idArray,
+  subRegionIds: idArray,
+  solutionIds: idArray,
+  serviceLineIds: idArray,
+  serviceIds: idArray,
+});
+
+// ─── Routes ───────────────────────────────────────────────────────────────
+
 usersRouter.get(
   "/users",
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     res.json(await UsersService.listVisibleUsers(req.user));
   })
 );
@@ -49,7 +89,7 @@ usersRouter.post(
   "/users",
   requireRole(["admin", "gestor"]),
   validate(insertUserSchema),
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const user = await UsersService.createUser(req.user, req.body);
     res.json(user);
   })
@@ -58,8 +98,9 @@ usersRouter.post(
 usersRouter.patch(
   "/users/:id",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
-    const user = await UsersService.updateUser(req.user, parseInt(req.params.id), req.body);
+  validate(updateUserSchema),
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const user = await UsersService.updateUser(req.user, parseInt(String(req.params.id)), req.body);
     res.json(user);
   })
 );
@@ -67,8 +108,8 @@ usersRouter.patch(
 usersRouter.delete(
   "/users/:id",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
-    await UsersService.deleteUser(req.user, parseInt(req.params.id));
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    await UsersService.deleteUser(req.user, parseInt(String(req.params.id)));
     res.json({ message: "Usuário excluído com sucesso" });
   })
 );
@@ -76,11 +117,12 @@ usersRouter.delete(
 usersRouter.patch(
   "/users/:id/status",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
+  validate(setActiveSchema),
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const user = await UsersService.setUserActive(
       req.user,
-      parseInt(req.params.id),
-      Boolean(req.body?.active)
+      parseInt(String(req.params.id)),
+      (req.body as { active: boolean }).active
     );
     res.json(user);
   })
@@ -89,7 +131,8 @@ usersRouter.patch(
 usersRouter.post(
   "/users/approve",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
+  validate(approveUserSchema),
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const user = await UsersService.approveUser(req.user, req.body);
     res.json(user);
   })

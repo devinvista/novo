@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, type AuthenticatedRequest } from "../../middleware/auth";
+import { intParam } from "../../lib/route-utils";
 
 export const quartersRouter: Router = Router();
 
@@ -23,15 +24,13 @@ quartersRouter.get(
 
 quartersRouter.get(
   "/:quarter/data",
-  asyncHandler(async (req: any, res) => {
-    const { quarter } = req.params;
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const quarter = String(req.params.quarter);
     const currentUser = req.user;
     const filters = {
-      regionId: req.query.regionId ? parseInt(req.query.regionId as string) : undefined,
-      subRegionId: req.query.subRegionId ? parseInt(req.query.subRegionId as string) : undefined,
-      serviceLineId: req.query.serviceLineId
-        ? parseInt(req.query.serviceLineId as string)
-        : undefined,
+      regionId: intParam(req.query.regionId),
+      subRegionId: intParam(req.query.subRegionId),
+      serviceLineId: intParam(req.query.serviceLineId),
       currentUserId: currentUser.id,
     };
     res.json(await storage.getQuarterlyData(quarter, currentUser.id, filters));

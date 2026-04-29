@@ -1,32 +1,61 @@
 import { Router } from "express";
 import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, type AuthenticatedRequest } from "../../middleware/auth";
 import { formatBrazilianNumber } from "../../shared/formatters";
 
 export const executiveSummaryRouter: Router = Router();
 
 executiveSummaryRouter.use(requireAuth);
 
+type ObjectiveSummary = {
+  id: number;
+  title: string;
+  description?: string | null;
+  status: string;
+  regionId?: number | null;
+  endDate?: string | null;
+  createdAt?: string | Date;
+  keyResults?: Array<{ progress?: number | null }>;
+  actions?: Array<unknown>;
+};
+
+type KeyResultSummary = {
+  title: string;
+  progress?: number | null;
+  currentValue?: string | null;
+  targetValue?: string | null;
+};
+
+type ActionSummary = {
+  status: string;
+  dueDate?: string | null;
+  updatedAt?: string | Date | null;
+};
+
+type CheckpointSummary = {
+  status: string;
+};
+
 executiveSummaryRouter.get(
   "/",
-  asyncHandler(async (req: any, res) => {
-    const currentUserId = req.user?.id;
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const currentUserId = req.user.id;
 
-    const objectives = await storage.getObjectives(currentUserId ? { currentUserId } : {});
-    const keyResults = await storage.getKeyResults(currentUserId ? { currentUserId } : {});
-    const actions = await storage.getActions(currentUserId ? { currentUserId } : {});
-    const checkpoints = await storage.getCheckpoints(undefined, currentUserId);
+    const objectives = (await storage.getObjectives({ currentUserId })) as ObjectiveSummary[];
+    const keyResults = (await storage.getKeyResults({ currentUserId })) as KeyResultSummary[];
+    const actions = (await storage.getActions({ currentUserId })) as ActionSummary[];
+    const checkpoints = (await storage.getCheckpoints(undefined, currentUserId)) as CheckpointSummary[];
 
     const totalObjectives = objectives.length;
     const totalKeyResults = keyResults.length;
     const totalActions = actions.length;
     const totalCheckpoints = checkpoints.length;
 
-    const completedObjectives = objectives.filter((obj: any) => obj.status === "completed").length;
-    const completedKeyResults = keyResults.filter((kr: any) => kr.progress >= 100).length;
-    const completedActions = actions.filter((action: any) => action.status === "completed").length;
-    const completedCheckpoints = checkpoints.filter((cp: any) => cp.status === "completed").length;
+    const completedObjectives = objectives.filter((obj) => obj.status === "completed").length;
+    const completedKeyResults = keyResults.filter((kr) => (kr.progress ?? 0) >= 100).length;
+    const completedActions = actions.filter((action) => action.status === "completed").length;
+    const completedCheckpoints = checkpoints.filter((cp) => cp.status === "completed").length;
 
     const objectiveCompletionRate =
       totalObjectives > 0 ? (completedObjectives / totalObjectives) * 100 : 0;
@@ -38,22 +67,21 @@ executiveSummaryRouter.get(
 
     const avgKeyResultProgress =
       keyResults.length > 0
-        ? keyResults.reduce((sum: number, kr: any) => sum + (kr.progress || 0), 0) /
-          keyResults.length
+        ? keyResults.reduce((sum, kr) => sum + (kr.progress ?? 0), 0) / keyResults.length
         : 0;
 
-    const objectivesByRegion = objectives.reduce((acc: Record<number, number>, obj: any) => {
-      acc[obj.regionId] = (acc[obj.regionId] || 0) + 1;
+    const objectivesByRegion = objectives.reduce<Record<number, number>>((acc, obj) => {
+      if (obj.regionId != null) acc[obj.regionId] = (acc[obj.regionId] || 0) + 1;
       return acc;
-    }, {} as Record<number, number>);
+    }, {});
 
     const topKeyResults = keyResults
       .slice()
-      .sort((a: any, b: any) => (b.progress || 0) - (a.progress || 0))
+      .sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0))
       .slice(0, 5)
-      .map((kr: any) => ({
+      .map((kr) => ({
         title: kr.title,
-        progress: kr.progress || 0,
+        progress: kr.progress ?? 0,
         currentValue: kr.currentValue ? formatBrazilianNumber(kr.currentValue) : "0",
         targetValue: kr.targetValue ? formatBrazilianNumber(kr.targetValue) : "0",
       }));
@@ -62,24 +90,24 @@ executiveSummaryRouter.get(
 
     const currentDate = new Date();
     const overdueObjectives = objectives.filter(
-      (obj: any) => new Date(obj.endDate) < currentDate && obj.status !== "completed"
+      (obj) => obj.endDate && new Date(obj.endDate) < currentDate && obj.status !== "completed"
     ).length;
     const overdueActions = actions.filter(
-      (action: any) =>
+      (action) =>
         action.dueDate && new Date(action.dueDate) < currentDate && action.status !== "completed"
     ).length;
 
     const mainObjectives = objectives
       .slice()
-      .sort((a: any, b: any) => (b.keyResults?.length || 0) - (a.keyResults?.length || 0))
+      .sort((a, b) => (b.keyResults?.length || 0) - (a.keyResults?.length || 0))
       .slice(0, 3)
-      .map((obj: any) => ({
+      .map((obj) => ({
         title: obj.title,
         description: obj.description,
         status: obj.status,
         progress:
           obj.keyResults && obj.keyResults.length > 0
-            ? obj.keyResults.reduce((sum: number, kr: any) => sum + (kr.progress || 0), 0) /
+            ? obj.keyResults.reduce((sum, kr) => sum + (kr.progress ?? 0), 0) /
               obj.keyResults.length
             : 0,
         keyResultsCount: obj.keyResults?.length || 0,
@@ -107,7 +135,7 @@ executiveSummaryRouter.get(
       mainObjectives,
       topKeyResults,
       performance: {
-        objectivesOnTrack: objectives.filter((obj: any) => obj.status === "active").length,
+        objectivesOnTrack: objectives.filter((obj) => obj.status === "active").length,
         objectivesAtRisk: overdueObjectives,
         actionsOverdue: overdueActions,
         strategicIndicatorsCount: strategicIndicators.length,
@@ -122,10 +150,10 @@ executiveSummaryRouter.get(
       },
       trends: {
         objectivesCreatedThisQuarter: objectives.filter(
-          (obj: any) => new Date(obj.createdAt) >= quarterStart
+          (obj) => obj.createdAt && new Date(obj.createdAt) >= quarterStart
         ).length,
-        keyResultsWithHighProgress: keyResults.filter((kr: any) => (kr.progress || 0) >= 75).length,
-        completedActionsThisQuarter: actions.filter((action: any) => {
+        keyResultsWithHighProgress: keyResults.filter((kr) => (kr.progress ?? 0) >= 75).length,
+        completedActionsThisQuarter: actions.filter((action) => {
           if (action.status !== "completed" || !action.updatedAt) return false;
           return new Date(action.updatedAt) >= quarterStart;
         }).length,

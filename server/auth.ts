@@ -169,7 +169,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    const { password, ...safeUser } = req.user as any;
+    const { password: _password, ...safeUser } = req.user as SelectUser;
     res.status(200).json(safeUser);
   });
 
@@ -181,8 +181,8 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const { password, ...safeUser } = req.user as any;
+    if (!req.isAuthenticated() || !req.user) return res.sendStatus(401);
+    const { password: _password, ...safeUser } = req.user as SelectUser;
     res.json(safeUser);
   });
 }

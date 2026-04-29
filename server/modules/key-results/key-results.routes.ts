@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
-import { validate } from "../../middleware/validate";
-import { requireAuth, requireRole } from "../../middleware/auth";
+import { requireAuth, requireRole, type AuthenticatedRequest } from "../../middleware/auth";
 import { NotFoundError } from "../../errors/app-error";
 import { insertKeyResultSchema } from "@shared/schema";
 import { intParam } from "../../lib/route-utils";
@@ -14,7 +13,7 @@ keyResultsRouter.use(requireAuth);
 
 keyResultsRouter.get(
   "/",
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const limit = intParam(req.query.limit);
     const offset = intParam(req.query.offset);
     const filters = {
@@ -37,7 +36,7 @@ keyResultsRouter.get(
 keyResultsRouter.post(
   "/",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const normalized = KRService.normalizeKRBody(req.body);
     const validated = insertKeyResultSchema.parse(normalized);
     const keyResult = await KRService.createKeyResult(req.user, validated);
@@ -48,10 +47,10 @@ keyResultsRouter.post(
 keyResultsRouter.put(
   "/:id",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const normalized = KRService.normalizeKRBody(req.body);
     const validated = insertKeyResultSchema.partial().parse(normalized);
-    const keyResult = await KRService.updateKeyResult(req.user, parseInt(req.params.id), validated);
+    const keyResult = await KRService.updateKeyResult(req.user, parseInt(String(req.params.id)), validated);
     res.json(keyResult);
   })
 );
@@ -59,16 +58,16 @@ keyResultsRouter.put(
 keyResultsRouter.delete(
   "/:id",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
-    await KRService.deleteKeyResult(req.user, parseInt(req.params.id));
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    await KRService.deleteKeyResult(req.user, parseInt(String(req.params.id)));
     res.sendStatus(204);
   })
 );
 
 keyResultsRouter.post(
   "/:id/recreate-checkpoints",
-  asyncHandler(async (req: any, res) => {
-    const keyResultId = parseInt(req.params.id);
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const keyResultId = parseInt(String(req.params.id));
     const keyResult = await storage.getKeyResult(keyResultId, req.user.id);
     if (!keyResult) throw new NotFoundError("Resultado-chave não encontrado ou sem acesso");
     res.json(await storage.generateCheckpoints(keyResultId));

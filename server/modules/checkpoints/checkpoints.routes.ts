@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../middleware/async-handler";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, type AuthenticatedRequest } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { intParam } from "../../lib/route-utils";
 import * as CheckpointsService from "./checkpoints.service";
@@ -31,7 +31,7 @@ const checkpointFullUpdatePayloadSchema = z.object({
 
 checkpointsRouter.get(
   "/",
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     res.json(
       await CheckpointsService.listCheckpoints(req.user, intParam(req.query.keyResultId), {
         regionId: intParam(req.query.regionId),
@@ -44,8 +44,8 @@ checkpointsRouter.get(
 checkpointsRouter.get(
   "/:id",
   validate(idParamsSchema, "params"),
-  asyncHandler(async (req: any, res) => {
-    res.json(await CheckpointsService.getCheckpoint(req.user, parseInt(req.params.id)));
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    res.json(await CheckpointsService.getCheckpoint(req.user, parseInt(String(req.params.id))));
   })
 );
 
@@ -53,10 +53,10 @@ checkpointsRouter.post(
   "/:id/update",
   validate(idParamsSchema, "params"),
   validate(checkpointProgressPayloadSchema),
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const result = await CheckpointsService.updateCheckpointProgress(
       req.user,
-      parseInt(req.params.id),
+      parseInt(String(req.params.id)),
       req.body
     );
     res.json(result);
@@ -67,10 +67,10 @@ checkpointsRouter.put(
   "/:id",
   validate(idParamsSchema, "params"),
   validate(checkpointFullUpdatePayloadSchema),
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const result = await CheckpointsService.updateCheckpoint(
       req.user,
-      parseInt(req.params.id),
+      parseInt(String(req.params.id)),
       req.body
     );
     res.json(result);
@@ -80,8 +80,8 @@ checkpointsRouter.put(
 checkpointsRouter.delete(
   "/:id",
   validate(idParamsSchema, "params"),
-  asyncHandler(async (req: any, res) => {
-    await CheckpointsService.deleteCheckpoint(req.user, parseInt(req.params.id));
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    await CheckpointsService.deleteCheckpoint(req.user, parseInt(String(req.params.id)));
     res.sendStatus(204);
   })
 );

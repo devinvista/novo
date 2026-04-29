@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { storage } from "../../storage";
 import { asyncHandler } from "../../middleware/async-handler";
-import { requireAuth, requireRole } from "../../middleware/auth";
+import { requireAuth, requireRole, type AuthenticatedRequest } from "../../middleware/auth";
 import { NotFoundError } from "../../errors/app-error";
 import { recordActivity } from "../../lib/audit-log";
 
@@ -16,7 +16,7 @@ trashRouter.use(requireAuth);
 trashRouter.get(
   "/",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
     const [objectives, keyResults, actions] = await Promise.all([
       storage.getObjectives({ onlyDeleted: true, currentUserId: req.user.id, limit: 200 }),
       storage.getKeyResults({ onlyDeleted: true, currentUserId: req.user.id, limit: 200 }),
@@ -29,8 +29,8 @@ trashRouter.get(
 trashRouter.post(
   "/objectives/:id/restore",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
-    const id = parseInt(req.params.id);
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const id = parseInt(String(req.params.id));
     await storage.objectives.restoreObjective(id);
     await recordActivity({
       userId: req.user.id,
@@ -47,8 +47,8 @@ trashRouter.post(
 trashRouter.post(
   "/key-results/:id/restore",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
-    const id = parseInt(req.params.id);
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const id = parseInt(String(req.params.id));
     await storage.keyResults.restoreKeyResult(id);
     await recordActivity({
       userId: req.user.id,
@@ -63,8 +63,8 @@ trashRouter.post(
 trashRouter.post(
   "/actions/:id/restore",
   requireRole(["admin", "gestor"]),
-  asyncHandler(async (req: any, res) => {
-    const id = parseInt(req.params.id);
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const id = parseInt(String(req.params.id));
     await storage.actions.restoreAction(id);
     await recordActivity({
       userId: req.user.id,

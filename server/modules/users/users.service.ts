@@ -15,11 +15,13 @@ import type { InsertUser } from "@shared/schema";
 type CurrentUser = {
   id: number;
   role: string;
-  regionIds?: number[];
-  subRegionIds?: number[];
-  solutionIds?: number[];
-  serviceLineIds?: number[];
-  serviceIds?: number[];
+  // Permissão por escopo armazenada em jsonb (tipo inferido `unknown`).
+  // Coercão p/ array é feita em `assertGestorScope` via Array.isArray.
+  regionIds?: unknown;
+  subRegionIds?: unknown;
+  solutionIds?: unknown;
+  serviceLineIds?: unknown;
+  serviceIds?: unknown;
 };
 
 type ScopeField =

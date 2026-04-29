@@ -1,14 +1,30 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../../pg-db";
 import { actionDependencies, actions } from "@shared/schema";
 import { eq, and, or, inArray } from "drizzle-orm";
 import { asyncHandler } from "../../middleware/async-handler";
+import { validate } from "../../middleware/validate";
 import { requireAuth } from "../../middleware/auth";
 import { BadRequestError, NotFoundError } from "../../errors/app-error";
 
 export const actionDependenciesRouter: Router = Router();
 
 actionDependenciesRouter.use(requireAuth);
+
+const createDependencySchema = z
+  .object({
+    actionId: z.coerce.number().int().positive(),
+    dependsOnId: z.coerce.number().int().positive(),
+  })
+  .refine((d) => d.actionId !== d.dependsOnId, {
+    message: "Uma ação não pode depender de si mesma",
+  });
+
+const dependencyParamsSchema = z.object({
+  actionId: z.coerce.number().int().positive(),
+  dependsOnId: z.coerce.number().int().positive(),
+});
 
 async function getActionOrThrow(id: number) {
   const [row] = await db.select({ id: actions.id }).from(actions).where(eq(actions.id, id)).limit(1);
@@ -35,7 +51,7 @@ async function hasCycle(from: number, to: number): Promise<boolean> {
 
 actionDependenciesRouter.get(
   "/",
-  asyncHandler(async (req: any, res) => {
+  asyncHandler(async (req, res) => {
     const actionIds = req.query.actionIds
       ? String(req.query.actionIds).split(",").map(Number).filter(Boolean)
       : undefined;
@@ -60,12 +76,9 @@ actionDependenciesRouter.get(
 
 actionDependenciesRouter.post(
   "/",
-  asyncHandler(async (req: any, res) => {
-    const actionId = parseInt(req.body.actionId);
-    const dependsOnId = parseInt(req.body.dependsOnId);
-
-    if (!actionId || !dependsOnId) throw new BadRequestError("actionId e dependsOnId são obrigatórios");
-    if (actionId === dependsOnId) throw new BadRequestError("Uma ação não pode depender de si mesma");
+  validate(createDependencySchema),
+  asyncHandler(async (req, res) => {
+    const { actionId, dependsOnId } = req.body as { actionId: number; dependsOnId: number };
 
     await Promise.all([getActionOrThrow(actionId), getActionOrThrow(dependsOnId)]);
 
@@ -91,9 +104,12 @@ actionDependenciesRouter.post(
 
 actionDependenciesRouter.delete(
   "/:actionId/:dependsOnId",
-  asyncHandler(async (req: any, res) => {
-    const actionId = parseInt(req.params.actionId);
-    const dependsOnId = parseInt(req.params.dependsOnId);
+  validate(dependencyParamsSchema, "params"),
+  asyncHandler(async (req, res) => {
+    const { actionId, dependsOnId } = req.params as unknown as {
+      actionId: number;
+      dependsOnId: number;
+    };
 
     const deleted = await db
       .delete(actionDependencies)
