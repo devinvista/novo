@@ -95,13 +95,14 @@ export async function updateCheckpoint(
 
   const targetValue = convertBRToDatabase(existing.targetValue);
   const actual = convertBRToDatabase(payload.actualValue);
-  const progress = targetValue > 0 ? (actual / targetValue) * 100 : 0;
+  const rawProgress = targetValue > 0 ? (actual / targetValue) * 100 : 0;
+  const progress = Math.max(0, Math.min(rawProgress, 999.99));
 
   const updateData: any = {
     actualValue: actual.toString(),
     notes: payload.notes,
     status: payload.status || "completed",
-    progress: progress.toString(),
+    progress: progress.toFixed(2),
   };
 
   if (payload.status === "completed") {

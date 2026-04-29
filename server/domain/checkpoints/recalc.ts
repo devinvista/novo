@@ -29,12 +29,13 @@ export async function recalcKeyResultFromCheckpoints(keyResultId: number): Promi
     const krTargetValue = convertBRToDatabase(currentKR.targetValue || "0");
     const latestValueRaw = withValue.length > 0 ? withValue[0].actualValue : "0";
     const currentValueNum = convertBRToDatabase(latestValueRaw || "0");
-    const newKRProgress =
+    const rawProgress =
       krTargetValue > 0 ? (currentValueNum / krTargetValue) * 100 : 0;
+    const newKRProgress = Math.max(0, Math.min(rawProgress, 999.99));
 
     await storage.updateKeyResult(keyResultId, {
       currentValue: currentValueNum.toString(),
-      progress: newKRProgress.toString(),
+      progress: newKRProgress.toFixed(2),
     });
 
     if (currentKR.objectiveId) {
