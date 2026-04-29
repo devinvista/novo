@@ -13,6 +13,20 @@ export const krCheckInsRouter: Router = Router();
 
 krCheckInsRouter.use(requireAuth);
 
+/**
+ * Lista todos os check-ins visíveis ao usuário atual (cascata pelos KRs visíveis).
+ * Usado pelo painel para identificar KRs que ainda não receberam check-in na semana.
+ */
+krCheckInsRouter.get(
+  "/kr-check-ins",
+  asyncHandler(async (req: any, res) => {
+    const userKrs = await storage.getKeyResults({ currentUserId: req.user.id });
+    const krIds = userKrs.map((kr: any) => kr.id);
+    const items = await storage.checkIns.listAcrossKeyResults(krIds);
+    res.json(items);
+  })
+);
+
 /** Calcula a data ISO (YYYY-MM-DD) da segunda-feira da semana de uma data. */
 function mondayOfWeek(date: Date): string {
   const d = new Date(date);

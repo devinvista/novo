@@ -1,6 +1,6 @@
 import { krCheckIns, users, keyResults, type KrCheckIn, type InsertKrCheckIn } from "@shared/schema";
 import { db } from "../pg-db";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 export class KrCheckInRepo {
   async list(keyResultId: number): Promise<Array<KrCheckIn & { authorName?: string | null }>> {
@@ -40,15 +40,15 @@ export class KrCheckInRepo {
     return rows[0];
   }
 
-  async listAcrossKeyResults(keyResultIds: number[], limit = 50): Promise<KrCheckIn[]> {
+  async listAcrossKeyResults(keyResultIds: number[], limit?: number): Promise<KrCheckIn[]> {
     if (keyResultIds.length === 0) return [];
-    const rows = await db
+    let query: any = db
       .select()
       .from(krCheckIns)
-      .where(and(eq(krCheckIns.keyResultId, keyResultIds[0])))
-      .orderBy(desc(krCheckIns.createdAt))
-      .limit(limit);
-    return rows;
+      .where(inArray(krCheckIns.keyResultId, keyResultIds))
+      .orderBy(desc(krCheckIns.weekStart), desc(krCheckIns.createdAt));
+    if (typeof limit === "number") query = query.limit(limit);
+    return await query;
   }
 
   async ensureKrExists(keyResultId: number): Promise<boolean> {
