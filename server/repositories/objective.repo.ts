@@ -418,15 +418,18 @@ export class ObjectiveRepo {
       if (!Number.isNaN(direct) && direct > 0) {
         return sum + Math.min(direct, 100);
       }
-      const current = parseFloat(kr.current?.toString() ?? '0');
-      const target = parseFloat(kr.target?.toString() ?? '0');
+      const currentRaw = parseFloat(kr.current?.toString() ?? '0');
+      const targetRaw = parseFloat(kr.target?.toString() ?? '0');
+      const current = Number.isFinite(currentRaw) ? currentRaw : 0;
+      const target = Number.isFinite(targetRaw) ? targetRaw : 0;
       const p = target > 0 ? Math.min((current / target) * 100, 100) : 0;
-      return sum + p;
+      return sum + (Number.isFinite(p) ? p : 0);
     }, 0);
 
-    const avg = total / rows.length;
-    await db.update(objectives).set({ progress: avg.toFixed(2) }).where(eq(objectives.id, objectiveId));
-    return avg;
+    const avg = rows.length > 0 ? total / rows.length : 0;
+    const safeAvg = Number.isFinite(avg) ? Math.max(0, Math.min(avg, 999.99)) : 0;
+    await db.update(objectives).set({ progress: safeAvg.toFixed(2) }).where(eq(objectives.id, objectiveId));
+    return safeAvg;
   }
 
   /**
@@ -440,10 +443,14 @@ export class ObjectiveRepo {
       .where(and(eq(objectives.parentObjectiveId, objectiveId), isNull(objectives.deletedAt)));
 
     if (rows.length === 0) return null;
-    const total = rows.reduce((sum, r) => sum + (r.progress ? parseFloat(r.progress.toString()) : 0), 0);
+    const total = rows.reduce((sum, r) => {
+      const v = r.progress ? parseFloat(r.progress.toString()) : 0;
+      return sum + (Number.isFinite(v) ? v : 0);
+    }, 0);
     const avg = total / rows.length;
-    await db.update(objectives).set({ progress: avg.toFixed(2) }).where(eq(objectives.id, objectiveId));
-    return avg;
+    const safeAvg = Number.isFinite(avg) ? Math.max(0, Math.min(avg, 999.99)) : 0;
+    await db.update(objectives).set({ progress: safeAvg.toFixed(2) }).where(eq(objectives.id, objectiveId));
+    return safeAvg;
   }
 
   // sql é usado caso outras queries precisem de raw — manter import.
