@@ -1,10 +1,19 @@
 /**
- * Serviço de Checkpoints — conversão BR↔DB, recálculo em cascata e formatação de resposta.
+ * Serviço de Checkpoints — gestão do PLANO (metas por período).
+ *
+ * Arquitetura unificada (04/2026):
+ * - O `currentValue`/`progress` do KR é controlado SOMENTE pelo fluxo de
+ *   check-in. Ao atualizar um checkpoint via admin com `actualValue`,
+ *   criamos implicitamente um check-in para a semana corrente, mantendo
+ *   uma única fonte de verdade.
+ * - O `status` dos checkpoints é recalculado automaticamente comparando
+ *   o último check-in com a meta planejada.
  */
 import { storage } from "../../storage";
 import { NotFoundError } from "../../errors/app-error";
 import { convertBRToDatabase, formatBrazilianNumber } from "../../shared/formatters";
-import { recalcKeyResultFromCheckpoints } from "../../domain/checkpoints/recalc";
+import { recalcCheckpointStatuses, updateKrAndCascade } from "../../domain/checkpoints/recalc";
+import { recordActivity } from "../../lib/audit-log";
 
 type CurrentUser = { id: number };
 
@@ -25,7 +34,9 @@ export function formatCheckpointsForResponse(list: any[]) {
 }
 
 /**
- * Lista checkpoints (opcionalmente filtrados por KR e/ou região/sub-região) e formata valores.
+ * Lista checkpoints (opcionalmente filtrados por KR e/ou região/sub-região)
+ * e enriquece cada item com o `actualValue` derivado do último check-in
+ * registrado para o KR.
  */
 export async function listCheckpoints(
   currentUser: CurrentUser,
@@ -33,7 +44,35 @@ export async function listCheckpoints(
   filters?: { regionId?: number; subRegionId?: number }
 ) {
   const checkpoints = await storage.getCheckpoints(keyResultId, currentUser.id, filters);
-  return formatCheckpointsForResponse(checkpoints);
+
+  // Enriquece cada checkpoint com o valor reportado pelo check-in mais recente
+  // do KR (a "realidade" sobreposta ao "plano"). Buffer simples por KR para
+  // evitar N consultas desnecessárias.
+  const krCache = new Map<number, string | null>();
+  const enriched = await Promise.all(
+    checkpoints.map(async (cp: any) => {
+      const krId = cp.keyResultId;
+      let reported = krCache.get(krId);
+      if (reported === undefined) {
+        const latest = await storage.checkIns.latest(krId);
+        reported = latest?.currentValue?.toString() ?? null;
+        krCache.set(krId, reported);
+      }
+      return {
+        ...cp,
+        // Mantém o actualValue histórico do checkpoint, mas adiciona o valor
+        // reportado pelo check-in mais recente (fonte de verdade da execução).
+        reportedValue: reported,
+      };
+    })
+  );
+
+  return formatCheckpointsForResponse(enriched).map((c, i) => ({
+    ...c,
+    reportedValue: enriched[i].reportedValue
+      ? formatBrazilianNumber(enriched[i].reportedValue)
+      : null,
+  }));
 }
 
 /**
@@ -46,8 +85,41 @@ export async function getCheckpoint(currentUser: CurrentUser, id: number) {
 }
 
 /**
+ * Cria um check-in implícito quando um admin atualiza um checkpoint com
+ * `actualValue`. Mantém a fonte única do `currentValue` no fluxo de check-ins.
+ */
+async function createImplicitCheckIn(
+  authorId: number,
+  keyResultId: number,
+  reportedValue: number,
+  notes?: string | null
+): Promise<void> {
+  const weekStart = mondayOfWeek(new Date());
+  await storage.checkIns.create({
+    keyResultId,
+    authorId,
+    weekStart,
+    status: "on_track",
+    confidence: 7,
+    currentValue: reportedValue.toString(),
+    nextSteps: notes ?? null,
+    blockers: null,
+  });
+  await updateKrAndCascade(keyResultId, reportedValue);
+}
+
+/** Calcula a data ISO (YYYY-MM-DD) da segunda-feira da semana de uma data. */
+function mondayOfWeek(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
  * Atualização simples do progresso de um checkpoint (endpoint legado /update).
- * Dispara recálculo em cascata e retorna valores já no formato BR.
+ * Cria check-in implícito quando há `actualValue` para manter fonte única.
  */
 export async function updateCheckpointProgress(
   currentUser: CurrentUser,
@@ -57,14 +129,28 @@ export async function updateCheckpointProgress(
   const existing = await storage.getCheckpoint(id, currentUser.id);
   if (!existing) throw new NotFoundError("Checkpoint não encontrado ou sem acesso");
 
-  const actualValueDb = payload.actualValue ? convertBRToDatabase(payload.actualValue) : 0;
+  const actualValueDb = payload.actualValue ? convertBRToDatabase(payload.actualValue) : null;
 
+  if (actualValueDb !== null) {
+    await createImplicitCheckIn(currentUser.id, existing.keyResultId, actualValueDb);
+  }
+
+  // Apenas metadados do checkpoint são atualizados aqui (status manual).
   const updated = await storage.updateCheckpoint(id, {
-    actualValue: actualValueDb.toString(),
-    status: payload.status || "pending",
+    status: payload.status || existing.status,
   });
 
-  await recalcKeyResultFromCheckpoints(existing.keyResultId);
+  // Recalcula automaticamente o status de todos os checkpoints do KR.
+  await recalcCheckpointStatuses(existing.keyResultId);
+
+  await recordActivity({
+    userId: currentUser.id,
+    action: "update",
+    entityType: "checkpoint",
+    entityId: id,
+    before: existing,
+    after: updated,
+  });
 
   return {
     ...updated,
@@ -83,7 +169,11 @@ type FullUpdatePayload = {
 };
 
 /**
- * Atualização completa de um checkpoint com cálculo de progresso e datas de conclusão.
+ * Atualização completa de um checkpoint (admin).
+ *
+ * Quando `actualValue` é fornecido, cria um check-in implícito para a semana
+ * corrente e propaga a cascata de progresso. O checkpoint em si recebe apenas
+ * notas/status — o `actualValue` será populado via `recalcCheckpointStatuses`.
  */
 export async function updateCheckpoint(
   currentUser: CurrentUser,
@@ -93,18 +183,21 @@ export async function updateCheckpoint(
   const existing = await storage.getCheckpoint(id, currentUser.id);
   if (!existing) throw new NotFoundError("Checkpoint não encontrado ou sem acesso");
 
-  const targetValue = convertBRToDatabase(existing.targetValue);
-  const actual = convertBRToDatabase(payload.actualValue);
-  const rawProgress = targetValue > 0 ? (actual / targetValue) * 100 : 0;
-  const progress = Math.max(0, Math.min(rawProgress, 999.99));
+  const reported = payload.actualValue ? convertBRToDatabase(payload.actualValue) : null;
 
-  const updateData: any = {
-    actualValue: actual.toString(),
-    notes: payload.notes,
+  if (reported !== null) {
+    await createImplicitCheckIn(
+      currentUser.id,
+      existing.keyResultId,
+      reported,
+      payload.notes
+    );
+  }
+
+  const updateData: Record<string, unknown> = {
+    notes: payload.notes ?? null,
     status: payload.status || "completed",
-    progress: progress.toFixed(2),
   };
-
   if (payload.status === "completed") {
     updateData.completedDate = payload.completedDate ? new Date(payload.completedDate) : new Date();
     updateData.completedAt = payload.completedAt ? new Date(payload.completedAt) : new Date();
@@ -114,7 +207,17 @@ export async function updateCheckpoint(
   }
 
   const checkpoint = await storage.updateCheckpoint(id, updateData);
-  await recalcKeyResultFromCheckpoints(existing.keyResultId);
+  await recalcCheckpointStatuses(existing.keyResultId);
+
+  await recordActivity({
+    userId: currentUser.id,
+    action: "update",
+    entityType: "checkpoint",
+    entityId: id,
+    before: existing,
+    after: checkpoint,
+  });
+
   return checkpoint;
 }
 
@@ -125,4 +228,12 @@ export async function deleteCheckpoint(currentUser: CurrentUser, id: number) {
   const existing = await storage.getCheckpoint(id, currentUser.id);
   if (!existing) throw new NotFoundError("Checkpoint não encontrado ou sem acesso");
   await storage.deleteCheckpoint(id);
+
+  await recordActivity({
+    userId: currentUser.id,
+    action: "delete",
+    entityType: "checkpoint",
+    entityId: id,
+    before: existing,
+  });
 }

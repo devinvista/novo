@@ -7,6 +7,7 @@ import { eq, and, desc, inArray, isNull, isNotNull, type SQL } from 'drizzle-orm
 import type { UserRepo } from './user.repo';
 import type { ObjectiveRepo, ObjectiveFilters } from './objective.repo';
 import { buildAccessScope, keyResultMatchesProductScope } from '../lib/access-scope';
+import { computeKrProgress } from '../domain/progress/compute';
 
 /**
  * KR enriquecido com objetivo e progresso recalculado para a UI.
@@ -111,19 +112,12 @@ export class KeyResultRepo {
     return result.map((row): KeyResultWithRelations => {
       const kr = row.keyResults;
       const objective = row.objectives ?? null;
-      let calculatedProgress = 0;
-      if (kr.currentValue && kr.targetValue) {
-        const current = parseFloat(kr.currentValue.toString());
-        const target = parseFloat(kr.targetValue.toString());
-        if (target > 0) {
-          calculatedProgress = Math.round((current / target) * 100 * 100) / 100;
-        }
-      }
-      const finalProgress = (kr.currentValue && kr.targetValue && calculatedProgress > 0)
-        ? calculatedProgress
-        : (kr.progress !== null && kr.progress !== undefined)
-          ? parseFloat(kr.progress.toString())
-          : 0;
+      // Usa a função canônica para garantir consistência entre todos os caminhos
+      // (lista de KRs, recálculo de objetivos, check-in, checkpoint admin).
+      const calculated = computeKrProgress(kr.currentValue, kr.targetValue);
+      const stored = (kr.progress !== null && kr.progress !== undefined)
+        ? parseFloat(kr.progress.toString()) : 0;
+      const finalProgress = calculated > 0 ? calculated : stored;
       return { ...kr, progress: finalProgress, objective };
     });
   }
@@ -168,25 +162,7 @@ export class KeyResultRepo {
     }
 
     return {
-      id: row.keyResults.id,
-      objectiveId: row.keyResults.objectiveId,
-      title: row.keyResults.title,
-      description: row.keyResults.description,
-      targetValue: row.keyResults.targetValue,
-      currentValue: row.keyResults.currentValue,
-      unit: row.keyResults.unit,
-      frequency: row.keyResults.frequency,
-      startDate: row.keyResults.startDate,
-      endDate: row.keyResults.endDate,
-      status: row.keyResults.status,
-      progress: row.keyResults.progress,
-      strategicIndicatorIds: row.keyResults.strategicIndicatorIds,
-      serviceLineIds: row.keyResults.serviceLineIds,
-      serviceLineId: row.keyResults.serviceLineId,
-      serviceId: row.keyResults.serviceId,
-      deletedAt: row.keyResults.deletedAt,
-      createdAt: row.keyResults.createdAt,
-      updatedAt: row.keyResults.updatedAt,
+      ...row.keyResults,
       objective: row.objectives,
     };
   }

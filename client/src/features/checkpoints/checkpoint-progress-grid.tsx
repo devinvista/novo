@@ -54,9 +54,12 @@ export default function CheckpointProgressGrid({
   // Calculate overall stats
   const totalCheckpoints = checkpoints.length;
   const completedCheckpoints = checkpoints.filter(cp => cp.status === "completed").length;
+  // Para o cálculo agora preferimos o `reportedValue` (último check-in do KR
+  // até a data do checkpoint). Se não vier, caímos para `actualValue` legado.
   const overallProgress = checkpoints.reduce((sum, cp) => {
     const targetValue = parseDecimalBR(cp.targetValue || "0");
-    const actualValue = parseDecimalBR(cp.actualValue || "0");
+    const reported = cp.reportedValue ?? cp.actualValue ?? "0";
+    const actualValue = parseDecimalBR(reported);
     return sum + (targetValue > 0 ? (actualValue / targetValue) * 100 : 0);
   }, 0) / totalCheckpoints;
 
@@ -82,7 +85,11 @@ export default function CheckpointProgressGrid({
             <AnimatePresence>
               {checkpoints.map((checkpoint, index) => {
                 const targetValue = parseDecimalBR(checkpoint.targetValue || "0");
-                const actualValue = parseDecimalBR(checkpoint.actualValue || "0");
+                // Prioriza valor reportado pelo check-in (fonte única) sobre o
+                // actualValue legado salvo no próprio checkpoint.
+                const actualValue = parseDecimalBR(
+                  checkpoint.reportedValue ?? checkpoint.actualValue ?? "0"
+                );
                 
                 // Verificar se é checkpoint futuro
                 const today = nowSP();

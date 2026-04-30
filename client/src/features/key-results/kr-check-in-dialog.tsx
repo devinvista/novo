@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  CalendarClock,
   CheckCircle2,
   ListChecks,
   MessageSquareText,
+  Target as TargetIcon,
   XCircle,
   History,
   Loader2,
@@ -138,6 +140,36 @@ export default function KrCheckInDialog({ keyResult, open, onOpenChange }: KrChe
     enabled: open,
   });
 
+  /** Plano do KR — usado para mostrar o checkpoint da semana corrente como contexto. */
+  const checkpointsQuery = useQuery<any[]>({
+    queryKey: ["/api/checkpoints", { keyResultId: keyResult.id }],
+    queryFn: async () => {
+      const res = await fetch(`/api/checkpoints?keyResultId=${keyResult.id}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Erro ao carregar plano");
+      return res.json();
+    },
+    enabled: open,
+  });
+
+  /** Próximo checkpoint não-concluído ou o mais próximo da semana atual. */
+  const currentPlannedCheckpoint = useMemo(() => {
+    const list = checkpointsQuery.data ?? [];
+    if (list.length === 0) return null;
+    const now = new Date();
+    const future = list.filter((c) => new Date(c.dueDate) >= now);
+    return future[0] ?? list[list.length - 1] ?? null;
+  }, [checkpointsQuery.data]);
+
+  const planTarget = currentPlannedCheckpoint
+    ? parseDecimalBR(String(currentPlannedCheckpoint.targetValue ?? "0"))
+    : 0;
+  const reportedNow = currentValue.trim() ? parseDecimalBR(currentValue) : null;
+  const planVariance = reportedNow !== null && planTarget > 0
+    ? ((reportedNow - planTarget) / planTarget) * 100
+    : null;
+
   const createCheckIn = useMutation({
     mutationFn: async () => {
       const payload: Record<string, unknown> = {
@@ -216,6 +248,57 @@ export default function KrCheckInDialog({ keyResult, open, onOpenChange }: KrChe
 
           <TabsContent value="new" className="mt-4">
             <form onSubmit={handleSubmit} className="space-y-5" data-testid="form-checkin">
+              {currentPlannedCheckpoint ? (
+                <div
+                  className="rounded-md border bg-muted/30 p-3 text-xs"
+                  data-testid="card-current-checkpoint"
+                >
+                  <div className="mb-2 flex items-center gap-1.5 font-semibold text-muted-foreground">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    Plano vigente
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Período
+                      </div>
+                      <div className="font-medium">{currentPlannedCheckpoint.title}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Meta planejada
+                      </div>
+                      <div className="flex items-center gap-1 font-medium">
+                        <TargetIcon className="h-3 w-3 text-muted-foreground" />
+                        {currentPlannedCheckpoint.targetValue}
+                        {keyResult.unit ? (
+                          <span className="text-muted-foreground"> {keyResult.unit}</span>
+                        ) : null}
+                      </div>
+                    </div>
+                    {planVariance !== null ? (
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Variação vs. plano
+                        </div>
+                        <div
+                          className={cn(
+                            "font-semibold tabular-nums",
+                            planVariance >= 0
+                              ? "text-green-700 dark:text-green-400"
+                              : "text-red-700 dark:text-red-400"
+                          )}
+                          data-testid="text-plan-variance"
+                        >
+                          {planVariance >= 0 ? "+" : ""}
+                          {planVariance.toFixed(1)}%
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="space-y-2">
                 <Label>Como está esse KR essa semana?</Label>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Target, TrendingUp, FileText } from "lucide-react";
+import { Calendar, Target, TrendingUp, FileText, Info } from "lucide-react";
 import { ptBR } from "date-fns/locale";
 import { formatSP } from "@/lib/timezone";
 import { apiRequest } from "@/lib/queryClient";
@@ -131,9 +131,20 @@ export default function CheckpointUpdateDialog({
             Atualizar Checkpoint
           </DialogTitle>
           <DialogDescription>
-            Atualize o progresso e status do checkpoint
+            Ajuste manual do checkpoint (uso administrativo)
           </DialogDescription>
         </DialogHeader>
+
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-100" data-testid="info-checkin-source">
+          <div className="flex items-start gap-2">
+            <Info className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              O valor reportado aqui criará um <strong>check-in semanal</strong> equivalente
+              para manter uma fonte única do progresso do KR. Para uso normal, prefira a
+              tela de check-in semanal.
+            </div>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Checkpoint Info */}

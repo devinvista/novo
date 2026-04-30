@@ -73,6 +73,9 @@ export const keyResults = pgTable("key_results", {
   startDate: varchar("start_date", { length: 10 }).notNull(),
   endDate: varchar("end_date", { length: 10 }).notNull(),
   frequency: varchar("frequency", { length: 50 }).notNull(),
+  // Cadência esperada do check-in semanal/quinzenal/mensal. Default 'weekly'.
+  // Usada pelo painel para sinalizar KRs com check-in em atraso.
+  checkInFrequency: varchar("check_in_frequency", { length: 50 }).default("weekly"),
   status: varchar("status", { length: 50 }).notNull().default("active"),
   progress: numeric("progress", { precision: 5, scale: 2 }).default("0.00"),
   deletedAt: timestamp("deleted_at"),

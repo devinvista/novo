@@ -14,6 +14,7 @@ import CheckpointProgressGrid from "@/features/checkpoints/checkpoint-progress-g
 import CheckpointTimelineHeader from "@/features/checkpoints/checkpoint-timeline-header";
 import NextCheckpointsOverview from "@/features/checkpoints/next-checkpoints-overview";
 import CheckpointUpdateDialog from "@/features/checkpoints/checkpoint-update-dialog";
+import PlanVsActualChart from "@/features/checkpoints/plan-vs-actual-chart";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useFilters } from "@/hooks/use-filters";
@@ -295,6 +296,13 @@ export default function Checkpoints() {
                   </CardContent>
                 </Card>
 
+                {/* Plano vs Realizado — comparativo entre o plano (checkpoints)
+                    e o reportado (check-ins) */}
+                <PlanVsActualChart
+                  checkpoints={selectedCheckpoints}
+                  unit={(selectedKeyResult as any)?.unit}
+                />
+
                 {/* Checkpoints Display */}
                 {viewMode === 'circles' ? (
                   <CheckpointProgressGrid
@@ -339,10 +347,15 @@ export default function Checkpoints() {
                                   <p className="text-sm text-gray-600">{formatDateBR(checkpoint.period)}</p>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-sm font-medium">
-                                    {checkpoint.actualValue || 0} / {checkpoint.targetValue}
+                                  <div className="text-xs text-muted-foreground">Plano</div>
+                                  <div className="text-sm font-medium tabular-nums">
+                                    {checkpoint.targetValue}
                                   </div>
-                                  <Badge 
+                                  <div className="mt-1 text-xs text-muted-foreground">Realizado</div>
+                                  <div className="text-sm font-semibold tabular-nums" data-testid={`text-realized-${checkpoint.id}`}>
+                                    {checkpoint.reportedValue ?? checkpoint.actualValue ?? "—"}
+                                  </div>
+                                  <Badge
                                     variant={checkpoint.status === 'completed' ? 'default' : 'secondary'}
                                     className="mt-1"
                                   >

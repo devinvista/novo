@@ -2,6 +2,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { db } from "../../pg-db";
 import { storage } from "../../storage";
 import { convertBRToDatabase } from "../../shared/formatters";
+import { computeKrProgressForDb } from "../progress/compute";
 import { logger } from "../../infra/logger";
 
 /**
@@ -15,8 +16,8 @@ type SqlExecutor = { execute: (query: SQL) => Promise<unknown> };
  * Atomicidade do recálculo (race condition fix):
  *
  * Anteriormente, dois check-ins (ou updates de checkpoint) concorrentes
- * sobre o mesmo Key Result podiam executar a sequência [ler checkpoints
- * → calcular progresso → escrever KR/objetivo] em paralelo, levando a
+ * sobre o mesmo Key Result podiam executar a sequência [ler dados →
+ * calcular progresso → escrever KR/objetivo] em paralelo, levando a
  * progressos inconsistentes (cada thread escrevia seu próprio resultado
  * com base num snapshot defasado).
  *
@@ -24,12 +25,23 @@ type SqlExecutor = { execute: (query: SQL) => Promise<unknown> };
  * `pg_advisory_xact_lock` chaveado pelo `objectiveId` (ou `-keyResultId`
  * quando órfão). O lock é exclusivo por sessão e liberado automaticamente
  * no COMMIT/ROLLBACK, garantindo serialização da janela de leitura+escrita
- * por árvore de objetivos sem custo de schema (não exige SELECT FOR UPDATE
- * em todas as tabelas envolvidas).
+ * por árvore de objetivos sem custo de schema.
  *
- * Os writes via `storage.*` continuam usando o pool padrão — o lock
- * advisory garante apenas exclusão mútua entre concorrentes; os writes
- * são individualmente auto-committed e ficam visíveis assim que retornam.
+ * --- ARQUITETURA UNIFICADA (a partir de 04/2026) ---
+ *
+ * O check-in semanal é a ÚNICA fonte de verdade do `currentValue` do KR.
+ * O checkpoint deixou de gravar `currentValue`/`progress` no KR — ele
+ * mantém o PLANO (targetValue por período) e tem seu `status` recalculado
+ * automaticamente comparando o último valor reportado pelo check-in com a
+ * meta planejada de cada checkpoint.
+ *
+ * Caminhos de escrita do `currentValue` do KR:
+ *   1. POST /api/key-results/:id/check-ins (entrada principal pelo usuário)
+ *   2. PUT /api/checkpoints/:id (admin) → cria implicitamente um check-in
+ *      semanal antes de salvar o checkpoint, mantendo a fonte única.
+ *
+ * Função canônica de cálculo de progresso: `computeKrProgress` em
+ * `server/domain/progress/compute.ts`.
  */
 
 async function acquireAdvisoryLock(tx: SqlExecutor, key: number): Promise<void> {
@@ -56,72 +68,113 @@ async function _recalcObjectiveCascadeLocked(
 }
 
 /**
- * Recalcula currentValue/progress de um Key Result a partir dos seus checkpoints.
- * Usa o checkpoint mais recente (por dueDate) com actualValue preenchido.
- * Em seguida propaga progresso para o objetivo pai e — em cascata — para os
- * ancestrais (até 16 níveis), suportando OKRs hierárquicos.
+ * Recalcula o `status` de cada checkpoint de um KR comparando a meta planejada
+ * (`targetValue`) e a `dueDate` do checkpoint com o último valor reportado
+ * via check-in.
  *
- * IMPORTANTE: chamado SEM userId — controle de acesso já deve ter sido feito
- * no endpoint que invocou esta função.
+ * Regras:
+ *   - dueDate no futuro                  → status mantém-se "pending"
+ *   - dueDate no passado e atingiu meta  → "completed" + completedAt = agora
+ *   - dueDate no passado e abaixo da meta→ "delayed"
+ *   - sem check-in nenhum                → mantém o status atual
  *
- * Erros são propagados ao chamador para que o handler central de erros possa
- * notificar o usuário. Anteriormente eram engolidos silenciosamente, fazendo
- * com que o usuário visse "sucesso" mesmo quando o recálculo falhava — o que
- * gerava progresso inconsistente sem aviso visível.
+ * Esta função NÃO grava `currentValue`/`progress` no KR — isso fica a cargo
+ * do POST de check-in.
+ */
+export async function recalcCheckpointStatuses(keyResultId: number): Promise<void> {
+  const kr = await storage.getKeyResult(keyResultId);
+  if (!kr) return;
+
+  const allCheckpoints = await storage.getCheckpoints(keyResultId);
+  if (allCheckpoints.length === 0) return;
+
+  const latestCheckIn = await storage.checkIns.latest(keyResultId);
+  const reportedValue =
+    latestCheckIn && latestCheckIn.currentValue !== null && latestCheckIn.currentValue !== undefined
+      ? convertBRToDatabase(String(latestCheckIn.currentValue))
+      : null;
+
+  if (reportedValue === null) return;
+
+  const now = new Date();
+  for (const cp of allCheckpoints) {
+    if (!cp.dueDate) continue;
+    const due = new Date(cp.dueDate);
+    if (due > now) continue; // futuro: não muda
+
+    const target = convertBRToDatabase(String(cp.targetValue ?? "0"));
+    if (target <= 0) continue;
+
+    const reached = reportedValue >= target;
+    const newStatus = reached ? "completed" : "delayed";
+
+    if (cp.status === newStatus) continue;
+
+    const update: Record<string, unknown> = {
+      status: newStatus,
+      actualValue: reportedValue.toString(),
+    };
+    if (reached) {
+      update.completedDate = cp.completedDate ?? now;
+      update.completedAt = cp.completedAt ?? now;
+    } else {
+      update.completedDate = null;
+      update.completedAt = null;
+    }
+
+    try {
+      await storage.updateCheckpoint(cp.id, update);
+    } catch (err) {
+      logger.warn({ err, checkpointId: cp.id }, "Falha ao recalcular status de checkpoint");
+    }
+  }
+}
+
+/**
+ * @deprecated Mantido apenas para compatibilidade com chamadas legadas.
+ * Use `recalcCheckpointStatuses` + atualização do KR via check-in.
+ *
+ * Não escreve mais no KR. Apenas recalcula status dos checkpoints e
+ * propaga a cascata de progresso do objetivo (que lê o `currentValue`
+ * já gravado no KR pelo fluxo de check-in).
  */
 export async function recalcKeyResultFromCheckpoints(keyResultId: number): Promise<void> {
-  const currentKR = await storage.getKeyResult(keyResultId);
-  if (!currentKR) return;
+  const kr = await storage.getKeyResult(keyResultId);
+  if (!kr) return;
+  await recalcCheckpointStatuses(keyResultId);
+  if (kr.objectiveId) await recalcObjectiveCascade(kr.objectiveId);
+}
 
-  // Lock por árvore de objetivo. Para KRs órfãos usamos -keyResultId para
-  // evitar colisão com chaves de objetivos.
-  const lockKey = currentKR.objectiveId ?? -keyResultId;
+/**
+ * Atualiza o `currentValue` e `progress` do KR a partir de um valor reportado
+ * (caminho do check-in) e propaga para a árvore de objetivos. Tudo dentro de
+ * uma transação com advisory lock para evitar race conditions.
+ */
+export async function updateKrAndCascade(
+  keyResultId: number,
+  reportedValue: number
+): Promise<void> {
+  const kr = await storage.getKeyResult(keyResultId);
+  if (!kr) return;
+
+  const lockKey = kr.objectiveId ?? -keyResultId;
+  const progress = computeKrProgressForDb(reportedValue, kr.targetValue);
 
   try {
     await db.transaction(async (tx) => {
       await acquireAdvisoryLock(tx, lockKey);
-
-      // Re-leitura dos checkpoints DENTRO do lock — antes da correção, a
-      // leitura ocorria fora da seção crítica e podia ficar defasada.
-      const allCheckpoints = await storage.getCheckpoints(keyResultId);
-
-      // Apenas checkpoints já atualizados (status "completed") representam
-      // medições reais. Checkpoints pendentes têm actualValue=0 por padrão
-      // e não devem zerar o progresso do KR.
-      const withValue = allCheckpoints
-        .filter((cp): cp is typeof cp => {
-          const v = cp.actualValue;
-          if (v === null || v === undefined || v === "") return false;
-          return cp.status === "completed";
-        })
-        .sort((a, b) => {
-          // dueDate é nullable no schema; checkpoints sem data caem para o final.
-          const ta = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-          const tb = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-          return tb - ta;
-        });
-
-      const krTargetValue = convertBRToDatabase(currentKR.targetValue || "0");
-      const latestValueRaw = withValue.length > 0 ? withValue[0].actualValue : "0";
-      const currentValueNum = convertBRToDatabase(latestValueRaw || "0");
-      const rawProgress =
-        krTargetValue > 0 ? (currentValueNum / krTargetValue) * 100 : 0;
-      const safeProgress = Number.isFinite(rawProgress) ? rawProgress : 0;
-      const newKRProgress = Math.max(0, Math.min(safeProgress, 999.99));
-
       await storage.updateKeyResult(keyResultId, {
-        currentValue: currentValueNum.toString(),
-        progress: newKRProgress.toFixed(2),
+        currentValue: reportedValue.toString(),
+        progress,
       });
-
-      if (currentKR.objectiveId) {
-        await _recalcObjectiveCascadeLocked(tx, currentKR.objectiveId);
+      if (kr.objectiveId) {
+        await _recalcObjectiveCascadeLocked(tx, kr.objectiveId);
       }
     });
   } catch (err) {
     logger.error(
-      { err, keyResultId, objectiveId: currentKR.objectiveId },
-      "Falha ao recalcular Key Result a partir dos checkpoints"
+      { err, keyResultId, objectiveId: kr.objectiveId },
+      "Falha ao atualizar Key Result a partir do check-in"
     );
     throw err;
   }

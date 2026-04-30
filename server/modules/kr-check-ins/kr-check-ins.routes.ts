@@ -6,7 +6,7 @@ import { requireAuth, type AuthenticatedRequest } from "../../middleware/auth";
 import { NotFoundError, ValidationError } from "../../errors/app-error";
 import { insertKrCheckInSchema } from "@shared/schema";
 import { recordActivity } from "../../lib/audit-log";
-import { recalcObjectiveCascade } from "../../domain/checkpoints/recalc";
+import { recalcCheckpointStatuses, updateKrAndCascade } from "../../domain/checkpoints/recalc";
 import { convertBRToDatabase } from "../../shared/formatters";
 
 export const krCheckInsRouter: Router = Router();
@@ -35,6 +35,35 @@ function mondayOfWeek(date: Date): string {
   d.setDate(d.getDate() + diff);
   return d.toISOString().slice(0, 10);
 }
+
+/**
+ * Lista os KRs visíveis ao usuário atual que ainda NÃO receberam check-in
+ * na semana corrente. Usado pelo badge da sidebar para sinalizar pendências.
+ */
+krCheckInsRouter.get(
+  "/kr-check-ins/pending",
+  asyncHandler<AuthenticatedRequest>(async (req, res) => {
+    const userKrs = await storage.getKeyResults({ currentUserId: req.user.id });
+    const krs = userKrs as Array<{ id: number; title?: string; status?: string }>;
+    const activeKrs = krs.filter((kr) => kr.status !== "completed" && kr.status !== "cancelled");
+    if (activeKrs.length === 0) {
+      res.json({ count: 0, items: [] });
+      return;
+    }
+    const krIds = activeKrs.map((kr) => kr.id);
+    const recent = await storage.checkIns.listAcrossKeyResults(krIds);
+    const currentWeek = mondayOfWeek(new Date());
+    const krsWithCheckIn = new Set(
+      recent.filter((c) => c.weekStart === currentWeek).map((c) => c.keyResultId)
+    );
+    const pending = activeKrs.filter((kr) => !krsWithCheckIn.has(kr.id));
+    res.json({
+      count: pending.length,
+      currentWeek,
+      items: pending.map((kr) => ({ id: kr.id, title: kr.title })),
+    });
+  })
+);
 
 krCheckInsRouter.get(
   "/key-results/:id/check-ins",
@@ -73,16 +102,14 @@ krCheckInsRouter.post(
       authorId: req.user.id,
     });
 
-    // Atualiza KR com o valor reportado e recalcula cascata pai
+    // Caminho ÚNICO de gravação do currentValue do KR.
     if (parsed.currentValue) {
-      const target = parseFloat((kr.targetValue ?? "0").toString());
-      const cur = parseFloat(parsed.currentValue.toString());
-      const progress = target > 0 ? Math.min((cur / target) * 100, 100) : 0;
-      await storage.updateKeyResult(keyResultId, {
-        currentValue: parsed.currentValue.toString(),
-        progress: progress.toString(),
-      });
-      if (kr.objectiveId) await recalcObjectiveCascade(kr.objectiveId);
+      const reported = parseFloat(parsed.currentValue.toString());
+      if (Number.isFinite(reported)) {
+        await updateKrAndCascade(keyResultId, reported);
+        // Recalcula automaticamente o status dos checkpoints à luz do novo valor.
+        await recalcCheckpointStatuses(keyResultId);
+      }
     }
 
     await recordActivity({

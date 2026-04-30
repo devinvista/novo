@@ -37,11 +37,26 @@ The database schema includes tables for `users`, `objectives`, `key_results`, `a
 ### API - Rotas Principais
 The API provides comprehensive CRUD operations for objectives, key results, actions, checkpoints, and user management. It also includes routes for dashboard KPIs, executive summaries, audit trails, and administrative lookups. Key authentication routes include `/api/login`, `/api/logout`, and `/api/register`.
 
-### Check-ins Semanais de KR
+### Check-ins Semanais de KR (fonte única do progresso)
 Cada Resultado-Chave possui um botão "Check-in" no card que abre um diálogo com duas abas:
-- **Novo check-in**: status (`on_track` / `at_risk` / `off_track`), nível de confiança (1–10), valor atual opcional (atualiza KR e cascata de progresso), próximos passos e bloqueios.
+- **Novo check-in**: status (`on_track` / `at_risk` / `off_track`), nível de confiança (1–10), valor atual opcional, próximos passos e bloqueios. Mostra o **Plano vigente** (próximo checkpoint) com a meta e a variação % automática frente ao valor digitado.
 - **Histórico**: timeline cronológica com autor, semana (segunda-feira), badge de status e confiança.
-Endpoints: `GET/POST /api/key-results/:id/check-ins`, `GET /api/key-results/:id/check-ins/latest`, `GET /api/kr-check-ins`. Toda inserção é auditada e dispara `recalcObjectiveCascade` quando há valor reportado.
+
+Endpoints:
+- `GET/POST /api/key-results/:id/check-ins` — lista/cria check-ins do KR
+- `GET /api/key-results/:id/check-ins/latest` — último check-in
+- `GET /api/kr-check-ins` — todos os check-ins visíveis ao usuário
+- `GET /api/kr-check-ins/pending` — KRs sem check-in na semana corrente (badge da sidebar)
+
+### Arquitetura: Checkpoint × Check-in (unificada em 04/2026)
+Sistema antes tinha **duplicação** entre check-ins (execução semanal) e checkpoints (plano periódico) — ambos escreviam `currentValue`/`progress` do KR causando race condition. Agora:
+
+- **Checkpoint = PLANO**: `targetValue` por período + `dueDate`. Status (`pending`/`completed`/`delayed`) é **recalculado automaticamente** comparando o último check-in com a meta planejada (ver `recalcCheckpointStatuses` em `server/domain/checkpoints/recalc.ts`).
+- **Check-in = REALIDADE**: É a **única fonte de verdade** do `currentValue` do KR. O fluxo `POST /api/key-results/:id/check-ins` chama `updateKrAndCascade` que grava o KR e propaga o cascade do objetivo dentro de uma transação com `pg_advisory_xact_lock`.
+- **Edição de checkpoint via admin**: Quando um admin envia `actualValue` para `PUT /api/checkpoints/:id`, o serviço cria um **check-in implícito** para a semana corrente, mantendo a fonte única.
+- **Cálculo canônico de progresso**: `computeKrProgress(current, target)` em `server/domain/progress/compute.ts` — substitui as três implementações divergentes anteriores. Faz clamping em 0..999.99% e aceita BR/EN.
+- **UI Plano vs. Realizado**: A página `/checkpoints` (após selecionar um KR) mostra o componente `PlanVsActualChart` com curva planejada vs. reportada e a variação total. Cada checkpoint na grade exibe o `reportedValue` do último check-in.
+- **Cadência por KR**: Coluna `key_results.check_in_frequency` (default `weekly`) define a cadência esperada do reporte; usada pelo endpoint `/pending` para sinalizar atraso.
 
 ### Controle de Acesso
 - **Roles**: `admin` (acesso total), `gestor` (gerencia objetivos, KRs e usuários operacionais do time), `operacional` (visualiza dados, atualiza checkpoints e ações).

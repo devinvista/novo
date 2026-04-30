@@ -1,20 +1,22 @@
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
-import { 
+import {
   Network,
-  Goal, 
-  Key, 
-  CheckSquare, 
-  Flag, 
-  Activity, 
-  Users, 
-  Settings, 
+  Goal,
+  Key,
+  CheckSquare,
+  Flag,
+  Activity,
+  Users,
+  Settings,
   LogOut,
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 
@@ -23,10 +25,19 @@ export default function Sidebar() {
   const { user, logoutMutation } = useAuth();
   const { isOpen } = useSidebarToggle();
 
+  /** Pendências de check-in semanal — usadas para destacar KRs sem reporte. */
+  const pendingCheckInsQuery = useQuery<{ count: number; items: Array<{ id: number; title?: string }> }>({
+    queryKey: ["/api/kr-check-ins/pending"],
+    enabled: !!user,
+    refetchInterval: 5 * 60 * 1000,
+  });
+
+  const pendingCount = pendingCheckInsQuery.data?.count ?? 0;
+
   const navigationItems = [
     { href: "/", icon: Network, label: "Alinhamento" },
     { href: "/objectives", icon: Goal, label: "Objetivos" },
-    { href: "/key-results", icon: Key, label: "Resultados-Chave" },
+    { href: "/key-results", icon: Key, label: "Resultados-Chave", badge: pendingCount },
     { href: "/actions", icon: CheckSquare, label: "Ações" },
     { href: "/checkpoints", icon: Flag, label: "Checkpoints" },
     { href: "/reports", icon: Activity, label: "Relatórios" },
@@ -84,10 +95,12 @@ export default function Sidebar() {
       <nav className="flex-1 p-4 space-y-2">
         {navigationItems.map((item) => {
           const Icon = item.icon;
+          const badge = "badge" in item ? (item as { badge?: number }).badge ?? 0 : 0;
           return (
-            <Link 
-              key={item.href} 
+            <Link
+              key={item.href}
               href={item.href}
+              data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
               className={`flex items-center px-4 py-3 rounded-lg font-medium transition-colors ${
                 isActive(item.href)
                   ? "text-sidebar-primary bg-sidebar-primary/10"
@@ -95,7 +108,17 @@ export default function Sidebar() {
               }`}
             >
               <Icon className="mr-3 h-4 w-4" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {badge > 0 ? (
+                <Badge
+                  variant="destructive"
+                  className="ml-2 h-5 min-w-5 rounded-full px-1.5 text-[10px] font-bold"
+                  data-testid={`badge-pending-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+                  title={`${badge} check-in${badge > 1 ? "s" : ""} pendente${badge > 1 ? "s" : ""} esta semana`}
+                >
+                  {badge > 99 ? "99+" : badge}
+                </Badge>
+              ) : null}
             </Link>
           );
         })}
