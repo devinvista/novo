@@ -6,7 +6,7 @@ import {
   Goal,
   Key,
   CheckSquare,
-  Flag,
+  ClipboardCheck,
   Activity,
   Users,
   Settings,
@@ -35,7 +35,7 @@ export default function Sidebar() {
     { href: "/objectives", icon: Goal, label: "Objetivos" },
     { href: "/key-results", icon: Key, label: "Resultados-Chave" },
     { href: "/actions", icon: CheckSquare, label: "Ações" },
-    { href: "/checkpoints", icon: Flag, label: "Checkpoints" },
+    { href: "/checkpoints", icon: ClipboardCheck, label: "Acompanhamento" },
     { href: "/reports", icon: Activity, label: "Relatórios" },
   ];
 

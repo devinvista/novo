@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Activity, Calendar, Trash2, MoreHorizontal, MessageSquarePlus } from "lucide-react";
+import { Plus, Edit, ClipboardCheck, Trash2, MoreHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
 
 import KeyResultForm from "@/features/key-results/key-result-form-simple";
@@ -20,7 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import type { KeyResult, Action, Checkpoint } from "@shared/schema";
+import type { KeyResult } from "@shared/schema";
 
 type KeyResultWithRelations = KeyResult & {
   objective?: { id: number; title: string } | null;
@@ -37,11 +37,9 @@ export default function KeyResults() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Check if user can manage key results
+
   const canManageKeyResults = user?.role === "admin" || user?.role === "gestor";
 
-  // Delete mutation for key results
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/key-results/${id}`);
@@ -49,34 +47,22 @@ export default function KeyResults() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
-      toast({
-        title: "Resultado-chave excluído",
-        description: "O resultado-chave foi excluído com sucesso.",
-      });
+      toast({ title: "Resultado-chave excluído", description: "O resultado-chave foi excluído com sucesso." });
     },
     onError: (error: any) => {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao excluir resultado-chave.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: error.message || "Erro ao excluir resultado-chave.", variant: "destructive" });
     },
   });
 
-  const handleDeleteKeyResult = (id: number) => {
-    deleteMutation.mutate(id);
-  };
-  
   const { data: keyResults, isLoading, error } = useQuery<KeyResultWithRelations[]>({
     queryKey: ["/api/key-results", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
       if (selectedQuarter && selectedQuarter !== "all") {
         const params = new URLSearchParams();
-        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
-        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
-        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
-        
-        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ''}`;
+        if (filters?.regionId) params.append("regionId", filters.regionId.toString());
+        if (filters?.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
+        const url = `/api/quarters/${selectedQuarter}/data${params.toString() ? `?${params}` : ""}`;
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -86,11 +72,10 @@ export default function KeyResults() {
         return data.keyResults || [];
       } else {
         const params = new URLSearchParams();
-        if (filters?.regionId) params.append('regionId', filters.regionId.toString());
-        if (filters?.subRegionId) params.append('subRegionId', filters.subRegionId.toString());
-        if (filters?.serviceLineId) params.append('serviceLineId', filters.serviceLineId.toString());
-        
-        const url = `/api/key-results${params.toString() ? `?${params}` : ''}`;
+        if (filters?.regionId) params.append("regionId", filters.regionId.toString());
+        if (filters?.subRegionId) params.append("subRegionId", filters.subRegionId.toString());
+        if (filters?.serviceLineId) params.append("serviceLineId", filters.serviceLineId.toString());
+        const url = `/api/key-results${params.toString() ? `?${params}` : ""}`;
         const response = await fetch(url, { credentials: "include" });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -103,7 +88,6 @@ export default function KeyResults() {
     refetchOnWindowFocus: false,
   });
 
-  // Busca todas as ações de uma vez e agrupa por KR (evita N+1 requests)
   const { data: actionsCounts } = useQuery<Record<number, number>>({
     queryKey: ["/api/actions-counts", selectedQuarter, JSON.stringify(filters)],
     queryFn: async () => {
@@ -130,171 +114,115 @@ export default function KeyResults() {
     refetchOnWindowFocus: false,
   });
 
-  // Busca todos os checkpoints de uma vez e agrupa por KR (evita N+1 requests)
-  const { data: checkpointsCounts } = useQuery<Record<number, { completed: number; total: number }>>({
-    queryKey: ["/api/checkpoints-counts", selectedQuarter, JSON.stringify(filters)],
-    queryFn: async () => {
-      if (!keyResults || keyResults.length === 0) return {};
-      const response = await fetch("/api/checkpoints", { credentials: "include" });
-      if (!response.ok) return {};
-      const checkpoints = await response.json();
-      const counts: Record<number, { completed: number; total: number }> = {};
-      if (Array.isArray(checkpoints)) {
-        checkpoints.forEach((cp: any) => {
-          if (cp.keyResultId) {
-            if (!counts[cp.keyResultId]) counts[cp.keyResultId] = { completed: 0, total: 0 };
-            counts[cp.keyResultId].total++;
-            if (cp.status === "completed") counts[cp.keyResultId].completed++;
-          }
-        });
-      }
-      return counts;
-    },
-    enabled: !!keyResults && keyResults.length > 0,
-    retry: 1,
-    refetchOnWindowFocus: false,
-  });
-
-  const handleCreateKeyResult = () => {
-    setSelectedKeyResult(null);
-    setIsFormOpen(true);
-  };
-
-  const handleEditKeyResult = (keyResult: any) => {
-    setSelectedKeyResult(keyResult);
-    setIsFormOpen(true);
-  };
-
-  const handleFormSuccess = () => {
-    setIsFormOpen(false);
-    setSelectedKeyResult(null);
-  };
-
-  const getStatusColor = (progress: number) => {
-    if (progress >= 70) return "bg-secondary";
-    if (progress >= 40) return "bg-accent";
-    return "bg-destructive";
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return { label: "Pendente", variant: "secondary" as const };
-      case 'active':
-        return { label: "Em andamento", variant: "default" as const };
-      case 'completed':
-        return { label: "Concluído", variant: "default" as const };
-      case 'delayed':
-        return { label: "Atrasado", variant: "destructive" as const };
-      case 'cancelled':
-        return { label: "Cancelado", variant: "destructive" as const };
-      default:
-        return { label: "Em andamento", variant: "default" as const };
+      case "pending": return { label: "Pendente", variant: "secondary" as const };
+      case "active": return { label: "Em andamento", variant: "default" as const };
+      case "completed": return { label: "Concluído", variant: "default" as const };
+      case "delayed": return { label: "Atrasado", variant: "destructive" as const };
+      case "cancelled": return { label: "Cancelado", variant: "destructive" as const };
+      default: return { label: "Em andamento", variant: "default" as const };
     }
   };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-        
-        <div className="p-6 border-b bg-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Resultados-Chave</h2>
-              <p className="text-gray-600">
-                {canManageKeyResults ? "Gerencie os KRs vinculados aos objetivos" : "Visualize os KRs vinculados aos objetivos"}
-              </p>
-            </div>
-            {canManageKeyResults && (
-              <Button onClick={handleCreateKeyResult}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo KR
-              </Button>
-            )}
+      <div className="p-6 border-b bg-white shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Resultados-Chave</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {canManageKeyResults ? "Gerencie os KRs vinculados aos objetivos" : "Visualize os KRs vinculados aos objetivos"}
+            </p>
           </div>
+          {canManageKeyResults && (
+            <Button onClick={() => { setSelectedKeyResult(null); setIsFormOpen(true); }} data-testid="button-new-kr">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo KR
+            </Button>
+          )}
         </div>
-        
-        <div className="flex-1 overflow-y-auto p-6">
-          {isLoading ? (
-            <div className="grid gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-2 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Erro ao carregar resultados-chave</p>
-              <p className="text-sm text-red-500 mt-2">{error.message}</p>
-            </div>
-          ) : (
-            <div className="grid gap-6">
-              {keyResults && keyResults.length > 0 ? keyResults.map((kr: any, index: number) => {
-                const progress = typeof kr.progress === 'number' ? kr.progress : parseDecimalBR(kr.progress || '0');
-                const statusBadge = getStatusBadge(kr.status || 'active');
-                
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        {isLoading ? (
+          <div className="grid gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-2 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Erro ao carregar resultados-chave</p>
+            <p className="text-sm text-red-500 mt-2">{error.message}</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 max-w-5xl">
+            {keyResults && keyResults.length > 0 ? (
+              keyResults.map((kr: any) => {
+                const progress = typeof kr.progress === "number" ? kr.progress : parseDecimalBR(kr.progress || "0");
+                const statusBadge = getStatusBadge(kr.status || "active");
+                const actionsCount = actionsCounts?.[kr.id] || 0;
+
                 return (
-                  <Card key={kr.id || `kr-${index}`} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg">
-                            {kr.title}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Objetivo: {kr.objective?.title || 'Sem objetivo associado'}
+                  <Card key={kr.id} className="hover:shadow-md transition-shadow bg-white">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base leading-snug">{kr.title}</CardTitle>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {kr.objective?.title || "Sem objetivo associado"}
                           </p>
                           {kr.description && (
-                            <p className="text-sm text-muted-foreground mt-2">
-                              {kr.description}
-                            </p>
+                            <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">{kr.description}</p>
                           )}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={statusBadge.variant}>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant={statusBadge.variant} className="text-xs">
                             {statusBadge.label}
                           </Badge>
                           {canManageKeyResults && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`button-menu-kr-${kr.id}`}>
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEditKeyResult(kr)}>
+                                <DropdownMenuItem onClick={() => { setSelectedKeyResult(kr); setIsFormOpen(true); }}>
                                   <Edit className="mr-2 h-4 w-4" />
                                   Editar KR
                                 </DropdownMenuItem>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
                                       <Trash2 className="mr-2 h-4 w-4" />
-                                      Deletar KR
+                                      Excluir KR
                                     </DropdownMenuItem>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Tem certeza que deseja deletar o resultado-chave "{kr.title}"? 
-                                        Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+                                        Tem certeza que deseja excluir "{kr.title}"? Esta ação não pode ser desfeita.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction 
-                                        onClick={() => handleDeleteKeyResult(kr.id)}
+                                      <AlertDialogAction
+                                        onClick={() => deleteMutation.mutate(kr.id)}
                                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                       >
-                                        Deletar
+                                        Excluir
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -305,133 +233,106 @@ export default function KeyResults() {
                         </div>
                       </div>
                     </CardHeader>
-                    
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Valor Atual:</span>
-                            <p className="font-medium">{kr.currentValue} {kr.unit}</p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Meta:</span>
-                            <p className="font-medium">{kr.targetValue} {kr.unit}</p>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <div className="flex justify-between text-sm mb-2">
-                            <span>Progresso</span>
-                            <span className="font-medium">{progress.toFixed(1).replace('.', ',')}%</span>
-                          </div>
-                          <Progress value={progress} className="h-2" />
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>Frequência: {translateFrequency(kr.frequency || '')}</span>
-                          {kr.strategicIndicator?.name && (
-                            <span>Indicador: {kr.strategicIndicator.name}</span>
-                          )}
-                        </div>
 
-                        <KrProgressChart keyResultId={kr.id} unit={kr.unit} targetValue={kr.targetValue} />
-                        
-                        <div className="flex items-center space-x-2 pt-3 border-t">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1 relative"
-                            onClick={() => setLocation(`/actions?kr=${kr.id}`)}
-                            data-testid={`button-actions-${kr.id}`}
-                          >
-                            <Activity className="h-4 w-4 mr-1" />
-                            {(actionsCounts?.[kr.id] || 0) === 0 ? "Criar Ações" : "Ações"}
-                            {(actionsCounts?.[kr.id] || 0) > 0 && (
-                              <Badge 
-                                variant="secondary" 
-                                className="ml-2 h-5 min-w-5 text-xs px-1.5 bg-blue-100 text-blue-800 hover:bg-blue-100"
-                              >
-                                {actionsCounts?.[kr.id] || 0}
-                              </Badge>
-                            )}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1 relative"
-                            onClick={() => setLocation(`/checkpoints?kr=${kr.id}`)}
-                            data-testid={`button-checkpoints-${kr.id}`}
-                          >
-                            <Calendar className="h-4 w-4 mr-1" />
-                            Checkpoints
-                            <Badge 
-                              variant="secondary" 
-                              className="ml-2 h-5 min-w-5 text-xs px-1.5 bg-green-100 text-green-800 hover:bg-green-100"
-                            >
-                              {checkpointsCounts?.[kr.id] 
-                                ? `${checkpointsCounts[kr.id].completed}/${checkpointsCounts[kr.id].total}`
-                                : "0/0"
-                              }
+                    <CardContent className="space-y-4">
+                      {/* Values row */}
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-xs text-gray-400 mb-0.5">Atual</p>
+                          <p className="font-semibold text-gray-900 tabular-nums">
+                            {kr.currentValue ?? "—"} <span className="text-gray-400 font-normal text-xs">{kr.unit}</span>
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-xs text-gray-400 mb-0.5">Meta</p>
+                          <p className="font-semibold text-gray-900 tabular-nums">
+                            {kr.targetValue ?? "—"} <span className="text-gray-400 font-normal text-xs">{kr.unit}</span>
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-xs text-gray-400 mb-0.5">Progresso</p>
+                          <p className="font-semibold text-gray-900 tabular-nums">
+                            {progress.toFixed(1).replace(".", ",")}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <Progress value={progress} className="h-2" />
+
+                      {/* Meta info */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{translateFrequency(kr.frequency || "")}</span>
+                        <span>
+                          {kr.startDate ? formatDateBR(kr.startDate) : "—"} →{" "}
+                          {kr.endDate ? formatDateBR(kr.endDate) : "—"}
+                        </span>
+                      </div>
+
+                      {/* Progress chart */}
+                      <KrProgressChart keyResultId={kr.id} unit={kr.unit} targetValue={kr.targetValue} />
+
+                      {/* Action buttons — simplified to 2 */}
+                      <div className="flex items-center gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setLocation(`/actions?kr=${kr.id}`)}
+                          data-testid={`button-actions-${kr.id}`}
+                        >
+                          {actionsCount === 0 ? "Criar Ações" : "Ações"}
+                          {actionsCount > 0 && (
+                            <Badge variant="secondary" className="ml-2 h-5 min-w-5 text-xs px-1.5 bg-blue-100 text-blue-800 hover:bg-blue-100">
+                              {actionsCount}
                             </Badge>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => setCheckInKr(kr)}
-                            data-testid={`button-checkin-${kr.id}`}
-                          >
-                            <MessageSquarePlus className="h-4 w-4 mr-1" />
-                            Check-in
-                          </Button>
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>Período: {kr.startDate ? formatDateBR(kr.startDate) : 'N/A'} - {kr.endDate ? formatDateBR(kr.endDate) : 'N/A'}</span>
-                        </div>
+                          )}
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setLocation(`/checkpoints?kr=${kr.id}`)}
+                          data-testid={`button-tracking-${kr.id}`}
+                        >
+                          <ClipboardCheck className="h-4 w-4 mr-1.5" />
+                          Acompanhar
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
                 );
-              }) : (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">Nenhum resultado-chave encontrado</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Crie objetivos primeiro e depois adicione resultados-chave a eles.
-                  </p>
-                  <Button className="mt-4" onClick={handleCreateKeyResult}>
+              })
+            ) : (
+              <div className="text-center py-12 bg-white rounded-xl border">
+                <p className="text-muted-foreground">Nenhum resultado-chave encontrado</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Crie objetivos primeiro e depois adicione resultados-chave.
+                </p>
+                {canManageKeyResults && (
+                  <Button className="mt-4" onClick={() => { setSelectedKeyResult(null); setIsFormOpen(true); }}>
                     <Plus className="mr-2 h-4 w-4" />
                     Criar primeiro KR
                   </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      
-      
-      <KeyResultForm 
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <KeyResultForm
         keyResult={selectedKeyResult}
-        onSuccess={() => {
-          setIsFormOpen(false);
-          setSelectedKeyResult(null);
-        }}
+        onSuccess={() => { setIsFormOpen(false); setSelectedKeyResult(null); }}
         open={isFormOpen}
-        onOpenChange={(open) => {
-          setIsFormOpen(open);
-          if (!open) {
-            setSelectedKeyResult(null);
-          }
-        }}
+        onOpenChange={(open) => { setIsFormOpen(open); if (!open) setSelectedKeyResult(null); }}
       />
 
       {checkInKr && (
         <KrCheckInDialog
           keyResult={checkInKr}
           open={!!checkInKr}
-          onOpenChange={(open) => {
-            if (!open) setCheckInKr(null);
-          }}
+          onOpenChange={(open) => { if (!open) setCheckInKr(null); }}
         />
       )}
     </div>

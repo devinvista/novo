@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
@@ -6,12 +7,13 @@ import { format, isBefore, startOfDay, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   LayoutDashboard, Goal, Key, CheckSquare, AlertCircle,
-  Clock, CheckCircle, ArrowRight, TrendingUp,
+  Clock, CheckCircle, ArrowRight, TrendingUp, PencilLine, ClipboardCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import KrCheckInDialog from "@/features/key-results/kr-check-in-dialog";
 import type { Objective, KeyResult, Action, KrCheckIn } from "@shared/schema";
 
 type ObjectiveWithOwner = Objective & { owner?: { id: number; name: string } };
@@ -43,18 +45,13 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 function StatCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  color,
-  href,
+  icon: Icon, label, value, sub, color, href,
 }: {
   icon: any; label: string; value: number; sub?: string; color: string; href: string;
 }) {
   return (
     <Link href={href}>
-      <div className={`bg-white border rounded-xl p-5 hover:shadow-md transition-all cursor-pointer group`} data-testid={`card-stat-${label}`}>
+      <div className="bg-white border rounded-xl p-5 hover:shadow-md transition-all cursor-pointer group" data-testid={`card-stat-${label}`}>
         <div className="flex items-start justify-between">
           <div className={`p-2 rounded-lg ${color}`}>
             <Icon className="h-5 w-5" />
@@ -73,6 +70,7 @@ function StatCard({
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const [checkInKr, setCheckInKr] = useState<any>(null);
 
   const { data: objectives, isLoading: loadingObj } = useQuery<ObjectiveWithOwner[]>({
     queryKey: ["/api/objectives"],
@@ -103,9 +101,6 @@ export default function DashboardPage() {
 
   const isLoading = loadingObj || loadingActions || loadingKRs;
 
-  // Usuário "escopado" por produto (operacional com solução / linha / serviço
-  // atribuídos): "Meu Painel" mostra TUDO dentro do escopo dele, não apenas o
-  // que ele é dono — pois a API já filtra a visibilidade pelo escopo.
   const hasProductScope =
     ((user as any)?.solutionIds?.length ?? 0) > 0 ||
     ((user as any)?.serviceLineIds?.length ?? 0) > 0 ||
@@ -138,7 +133,7 @@ export default function DashboardPage() {
     (kr) => myObjectiveIds.has(kr.objectiveId) && !kr.deletedAt
   );
 
-  const weekStart = format(startOfWeek(new Date(), { locale: ptBR }), "yyyy-MM-dd");
+  const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
   const { data: checkIns } = useQuery<KrCheckIn[]>({
     queryKey: ["/api/kr-check-ins"],
     queryFn: async () => {
@@ -168,7 +163,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-
       <div className="px-6 py-4 border-b bg-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-indigo-50 rounded-lg">
@@ -185,7 +179,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
         {isLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -194,6 +188,29 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            {/* Alert banner for pending check-ins */}
+            {krsNeedingCheckIn.length > 0 && (
+              <Link href="/checkpoints">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-amber-400 hover:shadow-sm transition-all group">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <ClipboardCheck className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-amber-900">
+                        {krsNeedingCheckIn.length} KR{krsNeedingCheckIn.length !== 1 ? "s" : ""} aguardando check-in esta semana
+                      </p>
+                      <p className="text-xs text-amber-700 mt-0.5">
+                        Clique para registrar o progresso de cada resultado-chave
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-amber-500 group-hover:text-amber-700 transition-colors" />
+                </div>
+              </Link>
+            )}
+
+            {/* Stat cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 icon={Goal}
@@ -230,6 +247,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* My Objectives */}
               <div className="bg-white border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -274,6 +292,7 @@ export default function DashboardPage() {
                 )}
               </div>
 
+              {/* Overdue Actions */}
               <div className="bg-white border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -304,9 +323,7 @@ export default function DashboardPage() {
                           <p className="text-sm text-gray-700 font-medium truncate">{action.title}</p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Clock className="h-3 w-3 text-red-500" />
-                            <span className="text-xs text-red-600">
-                              Venceu em {formatDate(action.dueDate)}
-                            </span>
+                            <span className="text-xs text-red-600">Venceu em {formatDate(action.dueDate)}</span>
                           </div>
                         </div>
                       </div>
@@ -320,6 +337,7 @@ export default function DashboardPage() {
                 )}
               </div>
 
+              {/* Pending Actions */}
               <div className="bg-white border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -337,14 +355,11 @@ export default function DashboardPage() {
                 ) : (
                   <div className="space-y-2">
                     {pendingActions.slice(0, 6).map((action) => {
-                      const isOverdue =
-                        action.dueDate && isBefore(startOfDay(new Date(action.dueDate)), today);
+                      const isOverdue = action.dueDate && isBefore(startOfDay(new Date(action.dueDate)), today);
                       return (
                         <div
                           key={action.id}
-                          className={`flex items-start justify-between gap-2 p-2.5 rounded-lg border ${
-                            isOverdue ? "bg-red-50 border-red-100" : "bg-gray-50 border-gray-100"
-                          }`}
+                          className={`flex items-start justify-between gap-2 p-2.5 rounded-lg border ${isOverdue ? "bg-red-50 border-red-100" : "bg-gray-50 border-gray-100"}`}
                           data-testid={`item-pending-action-${action.id}`}
                         >
                           <div className="flex-1 min-w-0">
@@ -370,15 +385,16 @@ export default function DashboardPage() {
                 )}
               </div>
 
+              {/* KRs needing check-in */}
               <div className="bg-white border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Key className="h-4 w-4 text-blue-500" />
-                    <h2 className="text-sm font-semibold text-gray-900">Check-ins Pendentes esta Semana</h2>
+                    <ClipboardCheck className="h-4 w-4 text-blue-500" />
+                    <h2 className="text-sm font-semibold text-gray-900">Check-ins desta semana</h2>
                   </div>
-                  <Link href="/key-results">
+                  <Link href="/checkpoints">
                     <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                      Ver KRs <ArrowRight className="h-3 w-3" />
+                      Ver todos <ArrowRight className="h-3 w-3" />
                     </Button>
                   </Link>
                 </div>
@@ -391,19 +407,22 @@ export default function DashboardPage() {
                 ) : (
                   <div className="space-y-2">
                     {krsNeedingCheckIn.slice(0, 5).map((kr) => (
-                      <div
+                      <button
                         key={kr.id}
-                        className="flex items-start gap-2 p-2.5 bg-blue-50 rounded-lg border border-blue-100"
+                        type="button"
+                        onClick={() => setCheckInKr(kr)}
+                        className="w-full text-left flex items-center gap-3 p-2.5 bg-amber-50 rounded-lg border border-amber-100 hover:border-amber-300 hover:bg-amber-100 transition-colors group"
                         data-testid={`item-kr-checkin-${kr.id}`}
                       >
-                        <Key className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
+                        <Key className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-700 truncate">{kr.title}</p>
-                          <p className="text-xs text-blue-600 mt-0.5">
-                            Progresso: {Math.round(parseFloat(kr.progress ?? "0"))}%
+                          <p className="text-xs text-amber-600 mt-0.5">
+                            {Math.round(parseFloat(kr.progress ?? "0"))}% concluído
                           </p>
                         </div>
-                      </div>
+                        <PencilLine className="h-3.5 w-3.5 text-amber-500 group-hover:text-amber-700 shrink-0" />
+                      </button>
                     ))}
                     {krsNeedingCheckIn.length > 5 && (
                       <p className="text-xs text-gray-400 text-center pt-1">
@@ -417,6 +436,14 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      {checkInKr && (
+        <KrCheckInDialog
+          keyResult={checkInKr}
+          open={!!checkInKr}
+          onOpenChange={(open) => { if (!open) setCheckInKr(null); }}
+        />
+      )}
     </div>
   );
 }

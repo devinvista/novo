@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Target, TrendingUp, FileText, Info } from "lucide-react";
+import { Calendar, Target, TrendingUp } from "lucide-react";
 import { ptBR } from "date-fns/locale";
 import { formatSP } from "@/lib/timezone";
 import { apiRequest } from "@/lib/queryClient";
@@ -22,10 +22,10 @@ interface CheckpointUpdateDialogProps {
   onClose: () => void;
 }
 
-export default function CheckpointUpdateDialog({ 
-  checkpoint, 
-  isOpen, 
-  onClose 
+export default function CheckpointUpdateDialog({
+  checkpoint,
+  isOpen,
+  onClose,
 }: CheckpointUpdateDialogProps) {
   const [actualValue, setActualValue] = useState("");
   const [status, setStatus] = useState("");
@@ -35,26 +35,24 @@ export default function CheckpointUpdateDialog({
 
   useEffect(() => {
     if (checkpoint) {
-      // Se o valor é 0 ou "0", deixar campo vazio para melhor UX
       const currentValue = checkpoint.actualValue;
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setActualValue((currentValue && currentValue !== "0" && currentValue !== 0) ? currentValue : "");
+      setActualValue(
+        currentValue && currentValue !== "0" && currentValue !== 0 ? currentValue : ""
+      );
       setStatus(checkpoint.status || "pending");
       setNotes(checkpoint.notes || "");
-      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [checkpoint]);
 
-  const updateCheckpointMutation = useMutation({
+  const updateMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("PUT", `/api/checkpoints/${checkpoint.id}`, data);
     },
     onSuccess: () => {
       toast({
-        title: "Checkpoint atualizado",
-        description: "As informações do checkpoint foram atualizadas com sucesso.",
+        title: "Marco atualizado",
+        description: "O marco foi atualizado e o progresso do KR foi recalculado.",
       });
-      // Invalidate all related queries so progress updates everywhere
       queryClient.invalidateQueries({ queryKey: ["/api/checkpoints"] });
       queryClient.invalidateQueries({ queryKey: ["/api/key-results"] });
       queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
@@ -64,8 +62,8 @@ export default function CheckpointUpdateDialog({
     },
     onError: (error: any) => {
       toast({
-        title: "Erro",
-        description: error.message || "Erro ao atualizar checkpoint.",
+        title: "Erro ao salvar",
+        description: error.message || "Não foi possível atualizar o marco.",
         variant: "destructive",
       });
     },
@@ -73,169 +71,126 @@ export default function CheckpointUpdateDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const updateData = {
-      actualValue: parseDecimalBR(actualValue).toString(), // Convert to database format using proper parser
+    updateMutation.mutate({
+      actualValue: parseDecimalBR(actualValue).toString(),
       status,
       notes: notes.trim() || null,
-      completedDate: status === 'completed' ? new Date().toISOString() : null,
-      completedAt: status === 'completed' ? new Date().toISOString() : null,
-    };
-
-    updateCheckpointMutation.mutate(updateData);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-gray-100 text-gray-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Concluído';
-      case 'in_progress': return 'Em Progresso';
-      case 'pending': return 'Pendente';
-      case 'overdue': return 'Atrasado';
-      default: return 'Pendente';
-    }
+      completedDate: status === "completed" ? new Date().toISOString() : null,
+      completedAt: status === "completed" ? new Date().toISOString() : null,
+    });
   };
 
   const calculateProgress = () => {
-    // CORREÇÃO: Usar parseDecimalBR para converter corretamente valores brasileiros
-    const target = parseDecimalBR(checkpoint?.targetValue || '0');
-    const actual = parseDecimalBR(actualValue || '0');
+    const target = parseDecimalBR(checkpoint?.targetValue || "0");
+    const actual = parseDecimalBR(actualValue || "0");
     if (target === 0 || !actualValue || actualValue === "") return 0;
     return Math.min(100, Math.round((actual / target) * 100));
   };
 
-  if (!checkpoint) return null;
-
-  const handleDialogChange = (open: boolean) => {
-    if (!open) {
-      cleanupOnDialogClose();
-      onClose();
+  const getStatusColor = (s: string) => {
+    switch (s) {
+      case "completed": return "bg-green-100 text-green-800";
+      case "in_progress": return "bg-blue-100 text-blue-800";
+      case "delayed": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
+  const getStatusText = (s: string) => {
+    switch (s) {
+      case "completed": return "Concluído";
+      case "in_progress": return "Em andamento";
+      case "delayed": return "Atrasado";
+      default: return "Pendente";
+    }
+  };
+
+  if (!checkpoint) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { cleanupOnDialogClose(); onClose(); } }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Atualizar Checkpoint
+            <Target className="h-5 w-5 text-primary" />
+            Atualizar marco
           </DialogTitle>
           <DialogDescription>
-            Ajuste manual do checkpoint (uso administrativo)
+            {checkpoint.title}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-100" data-testid="info-checkin-source">
-          <div className="flex items-start gap-2">
-            <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              O valor reportado aqui criará um <strong>check-in semanal</strong> equivalente
-              para manter uma fonte única do progresso do KR. Para uso normal, prefira a
-              tela de check-in semanal.
-            </div>
+        <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-gray-600">
+            <Calendar className="h-4 w-4 text-gray-400" />
+            <span>{formatSP(checkpoint.dueDate, "dd/MM/yyyy", { locale: ptBR })}</span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-600">
+            <TrendingUp className="h-4 w-4 text-gray-400" />
+            <span>Meta: <strong>{checkpoint.targetValue}</strong> {checkpoint.keyResult?.unit}</span>
+          </div>
+          <div className="col-span-2 flex items-center gap-2">
+            <span className="text-gray-500 text-xs">Status atual:</span>
+            <Badge className={`text-xs ${getStatusColor(checkpoint.status)}`}>
+              {getStatusText(checkpoint.status)}
+            </Badge>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Checkpoint Info */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="h-4 w-4" />
-              <span>{checkpoint.title}</span>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <TrendingUp className="h-4 w-4" />
-              <span>Meta: {checkpoint.targetValue} {checkpoint.keyResult?.unit}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Prazo:</span>
-              <Badge variant="outline">
-                {formatSP(checkpoint.dueDate, 'dd/MM/yyyy', { locale: ptBR })}
-              </Badge>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="actualValue">Valor realizado</Label>
+            <Input
+              id="actualValue"
+              type="text"
+              value={actualValue}
+              onChange={(e) => setActualValue(e.target.value)}
+              placeholder="Ex: 1.234 ou 1234,50"
+              required
+              data-testid="input-actual-value"
+            />
+            {actualValue && (
+              <p className="text-xs text-gray-500">
+                Progresso: <span className="font-medium text-gray-700">{calculateProgress()}%</span> da meta
+              </p>
+            )}
+          </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Status Atual:</span>
-              <Badge className={getStatusColor(checkpoint.status)}>
-                {getStatusText(checkpoint.status)}
-              </Badge>
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="status">Novo status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger data-testid="select-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="in_progress">Em andamento</SelectItem>
+                <SelectItem value="completed">Concluído</SelectItem>
+                <SelectItem value="delayed">Atrasado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="notes">Observações <span className="text-gray-400 font-normal">(opcional)</span></Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Contexto adicional sobre esse marco..."
+              rows={3}
+              data-testid="textarea-notes"
+            />
           </div>
 
           <Separator />
 
-          {/* Update Form */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="actualValue">Valor Atual</Label>
-              <Input
-                id="actualValue"
-                type="text"
-                value={actualValue}
-                onChange={(e) => setActualValue(e.target.value)}
-                placeholder="Digite o valor atual (ex: 20000 ou 20000,50)"
-                required
-              />
-              <div className="text-xs text-gray-500">
-                Progresso: {calculateProgress()}% da meta
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="in_progress">Em Progresso</SelectItem>
-                  <SelectItem value="completed">Concluído</SelectItem>
-                  <SelectItem value="overdue">Atrasado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Observações</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Adicione observações sobre o progresso..."
-                rows={3}
-              />
-            </div>
-          </div>
-
-          {/* Actions */}
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-            >
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1" data-testid="button-cancel-update">
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              disabled={updateCheckpointMutation.isPending}
-              className="flex-1"
-            >
-              {updateCheckpointMutation.isPending ? "Salvando..." : "Salvar"}
+            <Button type="submit" disabled={updateMutation.isPending} className="flex-1" data-testid="button-save-update">
+              {updateMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </div>
         </form>

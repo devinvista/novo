@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Target, TrendingUp, Users, Activity } from "lucide-react";
+import { Loader2, Target, TrendingUp, Users, ClipboardCheck } from "lucide-react";
 import logoImage from "@assets/ChatGPT Image 31 de jul. de 2025, 14_21_03_1753982548631.png";
 
 export default function AuthPage() {
@@ -24,27 +24,21 @@ export default function AuthPage() {
     gestorId: "",
   });
 
-  // Load managers for registration (uses public endpoint - only id and name)
   const { data: managers } = useQuery<Array<{ id: number; name: string }>>({
     queryKey: ["/api/managers/public"],
     queryFn: async () => {
-      const response = await fetch('/api/managers/public');
+      const response = await fetch("/api/managers/public");
       if (!response.ok) return [];
       return response.json();
     },
     enabled: true,
   });
 
-  // Use effect to redirect if already logged in
   useEffect(() => {
-    if (user) {
-      setLocation("/");
-    }
+    if (user) setLocation("/");
   }, [user, setLocation]);
 
-  if (user) {
-    return null;
-  }
+  if (user) return null;
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,9 +54,16 @@ export default function AuthPage() {
     registerMutation.mutate(formData);
   };
 
+  const features = [
+    { icon: TrendingUp, title: "Progresso Visual", desc: "Acompanhe em tempo real" },
+    { icon: Users, title: "Colaboração", desc: "Trabalhe em equipe" },
+    { icon: Target, title: "Objetivos", desc: "Metas estratégicas claras" },
+    { icon: ClipboardCheck, title: "Check-ins", desc: "Acompanhamento periódico" },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left side - Forms */}
+      {/* Left — Forms */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-md space-y-6 sm:space-y-8">
           <div className="text-center">
@@ -74,27 +75,25 @@ export default function AuthPage() {
                 className="h-16 w-auto object-contain"
               />
             </div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-3">Sistema de Gestão de Objetivos</p>
+            <p className="text-gray-500 text-sm mt-3">Sistema de Gestão de Objetivos</p>
           </div>
 
           <Tabs defaultValue="login" className="space-y-4" aria-label="Autenticação">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" className="text-sm sm:text-base">Entrar</TabsTrigger>
-              <TabsTrigger value="register" className="text-sm sm:text-base">Cadastrar</TabsTrigger>
+              <TabsTrigger value="login" data-testid="tab-login">Entrar</TabsTrigger>
+              <TabsTrigger value="register" data-testid="tab-register">Cadastrar</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
               <Card>
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg sm:text-xl">Fazer Login</CardTitle>
-                  <CardDescription className="text-sm sm:text-base">
-                    Acesse sua conta para gerenciar seus objetivos
-                  </CardDescription>
+                  <CardTitle>Fazer Login</CardTitle>
+                  <CardDescription>Acesse sua conta para gerenciar seus objetivos</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-username" className="text-sm sm:text-base">Usuário</Label>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="login-username">Usuário</Label>
                       <Input
                         id="login-username"
                         type="text"
@@ -102,27 +101,25 @@ export default function AuthPage() {
                         spellCheck={false}
                         autoCapitalize="none"
                         value={loginForm.username}
-                        onChange={(e) =>
-                          setLoginForm({ ...loginForm, username: e.target.value })
-                        }
+                        onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                         required
-                        className="h-11 sm:h-12 text-sm sm:text-base"
+                        className="h-11"
                         placeholder="Digite seu usuário"
+                        data-testid="input-username"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password" className="text-sm sm:text-base">Senha</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="login-password">Senha</Label>
                       <Input
                         id="login-password"
                         type="password"
                         autoComplete="current-password"
                         value={loginForm.password}
-                        onChange={(e) =>
-                          setLoginForm({ ...loginForm, password: e.target.value })
-                        }
+                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                         required
-                        className="h-11 sm:h-12 text-sm sm:text-base"
+                        className="h-11"
                         placeholder="Digite sua senha"
+                        data-testid="input-password"
                       />
                     </div>
                     {loginMutation.isError && (
@@ -134,13 +131,11 @@ export default function AuthPage() {
                     )}
                     <Button
                       type="submit"
-                      className="w-full h-11 sm:h-12 text-sm sm:text-base"
+                      className="w-full h-11"
                       disabled={loginMutation.isPending}
-                      aria-live="polite"
+                      data-testid="button-login"
                     >
-                      {loginMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                      )}
+                      {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {loginMutation.isPending ? "Entrando…" : "Entrar"}
                     </Button>
                   </form>
@@ -151,30 +146,27 @@ export default function AuthPage() {
             <TabsContent value="register">
               <Card>
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg sm:text-xl">Criar Conta</CardTitle>
-                  <CardDescription className="text-sm sm:text-base">
-                    Registre-se para começar a usar o sistema
-                  </CardDescription>
+                  <CardTitle>Criar Conta</CardTitle>
+                  <CardDescription>Registre-se para começar a usar o sistema</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleRegister} className="space-y-4 sm:space-y-5">
-                    <div className="space-y-2">
-                      <Label htmlFor="register-name" className="text-sm sm:text-base">Nome Completo</Label>
+                  <form onSubmit={handleRegister} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="register-name">Nome Completo</Label>
                       <Input
                         id="register-name"
                         type="text"
                         autoComplete="name"
                         value={registerForm.name}
-                        onChange={(e) =>
-                          setRegisterForm({ ...registerForm, name: e.target.value })
-                        }
+                        onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
                         required
-                        className="h-11 sm:h-12 text-sm sm:text-base"
-                        placeholder="Digite seu nome completo"
+                        className="h-11"
+                        placeholder="Seu nome completo"
+                        data-testid="input-name"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-email" className="text-sm sm:text-base">E-mail</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="register-email">E-mail</Label>
                       <Input
                         id="register-email"
                         type="email"
@@ -183,16 +175,15 @@ export default function AuthPage() {
                         spellCheck={false}
                         autoCapitalize="none"
                         value={registerForm.email}
-                        onChange={(e) =>
-                          setRegisterForm({ ...registerForm, email: e.target.value })
-                        }
+                        onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                         required
-                        className="h-11 sm:h-12 text-sm sm:text-base"
-                        placeholder="Digite seu e-mail"
+                        className="h-11"
+                        placeholder="seu@email.com"
+                        data-testid="input-email"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-username" className="text-sm sm:text-base">Usuário</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="register-username">Usuário</Label>
                       <Input
                         id="register-username"
                         type="text"
@@ -200,42 +191,34 @@ export default function AuthPage() {
                         spellCheck={false}
                         autoCapitalize="none"
                         value={registerForm.username}
-                        onChange={(e) =>
-                          setRegisterForm({ ...registerForm, username: e.target.value })
-                        }
+                        onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
                         required
-                        className="h-11 sm:h-12 text-sm sm:text-base"
-                        placeholder="Escolha um nome de usuário"
+                        className="h-11"
+                        placeholder="Nome de usuário único"
+                        data-testid="input-register-username"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-password" className="text-sm sm:text-base">Senha</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="register-password">Senha</Label>
                       <Input
                         id="register-password"
                         type="password"
                         autoComplete="new-password"
                         value={registerForm.password}
-                        onChange={(e) =>
-                          setRegisterForm({ ...registerForm, password: e.target.value })
-                        }
+                        onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                         required
-                        className="h-11 sm:h-12 text-sm sm:text-base"
+                        className="h-11"
                         placeholder="Crie uma senha segura"
+                        data-testid="input-register-password"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-manager" className="text-sm sm:text-base">Gestor Responsável</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="register-manager">Gestor Responsável</Label>
                       <Select
                         value={registerForm.gestorId}
-                        onValueChange={(value) =>
-                          setRegisterForm({ ...registerForm, gestorId: value })
-                        }
+                        onValueChange={(value) => setRegisterForm({ ...registerForm, gestorId: value })}
                       >
-                        <SelectTrigger
-                          id="register-manager"
-                          className="h-11 sm:h-12 text-sm sm:text-base"
-                          aria-label="Gestor responsável"
-                        >
+                        <SelectTrigger id="register-manager" className="h-11" data-testid="select-manager">
                           <SelectValue placeholder="Selecione seu gestor" />
                         </SelectTrigger>
                         <SelectContent>
@@ -247,7 +230,7 @@ export default function AuthPage() {
                             ))
                           ) : (
                             <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                              Nenhum gestor disponível no momento
+                              Nenhum gestor disponível
                             </div>
                           )}
                         </SelectContent>
@@ -260,15 +243,20 @@ export default function AuthPage() {
                         </AlertDescription>
                       </Alert>
                     )}
+                    {registerMutation.isSuccess && (
+                      <Alert role="status">
+                        <AlertDescription>
+                          Cadastro realizado! Aguarde a aprovação do seu gestor para acessar.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <Button
                       type="submit"
-                      className="w-full h-11 sm:h-12 text-sm sm:text-base"
+                      className="w-full h-11"
                       disabled={registerMutation.isPending}
-                      aria-live="polite"
+                      data-testid="button-register"
                     >
-                      {registerMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                      )}
+                      {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {registerMutation.isPending ? "Cadastrando…" : "Criar Conta"}
                     </Button>
                   </form>
@@ -276,106 +264,45 @@ export default function AuthPage() {
               </Card>
             </TabsContent>
           </Tabs>
-          
-          {/* Mobile Features Section */}
-          <div className="lg:hidden mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+
+          {/* Mobile features */}
+          <div className="lg:hidden mt-6 pt-6 border-t border-gray-200">
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+              {features.map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="text-center">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-sm">{title}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                 </div>
-                <h3 className="font-semibold mb-1 text-sm">Progresso Visual</h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Acompanhe em tempo real
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="font-semibold mb-1 text-sm">Colaboração</h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Trabalhe em equipe
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Activity className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="font-semibold mb-1 text-sm">Indicadores</h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Métricas estratégicas
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Target className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="font-semibold mb-1 text-sm">Checkpoints</h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Acompanhamento periódico
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right side - Hero */}
-      <div className="hidden lg:flex flex-1 bg-primary text-white p-6 lg:p-8 items-center justify-center">
-        <div className="max-w-md text-center space-y-6 lg:space-y-8">
+      {/* Right — Hero */}
+      <div className="hidden lg:flex flex-1 bg-primary text-white p-8 items-center justify-center">
+        <div className="max-w-md text-center space-y-8">
           <div>
-            <h2 className="text-2xl lg:text-4xl font-bold mb-4">
+            <h2 className="text-4xl font-bold mb-4">
               Gerencie seus OKRs de forma eficiente
             </h2>
-            <p className="text-blue-100 text-base lg:text-lg">
-              Sistema completo para definir, acompanhar e alcançar seus objetivos e resultados-chave na área da saúde.
+            <p className="text-blue-100 text-lg">
+              Sistema completo para definir, acompanhar e alcançar seus objetivos e resultados-chave.
             </p>
           </div>
-
-          <div className="grid grid-cols-2 gap-4 lg:gap-6">
-            <div className="text-center">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6" />
+          <div className="grid grid-cols-2 gap-6">
+            {features.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="text-center">
+                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h3 className="font-semibold mb-1">{title}</h3>
+                <p className="text-sm text-blue-100">{desc}</p>
               </div>
-              <h3 className="font-semibold mb-1 text-sm lg:text-base">Progresso Visual</h3>
-              <p className="text-xs lg:text-sm text-blue-100">
-                Acompanhe o progresso em tempo real
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <Users className="h-5 w-5 lg:h-6 lg:w-6" />
-              </div>
-              <h3 className="font-semibold mb-1 text-sm lg:text-base">Colaboração</h3>
-              <p className="text-xs lg:text-sm text-blue-100">
-                Trabalhe em equipe de forma integrada
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <Activity className="h-5 w-5 lg:h-6 lg:w-6" />
-              </div>
-              <h3 className="font-semibold mb-1 text-sm lg:text-base">Indicadores</h3>
-              <p className="text-xs lg:text-sm text-blue-100">
-                Métricas estratégicas da saúde
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <Target className="h-5 w-5 lg:h-6 lg:w-6" />
-              </div>
-              <h3 className="font-semibold mb-1 text-sm lg:text-base">Checkpoints</h3>
-              <p className="text-xs lg:text-sm text-blue-100">
-                Acompanhamento periódico automático
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </div>
