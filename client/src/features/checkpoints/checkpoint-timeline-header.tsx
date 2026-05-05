@@ -165,7 +165,7 @@ export default function CheckpointTimelineHeader({
                           📊 {checkpoint.actualValue}/{checkpoint.targetValue} {keyResult.unit}
                         </div>
                         <div className="mt-2 pt-2 border-t border-gray-100 text-center text-gray-500">
-                          Clique para atualizar
+                          Clique para fazer check-in
                         </div>
                       </div>
                     </div>

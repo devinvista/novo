@@ -26,7 +26,6 @@ import { ptBR } from "date-fns/locale";
 
 import CheckpointProgressGrid from "@/features/checkpoints/checkpoint-progress-grid";
 import CheckpointTimelineHeader from "@/features/checkpoints/checkpoint-timeline-header";
-import CheckpointUpdateDialog from "@/features/checkpoints/checkpoint-update-dialog";
 import PlanVsActualChart from "@/features/checkpoints/plan-vs-actual-chart";
 import KrCheckInDialog from "@/features/key-results/kr-check-in-dialog";
 import { apiRequest } from "@/lib/queryClient";
@@ -40,8 +39,6 @@ type ViewMode = "circles" | "simple";
 export default function Checkpoints() {
   const [selectedKeyResultId, setSelectedKeyResultId] = useState<number | undefined>(undefined);
   const [viewMode, setViewMode] = useState<ViewMode>("circles");
-  const [selectedCheckpoint, setSelectedCheckpoint] = useState<any>(null);
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [checkInKr, setCheckInKr] = useState<any>(null);
   const [location] = useLocation();
   const { toast } = useToast();
@@ -126,8 +123,8 @@ export default function Checkpoints() {
   });
 
   const handleCheckpointClick = (checkpoint: any) => {
-    setSelectedCheckpoint(checkpoint);
-    setIsUpdateDialogOpen(true);
+    const kr = keyResults?.find((k) => k.id === checkpoint.keyResultId);
+    if (kr) setCheckInKr(kr);
   };
 
   const handleRegenerateCheckpoints = () => {
@@ -620,17 +617,7 @@ export default function Checkpoints() {
         </div>
       </div>
 
-      {/* Update Dialog (admin) */}
-      <CheckpointUpdateDialog
-        checkpoint={selectedCheckpoint}
-        isOpen={isUpdateDialogOpen}
-        onClose={() => {
-          setIsUpdateDialogOpen(false);
-          setSelectedCheckpoint(null);
-        }}
-      />
-
-      {/* Check-in Dialog */}
+      {/* Check-in Dialog — única fonte de entrada para progresso */}
       {checkInKr && (
         <KrCheckInDialog
           keyResult={checkInKr}
