@@ -72,7 +72,7 @@ export default function PlanVsActualChart({ checkpoints, unit }: PlanVsActualCha
               Plano vs. Realizado
             </CardTitle>
             <CardDescription>
-              Curva planejada (checkpoints) comparada com o reporte semanal (check-ins).
+              Curva planejada (marcos) vs. valor reportado no check-in de cada período.
             </CardDescription>
           </div>
           {summary.variance !== null ? (

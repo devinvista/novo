@@ -68,15 +68,18 @@ async function _recalcObjectiveCascadeLocked(
 }
 
 /**
- * Recalcula o `status` de cada checkpoint de um KR comparando a meta planejada
- * (`targetValue`) e a `dueDate` do checkpoint com o último valor reportado
- * via check-in.
+ * Recalcula o `status` de cada checkpoint de um KR usando o modelo SNAPSHOT:
+ * cada marco é avaliado com o check-in mais recente cujo `weekStart` é
+ * anterior ou igual à `dueDate` do marco — não com o último check-in global.
+ *
+ * Isso garante um histórico honesto: um marco de 10/05 é avaliado com o
+ * valor registrado até 10/05, independentemente de check-ins posteriores.
  *
  * Regras:
- *   - dueDate no futuro                  → status mantém-se "pending"
- *   - dueDate no passado e atingiu meta  → "completed" + completedAt = agora
- *   - dueDate no passado e abaixo da meta→ "delayed"
- *   - sem check-in nenhum                → mantém o status atual
+ *   - dueDate no futuro                                → status mantém-se "pending"
+ *   - dueDate no passado, sem check-in até essa data   → mantém o status atual
+ *   - dueDate no passado, atingiu a meta do período    → "completed"
+ *   - dueDate no passado, abaixo da meta do período    → "delayed"
  *
  * Esta função NÃO grava `currentValue`/`progress` no KR — isso fica a cargo
  * do POST de check-in.
@@ -88,27 +91,36 @@ export async function recalcCheckpointStatuses(keyResultId: number): Promise<voi
   const allCheckpoints = await storage.getCheckpoints(keyResultId);
   if (allCheckpoints.length === 0) return;
 
-  const latestCheckIn = await storage.checkIns.latest(keyResultId);
-  const reportedValue =
-    latestCheckIn && latestCheckIn.currentValue !== null && latestCheckIn.currentValue !== undefined
-      ? convertBRToDatabase(String(latestCheckIn.currentValue))
-      : null;
-
-  if (reportedValue === null) return;
+  // Carrega todos os check-ins do KR de uma vez (weekStart DESC).
+  // O .find() abaixo retorna o mais recente com weekStart ≤ dueDate do marco.
+  const allCheckIns = await storage.checkIns.list(keyResultId);
+  if (allCheckIns.length === 0) return;
 
   const now = new Date();
+
   for (const cp of allCheckpoints) {
     if (!cp.dueDate) continue;
     const due = new Date(cp.dueDate);
     if (due > now) continue; // futuro: não muda
 
+    // MODELO SNAPSHOT: check-in vigente na data do marco (ou anterior mais próximo)
+    const dueDateStr = due.toISOString().slice(0, 10); // YYYY-MM-DD
+    const relevantCheckIn = allCheckIns.find(
+      (ci) => ci.weekStart != null && ci.currentValue != null &&
+               String(ci.weekStart) <= dueDateStr
+    );
+
+    if (!relevantCheckIn) continue; // sem check-in até essa data — mantém status atual
+
+    const reportedValue = convertBRToDatabase(String(relevantCheckIn.currentValue));
     const target = convertBRToDatabase(String(cp.targetValue ?? "0"));
     if (target <= 0) continue;
 
     const reached = reportedValue >= target;
     const newStatus = reached ? "completed" : "delayed";
 
-    if (cp.status === newStatus) continue;
+    // Só escreve se houve mudança de status ou de valor reportado
+    if (cp.status === newStatus && String(cp.actualValue) === reportedValue.toString()) continue;
 
     const update: Record<string, unknown> = {
       status: newStatus,
